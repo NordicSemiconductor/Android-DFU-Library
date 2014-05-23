@@ -53,7 +53,7 @@ import android.util.Log;
 /**
  * The DFU Service provides full
  */
-public abstract class DfuService extends IntentService {
+public abstract class DfuBaseService extends IntentService {
 	private static final String TAG = "DfuService";
 
 	public static final String EXTRA_DEVICE_ADDRESS = "no.nordicsemi.android.dfu.extra.EXTRA_DEVICE_ADDRESS";
@@ -400,7 +400,7 @@ public abstract class DfuService extends IntentService {
 		};
 	};
 
-	public DfuService() {
+	public DfuBaseService() {
 		super(TAG);
 	}
 
@@ -1302,7 +1302,7 @@ public abstract class DfuService extends IntentService {
 
 	private static IntentFilter makeDfuActionIntentFilter() {
 		final IntentFilter intentFilter = new IntentFilter();
-		intentFilter.addAction(DfuService.BROADCAST_ACTION);
+		intentFilter.addAction(DfuBaseService.BROADCAST_ACTION);
 		return intentFilter;
 	}
 

@@ -8,7 +8,7 @@
  ******************************************************************************/
 package no.nordicsemi.android.error;
 
-import no.nordicsemi.android.dfu.DfuService;
+import no.nordicsemi.android.dfu.DfuBaseService;
 
 public class GattError {
 
@@ -80,34 +80,34 @@ public class GattError {
 			return "GATT NOT ENCRYPTED";
 		case 0x00FF:
 			return "DFU SERVICE DSCOVERY NOT STARTED";
-		case DfuService.ERROR_DEVICE_DISCONNECTED:
+		case DfuBaseService.ERROR_DEVICE_DISCONNECTED:
 			return "DFU DEVICE DISCONNECTED";
-		case DfuService.ERROR_FILE_CLOSED:
+		case DfuBaseService.ERROR_FILE_CLOSED:
 			return "DFU FILE CLOSED";
-		case DfuService.ERROR_FILE_INVALID:
+		case DfuBaseService.ERROR_FILE_INVALID:
 			return "DFU NOT A VALID HEX FILE";
-		case DfuService.ERROR_FILE_IO_EXCEPTION:
+		case DfuBaseService.ERROR_FILE_IO_EXCEPTION:
 			return "DFU IO EXCEPTION";
-		case DfuService.ERROR_FILE_NOT_FOUND:
+		case DfuBaseService.ERROR_FILE_NOT_FOUND:
 			return "DFU FILE NOT FOUND";
-		case DfuService.ERROR_SERVICE_DISCOVERY_NOT_STARTED:
+		case DfuBaseService.ERROR_SERVICE_DISCOVERY_NOT_STARTED:
 			return "DFU ERROR WHILE SERVICE DISCOVERY";
-		case DfuService.ERROR_SERVICE_NOT_FOUND:
+		case DfuBaseService.ERROR_SERVICE_NOT_FOUND:
 			return "DFU SERVICE NOT FOUND";
-		case DfuService.ERROR_CHARACTERISTICS_NOT_FOUND:
+		case DfuBaseService.ERROR_CHARACTERISTICS_NOT_FOUND:
 			return "DFU CHARACTERISTICS NOT FOUND";
 		default:
-			if ((DfuService.ERROR_REMOTE_MASK & error) > 0) {
-				switch (error & (~DfuService.ERROR_REMOTE_MASK)) {
-				case DfuService.DFU_STATUS_INVALID_STATE:
+			if ((DfuBaseService.ERROR_REMOTE_MASK & error) > 0) {
+				switch (error & (~DfuBaseService.ERROR_REMOTE_MASK)) {
+				case DfuBaseService.DFU_STATUS_INVALID_STATE:
 					return "REMOTE DFU INVALID STATE";
-				case DfuService.DFU_STATUS_NOT_SUPPORTED:
+				case DfuBaseService.DFU_STATUS_NOT_SUPPORTED:
 					return "REMOTE DFU NOT SUPPORTED";
-				case DfuService.DFU_STATUS_DATA_SIZE_EXCEEDS_LIMIT:
+				case DfuBaseService.DFU_STATUS_DATA_SIZE_EXCEEDS_LIMIT:
 					return "REMOTE DFU DATA SIZE EXCEEDS LIMIT";
-				case DfuService.DFU_STATUS_CRC_ERROR:
+				case DfuBaseService.DFU_STATUS_CRC_ERROR:
 					return "REMOTE DFU INVALID CRC ERROR";
-				case DfuService.DFU_STATUS_OPERATION_FAILED:
+				case DfuBaseService.DFU_STATUS_OPERATION_FAILED:
 					return "REMOTE DFU OPERATION FAILED";
 				}
 			}
