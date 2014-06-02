@@ -536,7 +536,7 @@ public abstract class DfuBaseService extends IntentService {
 					sendLogBroadcast(Level.INFO, "DFU Start sent (Op Code 1) ");
 
 					// send image size in bytes to DFU Packet
-					logi("Sending image size in bytes to DFU Packet");
+					logi("Sending image size to DFU Packet: " + mImageSizeInBytes + " bytes");
 					writeImageSize(gatt, packetCharacteristic, mImageSizeInBytes);
 					sendLogBroadcast(Level.INFO, "Firmware image size sent");
 
