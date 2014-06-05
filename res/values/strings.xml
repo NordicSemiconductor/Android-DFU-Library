@@ -9,7 +9,8 @@
     <string name="dfu_status_validating">Validating&#8230;</string>
     <string name="dfu_status_disconnecting">Disonnecting&#8230;</string>
     <string name="dfu_status_completed">Done</string>
-    <string name="dfu_status_abored">Aborted</string>
+    <string name="dfu_status_aborted">Aborted</string>
+    <string name="dfu_status_aborting">Aborting&#8230;</string>
     <string name="dfu_status_error">Upload failed</string>
     
     <string name="dfu_status_connecting_msg">Connecting to %s&#8230;</string>
@@ -20,9 +21,5 @@
     <string name="dfu_status_aborted_msg">Application upload has been canceled.</string>
     <string name="dfu_status_disconnecting_msg">Disconnecting from %s&#8230;</string>
     <string name="dfu_status_error_msg">DFU process failed.</string>
-    
-    <string name="dfu_settings_dfu">DFU options</string>
-    <string name="dfu_settings_dfu_packets_receipt_notification_label">Packets receipt notification procedure</string>
-    <string name="dfu_settings_dfu_number_of_packets_label">Number of packets</string>
     
 </resources>

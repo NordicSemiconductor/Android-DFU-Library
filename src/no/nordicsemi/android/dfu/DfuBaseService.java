@@ -1181,7 +1181,7 @@ public abstract class DfuBaseService extends IntentService {
 			builder.setOngoing(false).setContentTitle(getString(R.string.dfu_status_completed)).setContentText(getString(R.string.dfu_status_completed_msg)).setAutoCancel(true);
 			break;
 		case PROGRESS_ABORTED:
-			builder.setOngoing(false).setContentTitle(getString(R.string.dfu_status_abored)).setContentText(getString(R.string.dfu_status_aborted_msg)).setAutoCancel(true);
+			builder.setOngoing(false).setContentTitle(getString(R.string.dfu_status_aborted)).setContentText(getString(R.string.dfu_status_aborted_msg)).setAutoCancel(true);
 			break;
 		default:
 			if (progress >= ERROR_MASK) {
