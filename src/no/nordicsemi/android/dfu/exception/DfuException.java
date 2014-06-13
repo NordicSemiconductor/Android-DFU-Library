@@ -8,6 +8,8 @@
  ******************************************************************************/
 package no.nordicsemi.android.dfu.exception;
 
+import no.nordicsemi.android.dfu.DfuBaseService;
+
 public class DfuException extends Exception {
 	private static final long serialVersionUID = -6901728550661937942L;
 
@@ -25,6 +27,6 @@ public class DfuException extends Exception {
 
 	@Override
 	public String getMessage() {
-		return super.getMessage() + " (error " + mError + ")";
+		return super.getMessage() + " (error " + (mError & ~DfuBaseService.ERROR_CONNECTION_MASK) + ")";
 	}
 }

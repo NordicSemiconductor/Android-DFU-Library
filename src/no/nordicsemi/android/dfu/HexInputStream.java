@@ -9,6 +9,7 @@
 package no.nordicsemi.android.dfu;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,6 +22,7 @@ public class HexInputStream extends FilterInputStream {
 	private int localPos;
 	private int pos;
 	private int size;
+	private int lastAddress;
 	private int available, bytesRead;
 
 	/**
@@ -39,6 +41,17 @@ public class HexInputStream extends FilterInputStream {
 		localBuf = new byte[LINE_LENGTH];
 		localPos = LINE_LENGTH; // we are at the end of the local buffer, new one must be obtained
 		size = localBuf.length;
+		lastAddress = 0;
+
+		available = calculateBinSize();
+	}
+
+	protected HexInputStream(final byte[] data) throws HexFileValidationException, IOException {
+		super(new ByteArrayInputStream(data));
+		localBuf = new byte[LINE_LENGTH];
+		localPos = LINE_LENGTH; // we are at the end of the local buffer, new one must be obtained
+		size = localBuf.length;
+		lastAddress = 0;
 
 		available = calculateBinSize();
 	}
@@ -49,6 +62,7 @@ public class HexInputStream extends FilterInputStream {
 		in.mark(in.available());
 
 		int b, lineSize, type;
+		int lastULBA = 0; // last Upper Linear Base Address, default 0 
 		try {
 			b = in.read();
 			while (true) {
@@ -58,21 +72,32 @@ public class HexInputStream extends FilterInputStream {
 				in.skip(4); // skipping address part
 				type = readByte(in); // reading the line type
 				switch (type) {
-				case 0x00:
-					// data type line
-					binSize += lineSize;
-					break;
 				case 0x01:
 					// end of file
 					return binSize;
-				case 0x02:
-					// extended segment address record
 				case 0x04:
 					// extended linear address record
+					/*
+					 * The HEX file may contain jump to different addresses. The MSB of LBA (Linear Base Address) is given using the line type 4.
+					 * We only support files where bytes are located together, no jumps are allowed. Therefore the newULBA may be only lastULBA + 1 (or any, if this is the first line of the HEX) 
+					 */
+					final int newULBA = readAddress(in);
+					if (binSize > 0 && newULBA != lastULBA + 1)
+						return binSize;
+					lastULBA = newULBA;
+					in.skip(2 /* check sum */);
+					break;
+				case 0x00:
+					// data type line
+					binSize += lineSize;
+					// no break!
+				case 0x02:
+					// extended segment address record
+					// TODO should there be the same as for Extended Linear Address?
 				default:
+					in.skip(lineSize * 2 /* 2 hex per one byte */+ 2 /* check sum */);
 					break;
 				}
-				in.skip(lineSize * 2 /* 2 hex per one byte */+ 2 /* check sum */);
 				// skip end of line
 				while (true) {
 					b = in.read();
@@ -129,12 +154,11 @@ public class HexInputStream extends FilterInputStream {
 	}
 
 	/**
-	 * Returns the total number of bytes. Call this method before reading packets.
+	 * Returns the total number of bytes.
 	 * 
 	 * @return total number of bytes available
-	 * @throws IOException
 	 */
-	public int sizeInBytes() throws IOException {
+	public int sizeInBytes() {
 		return available;
 	}
 
@@ -205,10 +229,17 @@ public class HexInputStream extends FilterInputStream {
 				// end of file
 				pos = -1;
 				return 0;
-			case 0x02:
-				// extended segment address
 			case 0x04:
 				// extended linear address
+				final int address = readAddress(in);
+				pos += 4;
+				if (bytesRead > 0 && address != lastAddress + 1)
+					return 0;
+				lastAddress = address;
+				pos += in.skip(2 /* check sum */);
+				break;
+			case 0x02:
+				// extended segment address
 			default:
 				pos += in.skip(lineSize * 2 /* 2 hex per one byte */+ 2 /* check sum */);
 				break;
@@ -246,6 +277,10 @@ public class HexInputStream extends FilterInputStream {
 		final int second = asciiToInt(in.read());
 
 		return first << 4 | second;
+	}
+
+	private int readAddress(final InputStream in) throws IOException {
+		return readByte(in) << 16 | readByte(in);
 	}
 
 	private int asciiToInt(final int ascii) {

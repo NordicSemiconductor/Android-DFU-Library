@@ -82,8 +82,8 @@ public class GattError {
 			return "DFU SERVICE DSCOVERY NOT STARTED";
 		case DfuBaseService.ERROR_DEVICE_DISCONNECTED:
 			return "DFU DEVICE DISCONNECTED";
-		case DfuBaseService.ERROR_FILE_CLOSED:
-			return "DFU FILE CLOSED";
+		case DfuBaseService.ERROR_FILE_ERROR:
+			return "DFU FILE ERROR";
 		case DfuBaseService.ERROR_FILE_INVALID:
 			return "DFU NOT A VALID HEX FILE";
 		case DfuBaseService.ERROR_FILE_IO_EXCEPTION:
@@ -96,6 +96,8 @@ public class GattError {
 			return "DFU SERVICE NOT FOUND";
 		case DfuBaseService.ERROR_CHARACTERISTICS_NOT_FOUND:
 			return "DFU CHARACTERISTICS NOT FOUND";
+		case DfuBaseService.ERROR_FILE_TYPE_UNSUPPORTED:
+			return "DFU FILE TYPE NOT SUPPORTED";
 		default:
 			if ((DfuBaseService.ERROR_REMOTE_MASK & error) > 0) {
 				switch (error & (~DfuBaseService.ERROR_REMOTE_MASK)) {

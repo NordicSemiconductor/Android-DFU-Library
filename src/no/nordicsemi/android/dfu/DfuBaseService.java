@@ -22,6 +22,7 @@ import no.nordicsemi.android.dfu.exception.RemoteDfuException;
 import no.nordicsemi.android.dfu.exception.UnknownResponseException;
 import no.nordicsemi.android.dfu.exception.UploadAbortedException;
 import no.nordicsemi.android.error.GattError;
+import no.nordicsemi.android.log.LogContract;
 import no.nordicsemi.android.log.LogContract.Log.Level;
 import no.nordicsemi.android.log.LogSession;
 import no.nordicsemi.android.log.Logger;
@@ -56,38 +57,104 @@ import android.util.Log;
 public abstract class DfuBaseService extends IntentService {
 	private static final String TAG = "DfuService";
 
+	/** A key for {@link SharedPreferences} entry that keeps information whether the upload is currently in progress. This may be used to get this information during activity creation. */
+	public static final String DFU_IN_PROGRESS = "no.nordicsemi.android.dfu.PREFS_DFU_IN_PROGRESS";
+
 	public static final String EXTRA_DEVICE_ADDRESS = "no.nordicsemi.android.dfu.extra.EXTRA_DEVICE_ADDRESS";
 	public static final String EXTRA_DEVICE_NAME = "no.nordicsemi.android.dfu.extra.EXTRA_DEVICE_NAME";
 	public static final String EXTRA_LOG_URI = "no.nordicsemi.android.dfu.extra.EXTRA_LOG_URI";
 	public static final String EXTRA_FILE_PATH = "no.nordicsemi.android.dfu.extra.EXTRA_FILE_PATH";
 	public static final String EXTRA_FILE_URI = "no.nordicsemi.android.dfu.extra.EXTRA_FILE_URI";
+
+	/**
+	 * The input file mime-type. Currently only "application/zip" (ZIP) or "application/octet-stream" (HEX) are supported. If this parameter is empty the "application/octet-stream" is assumed.
+	 */
+	public static final String EXTRA_FILE_MIME_TYPE = "no.nordicsemi.android.dfu.extra.EXTRA_MIME_TYPE";
+	/**
+	 * This optional extra parameter may contain a file type. Currently supported are:
+	 * <ul>
+	 * <li>{@link #TYPE_SOFT_DEVICE} - only Soft Device update</li>
+	 * <li>{@link #TYPE_BOOTLOADER} - only Bootloader update</li>
+	 * <li>{@link #TYPE_APPLICATION} - only application update</li>
+	 * <li>{@link #TYPE_AUTO} -the file is a ZIP file that may contain more than one HEX. The ZIP file MAY contain only the following files: <b>softdevice.hex</b>, <b>bootloader.hex</b>,
+	 * <b>application.hex</b> to determine the type based on its name. At lease one of them MUST be present.</li>
+	 * </ul>
+	 * If this parameter is not provided the type is assumed as follows:
+	 * <ol>
+	 * <li>If the {@link #EXTRA_FILE_MIME_TYPE} field is <code>null</code> or is equal to {@value #MIME_TYPE_HEX} - the {@link #TYPE_APPLICATION} is assumed.</li>
+	 * <li>If the {@link #EXTRA_FILE_MIME_TYPE} field is equal to {@value #MIME_TYPE_ZIP} - the {@link #TYPE_AUTO} is assumed.</li>
+	 * </ol>
+	 * TODO czy nazwy plikow dobre?
+	 */
+	public static final String EXTRA_FILE_TYPE = "no.nordicsemi.android.dfu.extra.EXTRA_FILE_TYPE";
+	/**
+	 * The file contains a new version of Soft Device.
+	 * 
+	 * @see #EXTRA_FILE_TYPE
+	 */
+	public static final byte TYPE_SOFT_DEVICE = 0x01;
+	/**
+	 * The file contains a new version of Bootloader.
+	 * 
+	 * @see #EXTRA_FILE_TYPE
+	 */
+	public static final byte TYPE_BOOTLOADER = 0x02;
+	/**
+	 * The file contains a new version of Application.
+	 * 
+	 * @see #EXTRA_FILE_TYPE
+	 */
+	public static final byte TYPE_APPLICATION = 0x04;
+	/**
+	 * A ZIP file that combines more than 1 HEX file. The names of files in the ZIP must be: <b>softdevice.hex</b>, <b>bootloader.hex</b>, <b>application.hex</b> in order to be read correctly. In the
+	 * DFU version 2 the Soft Device and Bootloader may be sent together. In case of additional application file included, the service will try to send Soft Device, Bootloader and Application together
+	 * (not supported by DFU v.2) and if it fails, send first SD+BL, reconnect and send application. TODO czy nazwy plikow dobre?
+	 * 
+	 * @see #EXTRA_FILE_TYPE
+	 * */
+	public static final byte TYPE_AUTO = 0x00;
+
+	/** Extra to send progress and error broadcast events. */
 	public static final String EXTRA_DATA = "no.nordicsemi.android.dfu.extra.EXTRA_DATA";
+	/**
+	 * Extra to send progress or error information in the DFU notification. The value may contain:
+	 * <ul>
+	 * <li>Value 0 - 100 - percentage progress value</li>
+	 * <li>One of the following status constants:
+	 * <ul>
+	 * <li>{@link #PROGRESS_CONNECTING}</li>
+	 * <li>{@link #PROGRESS_STARTING}</li>
+	 * <li>{@link #PROGRESS_VALIDATING}</li>
+	 * <li>{@link #PROGRESS_DISCONNECTING}</li>
+	 * <li>{@link #PROGRESS_COMPLETED}</li>
+	 * <li>{@link #PROGRESS_ABORTED}</li>
+	 * </ul>
+	 * </li>
+	 * <li>An error code with {@link #ERROR_MASK} if initialization error occurred</li>
+	 * <li>An error code with {@link #ERROR_REMOTE_MASK} if remote DFU target returned an error</li>
+	 * <li>An error code with {@link #ERROR_CONNECTION_MASK} if connection error occurred (f.e. Gatt error (133) or Internal Gatt Error (129))</li>
+	 * </ul>
+	 * To check if error occurred use:<br />
+	 * {@code boolean error = progressValue >= DfuBaseService.ERROR_MASK;}
+	 */
 	public static final String EXTRA_PROGRESS = "no.nordicsemi.android.dfu.extra.EXTRA_PROGRESS";
 
-	/** A key for {@link SharedPreferences} entry that keeps information whether the upload is currently in progress. This may be used to get this information during activity creation. */
-	public static final String DFU_IN_PROGRESS = "no.nordicsemi.android.dfu.PREFS_DFU_IN_PROGRESS";
-
-	public static final String BROADCAST_ERROR = "no.nordicsemi.android.dfu.broadcast.BROADCAST_ERROR";
-	/** If this bit is set than the progress value indicates an error. Use {@link GattError#parse(int)} to obtain error name. */
-	public static final int ERROR_MASK = 0x0100;
-	public static final int ERROR_DEVICE_DISCONNECTED = ERROR_MASK | 0x00;
-	public static final int ERROR_FILE_NOT_FOUND = ERROR_MASK | 0x01;
-	/** Thrown if service was unable to open the HEX file ({@link IOException} has been thrown). */
-	public static final int ERROR_FILE_CLOSED = ERROR_MASK | 0x02;
-	/** Thrown then input file is not a valid HEX file. The content size must devices by 4 bytes. */
-	public static final int ERROR_FILE_INVALID = ERROR_MASK | 0x03;
-	/** Thrown when {@link IOException} occurred when reading from file. */
-	public static final int ERROR_FILE_IO_EXCEPTION = ERROR_MASK | 0x04;
-	public static final int ERROR_SERVICE_DISCOVERY_NOT_STARTED = ERROR_MASK | 0x05;
-	public static final int ERROR_SERVICE_NOT_FOUND = ERROR_MASK | 0x06;
-	public static final int ERROR_CHARACTERISTICS_NOT_FOUND = ERROR_MASK | 0x07;
-	/** Thrown when unknown response has been obtained from the target. The DFU target must follow specification. */
-	public static final int ERROR_INVALID_RESPONSE = ERROR_MASK | 0x08;
-	/** Flag set then the DFU target returned a DFU error. Look for DFU specification to get error codes. */
-	public static final int ERROR_REMOTE_MASK = 0x0200;
-	/** The flag set when one of {@link BluetoothGattCallback} methods was called with status other than {@link BluetoothGatt#GATT_SUCCESS}. */
-	public static final int ERROR_CONNECTION_MASK = 0x0400;
-
+	/**
+	 * The broadcast message contains the following extras:
+	 * <ul>
+	 * <li>{@link #EXTRA_DATA} - the progress value (percentage 0-100) or:
+	 * <ul>
+	 * <li>{@link #PROGRESS_CONNECTING}</li>
+	 * <li>{@link #PROGRESS_STARTING}</li>
+	 * <li>{@link #PROGRESS_VALIDATING}</li>
+	 * <li>{@link #PROGRESS_DISCONNECTING}</li>
+	 * <li>{@link #PROGRESS_COMPLETED}</li>
+	 * <li>{@link #PROGRESS_ABORTED}</li>
+	 * </ul>
+	 * </li>
+	 * <li>{@link #EXTRA_DEVICE_ADDRESS} - the target device address</li>
+	 * </ul>
+	 */
 	public static final String BROADCAST_PROGRESS = "no.nordicsemi.android.dfu.broadcast.BROADCAST_PROGRESS";
 	/** Service is connecting to the remote DFU target. */
 	public static final int PROGRESS_CONNECTING = -1;
@@ -102,7 +169,49 @@ public abstract class DfuBaseService extends IntentService {
 	/** The upload has been aborted. Previous software version will be restored on the target. */
 	public static final int PROGRESS_ABORTED = -7;
 
-	/** The log events are only broadcasted when there is no nRF Logger installed. */
+	/**
+	 * The broadcast error message contains the following extras:
+	 * <ul>
+	 * <li>{@link #EXTRA_DATA} - the error number. Use {@link GattError#parse(int)} to get String representation</li>
+	 * <li>{@link #EXTRA_DEVICE_ADDRESS} - the target device address</li>
+	 * </ul>
+	 */
+	public static final String BROADCAST_ERROR = "no.nordicsemi.android.dfu.broadcast.BROADCAST_ERROR";
+	/**
+	 * If this bit is set than the progress value indicates an error. Use {@link GattError#parse(int)} to obtain error name.
+	 */
+	public static final int ERROR_MASK = 0x0100;
+	public static final int ERROR_DEVICE_DISCONNECTED = ERROR_MASK | 0x00;
+	public static final int ERROR_FILE_NOT_FOUND = ERROR_MASK | 0x01;
+	/** Thrown if service was unable to open the file ({@link IOException} has been thrown). */
+	public static final int ERROR_FILE_ERROR = ERROR_MASK | 0x02;
+	/** Thrown then input file is not a valid HEX or ZIP file. */
+	public static final int ERROR_FILE_INVALID = ERROR_MASK | 0x03;
+	/** Thrown when {@link IOException} occurred when reading from file. */
+	public static final int ERROR_FILE_IO_EXCEPTION = ERROR_MASK | 0x04;
+	/** Error thrown then {@code gatt.discoverServices();} returns false. */
+	public static final int ERROR_SERVICE_DISCOVERY_NOT_STARTED = ERROR_MASK | 0x05;
+	/** Thrown when the service discovery has finished but the DFU service has not been found. The device does not support DFU of is not in DFU mode. */
+	public static final int ERROR_SERVICE_NOT_FOUND = ERROR_MASK | 0x06;
+	/** Thrown when the required DFU service has been found but at least one of the DFU characteristics is absent. */
+	public static final int ERROR_CHARACTERISTICS_NOT_FOUND = ERROR_MASK | 0x07;
+	/** Thrown when unknown response has been obtained from the target. The DFU target must follow specification. */
+	public static final int ERROR_INVALID_RESPONSE = ERROR_MASK | 0x08;
+	/** Thrown when the the service does not support given type or mime-type. */
+	public static final int ERROR_FILE_TYPE_UNSUPPORTED = ERROR_MASK | 0x09;
+	/** Flag set then the DFU target returned a DFU error. Look for DFU specification to get error codes. */
+	public static final int ERROR_REMOTE_MASK = 0x0200;
+	/** The flag set when one of {@link BluetoothGattCallback} methods was called with status other than {@link BluetoothGatt#GATT_SUCCESS}. */
+	public static final int ERROR_CONNECTION_MASK = 0x0400;
+
+	/**
+	 * The log events are only broadcasted when there is no nRF Logger installed. The broadcast contains 2 extras:
+	 * <ul>
+	 * <li>{@link #EXTRA_LOG_LEVEL} - The log level: one of {@link LogContract.Log.Level#DEBUG}, {@link LogContract.Log.Level#VERBOSE}, {@link LogContract.Log.Level#INFO},
+	 * {@link LogContract.Log.Level#WARNING}, {@link LogContract.Log.Level#ERROR}</li>
+	 * <li>{@link #EXTRA_LOG_MESSAGE}</li>
+	 * </ul>
+	 * */
 	public static final String BROADCAST_LOG = "no.nordicsemi.android.dfu.broadcast.BROADCAST_LOG";
 	public static final String EXTRA_LOG_MESSAGE = "no.nordicsemi.android.dfu.extra.EXTRA_LOG_INFO";
 	public static final String EXTRA_LOG_LEVEL = "no.nordicsemi.android.dfu.extra.EXTRA_LOG_LEVEL";
@@ -142,14 +251,17 @@ public abstract class DfuBaseService extends IntentService {
 	private int mPacketsBeforeNotification = 10;
 
 	private byte[] mBuffer = new byte[MAX_PACKET_SIZE];
-	private HexInputStream mHexInputStream;
+	private InputStream mInputStream;
+	/** Size of BIN content of all hex files that are going to be transmitted. */
 	private int mImageSizeInBytes;
-	private int mImageSizeInPackets;
+	/** Number of bytes transmitted. */
 	private int mBytesSent;
+	/** Number of bytes confirmed by the notification. */
 	private int mBytesConfirmed;
-	private int mPacketsSendSinceNotification;
+	private int mPacketsSentSinceNotification;
 	private boolean mPaused;
 	private boolean mAborted;
+	private boolean mResetRequestSent;
 
 	/** Flag indicating whether the image size has been already transfered or not */
 	private boolean mImageSizeSent;
@@ -167,7 +279,7 @@ public abstract class DfuBaseService extends IntentService {
 	private static final int OP_CODE_PACKET_RECEIPT_NOTIF_REQ_KEY = 0x08; // 8
 	private static final int OP_CODE_RESPONSE_CODE_KEY = 0x10; // 16
 	private static final int OP_CODE_PACKET_RECEIPT_NOTIF_KEY = 0x11; // 11
-	private static final byte[] OP_CODE_START_DFU = new byte[] { OP_CODE_RECEIVE_START_DFU_KEY };
+	private static final byte[] OP_CODE_START_DFU = new byte[] { OP_CODE_RECEIVE_START_DFU_KEY, 0x00 };
 	private static final byte[] OP_CODE_RECEIVE_FIRMWARE_IMAGE = new byte[] { OP_CODE_RECEIVE_FIRMWARE_IMAGE_KEY };
 	private static final byte[] OP_CODE_VALIDATE = new byte[] { OP_CODE_RECEIVE_VALIDATE_KEY };
 	private static final byte[] OP_CODE_ACTIVATE_AND_RESET = new byte[] { OP_CODE_RECEIVE_ACTIVATE_AND_RESET_KEY };
@@ -186,6 +298,9 @@ public abstract class DfuBaseService extends IntentService {
 	private static final UUID DFU_CONTROL_POINT_UUID = new UUID(0x000015311212EFDEl, 0x1523785FEABCD123l);
 	private static final UUID DFU_PACKET_UUID = new UUID(0x000015321212EFDEl, 0x1523785FEABCD123l);
 	private static final UUID CLIENT_CHARACTERISTIC_CONFIG = new UUID(0x0000290200001000l, 0x800000805f9b34fbl);
+
+	public static final String MIME_TYPE_HEX = "application/octet-stream";
+	public static final String MIME_TYPE_ZIP = "application/zip";
 
 	private final BroadcastReceiver mDfuActionReceiver = new BroadcastReceiver() {
 		@Override
@@ -239,6 +354,7 @@ public abstract class DfuBaseService extends IntentService {
 					}
 				} else if (newState == BluetoothGatt.STATE_DISCONNECTED) {
 					logi("Disconnected from GATT server");
+					mPaused = false;
 					mConnectionState = STATE_DISCONNECTED;
 				}
 			} else {
@@ -305,11 +421,11 @@ public abstract class DfuBaseService extends IntentService {
 					if (mImageSizeSent) {
 						// if the PACKET characteristic was written with image data, update counters
 						mBytesSent += characteristic.getValue().length;
-						mPacketsSendSinceNotification++;
+						mPacketsSentSinceNotification++;
 
 						// if a packet receipt notification is expected, or the last packet was sent, do nothing. There onCharacteristicChanged listener will catch either 
 						// a packet confirmation (if there are more bytes to send) or the image received notification (it upload process was completed)
-						final boolean notificationExpected = mPacketsBeforeNotification > 0 && mPacketsSendSinceNotification == mPacketsBeforeNotification;
+						final boolean notificationExpected = mPacketsBeforeNotification > 0 && mPacketsSentSinceNotification == mPacketsBeforeNotification;
 						final boolean lastPacketTransfered = mBytesSent == mImageSizeInBytes;
 
 						if (notificationExpected || lastPacketTransfered)
@@ -327,7 +443,7 @@ public abstract class DfuBaseService extends IntentService {
 							}
 
 							final byte[] buffer = mBuffer;
-							final int size = mHexInputStream.readPacket(buffer);
+							final int size = mInputStream.read(buffer);
 							writePacket(gatt, characteristic, buffer, size);
 							updateProgressNotification();
 							return;
@@ -347,8 +463,16 @@ public abstract class DfuBaseService extends IntentService {
 					mRequestCompleted = true;
 				}
 			} else {
-				loge("Characteristic write error: " + status);
-				mErrorState = ERROR_CONNECTION_MASK | status;
+				/*
+				 * If a Reset (Op Code = 6) or Activate and Reset (Op Code = 5) commands are sent the DFU target resets and sometimes does it so quickly that does not manage to send
+				 * any ACK to the controller and error 133 is thrown here.  
+				 */
+				if (mResetRequestSent)
+					mRequestCompleted = true;
+				else {
+					loge("Characteristic write error: " + status);
+					mErrorState = ERROR_CONNECTION_MASK | status;
+				}
 			}
 
 			// notify waiting thread
@@ -368,14 +492,14 @@ public abstract class DfuBaseService extends IntentService {
 
 				try {
 					mBytesConfirmed = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 1);
-					mPacketsSendSinceNotification = 0;
+					mPacketsSentSinceNotification = 0;
 
 					waitIfPaused();
 					if (mAborted)
 						break;
 
 					final byte[] buffer = mBuffer;
-					final int size = mHexInputStream.readPacket(buffer);
+					final int size = mInputStream.read(buffer);
 					writePacket(gatt, packetCharacteristic, buffer, size);
 					updateProgressNotification();
 					return;
@@ -430,16 +554,43 @@ public abstract class DfuBaseService extends IntentService {
 
 		initialize();
 
+		// Read input parameters
 		final String deviceAddress = intent.getStringExtra(EXTRA_DEVICE_ADDRESS);
 		final String deviceName = intent.getStringExtra(EXTRA_DEVICE_NAME);
+		byte fileType = intent.getByteExtra(EXTRA_FILE_TYPE, TYPE_APPLICATION);
+		String mimeType = intent.getStringExtra(EXTRA_FILE_MIME_TYPE);
+		mimeType = mimeType != null ? mimeType : (fileType == TYPE_AUTO ? MIME_TYPE_ZIP : MIME_TYPE_HEX);
 		final String filePath = intent.getStringExtra(EXTRA_FILE_PATH);
 		final Uri fileUri = intent.getParcelableExtra(EXTRA_FILE_URI);
 		final Uri logUri = intent.getParcelableExtra(EXTRA_LOG_URI);
 		mLogSession = Logger.openSession(this, logUri);
 
+		// Check file type and mime-type
+		if ((fileType & ~(TYPE_SOFT_DEVICE | TYPE_BOOTLOADER | TYPE_APPLICATION)) > 0 || !(MIME_TYPE_ZIP.equals(mimeType) || MIME_TYPE_HEX.equals(mimeType))) {
+			logw("File type or file mime-type not supported");
+			sendLogBroadcast(Level.WARNING, "File type or file mime-type not supported");
+			sendErrorBroadcast(ERROR_FILE_TYPE_UNSUPPORTED);
+			return;
+		}
+		if (fileType == TYPE_AUTO && MIME_TYPE_HEX.equals(mimeType)) {
+			logw("Unable to determine file type");
+			sendLogBroadcast(Level.WARNING, "Unable to determine file type");
+			sendErrorBroadcast(ERROR_FILE_TYPE_UNSUPPORTED);
+			return;
+		}
+
 		mDeviceAddress = deviceAddress;
 		mDeviceName = deviceName;
 		mConnectionState = STATE_DISCONNECTED;
+		mBytesSent = 0;
+		mBytesConfirmed = 0;
+		mPacketsSentSinceNotification = 0;
+		mErrorState = 0;
+		mAborted = false;
+		mPaused = false;
+		mResetRequestSent = false;
+		mRequestCompleted = false;
+		mImageSizeSent = false;
 
 		// read preferences
 		final boolean packetReceiptNotificationEnabled = preferences.getBoolean(DfuSettingsConstants.SETTINGS_PACKET_RECEIPT_NOTIFICATION_ENABLED, true);
@@ -458,27 +609,32 @@ public abstract class DfuBaseService extends IntentService {
 
 		sendLogBroadcast(Level.VERBOSE, "Starting DFU service");
 
-		HexInputStream his = null;
+		InputStream is = null;
+		int imageSizeInBytes;
 		try {
 			// Prepare data to send, calculate stream size
 			try {
 				sendLogBroadcast(Level.VERBOSE, "Opening file...");
 				if (fileUri != null)
-					his = openInputStream(fileUri);
+					is = openInputStream(fileUri, mimeType, fileType);
 				else
-					his = openInputStream(filePath);
+					is = openInputStream(filePath, mimeType, fileType);
 
-				mImageSizeInBytes = his.sizeInBytes();
-				mImageSizeInPackets = his.sizeInPackets(MAX_PACKET_SIZE);
-				mHexInputStream = his;
-				sendLogBroadcast(Level.INFO, "Image file opened (" + mImageSizeInBytes + " bytes)");
+				imageSizeInBytes = mImageSizeInBytes = is.available();
+				mInputStream = is;
+				// Update the file type bit field basing on the ZIP content
+				if (fileType == TYPE_AUTO && MIME_TYPE_ZIP.equals(mimeType)) {
+					final ZipHexInputStream zhis = (ZipHexInputStream) is;
+					fileType = zhis.getContentType();
+				}
+				sendLogBroadcast(Level.INFO, "Image file opened (" + mImageSizeInBytes + " bytes in total)");
 			} catch (final FileNotFoundException e) {
 				loge("An exception occured while opening file", e);
 				sendErrorBroadcast(ERROR_FILE_NOT_FOUND);
 				return;
 			} catch (final IOException e) {
 				loge("An exception occured while calculating file size", e);
-				sendErrorBroadcast(ERROR_FILE_CLOSED);
+				sendErrorBroadcast(ERROR_FILE_ERROR);
 				return;
 			}
 
@@ -529,34 +685,135 @@ public abstract class DfuBaseService extends IntentService {
 				try {
 					// set up the temporary variable that will hold the responses
 					byte[] response = null;
-
-					// send Start DFU command to Control Point
-					logi("Sending Start DFU command (Op Code = 1)");
-					writeOpCode(gatt, controlPointCharacteristic, OP_CODE_START_DFU);
-					sendLogBroadcast(Level.INFO, "DFU Start sent (Op Code 1) ");
-
-					// send image size in bytes to DFU Packet
-					logi("Sending image size to DFU Packet: " + mImageSizeInBytes + " bytes");
-					writeImageSize(gatt, packetCharacteristic, mImageSizeInBytes);
-					sendLogBroadcast(Level.INFO, "Firmware image size sent");
-
-					// a notification will come with confirmation. Let's wait for it a bit
-					response = readNotificationResponse();
+					int status = 0;
 
 					/*
-					 * The response received from the DFU device contains:
-					 * +---------+--------+----------------------------------------------------+
-					 * | byte no |  value |                  description                       |
-					 * +---------+--------+----------------------------------------------------+
-					 * |       0 |     16 | Response code                                      |
-					 * |       1 |      1 | The Op Code of a request that this response is for |
-					 * |       2 | STATUS | See DFU_STATUS_* for status codes                  |
-					 * +---------+--------+----------------------------------------------------+
+					 * DFU v.1 supports updating only an Application.
+					 * 
+					 * Initializing procedure:
+					 * 
+					 * [DFU Start (0x01)] -> DFU Control Point
+					 * [App size in bytes (UINT32)] -> DFU Packet
+					 * 
+					 * ---------------------------------------------------------------------
+					 * DFU v.2 supports updating Soft Device, Bootloader and Application
+					 * 
+					 * Initializing procedure:
+					 * 
+					 * [DFU Start (0x01), <Update Mode>] -> DFU Control Point
+					 * [SD size in bytes (UINT32), Bootloader size in bytes (UINT32), Application size in bytes (UINT32)] -> DFU Packet
+					 * 
+					 * where <Upload Mode> is a bit mask:
+					 * 0x01 - Soft Device update
+					 * 0x02 - Bootloader update
+					 * 0x04 - Application update
+					 * so that 
+					 * 0x03 - Soft Device and Bootloader update
+					 * Other options are not supported yet. TODO SD+BL+App supported?
+					 * 
+					 * --------------------------------------------------------------------
+					 * If DFU target supports only DFU v.1 a response [10, 01, 03] will be send as a notification on DFU Control Point characteristic, where:
+					 * 10 - Response for...
+					 * 01 - DFU Start command
+					 * 03 - Operation Not Supported
+					 * (see table below)
+					 * 
+					 * In that case:
+					 * 1. If this is application update - service will try to upload using DFU v.1
+					 * 2. In case of SD or BL update an error is returned
 					 */
-					int status = getStatusCode(response, OP_CODE_RECEIVE_START_DFU_KEY);
-					sendLogBroadcast(Level.INFO, "Responce received (Op Code: " + response[1] + " Status: " + status + ")");
-					if (status != DFU_STATUS_SUCCESS)
-						throw new RemoteDfuException("Starting DFU failed", status);
+					OP_CODE_START_DFU[1] = fileType;
+
+					// obtain size of image(s)
+					int softDeviceImageSize = (fileType & TYPE_SOFT_DEVICE) > 0 ? imageSizeInBytes : 0;
+					int bootloaderImageSize = (fileType & TYPE_BOOTLOADER) > 0 ? imageSizeInBytes : 0;
+					int appImageSize = (fileType & TYPE_APPLICATION) > 0 ? imageSizeInBytes : 0;
+					if (MIME_TYPE_ZIP.equals(mimeType)) {
+						final ZipHexInputStream zhis = (ZipHexInputStream) is;
+						softDeviceImageSize = zhis.softDeviceImageSize();
+						bootloaderImageSize = zhis.bootloaderImageSize();
+						appImageSize = zhis.applicationImageSize();
+					}
+					try {
+						// send Start DFU command to Control Point
+						logi("Sending Start DFU command (Op Code = 1, Upload Mode = " + fileType + ")");
+						writeOpCode(gatt, controlPointCharacteristic, OP_CODE_START_DFU);
+						sendLogBroadcast(Level.INFO, "DFU Start sent (Op Code 1, Upload Mode = " + fileType + ")");
+
+						// send image size in bytes to DFU Packet
+						logi("Sending image size array to DFU Packet: [" + softDeviceImageSize + "b, " + bootloaderImageSize + "b, " + appImageSize + "b]");
+						writeImageSize(gatt, packetCharacteristic, softDeviceImageSize, bootloaderImageSize, appImageSize);
+						sendLogBroadcast(Level.INFO, "Firmware image size sent [" + softDeviceImageSize + "b, " + bootloaderImageSize + "b, " + appImageSize + "b]");
+
+						// a notification will come with confirmation. Let's wait for it a bit
+						response = readNotificationResponse();
+
+						/*
+						 * The response received from the DFU device contains:
+						 * +---------+--------+----------------------------------------------------+
+						 * | byte no |  value |                  description                       |
+						 * +---------+--------+----------------------------------------------------+
+						 * |       0 |     16 | Response code                                      |
+						 * |       1 |      1 | The Op Code of a request that this response is for |
+						 * |       2 | STATUS | See DFU_STATUS_* for status codes                  |
+						 * +---------+--------+----------------------------------------------------+
+						 */
+						status = getStatusCode(response, OP_CODE_RECEIVE_START_DFU_KEY);
+						sendLogBroadcast(Level.INFO, "Responce received (Op Code: " + response[1] + " Status: " + status + ")");
+						if (status != DFU_STATUS_SUCCESS)
+							throw new RemoteDfuException("Starting DFU failed", status);
+					} catch (final RemoteDfuException e) {
+						try {
+							if (e.getErrorNumber() != DFU_STATUS_NOT_SUPPORTED)
+								throw e;
+
+							// If user wants to send application + soft device or bootloader (or 3 files) we may try to send the other files first, and then reconnect and send the application
+							if ((fileType & TYPE_APPLICATION) > 0 && (fileType & (TYPE_SOFT_DEVICE | TYPE_BOOTLOADER)) > 0) {
+								fileType ^= TYPE_APPLICATION;
+								appImageSize = 0;
+
+								// TODO aplikcaja powinna sprobowac wyslac samo SD+BL, potem sie ponownie polaczyc i wyslac app
+							} else
+								throw e;
+						} catch (final RemoteDfuException e1) {
+							if (e1.getErrorNumber() != DFU_STATUS_NOT_SUPPORTED)
+								throw e1;
+
+							// If operation is not supported by DFU target we may try to upload application with legacy mode, using DFU v.1
+							if (fileType == TYPE_APPLICATION) {
+								// The DFU target does not support DFU v.2 protocol
+								logw("DFU target does not support DFU v.2");
+								sendLogBroadcast(Level.WARNING, "DFU target does not support DFU v.2");
+
+								// send Start DFU command to Control Point
+								sendLogBroadcast(Level.VERBOSE, "Switching to DFU v.1");
+								logi("Resending Start DFU command (Op Code = 1)");
+								writeOpCode(gatt, controlPointCharacteristic, OP_CODE_START_DFU); // If has 2 bytes, but the second one is ignored
+								sendLogBroadcast(Level.INFO, "DFU Start sent (Op Code 1)");
+
+								// send image size in bytes to DFU Packet
+								logi("Sending application image size to DFU Packet: " + imageSizeInBytes + " bytes");
+								writeImageSize(gatt, packetCharacteristic, mImageSizeInBytes);
+								sendLogBroadcast(Level.INFO, "Firmware image size sent (" + imageSizeInBytes + " bytes)");
+
+								// a notification will come with confirmation. Let's wait for it a bit
+								response = readNotificationResponse();
+								status = getStatusCode(response, OP_CODE_RECEIVE_START_DFU_KEY);
+								sendLogBroadcast(Level.INFO, "Responce received (Op Code: " + response[1] + " Status: " + status + ")");
+								if (status != DFU_STATUS_SUCCESS)
+									throw new RemoteDfuException("Starting DFU failed", status);
+							} else
+								throw e1;
+						}
+					}
+
+					if ((fileType & TYPE_SOFT_DEVICE) > 0) {
+						// TODO wywalic to oczekiwanie. Wymagane aby mozna bylo wyslac SoftDevice - bootloader musi wyczyscic przestrzen aplikacji aby moc tam wgrac nowe SD
+						int k = 0;
+						for (long l = 0; l < 600000000L; l++) {
+							k = (int) (l * k);
+						}
+					}
 
 					// Send the number of packets of firmware before receiving a receipt notification
 					final int numberOfPacketsBeforeNotification = mPacketsBeforeNotification;
@@ -577,7 +834,7 @@ public abstract class DfuBaseService extends IntentService {
 					updateProgressNotification();
 					try {
 						sendLogBroadcast(Level.INFO, "Starting upload...");
-						response = uploadFirmwareImage(gatt, packetCharacteristic, his);
+						response = uploadFirmwareImage(gatt, packetCharacteristic, is);
 					} catch (final DeviceDisconnectedException e) {
 						loge("Disconnected while sending data");
 						throw e;
@@ -603,6 +860,7 @@ public abstract class DfuBaseService extends IntentService {
 					// A notification will come with status code. Let's wait for it a bit.
 					response = readNotificationResponse();
 					status = getStatusCode(response, OP_CODE_RECEIVE_VALIDATE_KEY);
+					logi("Response received. Op Code: " + response[0] + " Req Op Code: " + response[1] + " status: " + response[2]);
 					sendLogBroadcast(Level.INFO, "Responce received (Op Code: " + response[1] + " Status: " + status + ")");
 					if (status != DFU_STATUS_SUCCESS)
 						throw new RemoteDfuException("Device returned validation error", status);
@@ -630,20 +888,18 @@ public abstract class DfuBaseService extends IntentService {
 					loge(e.getMessage());
 					sendLogBroadcast(Level.ERROR, e.getMessage());
 
-					// This causes GATT_ERROR 0x85 on Nexus 4 (4.4.2)
-					//					logi("Sending Reset command (Op Code = 6)");
-					//					writeOpCode(gatt, controlPointCharacteristic, OP_CODE_RESET);
-					//					sendLogBroadcast(Level.INFO, "Reset request sent");
+					logi("Sending Reset command (Op Code = 6)");
+					writeOpCode(gatt, controlPointCharacteristic, OP_CODE_RESET);
+					sendLogBroadcast(Level.INFO, "Reset request sent");
 					terminateConnection(gatt, error);
 				} catch (final RemoteDfuException e) {
 					final int error = ERROR_REMOTE_MASK | e.getErrorNumber();
 					loge(e.getMessage());
 					sendLogBroadcast(Level.ERROR, String.format("Remote DFU error: %s", GattError.parse(error)));
 
-					// This causes GATT_ERROR 0x85 on Nexus 4 (4.4.2)
-					//					logi("Sending Reset command (Op Code = 6)");
-					//					writeOpCode(gatt, controlPointCharacteristic, OP_CODE_RESET);
-					//					sendLogBroadcast(Level.INFO, "Reset request sent");
+					logi("Sending Reset command (Op Code = 6)");
+					writeOpCode(gatt, controlPointCharacteristic, OP_CODE_RESET);
+					sendLogBroadcast(Level.INFO, "Reset request sent");
 					terminateConnection(gatt, error);
 				}
 			} catch (final UploadAbortedException e) {
@@ -676,6 +932,7 @@ public abstract class DfuBaseService extends IntentService {
 					try {
 						logi("Sending Reset command (Op Code = 6)");
 						writeOpCode(gatt, controlPointCharacteristic, OP_CODE_RESET);
+						sendLogBroadcast(Level.INFO, "Reset request sent");
 					} catch (final Exception e1) {
 						// do nothing
 					}
@@ -688,10 +945,10 @@ public abstract class DfuBaseService extends IntentService {
 				editor.commit();
 
 				// ensure that input stream is always closed
-				mHexInputStream = null;
-				if (his != null)
-					his.close();
-				his = null;
+				mInputStream = null;
+				if (is != null)
+					is.close();
+				is = null;
 			} catch (IOException e) {
 				// do nothing
 			}
@@ -712,28 +969,34 @@ public abstract class DfuBaseService extends IntentService {
 	}
 
 	/**
-	 * Opens the binary input stream from a HEX file. A Path to the HEX file is given
+	 * Opens the binary input stream that returns the firmware image content. A Path to the file is given
 	 * 
 	 * @param filePath
 	 *            the path to the HEX file
-	 * @return the binary input stream with Intel HEX data
-	 * @throws FileNotFoundException
+	 * @param mimeType
+	 *            the file type
+	 * @return the input stream with binary image content
 	 */
-	private HexInputStream openInputStream(final String filePath) throws FileNotFoundException, IOException {
+	private InputStream openInputStream(final String filePath, final String mimeType, final byte types) throws FileNotFoundException, IOException {
 		final InputStream is = new FileInputStream(filePath);
+		if (MIME_TYPE_ZIP.equals(mimeType))
+			return new ZipHexInputStream(is, types);
 		return new HexInputStream(is);
 	}
 
 	/**
-	 * Opens the binary input stream from a HEX file. A Uri to the stream is given
+	 * Opens the binary input stream. A Uri to the stream is given
 	 * 
 	 * @param stream
 	 *            the Uri to the stream
-	 * @return the binary input stream with Intel HEX data
-	 * @throws FileNotFoundException
+	 * @param mimeType
+	 *            the file type
+	 * @return the input stream with binary image content
 	 */
-	private HexInputStream openInputStream(final Uri stream) throws FileNotFoundException, IOException {
+	private InputStream openInputStream(final Uri stream, final String mimeType, final byte types) throws FileNotFoundException, IOException {
 		final InputStream is = getContentResolver().openInputStream(stream);
+		if (MIME_TYPE_ZIP.equals(mimeType))
+			return new ZipHexInputStream(is, types);
 		return new HexInputStream(is);
 	}
 
@@ -957,6 +1220,11 @@ public abstract class DfuBaseService extends IntentService {
 		mReceivedData = null;
 		mErrorState = 0;
 		mRequestCompleted = false;
+		/*
+		 * Sending a command that will make the DFU target to reboot may cause an error 133 (0x85 - Gatt Error). If so, with this flag set, the error will not be shown to the user
+		 * as the peripheral is disconnected anyway. See: mGattCallback#onCharacteristicWrite(...) method 
+		 */
+		mResetRequestSent = value[0] == OP_CODE_RECEIVE_RESET_KEY || value[0] == OP_CODE_RECEIVE_ACTIVATE_AND_RESET_KEY;
 
 		characteristic.setValue(value);
 		gatt.writeCharacteristic(characteristic);
@@ -999,6 +1267,7 @@ public abstract class DfuBaseService extends IntentService {
 		mImageSizeSent = false;
 
 		characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+		characteristic.setValue(new byte[4]);
 		characteristic.setValue(imageSize, BluetoothGattCharacteristic.FORMAT_UINT32, 0);
 		gatt.writeCharacteristic(characteristic);
 
@@ -1020,6 +1289,60 @@ public abstract class DfuBaseService extends IntentService {
 	}
 
 	/**
+	 * <p>
+	 * Writes the Soft Device, Bootloader and Application image sizes to the characteristic. Soft Device and Bootloader update was added in DFU v.2. Sizes of SD, BL and App are uploaded as 3x UINT32
+	 * even though some of them may be 0s. F.e. if only App is being updated the data will be <0x00000000, 0x00000000, [App size]>
+	 * </p>
+	 * <p>
+	 * This method is SYNCHRONOUS and wait until the {@link BluetoothGattCallback#onCharacteristicWrite(BluetoothGatt, BluetoothGattCharacteristic, int)} will be called or the connection state will
+	 * change from {@link #STATE_CONNECTED_AND_READY}. If connection state will change, or an error will occur, an exception will be thrown.
+	 * </p>
+	 * 
+	 * @param gatt
+	 *            the GATT device
+	 * @param characteristic
+	 *            the characteristic to write to. Should be the DFU PACKET
+	 * @param softDeviceImageSize
+	 *            the Soft Device image size in bytes
+	 * @param bootloaderImageSize
+	 *            the Bootloader image size in bytes
+	 * @param appImageSize
+	 *            the Application image size in bytes
+	 * @throws DeviceDisconnectedException
+	 * @throws DfuException
+	 * @throws UploadAbortedException
+	 */
+	private void writeImageSize(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final int softDeviceImageSize, final int bootloaderImageSize, final int appImageSize)
+			throws DeviceDisconnectedException, DfuException, UploadAbortedException {
+		mReceivedData = null;
+		mErrorState = 0;
+		mImageSizeSent = false;
+
+		characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+		characteristic.setValue(new byte[12]);
+		characteristic.setValue(softDeviceImageSize, BluetoothGattCharacteristic.FORMAT_UINT32, 0);
+		characteristic.setValue(bootloaderImageSize, BluetoothGattCharacteristic.FORMAT_UINT32, 4);
+		characteristic.setValue(appImageSize, BluetoothGattCharacteristic.FORMAT_UINT32, 8);
+		gatt.writeCharacteristic(characteristic);
+
+		// We have to wait for confirmation
+		try {
+			synchronized (mLock) {
+				while ((mImageSizeSent == false && mConnectionState == STATE_CONNECTED_AND_READY && mErrorState == 0 && !mAborted) || mPaused)
+					mLock.wait();
+			}
+		} catch (final InterruptedException e) {
+			loge("Sleeping interrupted", e);
+		}
+		if (mAborted)
+			throw new UploadAbortedException();
+		if (mErrorState != 0)
+			throw new DfuException("Unable to write Image Sizes", mErrorState);
+		if (mConnectionState != STATE_CONNECTED_AND_READY)
+			throw new DeviceDisconnectedException("Unable to write Image Sizes", mConnectionState);
+	}
+
+	/**
 	 * Starts sending the data. This method is SYNCHRONOUS and terminates when the whole file will be uploaded or the connection status will change from {@link #STATE_CONNECTED_AND_READY}. If
 	 * connection state will change, or an error will occur, an exception will be thrown.
 	 * 
@@ -1034,14 +1357,14 @@ public abstract class DfuBaseService extends IntentService {
 	 *             Thrown if DFU error occur
 	 * @throws UploadAbortedException
 	 */
-	private byte[] uploadFirmwareImage(final BluetoothGatt gatt, final BluetoothGattCharacteristic packetCharacteristic, final HexInputStream inputStream) throws DeviceDisconnectedException,
+	private byte[] uploadFirmwareImage(final BluetoothGatt gatt, final BluetoothGattCharacteristic packetCharacteristic, final InputStream inputStream) throws DeviceDisconnectedException,
 			DfuException, UploadAbortedException {
 		mReceivedData = null;
 		mErrorState = 0;
 
 		final byte[] buffer = mBuffer;
 		try {
-			final int size = inputStream.readPacket(buffer);
+			final int size = inputStream.read(buffer);
 			writePacket(gatt, packetCharacteristic, buffer, size);
 		} catch (final HexFileValidationException e) {
 			throw new DfuException("HEX file not valid", ERROR_FILE_INVALID);
@@ -1154,7 +1477,7 @@ public abstract class DfuBaseService extends IntentService {
 	 * 
 	 * @param progress
 	 *            the current progress state or an error number, can be one of {@link #PROGRESS_CONNECTING}, {@link #PROGRESS_STARTING}, {@link #PROGRESS_VALIDATING}, {@link #PROGRESS_DISCONNECTING},
-	 *            {@link #PROGRESS_COMPLETED} or {@link #ERROR_FILE_CLOSED}, {@link #ERROR_FILE_INVALID} , etc
+	 *            {@link #PROGRESS_COMPLETED} or {@link #ERROR_FILE_ERROR}, {@link #ERROR_FILE_INVALID} , etc
 	 */
 	private void updateProgressNotification(final int progress) {
 		final String deviceAddress = mDeviceAddress;
@@ -1314,6 +1637,11 @@ public abstract class DfuBaseService extends IntentService {
 	private void loge(final String message, final Throwable e) {
 		if (BuildConfig.DEBUG)
 			Log.e(TAG, message, e);
+	}
+
+	private void logw(final String message) {
+		if (BuildConfig.DEBUG)
+			Log.w(TAG, message);
 	}
 
 	private void logi(final String message) {
