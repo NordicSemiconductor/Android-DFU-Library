@@ -139,8 +139,8 @@ public abstract class DfuBaseService extends IntentService {
 	 */
 	public static final String EXTRA_PROGRESS = "no.nordicsemi.android.dfu.extra.EXTRA_PROGRESS";
 
-	private static final String EXTRA_PART_CURRENT = "no.nordicsemi.android.dfu.extra.EXTRA_PART_CURRENT";
-	private static final String EXTRA_PARTS_TOTAL = "no.nordicsemi.android.dfu.extra.EXTRA_PARTS_TOTAL";
+	public static final String EXTRA_PART_CURRENT = "no.nordicsemi.android.dfu.extra.EXTRA_PART_CURRENT";
+	public static final String EXTRA_PARTS_TOTAL = "no.nordicsemi.android.dfu.extra.EXTRA_PARTS_TOTAL";
 
 	/**
 	 * The broadcast message contains the following extras:
@@ -264,7 +264,7 @@ public abstract class DfuBaseService extends IntentService {
 	private int mBytesConfirmed;
 	private int mPacketsSentSinceNotification;
 	/**
-	 * Application update may require two connections, one for Soft Device and/or Bootloader upload, second for Application. This fields contains the current part number.
+	 * Firmware update may require two connections: one for Soft Device and/or Bootloader upload and second for Application. This fields contains the current part number.
 	 */
 	private int mPartCurrent;
 	/** Total number of parts. */
@@ -826,17 +826,6 @@ public abstract class DfuBaseService extends IntentService {
 								// TODO aplikcaja powinna sprobowac wyslac samo SD+BL, potem sie ponownie polaczyc i wyslac app
 								// Testowanie czy nowy SD sie wgral: nrfjprog --memrd 0x3000 --w 32 --n 16
 								// Nowy bedzie miec FFFFFFFE na koncu, stary FFFF004E
-
-								/*
-								 * The current service handle will try to upload Soft Device and/or Bootloader.
-								 * We need to enqueue another Intent that will try to send application only.
-								 */
-								final Intent newIntent = new Intent();
-								newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
-								newIntent.putExtra(EXTRA_FILE_TYPE, TYPE_APPLICATION);
-								newIntent.putExtra(EXTRA_PART_CURRENT, 2);
-								newIntent.putExtra(EXTRA_PARTS_TOTAL, 2);
-								startService(newIntent);
 							} else
 								throw e;
 						} catch (final RemoteDfuException e1) {
@@ -954,6 +943,18 @@ public abstract class DfuBaseService extends IntentService {
 					 */
 					if (mPartCurrent == mPartsTotal) {
 						updateProgressNotification(PROGRESS_COMPLETED);
+					} else {
+						/*
+						 * The current service handle will try to upload Soft Device and/or Bootloader.
+						 * We need to enqueue another Intent that will try to send application only.
+						 */
+						logi("Starting service that will upload application");
+						final Intent newIntent = new Intent();
+						newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
+						newIntent.putExtra(EXTRA_FILE_TYPE, TYPE_APPLICATION);
+						newIntent.putExtra(EXTRA_PART_CURRENT, mPartCurrent + 1);
+						newIntent.putExtra(EXTRA_PARTS_TOTAL, mPartsTotal);
+						startService(newIntent);
 					}
 				} catch (final UnknownResponseException e) {
 					final int error = ERROR_INVALID_RESPONSE;
@@ -1642,6 +1643,8 @@ public abstract class DfuBaseService extends IntentService {
 		final Intent broadcast = new Intent(BROADCAST_PROGRESS);
 		broadcast.putExtra(EXTRA_DATA, progress);
 		broadcast.putExtra(EXTRA_DEVICE_ADDRESS, mDeviceAddress);
+		broadcast.putExtra(EXTRA_PART_CURRENT, mPartCurrent);
+		broadcast.putExtra(EXTRA_PARTS_TOTAL, mPartsTotal);
 		if (mLogSession != null)
 			broadcast.putExtra(EXTRA_LOG_URI, mLogSession.getSessionUri());
 		LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
