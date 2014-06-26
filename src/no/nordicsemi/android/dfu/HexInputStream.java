@@ -113,7 +113,7 @@ public class HexInputStream extends FilterInputStream {
 	}
 
 	@Override
-	public int available() throws IOException {
+	public int available() {
 		return available - bytesRead;
 	}
 

@@ -92,19 +92,19 @@ public abstract class DfuBaseService extends IntentService {
 	 * 
 	 * @see #EXTRA_FILE_TYPE
 	 */
-	public static final byte TYPE_SOFT_DEVICE = 0x01;
+	public static final int TYPE_SOFT_DEVICE = 0x01;
 	/**
 	 * The file contains a new version of Bootloader.
 	 * 
 	 * @see #EXTRA_FILE_TYPE
 	 */
-	public static final byte TYPE_BOOTLOADER = 0x02;
+	public static final int TYPE_BOOTLOADER = 0x02;
 	/**
 	 * The file contains a new version of Application.
 	 * 
 	 * @see #EXTRA_FILE_TYPE
 	 */
-	public static final byte TYPE_APPLICATION = 0x04;
+	public static final int TYPE_APPLICATION = 0x04;
 	/**
 	 * A ZIP file that combines more than 1 HEX file. The names of files in the ZIP must be: <b>softdevice.hex</b>, <b>bootloader.hex</b>, <b>application.hex</b> in order to be read correctly. In the
 	 * DFU version 2 the Soft Device and Bootloader may be sent together. In case of additional application file included, the service will try to send Soft Device, Bootloader and Application together
@@ -112,7 +112,7 @@ public abstract class DfuBaseService extends IntentService {
 	 * 
 	 * @see #EXTRA_FILE_TYPE
 	 * */
-	public static final byte TYPE_AUTO = 0x00;
+	public static final int TYPE_AUTO = 0x00;
 
 	/** Extra to send progress and error broadcast events. */
 	public static final String EXTRA_DATA = "no.nordicsemi.android.dfu.extra.EXTRA_DATA";
@@ -138,6 +138,9 @@ public abstract class DfuBaseService extends IntentService {
 	 * {@code boolean error = progressValue >= DfuBaseService.ERROR_MASK;}
 	 */
 	public static final String EXTRA_PROGRESS = "no.nordicsemi.android.dfu.extra.EXTRA_PROGRESS";
+
+	private static final String EXTRA_PART_CURRENT = "no.nordicsemi.android.dfu.extra.EXTRA_PART_CURRENT";
+	private static final String EXTRA_PARTS_TOTAL = "no.nordicsemi.android.dfu.extra.EXTRA_PARTS_TOTAL";
 
 	/**
 	 * The broadcast message contains the following extras:
@@ -257,8 +260,15 @@ public abstract class DfuBaseService extends IntentService {
 	/** Number of bytes transmitted. */
 	private int mBytesSent;
 	/** Number of bytes confirmed by the notification. */
+	@SuppressWarnings("unused")
 	private int mBytesConfirmed;
 	private int mPacketsSentSinceNotification;
+	/**
+	 * Application update may require two connections, one for Soft Device and/or Bootloader upload, second for Application. This fields contains the current part number.
+	 */
+	private int mPartCurrent;
+	/** Total number of parts. */
+	private int mPartsTotal;
 	private boolean mPaused;
 	private boolean mAborted;
 	private boolean mResetRequestSent;
@@ -532,6 +542,8 @@ public abstract class DfuBaseService extends IntentService {
 	public void onCreate() {
 		super.onCreate();
 
+		initialize();
+
 		final LocalBroadcastManager manager = LocalBroadcastManager.getInstance(this);
 		manager.registerReceiver(mDfuActionReceiver, makeDfuActionIntentFilter());
 	}
@@ -552,18 +564,18 @@ public abstract class DfuBaseService extends IntentService {
 		editor.putBoolean(DFU_IN_PROGRESS, true);
 		editor.commit();
 
-		initialize();
-
 		// Read input parameters
 		final String deviceAddress = intent.getStringExtra(EXTRA_DEVICE_ADDRESS);
 		final String deviceName = intent.getStringExtra(EXTRA_DEVICE_NAME);
-		byte fileType = intent.getByteExtra(EXTRA_FILE_TYPE, TYPE_APPLICATION);
+		int fileType = intent.getIntExtra(EXTRA_FILE_TYPE, TYPE_APPLICATION);
 		String mimeType = intent.getStringExtra(EXTRA_FILE_MIME_TYPE);
 		mimeType = mimeType != null ? mimeType : (fileType == TYPE_AUTO ? MIME_TYPE_ZIP : MIME_TYPE_HEX);
 		final String filePath = intent.getStringExtra(EXTRA_FILE_PATH);
 		final Uri fileUri = intent.getParcelableExtra(EXTRA_FILE_URI);
 		final Uri logUri = intent.getParcelableExtra(EXTRA_LOG_URI);
 		mLogSession = Logger.openSession(this, logUri);
+		mPartCurrent = intent.getIntExtra(EXTRA_PART_CURRENT, 1);
+		mPartsTotal = intent.getIntExtra(EXTRA_PARTS_TOTAL, 1);
 
 		// Check file type and mime-type
 		if ((fileType & ~(TYPE_SOFT_DEVICE | TYPE_BOOTLOADER | TYPE_APPLICATION)) > 0 || !(MIME_TYPE_ZIP.equals(mimeType) || MIME_TYPE_HEX.equals(mimeType))) {
@@ -572,7 +584,7 @@ public abstract class DfuBaseService extends IntentService {
 			sendErrorBroadcast(ERROR_FILE_TYPE_UNSUPPORTED);
 			return;
 		}
-		if (fileType == TYPE_AUTO && MIME_TYPE_HEX.equals(mimeType)) {
+		if (MIME_TYPE_HEX.equals(mimeType) && fileType != TYPE_SOFT_DEVICE && fileType != TYPE_BOOTLOADER && fileType != TYPE_APPLICATION) {
 			logw("Unable to determine file type");
 			sendLogBroadcast(Level.WARNING, "Unable to determine file type");
 			sendErrorBroadcast(ERROR_FILE_TYPE_UNSUPPORTED);
@@ -588,6 +600,7 @@ public abstract class DfuBaseService extends IntentService {
 		mErrorState = 0;
 		mAborted = false;
 		mPaused = false;
+		mNotificationsEnabled = false;
 		mResetRequestSent = false;
 		mRequestCompleted = false;
 		mImageSizeSent = false;
@@ -620,8 +633,8 @@ public abstract class DfuBaseService extends IntentService {
 				else
 					is = openInputStream(filePath, mimeType, fileType);
 
-				imageSizeInBytes = mImageSizeInBytes = is.available();
 				mInputStream = is;
+				imageSizeInBytes = mImageSizeInBytes = is.available();
 				// Update the file type bit field basing on the ZIP content
 				if (fileType == TYPE_AUTO && MIME_TYPE_ZIP.equals(mimeType)) {
 					final ZipHexInputStream zhis = (ZipHexInputStream) is;
@@ -709,7 +722,9 @@ public abstract class DfuBaseService extends IntentService {
 					 * 0x04 - Application update
 					 * so that 
 					 * 0x03 - Soft Device and Bootloader update
-					 * Other options are not supported yet. TODO SD+BL+App supported?
+					 * 
+					 * If <Upload Mode> equals 5, 6 or 7 DFU target may return OPERATION_NOT_SUPPORTED [10, 01, 03]. In that case service will try to send
+					 * Soft Device and/or Bootloader first, reconnect to the new Bootloader and send the Application in the second connection.
 					 * 
 					 * --------------------------------------------------------------------
 					 * If DFU target supports only DFU v.1 a response [10, 01, 03] will be send as a notification on DFU Control Point characteristic, where:
@@ -722,19 +737,22 @@ public abstract class DfuBaseService extends IntentService {
 					 * 1. If this is application update - service will try to upload using DFU v.1
 					 * 2. In case of SD or BL update an error is returned
 					 */
-					OP_CODE_START_DFU[1] = fileType;
 
 					// obtain size of image(s)
 					int softDeviceImageSize = (fileType & TYPE_SOFT_DEVICE) > 0 ? imageSizeInBytes : 0;
 					int bootloaderImageSize = (fileType & TYPE_BOOTLOADER) > 0 ? imageSizeInBytes : 0;
 					int appImageSize = (fileType & TYPE_APPLICATION) > 0 ? imageSizeInBytes : 0;
+					// the sizes above may be overwritten if a ZIP file was passed
 					if (MIME_TYPE_ZIP.equals(mimeType)) {
 						final ZipHexInputStream zhis = (ZipHexInputStream) is;
 						softDeviceImageSize = zhis.softDeviceImageSize();
 						bootloaderImageSize = zhis.bootloaderImageSize();
 						appImageSize = zhis.applicationImageSize();
 					}
+
 					try {
+						OP_CODE_START_DFU[1] = (byte) fileType;
+
 						// send Start DFU command to Control Point
 						logi("Sending Start DFU command (Op Code = 1, Upload Mode = " + fileType + ")");
 						writeOpCode(gatt, controlPointCharacteristic, OP_CODE_START_DFU);
@@ -767,12 +785,58 @@ public abstract class DfuBaseService extends IntentService {
 							if (e.getErrorNumber() != DFU_STATUS_NOT_SUPPORTED)
 								throw e;
 
-							// If user wants to send application + soft device or bootloader (or 3 files) we may try to send the other files first, and then reconnect and send the application
+							// If user wants to send soft device and/or bootloader + application we may try to send the Soft Device/Bootloader files first, 
+							// and then reconnect and send the application
 							if ((fileType & TYPE_APPLICATION) > 0 && (fileType & (TYPE_SOFT_DEVICE | TYPE_BOOTLOADER)) > 0) {
-								fileType ^= TYPE_APPLICATION;
-								appImageSize = 0;
+								logw("DFU target does not support (SD/BL)+App update");
+								sendLogBroadcast(Level.WARNING, "DFU target does not support (SD/BL)+App update");
+
+								fileType &= ~TYPE_APPLICATION; // clear application bit
+								OP_CODE_START_DFU[1] = (byte) fileType;
+								mPartsTotal = 2;
+
+								// set new content type in the ZIP Input Stream and update sizes of images
+								final ZipHexInputStream zhis = (ZipHexInputStream) is;
+								zhis.setContentType(fileType);
+								try {
+									appImageSize = 0;
+									mImageSizeInBytes = is.available();
+								} catch (final IOException e1) {
+									// never happen
+								}
+
+								// send Start DFU command to Control Point
+								sendLogBroadcast(Level.VERBOSE, "Sending only SD/BL");
+								logi("Resending Start DFU command (Op Code = 1, Upload Mode = " + fileType + ")");
+								writeOpCode(gatt, controlPointCharacteristic, OP_CODE_START_DFU);
+								sendLogBroadcast(Level.INFO, "DFU Start sent (Op Code 1, Upload Mode = " + fileType + ")");
+
+								// send image size in bytes to DFU Packet
+								logi("Sending image size array to DFU Packet: [" + softDeviceImageSize + "b, " + bootloaderImageSize + "b, " + appImageSize + "b]");
+								writeImageSize(gatt, packetCharacteristic, softDeviceImageSize, bootloaderImageSize, appImageSize);
+								sendLogBroadcast(Level.INFO, "Firmware image size sent [" + softDeviceImageSize + "b, " + bootloaderImageSize + "b, " + appImageSize + "b]");
+
+								// a notification will come with confirmation. Let's wait for it a bit
+								response = readNotificationResponse();
+								status = getStatusCode(response, OP_CODE_RECEIVE_START_DFU_KEY);
+								sendLogBroadcast(Level.INFO, "Responce received (Op Code: " + response[1] + " Status: " + status + ")");
+								if (status != DFU_STATUS_SUCCESS)
+									throw new RemoteDfuException("Starting DFU failed", status);
 
 								// TODO aplikcaja powinna sprobowac wyslac samo SD+BL, potem sie ponownie polaczyc i wyslac app
+								// Testowanie czy nowy SD sie wgral: nrfjprog --memrd 0x3000 --w 32 --n 16
+								// Nowy bedzie miec FFFFFFFE na koncu, stary FFFF004E
+
+								/*
+								 * The current service handle will try to upload Soft Device and/or Bootloader.
+								 * We need to enqueue another Intent that will try to send application only.
+								 */
+								final Intent newIntent = new Intent();
+								newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
+								newIntent.putExtra(EXTRA_FILE_TYPE, TYPE_APPLICATION);
+								newIntent.putExtra(EXTRA_PART_CURRENT, 2);
+								newIntent.putExtra(EXTRA_PARTS_TOTAL, 2);
+								startService(newIntent);
 							} else
 								throw e;
 						} catch (final RemoteDfuException e1) {
@@ -818,10 +882,10 @@ public abstract class DfuBaseService extends IntentService {
 					// Send the number of packets of firmware before receiving a receipt notification
 					final int numberOfPacketsBeforeNotification = mPacketsBeforeNotification;
 					if (numberOfPacketsBeforeNotification > 0) {
-						logi("Sending the number of packets before notifications (Op Code = 8)");
+						logi("Sending the number of packets before notifications (Op Code = 8, value = " + numberOfPacketsBeforeNotification + ")");
 						setNumberOfPackets(OP_CODE_PACKET_RECEIPT_NOTIF_REQ, numberOfPacketsBeforeNotification);
 						writeOpCode(gatt, controlPointCharacteristic, OP_CODE_PACKET_RECEIPT_NOTIF_REQ);
-						sendLogBroadcast(Level.INFO, "Packet Receipt Notif Req (Op Code 8) sent (value: " + mPacketsBeforeNotification + ")");
+						sendLogBroadcast(Level.INFO, "Packet Receipt Notif Req (Op Code 8) sent (value: " + numberOfPacketsBeforeNotification + ")");
 					}
 
 					// Initialize firmware upload
@@ -882,7 +946,15 @@ public abstract class DfuBaseService extends IntentService {
 					// Close the device
 					refreshDeviceCache(gatt);
 					close(gatt);
-					updateProgressNotification(PROGRESS_COMPLETED);
+
+					/*
+					 * We need to send PROGRESS_COMPLETED message only when all files has been transmitted.
+					 * In case user wants to send Soft Device and/or Bootloader and Application service will be started twice: one to send SD+BL,
+					 * second time to send Application using the new Bootloader. In the first case we do not send PROGRESS_COMPLETED notification.
+					 */
+					if (mPartCurrent == mPartsTotal) {
+						updateProgressNotification(PROGRESS_COMPLETED);
+					}
 				} catch (final UnknownResponseException e) {
 					final int error = ERROR_INVALID_RESPONSE;
 					loge(e.getMessage());
@@ -923,7 +995,6 @@ public abstract class DfuBaseService extends IntentService {
 					gatt.setCharacteristicNotification(controlPointCharacteristic, false);
 				close(gatt);
 				updateProgressNotification(ERROR_DEVICE_DISCONNECTED);
-				return;
 			} catch (final DfuException e) {
 				final int error = e.getErrorNumber() & ~ERROR_CONNECTION_MASK;
 				sendLogBroadcast(Level.ERROR, String.format("Error (0x%02X): %s", error, GattError.parse(error)));
@@ -949,7 +1020,7 @@ public abstract class DfuBaseService extends IntentService {
 				if (is != null)
 					is.close();
 				is = null;
-			} catch (IOException e) {
+			} catch (final IOException e) {
 				// do nothing
 			}
 		}
@@ -977,7 +1048,7 @@ public abstract class DfuBaseService extends IntentService {
 	 *            the file type
 	 * @return the input stream with binary image content
 	 */
-	private InputStream openInputStream(final String filePath, final String mimeType, final byte types) throws FileNotFoundException, IOException {
+	private InputStream openInputStream(final String filePath, final String mimeType, final int types) throws FileNotFoundException, IOException {
 		final InputStream is = new FileInputStream(filePath);
 		if (MIME_TYPE_ZIP.equals(mimeType))
 			return new ZipHexInputStream(is, types);
@@ -993,7 +1064,7 @@ public abstract class DfuBaseService extends IntentService {
 	 *            the file type
 	 * @return the input stream with binary image content
 	 */
-	private InputStream openInputStream(final Uri stream, final String mimeType, final byte types) throws FileNotFoundException, IOException {
+	private InputStream openInputStream(final Uri stream, final String mimeType, final int types) throws FileNotFoundException, IOException {
 		final InputStream is = getContentResolver().openInputStream(stream);
 		if (MIME_TYPE_ZIP.equals(mimeType))
 			return new ZipHexInputStream(is, types);
@@ -1512,8 +1583,9 @@ public abstract class DfuBaseService extends IntentService {
 				builder.setOngoing(false).setContentTitle(getString(R.string.dfu_status_error)).setContentText(getString(R.string.dfu_status_error_msg)).setAutoCancel(true);
 			} else {
 				// progress is in percents
-				builder.setOngoing(true).setContentTitle(getString(R.string.dfu_status_uploading)).setContentText(getString(R.string.dfu_status_uploading_msg, deviceName))
-						.setProgress(100, progress, false);
+				final String title = mPartsTotal == 1 ? getString(R.string.dfu_status_uploading) : getString(R.string.dfu_status_uploading_part, mPartCurrent, mPartsTotal);
+				final String text = mPartsTotal == mPartCurrent ? getString(R.string.dfu_status_uploading_msg, deviceName) : getString(R.string.dfu_status_uploading_components_msg, deviceName);
+				builder.setOngoing(true).setContentTitle(title).setContentText(text).setProgress(100, progress, false);
 			}
 		}
 		// send progress or error broadcast

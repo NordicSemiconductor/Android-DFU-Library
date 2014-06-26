@@ -6,8 +6,6 @@ import java.io.InputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import android.util.Log;
-
 public class ZipHexInputStream extends ZipInputStream {
 	private static final String SOFTDEVICE_NAME = "softdevice.hex";
 	private static final String BOOTLOADER_NAME = "bootloader.hex";
@@ -45,7 +43,7 @@ public class ZipHexInputStream extends ZipInputStream {
 	 *            files to read
 	 * @throws IOException
 	 */
-	public ZipHexInputStream(final InputStream stream, final byte types) throws IOException {
+	public ZipHexInputStream(final InputStream stream, final int types) throws IOException {
 		super(stream);
 
 		this.bytesRead = 0;
@@ -64,7 +62,6 @@ public class ZipHexInputStream extends ZipInputStream {
 				// Skip files that not specified in types
 				if (types != DfuBaseService.TYPE_AUTO
 						&& ((softDevice && (types & DfuBaseService.TYPE_SOFT_DEVICE) == 0) || (bootloader && (types & DfuBaseService.TYPE_BOOTLOADER) == 0) || (application && (types & DfuBaseService.TYPE_APPLICATION) == 0))) {
-					Log.i("ZHIS", "Skipping: " + filename);
 					continue;
 				}
 
@@ -94,16 +91,26 @@ public class ZipHexInputStream extends ZipInputStream {
 				} else if (application) {
 					source = applicationBytes = new byte[applicationSize = is.available()];
 					is.read(applicationBytes);
-					// Temporarly set the current source to application, it may be overwritten in a moment
+					// Temporarily set the current source to application, it may be overwritten in a moment
 					if (currentSource == null)
 						currentSource = source;
 				}
 				is.close();
-				Log.i("ZHIS", filename + " loaded (bin size: " + is.sizeInBytes() + ")");
 			}
 		} finally {
-			close();
+			super.close();
 		}
+	}
+
+	@Override
+	public void close() throws IOException {
+		softDeviceBytes = null;
+		bootloaderBytes = null;
+		softDeviceBytes = null;
+		softDeviceSize = bootloaderSize = applicationSize = 0;
+		currentSource = null;
+		bytesRead = bytesReadFromCurrentSource = 0;
+		super.close();
 	}
 
 	@Override
@@ -115,7 +122,6 @@ public class ZipHexInputStream extends ZipInputStream {
 		if (buffer.length > size) {
 			if (startNextFile() == null) {
 				bytesRead += size;
-				Log.i("ZHIS", "End of all files, " + bytesRead + " bytes read in total");
 				return size;
 			}
 
@@ -124,13 +130,18 @@ public class ZipHexInputStream extends ZipInputStream {
 			System.arraycopy(currentSource, 0, buffer, size, nextSize);
 			bytesReadFromCurrentSource += nextSize;
 			size += nextSize;
-			Log.i("ZHIS", "New file started, size = " + size);
 		}
 		bytesRead += size;
 		return size;
 	}
 
-	public byte getContentType() {
+	/**
+	 * Returns the content type based on the content of the ZIP file. The content type may be truncated using {@link #setContentType(int)}.
+	 * 
+	 * @return a bit field of {@link DfuBaseService#TYPE_SOFT_DEVICE TYPE_SOFT_DEVICE}, {@link DfuBaseService#TYPE_BOOTLOADER TYPE_BOOTLOADER} and {@link DfuBaseService#TYPE_APPLICATION
+	 *         TYPE_APPLICATION}
+	 */
+	public int getContentType() {
 		byte b = 0;
 		if (softDeviceSize > 0)
 			b |= DfuBaseService.TYPE_SOFT_DEVICE;
@@ -141,13 +152,44 @@ public class ZipHexInputStream extends ZipInputStream {
 		return b;
 	}
 
+	/**
+	 * Truncates the current content type. May be used to hide some files, f.e. to send Soft Device and Bootloader without Application or only the Application.
+	 * 
+	 * @param type
+	 *            the new type
+	 * @return the final type after truncating
+	 */
+	public int setContentType(final int type) {
+		if (bytesRead > 0)
+			throw new UnsupportedOperationException("Content type must not be change after reading content");
+
+		final int t = getContentType() & type;
+
+		if ((t & DfuBaseService.TYPE_SOFT_DEVICE) == 0) {
+			softDeviceBytes = null;
+			softDeviceSize = 0;
+		}
+		if ((t & DfuBaseService.TYPE_BOOTLOADER) == 0) {
+			bootloaderBytes = null;
+			bootloaderSize = 0;
+		}
+		if ((t & DfuBaseService.TYPE_APPLICATION) == 0) {
+			applicationBytes = null;
+			applicationSize = 0;
+		}
+		return t;
+	}
+
+	/**
+	 * Sets the currentSource to the new file or to <code>null</code> if the last file has been transmitted.
+	 * 
+	 * @return the new source, the same as {@link #currentSource}
+	 */
 	private byte[] startNextFile() {
 		byte[] ret = null;
 		if (currentSource == softDeviceBytes && bootloaderBytes != null) {
-			Log.i("ZHIS", "Switching to bootloader");
 			ret = currentSource = bootloaderBytes;
 		} else if (currentSource != applicationBytes && applicationBytes != null) {
-			Log.i("ZHIS", "Switching to application");
 			ret = currentSource = applicationBytes;
 		} else {
 			ret = currentSource = null;
@@ -157,7 +199,7 @@ public class ZipHexInputStream extends ZipInputStream {
 	}
 
 	@Override
-	public int available() throws IOException {
+	public int available() {
 		return softDeviceSize + bootloaderSize + applicationSize - bytesRead;
 	}
 
