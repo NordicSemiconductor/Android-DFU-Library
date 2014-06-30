@@ -105,7 +105,6 @@ public abstract class DfuBaseService extends IntentService {
 	 * <li>If the {@link #EXTRA_FILE_MIME_TYPE} field is <code>null</code> or is equal to {@value #MIME_TYPE_HEX} - the {@link #TYPE_APPLICATION} is assumed.</li>
 	 * <li>If the {@link #EXTRA_FILE_MIME_TYPE} field is equal to {@value #MIME_TYPE_ZIP} - the {@link #TYPE_AUTO} is assumed.</li>
 	 * </ol>
-	 * TODO czy nazwy plikow dobre?
 	 */
 	public static final String EXTRA_FILE_TYPE = "no.nordicsemi.android.dfu.extra.EXTRA_FILE_TYPE";
 	/**
@@ -129,7 +128,7 @@ public abstract class DfuBaseService extends IntentService {
 	/**
 	 * A ZIP file that combines more than 1 HEX file. The names of files in the ZIP must be: <b>softdevice.hex</b>, <b>bootloader.hex</b>, <b>application.hex</b> in order to be read correctly. In the
 	 * DFU version 2 the Soft Device and Bootloader may be sent together. In case of additional application file included, the service will try to send Soft Device, Bootloader and Application together
-	 * (not supported by DFU v.2) and if it fails, send first SD+BL, reconnect and send application. TODO czy nazwy plikow dobre?
+	 * (not supported by DFU v.2) and if it fails, send first SD+BL, reconnect and send application.
 	 * 
 	 * @see #EXTRA_FILE_TYPE
 	 */
@@ -855,10 +854,6 @@ public abstract class DfuBaseService extends IntentService {
 								sendLogBroadcast(Level.INFO, "Responce received (Op Code: " + response[1] + " Status: " + status + ")");
 								if (status != DFU_STATUS_SUCCESS)
 									throw new RemoteDfuException("Starting DFU failed", status);
-
-								// TODO aplikcaja powinna sprobowac wyslac samo SD+BL, potem sie ponownie polaczyc i wyslac app
-								// Testowanie czy nowy SD sie wgral: nrfjprog --memrd 0x3000 --w 32 --n 16
-								// Nowy bedzie miec FFFFFFFE na koncu, stary FFFF004E
 							} else
 								throw e;
 						} catch (final RemoteDfuException e1) {
@@ -894,10 +889,15 @@ public abstract class DfuBaseService extends IntentService {
 					}
 
 					if ((fileType & TYPE_SOFT_DEVICE) > 0) {
-						// TODO wywalic to oczekiwanie. Wymagane aby mozna bylo wyslac SoftDevice - bootloader musi wyczyscic przestrzen aplikacji aby moc tam wgrac nowe SD
-						int k = 0;
-						for (long l = 0; l < 600000000L; l++) {
-							k = (int) (l * k);
+						// In the current version of bootloader we must wait some time until we can proceed with Soft Device update. Bootloader must prepare the RAM for the new firmware.
+						// Most likely this step will not be needed in the future as the notification received a moment before will be postponed until Bootloader is ready.
+						// TODO remove this "if" when bootloader fixed:
+						synchronized (this) {
+							try {
+								wait(6000);
+							} catch (final InterruptedException e) {
+								// do nothing
+							}
 						}
 					}
 
