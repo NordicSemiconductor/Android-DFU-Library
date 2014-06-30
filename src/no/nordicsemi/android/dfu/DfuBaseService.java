@@ -13,6 +13,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
+import java.util.Locale;
 import java.util.UUID;
 
 import no.nordicsemi.android.dfu.exception.DeviceDisconnectedException;
@@ -91,6 +92,7 @@ public abstract class DfuBaseService extends IntentService {
 	 * The input file mime-type. Currently only "application/zip" (ZIP) or "application/octet-stream" (HEX) are supported. If this parameter is empty the "application/octet-stream" is assumed.
 	 */
 	public static final String EXTRA_FILE_MIME_TYPE = "no.nordicsemi.android.dfu.extra.EXTRA_MIME_TYPE";
+
 	/**
 	 * This optional extra parameter may contain a file type. Currently supported are:
 	 * <ul>
@@ -289,6 +291,7 @@ public abstract class DfuBaseService extends IntentService {
 	private int mPartCurrent;
 	/** Total number of parts. */
 	private int mPartsTotal;
+	private int mFileType;
 	private boolean mPaused;
 	private boolean mAborted;
 	private boolean mResetRequestSent;
@@ -608,12 +611,14 @@ public abstract class DfuBaseService extends IntentService {
 		// Read input parameters
 		final String deviceAddress = intent.getStringExtra(EXTRA_DEVICE_ADDRESS);
 		final String deviceName = intent.getStringExtra(EXTRA_DEVICE_NAME);
-		int fileType = intent.getIntExtra(EXTRA_FILE_TYPE, TYPE_APPLICATION);
-		String mimeType = intent.getStringExtra(EXTRA_FILE_MIME_TYPE);
-		mimeType = mimeType != null ? mimeType : (fileType == TYPE_AUTO ? MIME_TYPE_ZIP : MIME_TYPE_HEX);
 		final String filePath = intent.getStringExtra(EXTRA_FILE_PATH);
 		final Uri fileUri = intent.getParcelableExtra(EXTRA_FILE_URI);
 		final Uri logUri = intent.getParcelableExtra(EXTRA_LOG_URI);
+		int fileType = intent.getIntExtra(EXTRA_FILE_TYPE, TYPE_AUTO);
+		if (filePath != null && fileType == TYPE_AUTO)
+			fileType = filePath.toLowerCase(Locale.US).endsWith("zip") ? TYPE_AUTO : TYPE_APPLICATION;
+		String mimeType = intent.getStringExtra(EXTRA_FILE_MIME_TYPE);
+		mimeType = mimeType != null ? mimeType : (fileType == TYPE_AUTO ? MIME_TYPE_ZIP : MIME_TYPE_HEX);
 		mLogSession = Logger.openSession(this, logUri);
 		mPartCurrent = intent.getIntExtra(EXTRA_PART_CURRENT, 1);
 		mPartsTotal = intent.getIntExtra(EXTRA_PARTS_TOTAL, 1);
@@ -681,6 +686,7 @@ public abstract class DfuBaseService extends IntentService {
 					final ZipHexInputStream zhis = (ZipHexInputStream) is;
 					fileType = zhis.getContentType();
 				}
+				mFileType = fileType;
 				sendLogBroadcast(Level.INFO, "Image file opened (" + mImageSizeInBytes + " bytes in total)");
 			} catch (final FileNotFoundException e) {
 				loge("An exception occured while opening file", e);
@@ -824,6 +830,7 @@ public abstract class DfuBaseService extends IntentService {
 								sendLogBroadcast(Level.WARNING, "DFU target does not support (SD/BL)+App update");
 
 								fileType &= ~TYPE_APPLICATION; // clear application bit
+								mFileType = fileType;
 								OP_CODE_START_DFU[1] = (byte) fileType;
 								mPartsTotal = 2;
 
@@ -1618,7 +1625,7 @@ public abstract class DfuBaseService extends IntentService {
 			} else {
 				// progress is in percents
 				final String title = mPartsTotal == 1 ? getString(R.string.dfu_status_uploading) : getString(R.string.dfu_status_uploading_part, mPartCurrent, mPartsTotal);
-				final String text = mPartsTotal == mPartCurrent ? getString(R.string.dfu_status_uploading_msg, deviceName) : getString(R.string.dfu_status_uploading_components_msg, deviceName);
+				final String text = (mFileType & TYPE_APPLICATION) > 0 ? getString(R.string.dfu_status_uploading_msg, deviceName) : getString(R.string.dfu_status_uploading_components_msg, deviceName);
 				builder.setOngoing(true).setContentTitle(title).setContentText(text).setProgress(100, progress, false);
 			}
 		}
