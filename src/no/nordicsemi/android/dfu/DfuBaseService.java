@@ -52,7 +52,28 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 /**
- * The DFU Service provides full
+ * The DFU Service provides full support for Over-the-Air (OTA) Device Firmware Update by Nordic Semiconductor.<br />
+ * With the Soft Device 7.0.0+ it allows to upload a new Soft Device, new Bootloader and a new Application. For odler soft devices only Application update is supported.
+ * <p>
+ * To run the service to your application inherit it and overwrite the missing method. Remember to it to the AndroidManifest.xml file. Start the service with the following parameters:
+ * 
+ * <pre>
+ * final Intent service = new Intent(this, YourDfuService.class);
+ * service.putExtra(DfuService.EXTRA_DEVICE_ADDRESS, mSelectedDevice.getAddress());
+ * service.putExtra(DfuService.EXTRA_DEVICE_NAME, mSelectedDevice.getName());
+ * service.putExtra(DfuService.EXTRA_FILE_MIME_TYPE, mFileType == DfuService.TYPE_AUTO ? YourDfuService.MIME_TYPE_ZIP : YourDfuService.MIME_TYPE_HEX);
+ * service.putExtra(DfuService.EXTRA_FILE_TYPE, mFileType);
+ * service.putExtra(DfuService.EXTRA_FILE_PATH, mFilePath);
+ * service.putExtra(DfuService.EXTRA_FILE_URI, mFileStreamUri);
+ * startService(service);
+ * </pre>
+ * 
+ * The {@link #EXTRA_FILE_MIME_TYPE} and {@link #EXTRA_FILE_TYPE} parameters are optional. If not provided the application upload from HEX file is assumed. The service API is compatible with previous
+ * versions.
+ * </p>
+ * <p>
+ * The service will show its progress in the notifications bar and will send local broadcasts the the application.
+ * </p>
  */
 public abstract class DfuBaseService extends IntentService {
 	private static final String TAG = "DfuService";
@@ -111,7 +132,7 @@ public abstract class DfuBaseService extends IntentService {
 	 * (not supported by DFU v.2) and if it fails, send first SD+BL, reconnect and send application. TODO czy nazwy plikow dobre?
 	 * 
 	 * @see #EXTRA_FILE_TYPE
-	 * */
+	 */
 	public static final int TYPE_AUTO = 0x00;
 
 	/** Extra to send progress and error broadcast events. */
@@ -214,7 +235,7 @@ public abstract class DfuBaseService extends IntentService {
 	 * {@link LogContract.Log.Level#WARNING}, {@link LogContract.Log.Level#ERROR}</li>
 	 * <li>{@link #EXTRA_LOG_MESSAGE}</li>
 	 * </ul>
-	 * */
+	 */
 	public static final String BROADCAST_LOG = "no.nordicsemi.android.dfu.broadcast.BROADCAST_LOG";
 	public static final String EXTRA_LOG_MESSAGE = "no.nordicsemi.android.dfu.extra.EXTRA_LOG_INFO";
 	public static final String EXTRA_LOG_LEVEL = "no.nordicsemi.android.dfu.extra.EXTRA_LOG_LEVEL";
@@ -342,6 +363,21 @@ public abstract class DfuBaseService extends IntentService {
 		}
 	};
 
+	private final BroadcastReceiver mConnectionStateBroadcastReceiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(final Context context, final Intent intent) {
+			// obtain the device and check it this is the one that we are connected to 
+			final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+			if (!device.getAddress().equals(mDeviceAddress))
+				return;
+
+			final String action = intent.getAction();
+
+			logi("Action received: " + action);
+			mConnectionState = STATE_DISCONNECTED;
+		}
+	};
+
 	private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
 		@Override
 		public void onConnectionStateChange(final BluetoothGatt gatt, final int status, final int newState) {
@@ -422,10 +458,10 @@ public abstract class DfuBaseService extends IntentService {
 				 * This method is called when either a CONTROL POINT or PACKET characteristic has been written.
 				 * If it is the CONTROL POINT characteristic, just set the flag to true.
 				 * If the PACKET characteristic was written we must:
-				 *  - if the image size was written in DFU Start procedure, just set flag to true
-				 *  - else 
-				 *      - send the next packet, if notification is not required at that moment
-				 *      - do nothing, because we have to wait for the notification to confirm the data received  
+				 * - if the image size was written in DFU Start procedure, just set flag to true
+				 * - else
+				 * - send the next packet, if notification is not required at that moment
+				 * - do nothing, because we have to wait for the notification to confirm the data received
 				 */
 				if (DFU_PACKET_UUID.equals(characteristic.getUuid())) {
 					if (mImageSizeSent) {
@@ -475,7 +511,7 @@ public abstract class DfuBaseService extends IntentService {
 			} else {
 				/*
 				 * If a Reset (Op Code = 6) or Activate and Reset (Op Code = 5) commands are sent the DFU target resets and sometimes does it so quickly that does not manage to send
-				 * any ACK to the controller and error 133 is thrown here.  
+				 * any ACK to the controller and error 133 is thrown here.
 				 */
 				if (mResetRequestSent)
 					mRequestCompleted = true;
@@ -546,6 +582,10 @@ public abstract class DfuBaseService extends IntentService {
 
 		final LocalBroadcastManager manager = LocalBroadcastManager.getInstance(this);
 		manager.registerReceiver(mDfuActionReceiver, makeDfuActionIntentFilter());
+
+		final IntentFilter filter = new IntentFilter();
+		filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
+		registerReceiver(mConnectionStateBroadcastReceiver, filter);
 	}
 
 	@Override
@@ -554,6 +594,8 @@ public abstract class DfuBaseService extends IntentService {
 
 		final LocalBroadcastManager manager = LocalBroadcastManager.getInstance(this);
 		manager.unregisterReceiver(mDfuActionReceiver);
+
+		unregisterReceiver(mConnectionStateBroadcastReceiver);
 	}
 
 	@Override
@@ -702,37 +744,28 @@ public abstract class DfuBaseService extends IntentService {
 
 					/*
 					 * DFU v.1 supports updating only an Application.
-					 * 
 					 * Initializing procedure:
-					 * 
 					 * [DFU Start (0x01)] -> DFU Control Point
 					 * [App size in bytes (UINT32)] -> DFU Packet
-					 * 
 					 * ---------------------------------------------------------------------
 					 * DFU v.2 supports updating Soft Device, Bootloader and Application
-					 * 
 					 * Initializing procedure:
-					 * 
 					 * [DFU Start (0x01), <Update Mode>] -> DFU Control Point
 					 * [SD size in bytes (UINT32), Bootloader size in bytes (UINT32), Application size in bytes (UINT32)] -> DFU Packet
-					 * 
 					 * where <Upload Mode> is a bit mask:
 					 * 0x01 - Soft Device update
 					 * 0x02 - Bootloader update
 					 * 0x04 - Application update
-					 * so that 
+					 * so that
 					 * 0x03 - Soft Device and Bootloader update
-					 * 
 					 * If <Upload Mode> equals 5, 6 or 7 DFU target may return OPERATION_NOT_SUPPORTED [10, 01, 03]. In that case service will try to send
 					 * Soft Device and/or Bootloader first, reconnect to the new Bootloader and send the Application in the second connection.
-					 * 
 					 * --------------------------------------------------------------------
 					 * If DFU target supports only DFU v.1 a response [10, 01, 03] will be send as a notification on DFU Control Point characteristic, where:
 					 * 10 - Response for...
 					 * 01 - DFU Start command
 					 * 03 - Operation Not Supported
 					 * (see table below)
-					 * 
 					 * In that case:
 					 * 1. If this is application update - service will try to upload using DFU v.1
 					 * 2. In case of SD or BL update an error is returned
@@ -769,11 +802,11 @@ public abstract class DfuBaseService extends IntentService {
 						/*
 						 * The response received from the DFU device contains:
 						 * +---------+--------+----------------------------------------------------+
-						 * | byte no |  value |                  description                       |
+						 * | byte no | value | description |
 						 * +---------+--------+----------------------------------------------------+
-						 * |       0 |     16 | Response code                                      |
-						 * |       1 |      1 | The Op Code of a request that this response is for |
-						 * |       2 | STATUS | See DFU_STATUS_* for status codes                  |
+						 * | 0 | 16 | Response code |
+						 * | 1 | 1 | The Op Code of a request that this response is for |
+						 * | 2 | STATUS | See DFU_STATUS_* for status codes |
 						 * +---------+--------+----------------------------------------------------+
 						 */
 						status = getStatusCode(response, OP_CODE_RECEIVE_START_DFU_KEY);
@@ -1294,7 +1327,7 @@ public abstract class DfuBaseService extends IntentService {
 		mRequestCompleted = false;
 		/*
 		 * Sending a command that will make the DFU target to reboot may cause an error 133 (0x85 - Gatt Error). If so, with this flag set, the error will not be shown to the user
-		 * as the peripheral is disconnected anyway. See: mGattCallback#onCharacteristicWrite(...) method 
+		 * as the peripheral is disconnected anyway. See: mGattCallback#onCharacteristicWrite(...) method
 		 */
 		mResetRequestSent = value[0] == OP_CODE_RECEIVE_RESET_KEY || value[0] == OP_CODE_RECEIVE_ACTIVATE_AND_RESET_KEY;
 
