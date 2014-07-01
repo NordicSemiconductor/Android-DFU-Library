@@ -62,14 +62,14 @@ public class HexInputStream extends FilterInputStream {
 		in.mark(in.available());
 
 		int b, lineSize, type;
-		int lastULBA = 0; // last Upper Linear Base Address, default 0 
+		int lastULBA = 0, offset; // last Upper Linear Base Address, default 0 
 		try {
 			b = in.read();
 			while (true) {
 				checkComma(b);
 
 				lineSize = readByte(in); // reading the length of the data in this line
-				in.skip(4); // skipping address part
+				offset = readAddress(in);// reading the offset
 				type = readByte(in); // reading the line type
 				switch (type) {
 				case 0x01:
@@ -79,7 +79,7 @@ public class HexInputStream extends FilterInputStream {
 					// extended linear address record
 					/*
 					 * The HEX file may contain jump to different addresses. The MSB of LBA (Linear Base Address) is given using the line type 4.
-					 * We only support files where bytes are located together, no jumps are allowed. Therefore the newULBA may be only lastULBA + 1 (or any, if this is the first line of the HEX) 
+					 * We only support files where bytes are located together, no jumps are allowed. Therefore the newULBA may be only lastULBA + 1 (or any, if this is the first line of the HEX)
 					 */
 					final int newULBA = readAddress(in);
 					if (binSize > 0 && newULBA != lastULBA + 1)
@@ -89,7 +89,8 @@ public class HexInputStream extends FilterInputStream {
 					break;
 				case 0x00:
 					// data type line
-					binSize += lineSize;
+					if ((lastULBA << 16) + offset >= 0x1000) // we must skip all data from below address 0x1000 as those are the MBR. The Soft Device starts at 0x1000, the app and bootloader futher more
+						binSize += lineSize;
 					// no break!
 				case 0x02:
 					// extended segment address record
@@ -192,7 +193,7 @@ public class HexInputStream extends FilterInputStream {
 		// temporary value
 		int b = 0;
 
-		int lineSize, type;
+		int lineSize, type, offset;
 		do {
 			// skip end of line
 			while (true) {
@@ -216,7 +217,8 @@ public class HexInputStream extends FilterInputStream {
 			checkComma(b); // checking the comma at the beginning
 			lineSize = readByte(in); // reading the length of the data in this line
 			pos += 2;
-			pos += in.skip(4); // skipping address part
+			offset = readAddress(in);// reading the offset
+			pos += 4;
 			type = readByte(in); // reading the line type
 			pos += 2;
 
@@ -224,6 +226,10 @@ public class HexInputStream extends FilterInputStream {
 			switch (type) {
 			case 0x00:
 				// data type
+				if ((lastAddress << 16) + offset < 0x1000) {
+					type = -1; // some other than 0
+					pos += in.skip(lineSize * 2 /* 2 hex per one byte */+ 2 /* check sum */);
+				}
 				break;
 			case 0x01:
 				// end of file
@@ -240,6 +246,7 @@ public class HexInputStream extends FilterInputStream {
 				break;
 			case 0x02:
 				// extended segment address
+				// TODO should here be the same as for 0x04? (+break)
 			default:
 				pos += in.skip(lineSize * 2 /* 2 hex per one byte */+ 2 /* check sum */);
 				break;
@@ -280,7 +287,7 @@ public class HexInputStream extends FilterInputStream {
 	}
 
 	private int readAddress(final InputStream in) throws IOException {
-		return readByte(in) << 16 | readByte(in);
+		return readByte(in) << 8 | readByte(in);
 	}
 
 	private int asciiToInt(final int ascii) {
