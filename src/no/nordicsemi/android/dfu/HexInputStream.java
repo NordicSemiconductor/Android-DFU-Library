@@ -16,6 +16,14 @@ import java.io.InputStream;
 
 import no.nordicsemi.android.dfu.exception.HexFileValidationException;
 
+/**
+ * Reads the binary content from the HEX file using IntelHex standard: http://www.interlog.com/~speff/usefulinfo/Hexfrmt.pdf
+ * Truncates the HEX file from all meta data and returns only the BIN content.
+ * <p>
+ * In nRF51 chips memory a SoftDevice starts at address 0x1000. From 0x0000 to 0x1000 there is MBR sector (since SoftDevice 7.0.0) which should not be transmitted using DFU. Therefore this class skips
+ * all data from addresses below 0x1000.
+ * </p>
+ */
 public class HexInputStream extends FilterInputStream {
 	private final int LINE_LENGTH = 16;
 	private final byte[] localBuf;
@@ -26,8 +34,7 @@ public class HexInputStream extends FilterInputStream {
 	private int available, bytesRead;
 
 	/**
-	 * Creates the HEX Input Stream. The constructor calculates the size of the BIN content which is available through {@link #sizeInBytes()}. If HEX file is invalid then the bin size is 0. The
-	 * supported line types are: 0 (data), 4 (extended linear address). The type 5 is available of the end of the file.
+	 * Creates the HEX Input Stream. The constructor calculates the size of the BIN content which is available through {@link #sizeInBytes()}. If HEX file is invalid then the bin size is 0.
 	 * 
 	 * @param in
 	 *            the input stream to read from
