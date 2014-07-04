@@ -583,7 +583,10 @@ public abstract class DfuBaseService extends IntentService {
 		initialize();
 
 		final LocalBroadcastManager manager = LocalBroadcastManager.getInstance(this);
-		manager.registerReceiver(mDfuActionReceiver, makeDfuActionIntentFilter());
+		final IntentFilter actionFilter = makeDfuActionIntentFilter();
+		manager.registerReceiver(mDfuActionReceiver, actionFilter);
+		// We must register this as a non-local receiver to get broadcasts from the notification action
+		registerReceiver(mDfuActionReceiver, actionFilter);
 
 		final IntentFilter filter = new IntentFilter();
 		filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
@@ -597,6 +600,7 @@ public abstract class DfuBaseService extends IntentService {
 		final LocalBroadcastManager manager = LocalBroadcastManager.getInstance(this);
 		manager.unregisterReceiver(mDfuActionReceiver);
 
+		unregisterReceiver(mDfuActionReceiver);
 		unregisterReceiver(mConnectionStateBroadcastReceiver);
 	}
 
@@ -1595,7 +1599,7 @@ public abstract class DfuBaseService extends IntentService {
 		final String deviceAddress = mDeviceAddress;
 		final String deviceName = mDeviceName != null ? mDeviceName : getString(R.string.dfu_unknown_name);
 
-		final Bitmap largeIcon = BitmapFactory.decodeResource(getResources(), R.drawable.stat_dfu);
+		final Bitmap largeIcon = BitmapFactory.decodeResource(getResources(), R.drawable.ic_stat_notify_dfu);
 
 		final Notification.Builder builder = new Notification.Builder(this).setSmallIcon(android.R.drawable.stat_sys_upload).setOnlyAlertOnce(true).setLargeIcon(largeIcon);
 		switch (progress) {
@@ -1645,6 +1649,14 @@ public abstract class DfuBaseService extends IntentService {
 			intent.putExtra(EXTRA_LOG_URI, mLogSession.getSessionUri());
 		final PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 		builder.setContentIntent(pendingIntent);
+
+		// Add Abort action to the notification
+		if (progress != PROGRESS_ABORTED && progress != PROGRESS_COMPLETED) {
+			final Intent abortIntent = new Intent(BROADCAST_ACTION);
+			abortIntent.putExtra(EXTRA_ACTION, ACTION_ABORT);
+			final PendingIntent pendingAbortIntent = PendingIntent.getBroadcast(this, 1, abortIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+			builder.addAction(R.drawable.ic_action_notify_cancel, getString(R.string.dfu_action_abort), pendingAbortIntent);
+		}
 
 		final NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 		manager.notify(NOTIFICATION_ID, builder.build());

@@ -1,6 +1,8 @@
 <resources>
 
     <string name="dfu_unknown_name">unnamed device</string>
+    
+    <string name="dfu_action_abort">Abort</string>
 
     <string name="dfu_status_initializing">Initializing&#8230;</string>
     <string name="dfu_status_connecting">Connecting&#8230;</string>
