@@ -657,7 +657,7 @@ public abstract class DfuBaseService extends IntentService {
 
 		// read preferences
 		final boolean packetReceiptNotificationEnabled = preferences.getBoolean(DfuSettingsConstants.SETTINGS_PACKET_RECEIPT_NOTIFICATION_ENABLED, true);
-		final String value = preferences.getString(DfuSettingsConstants.SETTINGS_NUMBER_OF_PACKETS, String.valueOf(DfuSettingsConstants.SETTINGS_NUMBER_OF_PACKETS_DEFAULT));
+		String value = preferences.getString(DfuSettingsConstants.SETTINGS_NUMBER_OF_PACKETS, String.valueOf(DfuSettingsConstants.SETTINGS_NUMBER_OF_PACKETS_DEFAULT));
 		int numberOfPackets = DfuSettingsConstants.SETTINGS_NUMBER_OF_PACKETS_DEFAULT;
 		try {
 			numberOfPackets = Integer.parseInt(value);
@@ -669,6 +669,17 @@ public abstract class DfuBaseService extends IntentService {
 		if (!packetReceiptNotificationEnabled)
 			numberOfPackets = 0;
 		mPacketsBeforeNotification = numberOfPackets;
+		// The Soft Device starts where MBR ends (by default from the address 0x1000). Before there is a MBR section, which should not be transmitted over DFU. 
+		// Applications and bootloader starts from bigger address. However, in custom DFU implementations, user may want to transmit the whole whole data, even from address 0x0000.
+		value = preferences.getString(DfuSettingsConstants.SETTINGS_MBR_SIZE, String.valueOf(DfuSettingsConstants.SETTINGS_DEFAULT_MBR_SIZE));
+		int mbrSize = DfuSettingsConstants.SETTINGS_DEFAULT_MBR_SIZE;
+		try {
+			mbrSize = Integer.parseInt(value);
+			if (mbrSize < 0)
+				mbrSize = 0;
+		} catch (final NumberFormatException e) {
+			mbrSize = DfuSettingsConstants.SETTINGS_DEFAULT_MBR_SIZE;
+		}
 
 		sendLogBroadcast(Level.VERBOSE, "Starting DFU service");
 
@@ -679,9 +690,9 @@ public abstract class DfuBaseService extends IntentService {
 			try {
 				sendLogBroadcast(Level.VERBOSE, "Opening file...");
 				if (fileUri != null)
-					is = openInputStream(fileUri, mimeType, fileType);
+					is = openInputStream(fileUri, mimeType, mbrSize, fileType);
 				else
-					is = openInputStream(filePath, mimeType, fileType);
+					is = openInputStream(filePath, mimeType, mbrSize, fileType);
 
 				mInputStream = is;
 				imageSizeInBytes = mImageSizeInBytes = is.available();
@@ -1072,7 +1083,7 @@ public abstract class DfuBaseService extends IntentService {
 	}
 
 	/**
-	 * Sets number of data packets that will be send before the notification will be received
+	 * Sets number of data packets that will be send before the notification will be received.
 	 * 
 	 * @param data
 	 *            control point data packet
@@ -1085,35 +1096,43 @@ public abstract class DfuBaseService extends IntentService {
 	}
 
 	/**
-	 * Opens the binary input stream that returns the firmware image content. A Path to the file is given
+	 * Opens the binary input stream that returns the firmware image content. A Path to the file is given.
 	 * 
 	 * @param filePath
 	 *            the path to the HEX file
 	 * @param mimeType
 	 *            the file type
+	 * @param mbrSize
+	 *            the size of MBR, by default 0x1000
+	 * @param types
+	 *            the content files types in ZIP
 	 * @return the input stream with binary image content
 	 */
-	private InputStream openInputStream(final String filePath, final String mimeType, final int types) throws FileNotFoundException, IOException {
+	private InputStream openInputStream(final String filePath, final String mimeType, final int mbrSize, final int types) throws FileNotFoundException, IOException {
 		final InputStream is = new FileInputStream(filePath);
 		if (MIME_TYPE_ZIP.equals(mimeType))
-			return new ZipHexInputStream(is, types);
-		return new HexInputStream(is);
+			return new ZipHexInputStream(is, mbrSize, types);
+		return new HexInputStream(is, mbrSize);
 	}
 
 	/**
-	 * Opens the binary input stream. A Uri to the stream is given
+	 * Opens the binary input stream. A Uri to the stream is given.
 	 * 
 	 * @param stream
 	 *            the Uri to the stream
 	 * @param mimeType
 	 *            the file type
+	 * @param mbrSize
+	 *            the size of MBR, by default 0x1000
+	 * @param types
+	 *            the content files types in ZIP
 	 * @return the input stream with binary image content
 	 */
-	private InputStream openInputStream(final Uri stream, final String mimeType, final int types) throws FileNotFoundException, IOException {
+	private InputStream openInputStream(final Uri stream, final String mimeType, final int mbrSize, final int types) throws FileNotFoundException, IOException {
 		final InputStream is = getContentResolver().openInputStream(stream);
 		if (MIME_TYPE_ZIP.equals(mimeType))
-			return new ZipHexInputStream(is, types);
-		return new HexInputStream(is);
+			return new ZipHexInputStream(is, mbrSize, types);
+		return new HexInputStream(is, mbrSize);
 	}
 
 	/**

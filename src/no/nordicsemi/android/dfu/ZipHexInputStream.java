@@ -41,9 +41,12 @@ public class ZipHexInputStream extends ZipInputStream {
 	 *            the Zip Input Stream
 	 * @param types
 	 *            files to read
+	 * @param trim
+	 *            if <code>true</code> the bin data will be trimmed. All data from addresses < 0x1000 will be skipped. In the Soft Device 7.0.0 it's MBR space and this HEX fragment should not be
+	 *            transmitted. However, other DFU implementations (f.e. without Soft Device) may require uploading the whole file.
 	 * @throws IOException
 	 */
-	public ZipHexInputStream(final InputStream stream, final int types) throws IOException {
+	public ZipHexInputStream(final InputStream stream, final int mbrSize, final int types) throws IOException {
 		super(stream);
 
 		this.bytesRead = 0;
@@ -76,7 +79,7 @@ public class ZipHexInputStream extends ZipInputStream {
 
 				// Create HexInputStream from bytes and copy BIN content to arrays
 				byte[] source = null;
-				final HexInputStream is = new HexInputStream(bytes);
+				final HexInputStream is = new HexInputStream(bytes, mbrSize);
 				if (softDevice) {
 					source = softDeviceBytes = new byte[softDeviceSize = is.available()];
 					is.read(softDeviceBytes);

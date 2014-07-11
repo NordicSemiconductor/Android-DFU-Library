@@ -32,38 +32,44 @@ public class HexInputStream extends FilterInputStream {
 	private int size;
 	private int lastAddress;
 	private int available, bytesRead;
+	private int MBRsize;
 
 	/**
 	 * Creates the HEX Input Stream. The constructor calculates the size of the BIN content which is available through {@link #sizeInBytes()}. If HEX file is invalid then the bin size is 0.
 	 * 
 	 * @param in
 	 *            the input stream to read from
+	 * @param trim
+	 *            if <code>true</code> the bin data will be trimmed. All data from addresses < 0x1000 will be skipped. In the Soft Device 7.0.0 it's MBR space and this HEX fragment should not be
+	 *            transmitted. However, other DFU implementations (f.e. without Soft Device) may require uploading the whole file.
 	 * @throws HexFileValidationException
 	 *             if HEX file is invalid. F.e. there is no semicolon (':') on the beginning of each line.
 	 * @throws IOException
 	 *             if the stream is closed or another IOException occurs.
 	 */
-	protected HexInputStream(final InputStream in) throws HexFileValidationException, IOException {
+	protected HexInputStream(final InputStream in, final int mbrSize) throws HexFileValidationException, IOException {
 		super(new BufferedInputStream(in));
-		localBuf = new byte[LINE_LENGTH];
-		localPos = LINE_LENGTH; // we are at the end of the local buffer, new one must be obtained
-		size = localBuf.length;
-		lastAddress = 0;
+		this.localBuf = new byte[LINE_LENGTH];
+		this.localPos = LINE_LENGTH; // we are at the end of the local buffer, new one must be obtained
+		this.size = localBuf.length;
+		this.lastAddress = 0;
+		this.MBRsize = mbrSize;
 
-		available = calculateBinSize();
+		this.available = calculateBinSize(mbrSize);
 	}
 
-	protected HexInputStream(final byte[] data) throws HexFileValidationException, IOException {
+	protected HexInputStream(final byte[] data, final int mbrSize) throws HexFileValidationException, IOException {
 		super(new ByteArrayInputStream(data));
-		localBuf = new byte[LINE_LENGTH];
-		localPos = LINE_LENGTH; // we are at the end of the local buffer, new one must be obtained
-		size = localBuf.length;
-		lastAddress = 0;
+		this.localBuf = new byte[LINE_LENGTH];
+		this.localPos = LINE_LENGTH; // we are at the end of the local buffer, new one must be obtained
+		this.size = localBuf.length;
+		this.lastAddress = 0;
+		this.MBRsize = mbrSize;
 
-		available = calculateBinSize();
+		this.available = calculateBinSize(mbrSize);
 	}
 
-	private int calculateBinSize() throws IOException {
+	private int calculateBinSize(final int mbrSize) throws IOException {
 		int binSize = 0;
 		final InputStream in = this.in;
 		in.mark(in.available());
@@ -96,7 +102,7 @@ public class HexInputStream extends FilterInputStream {
 					break;
 				case 0x00:
 					// data type line
-					if ((lastULBA << 16) + offset >= 0x1000) // we must skip all data from below address 0x1000 as those are the MBR. The Soft Device starts at 0x1000, the app and bootloader futher more
+					if ((lastULBA << 16) + offset >= mbrSize) // we must skip all data from below last MBR address (default 0x1000) as those are the MBR. The Soft Device starts at the end of MBR (0x1000), the app and bootloader farther more
 						binSize += lineSize;
 					// no break!
 				case 0x02:
@@ -233,7 +239,7 @@ public class HexInputStream extends FilterInputStream {
 			switch (type) {
 			case 0x00:
 				// data type
-				if ((lastAddress << 16) + offset < 0x1000) {
+				if ((lastAddress << 16) + offset < MBRsize) { // skip MBR
 					type = -1; // some other than 0
 					pos += in.skip(lineSize * 2 /* 2 hex per one byte */+ 2 /* check sum */);
 				}
