@@ -910,18 +910,19 @@ public abstract class DfuBaseService extends IntentService {
 						}
 					}
 
-					if ((fileType & TYPE_SOFT_DEVICE) > 0) {
-						// In the current version of bootloader we must wait some time until we can proceed with Soft Device update. Bootloader must prepare the RAM for the new firmware.
-						// Most likely this step will not be needed in the future as the notification received a moment before will be postponed until Bootloader is ready.
-						// TODO remove this "if" when bootloader fixed:
-						synchronized (this) {
-							try {
-								wait(6000);
-							} catch (final InterruptedException e) {
-								// do nothing
-							}
-						}
-					}
+					// Since SDK 6.1 this delay is no longer required as the Receive Start DFU notification is postponed until the memory is clear.
+
+					//		if ((fileType & TYPE_SOFT_DEVICE) > 0) {
+					//			// In the experimental version of bootloader (SDK 6.0.0) we must wait some time until we can proceed with Soft Device update. Bootloader must prepare the RAM for the new firmware.
+					//			// Most likely this step will not be needed in the future as the notification received a moment before will be postponed until Bootloader is ready.
+					//			synchronized (this) {
+					//				try {
+					//					wait(6000);
+					//				} catch (final InterruptedException e) {
+					//					// do nothing
+					//				}
+					//			}
+					//		}
 
 					// Send the number of packets of firmware before receiving a receipt notification
 					final int numberOfPacketsBeforeNotification = mPacketsBeforeNotification;
