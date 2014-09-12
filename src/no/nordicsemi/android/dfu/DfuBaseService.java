@@ -23,9 +23,9 @@ import no.nordicsemi.android.dfu.exception.RemoteDfuException;
 import no.nordicsemi.android.dfu.exception.UnknownResponseException;
 import no.nordicsemi.android.dfu.exception.UploadAbortedException;
 import no.nordicsemi.android.error.GattError;
+import no.nordicsemi.android.log.ILogSession;
 import no.nordicsemi.android.log.LogContract;
 import no.nordicsemi.android.log.LogContract.Log.Level;
-import no.nordicsemi.android.log.LogSession;
 import no.nordicsemi.android.log.Logger;
 import android.app.Activity;
 import android.app.IntentService;
@@ -78,6 +78,7 @@ import android.util.Log;
  */
 public abstract class DfuBaseService extends IntentService {
 	private static final String TAG = "DfuService";
+	final private static char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
 
 	/** A key for {@link SharedPreferences} entry that keeps information whether the upload is currently in progress. This may be used to get this information during activity creation. */
 	public static final String DFU_IN_PROGRESS = "no.nordicsemi.android.dfu.PREFS_DFU_IN_PROGRESS";
@@ -253,7 +254,7 @@ public abstract class DfuBaseService extends IntentService {
 	private BluetoothAdapter mBluetoothAdapter;
 	private String mDeviceAddress;
 	private String mDeviceName;
-	private LogSession mLogSession;
+	private ILogSession mLogSession;
 	/** Lock used in synchronization purposes */
 	private final Object mLock = new Object();
 
@@ -508,6 +509,7 @@ public abstract class DfuBaseService extends IntentService {
 					}
 				} else {
 					// if the CONTROL POINT characteristic was written just set the flag to true
+					sendLogBroadcast(Level.INFO, "Data written to " + characteristic.getUuid() + ", value (0x): " + parse(characteristic));
 					mRequestCompleted = true;
 				}
 			} else {
@@ -560,6 +562,7 @@ public abstract class DfuBaseService extends IntentService {
 				}
 				break;
 			default:
+				sendLogBroadcast(Level.INFO, "Received Read Response from " + characteristic.getUuid() + ", value (0x): " + parse(characteristic));
 				mReceivedData = characteristic.getValue();
 				break;
 			}
@@ -570,6 +573,25 @@ public abstract class DfuBaseService extends IntentService {
 				return;
 			}
 		};
+
+		public String parse(final BluetoothGattCharacteristic characteristic) {
+			final byte[] data = characteristic.getValue();
+			if (data == null)
+				return "";
+			final int length = data.length;
+			if (length == 0)
+				return "";
+
+			final char[] out = new char[length * 3 - 1];
+			for (int j = 0; j < length; j++) {
+				int v = data[j] & 0xFF;
+				out[j * 3] = HEX_ARRAY[v >>> 4];
+				out[j * 3 + 1] = HEX_ARRAY[v & 0x0F];
+				if (j != length - 1)
+					out[j * 3 + 2] = '-';
+			}
+			return new String(out);
+		}
 	};
 
 	public DfuBaseService() {
@@ -809,12 +831,12 @@ public abstract class DfuBaseService extends IntentService {
 						// send Start DFU command to Control Point
 						logi("Sending Start DFU command (Op Code = 1, Upload Mode = " + fileType + ")");
 						writeOpCode(gatt, controlPointCharacteristic, OP_CODE_START_DFU);
-						sendLogBroadcast(Level.INFO, "DFU Start sent (Op Code 1, Upload Mode = " + fileType + ")");
+						sendLogBroadcast(Level.APPLICATION, "DFU Start sent (Op Code 1, Upload Mode = " + fileType + ")");
 
 						// send image size in bytes to DFU Packet
 						logi("Sending image size array to DFU Packet: [" + softDeviceImageSize + "b, " + bootloaderImageSize + "b, " + appImageSize + "b]");
 						writeImageSize(gatt, packetCharacteristic, softDeviceImageSize, bootloaderImageSize, appImageSize);
-						sendLogBroadcast(Level.INFO, "Firmware image size sent [" + softDeviceImageSize + "b, " + bootloaderImageSize + "b, " + appImageSize + "b]");
+						sendLogBroadcast(Level.APPLICATION, "Firmware image size sent [" + softDeviceImageSize + "b, " + bootloaderImageSize + "b, " + appImageSize + "b]");
 
 						// a notification will come with confirmation. Let's wait for it a bit
 						response = readNotificationResponse();
@@ -830,7 +852,7 @@ public abstract class DfuBaseService extends IntentService {
 						 * +---------+--------+----------------------------------------------------+
 						 */
 						status = getStatusCode(response, OP_CODE_RECEIVE_START_DFU_KEY);
-						sendLogBroadcast(Level.INFO, "Responce received (Op Code: " + response[1] + " Status: " + status + ")");
+						sendLogBroadcast(Level.APPLICATION, "Responce received (Op Code: " + response[1] + " Status: " + status + ")");
 						if (status != DFU_STATUS_SUCCESS)
 							throw new RemoteDfuException("Starting DFU failed", status);
 					} catch (final RemoteDfuException e) {
@@ -863,17 +885,17 @@ public abstract class DfuBaseService extends IntentService {
 								sendLogBroadcast(Level.VERBOSE, "Sending only SD/BL");
 								logi("Resending Start DFU command (Op Code = 1, Upload Mode = " + fileType + ")");
 								writeOpCode(gatt, controlPointCharacteristic, OP_CODE_START_DFU);
-								sendLogBroadcast(Level.INFO, "DFU Start sent (Op Code 1, Upload Mode = " + fileType + ")");
+								sendLogBroadcast(Level.APPLICATION, "DFU Start sent (Op Code 1, Upload Mode = " + fileType + ")");
 
 								// send image size in bytes to DFU Packet
 								logi("Sending image size array to DFU Packet: [" + softDeviceImageSize + "b, " + bootloaderImageSize + "b, " + appImageSize + "b]");
 								writeImageSize(gatt, packetCharacteristic, softDeviceImageSize, bootloaderImageSize, appImageSize);
-								sendLogBroadcast(Level.INFO, "Firmware image size sent [" + softDeviceImageSize + "b, " + bootloaderImageSize + "b, " + appImageSize + "b]");
+								sendLogBroadcast(Level.APPLICATION, "Firmware image size sent [" + softDeviceImageSize + "b, " + bootloaderImageSize + "b, " + appImageSize + "b]");
 
 								// a notification will come with confirmation. Let's wait for it a bit
 								response = readNotificationResponse();
 								status = getStatusCode(response, OP_CODE_RECEIVE_START_DFU_KEY);
-								sendLogBroadcast(Level.INFO, "Responce received (Op Code: " + response[1] + " Status: " + status + ")");
+								sendLogBroadcast(Level.APPLICATION, "Responce received (Op Code: " + response[1] + " Status: " + status + ")");
 								if (status != DFU_STATUS_SUCCESS)
 									throw new RemoteDfuException("Starting DFU failed", status);
 							} else
@@ -892,17 +914,17 @@ public abstract class DfuBaseService extends IntentService {
 								sendLogBroadcast(Level.VERBOSE, "Switching to DFU v.1");
 								logi("Resending Start DFU command (Op Code = 1)");
 								writeOpCode(gatt, controlPointCharacteristic, OP_CODE_START_DFU); // If has 2 bytes, but the second one is ignored
-								sendLogBroadcast(Level.INFO, "DFU Start sent (Op Code 1)");
+								sendLogBroadcast(Level.APPLICATION, "DFU Start sent (Op Code 1)");
 
 								// send image size in bytes to DFU Packet
 								logi("Sending application image size to DFU Packet: " + imageSizeInBytes + " bytes");
 								writeImageSize(gatt, packetCharacteristic, mImageSizeInBytes);
-								sendLogBroadcast(Level.INFO, "Firmware image size sent (" + imageSizeInBytes + " bytes)");
+								sendLogBroadcast(Level.APPLICATION, "Firmware image size sent (" + imageSizeInBytes + " bytes)");
 
 								// a notification will come with confirmation. Let's wait for it a bit
 								response = readNotificationResponse();
 								status = getStatusCode(response, OP_CODE_RECEIVE_START_DFU_KEY);
-								sendLogBroadcast(Level.INFO, "Responce received (Op Code: " + response[1] + " Status: " + status + ")");
+								sendLogBroadcast(Level.APPLICATION, "Responce received (Op Code: " + response[1] + " Status: " + status + ")");
 								if (status != DFU_STATUS_SUCCESS)
 									throw new RemoteDfuException("Starting DFU failed", status);
 							} else
@@ -930,19 +952,19 @@ public abstract class DfuBaseService extends IntentService {
 						logi("Sending the number of packets before notifications (Op Code = 8, value = " + numberOfPacketsBeforeNotification + ")");
 						setNumberOfPackets(OP_CODE_PACKET_RECEIPT_NOTIF_REQ, numberOfPacketsBeforeNotification);
 						writeOpCode(gatt, controlPointCharacteristic, OP_CODE_PACKET_RECEIPT_NOTIF_REQ);
-						sendLogBroadcast(Level.INFO, "Packet Receipt Notif Req (Op Code 8) sent (value: " + numberOfPacketsBeforeNotification + ")");
+						sendLogBroadcast(Level.APPLICATION, "Packet Receipt Notif Req (Op Code 8) sent (value: " + numberOfPacketsBeforeNotification + ")");
 					}
 
 					// Initialize firmware upload
 					logi("Sending Receive Firmware Image request (Op Code = 3)");
 					writeOpCode(gatt, controlPointCharacteristic, OP_CODE_RECEIVE_FIRMWARE_IMAGE);
-					sendLogBroadcast(Level.INFO, "Receive Firmware Image request sent");
+					sendLogBroadcast(Level.APPLICATION, "Receive Firmware Image request sent");
 
 					// This allow us to calculate upload time
 					final long startTime = System.currentTimeMillis();
 					updateProgressNotification();
 					try {
-						sendLogBroadcast(Level.INFO, "Starting upload...");
+						sendLogBroadcast(Level.APPLICATION, "Starting upload...");
 						response = uploadFirmwareImage(gatt, packetCharacteristic, is);
 					} catch (final DeviceDisconnectedException e) {
 						loge("Disconnected while sending data");
@@ -952,11 +974,11 @@ public abstract class DfuBaseService extends IntentService {
 
 					final long endTime = System.currentTimeMillis();
 					logi("Transfer of " + mBytesSent + " bytes has taken " + (endTime - startTime) + " ms");
-					sendLogBroadcast(Level.INFO, "Upload completed in " + (endTime - startTime) + " ms");
+					sendLogBroadcast(Level.APPLICATION, "Upload completed in " + (endTime - startTime) + " ms");
 
 					// Check the result of the operation
 					status = getStatusCode(response, OP_CODE_RECEIVE_FIRMWARE_IMAGE_KEY);
-					sendLogBroadcast(Level.INFO, "Responce received (Op Code: " + response[1] + " Status: " + status + ")");
+					sendLogBroadcast(Level.APPLICATION, "Responce received (Op Code: " + response[1] + " Status: " + status + ")");
 					logi("Response received. Op Code: " + response[0] + " Req Op Code: " + response[1] + " status: " + response[2]);
 					if (status != DFU_STATUS_SUCCESS)
 						throw new RemoteDfuException("Device returned error after sending file", status);
@@ -964,13 +986,13 @@ public abstract class DfuBaseService extends IntentService {
 					// Send Validate request
 					logi("Sending Validate request (Op Code = 4)");
 					writeOpCode(gatt, controlPointCharacteristic, OP_CODE_VALIDATE);
-					sendLogBroadcast(Level.INFO, "Validate request sent");
+					sendLogBroadcast(Level.APPLICATION, "Validate request sent");
 
 					// A notification will come with status code. Let's wait for it a bit.
 					response = readNotificationResponse();
 					status = getStatusCode(response, OP_CODE_RECEIVE_VALIDATE_KEY);
 					logi("Response received. Op Code: " + response[0] + " Req Op Code: " + response[1] + " status: " + response[2]);
-					sendLogBroadcast(Level.INFO, "Responce received (Op Code: " + response[1] + " Status: " + status + ")");
+					sendLogBroadcast(Level.APPLICATION, "Responce received (Op Code: " + response[1] + " Status: " + status + ")");
 					if (status != DFU_STATUS_SUCCESS)
 						throw new RemoteDfuException("Device returned validation error", status);
 
@@ -982,7 +1004,7 @@ public abstract class DfuBaseService extends IntentService {
 					// Send Activate and Reset signal.
 					logi("Sending Activate and Reset request (Op Code = 5)");
 					writeOpCode(gatt, controlPointCharacteristic, OP_CODE_ACTIVATE_AND_RESET);
-					sendLogBroadcast(Level.INFO, "Activate and Reset request sent");
+					sendLogBroadcast(Level.APPLICATION, "Activate and Reset request sent");
 
 					// The device will reset so we don't have to send Disconnect signal.
 					waitUntilDisconnected();
@@ -1019,7 +1041,7 @@ public abstract class DfuBaseService extends IntentService {
 
 					logi("Sending Reset command (Op Code = 6)");
 					writeOpCode(gatt, controlPointCharacteristic, OP_CODE_RESET);
-					sendLogBroadcast(Level.INFO, "Reset request sent");
+					sendLogBroadcast(Level.APPLICATION, "Reset request sent");
 					terminateConnection(gatt, error);
 				} catch (final RemoteDfuException e) {
 					final int error = ERROR_REMOTE_MASK | e.getErrorNumber();
@@ -1028,7 +1050,7 @@ public abstract class DfuBaseService extends IntentService {
 
 					logi("Sending Reset command (Op Code = 6)");
 					writeOpCode(gatt, controlPointCharacteristic, OP_CODE_RESET);
-					sendLogBroadcast(Level.INFO, "Reset request sent");
+					sendLogBroadcast(Level.APPLICATION, "Reset request sent");
 					terminateConnection(gatt, error);
 				}
 			} catch (final UploadAbortedException e) {
@@ -1039,7 +1061,7 @@ public abstract class DfuBaseService extends IntentService {
 						mAborted = false;
 						logi("Sending Reset command (Op Code = 6)");
 						writeOpCode(gatt, controlPointCharacteristic, OP_CODE_RESET);
-						sendLogBroadcast(Level.INFO, "Reset request sent");
+						sendLogBroadcast(Level.APPLICATION, "Reset request sent");
 					} catch (final Exception e1) {
 						// do nothing
 					}
@@ -1060,7 +1082,7 @@ public abstract class DfuBaseService extends IntentService {
 					try {
 						logi("Sending Reset command (Op Code = 6)");
 						writeOpCode(gatt, controlPointCharacteristic, OP_CODE_RESET);
-						sendLogBroadcast(Level.INFO, "Reset request sent");
+						sendLogBroadcast(Level.APPLICATION, "Reset request sent");
 					} catch (final Exception e1) {
 						// do nothing
 					}
@@ -1312,12 +1334,18 @@ public abstract class DfuBaseService extends IntentService {
 
 		logi((enable ? "Enabling " : "Disabling") + " notifications...");
 
+		if (enable) {
+			sendLogBroadcast(Level.VERBOSE, "Enabling notifications for " + characteristic.getUuid());
+		} else {
+			sendLogBroadcast(Level.VERBOSE, "Disabling notifications for " + characteristic.getUuid());
+		}
 		// enable notifications locally
 		gatt.setCharacteristicNotification(characteristic, enable);
 
 		// enable notifications on the device
 		final BluetoothGattDescriptor descriptor = characteristic.getDescriptor(CLIENT_CHARACTERISTIC_CONFIG);
 		descriptor.setValue(enable ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE : BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
+		sendLogBroadcast(Level.DEBUG, "gatt.writeDescriptor(" + descriptor.getUuid() + (enable ? ", value=0x01-00)" : ", value=0x00-00)"));
 		gatt.writeDescriptor(descriptor);
 
 		// We have to wait until device gets disconnected or an error occur
@@ -1363,6 +1391,8 @@ public abstract class DfuBaseService extends IntentService {
 		mResetRequestSent = value[0] == OP_CODE_RECEIVE_RESET_KEY || value[0] == OP_CODE_RECEIVE_ACTIVATE_AND_RESET_KEY;
 
 		characteristic.setValue(value);
+		sendLogBroadcast(Level.VERBOSE, "Writing to characteristic " + characteristic.getUuid());
+		sendLogBroadcast(Level.DEBUG, "gatt.writeCharacteristic(" + characteristic.getUuid() + ")");
 		gatt.writeCharacteristic(characteristic);
 
 		// We have to wait for confirmation
@@ -1405,6 +1435,8 @@ public abstract class DfuBaseService extends IntentService {
 		characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
 		characteristic.setValue(new byte[4]);
 		characteristic.setValue(imageSize, BluetoothGattCharacteristic.FORMAT_UINT32, 0);
+		sendLogBroadcast(Level.VERBOSE, "Writing to characteristic " + characteristic.getUuid());
+		sendLogBroadcast(Level.DEBUG, "gatt.writeCharacteristic(" + characteristic.getUuid() + ")");
 		gatt.writeCharacteristic(characteristic);
 
 		// We have to wait for confirmation
@@ -1459,6 +1491,8 @@ public abstract class DfuBaseService extends IntentService {
 		characteristic.setValue(softDeviceImageSize, BluetoothGattCharacteristic.FORMAT_UINT32, 0);
 		characteristic.setValue(bootloaderImageSize, BluetoothGattCharacteristic.FORMAT_UINT32, 4);
 		characteristic.setValue(appImageSize, BluetoothGattCharacteristic.FORMAT_UINT32, 8);
+		sendLogBroadcast(Level.VERBOSE, "Writing to characteristic " + characteristic.getUuid());
+		sendLogBroadcast(Level.DEBUG, "gatt.writeCharacteristic(" + characteristic.getUuid() + ")");
 		gatt.writeCharacteristic(characteristic);
 
 		// We have to wait for confirmation
@@ -1501,6 +1535,7 @@ public abstract class DfuBaseService extends IntentService {
 		final byte[] buffer = mBuffer;
 		try {
 			final int size = inputStream.read(buffer);
+			sendLogBroadcast(Level.VERBOSE, "Sending firmware to characteristic " + packetCharacteristic.getUuid() + "...");
 			writePacket(gatt, packetCharacteristic, buffer, size);
 		} catch (final HexFileValidationException e) {
 			throw new DfuException("HEX file not valid", ERROR_FILE_INVALID);
@@ -1732,7 +1767,7 @@ public abstract class DfuBaseService extends IntentService {
 	}
 
 	private void sendLogBroadcast(final int level, final String message) {
-		final LogSession session = mLogSession;
+		final ILogSession session = mLogSession;
 		final String fullMessage = "[DFU] " + message;
 		if (session == null) {
 			// the log provider is not installed, use broadcast action 
