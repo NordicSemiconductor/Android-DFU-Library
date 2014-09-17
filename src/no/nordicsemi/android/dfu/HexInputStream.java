@@ -74,8 +74,9 @@ public class HexInputStream extends FilterInputStream {
 		final InputStream in = this.in;
 		in.mark(in.available());
 
-		int b, lineSize, type;
-		int lastULBA = 0, offset; // last Upper Linear Base Address, default 0 
+		int b, lineSize, offset, type;
+		int lastBaseAddress = 0; // last Base Address, default 0 
+		int lastAddress = 0;
 		try {
 			b = in.read();
 			while (true) {
@@ -88,26 +89,34 @@ public class HexInputStream extends FilterInputStream {
 				case 0x01:
 					// end of file
 					return binSize;
-				case 0x04:
+				case 0x04: {
 					// extended linear address record
 					/*
 					 * The HEX file may contain jump to different addresses. The MSB of LBA (Linear Base Address) is given using the line type 4.
 					 * We only support files where bytes are located together, no jumps are allowed. Therefore the newULBA may be only lastULBA + 1 (or any, if this is the first line of the HEX)
 					 */
 					final int newULBA = readAddress(in);
-					if (binSize > 0 && newULBA != lastULBA + 1)
+					if (binSize > 0 && newULBA != (lastBaseAddress >> 16) + 1)
 						return binSize;
-					lastULBA = newULBA;
+					lastBaseAddress = newULBA << 16;
 					in.skip(2 /* check sum */);
 					break;
+				}
+				case 0x02: {
+					// extended segment address record
+					final int newSBA = readAddress(in) << 4;
+					if (binSize > 0 && (newSBA >> 16) != (lastBaseAddress >> 16) + 1)
+						return binSize;
+					lastBaseAddress = newSBA;
+					in.skip(2 /* check sum */);
+					break;
+				}
 				case 0x00:
 					// data type line
-					if ((lastULBA << 16) + offset >= mbrSize) // we must skip all data from below last MBR address (default 0x1000) as those are the MBR. The Soft Device starts at the end of MBR (0x1000), the app and bootloader farther more
+					lastAddress = lastBaseAddress + offset;
+					if (lastAddress >= mbrSize) // we must skip all data from below last MBR address (default 0x1000) as those are the MBR. The Soft Device starts at the end of MBR (0x1000), the app and bootloader farther more
 						binSize += lineSize;
 					// no break!
-				case 0x02:
-					// extended segment address record
-					// TODO should there be the same as for Extended Linear Address?
 				default:
 					in.skip(lineSize * 2 /* 2 hex per one byte */+ 2 /* check sum */);
 					break;
@@ -239,7 +248,7 @@ public class HexInputStream extends FilterInputStream {
 			switch (type) {
 			case 0x00:
 				// data type
-				if ((lastAddress << 16) + offset < MBRsize) { // skip MBR
+				if (lastAddress + offset < MBRsize) { // skip MBR
 					type = -1; // some other than 0
 					pos += in.skip(lineSize * 2 /* 2 hex per one byte */+ 2 /* check sum */);
 				}
@@ -248,18 +257,26 @@ public class HexInputStream extends FilterInputStream {
 				// end of file
 				pos = -1;
 				return 0;
-			case 0x04:
-				// extended linear address
-				final int address = readAddress(in);
+			case 0x02: {
+				// extended segment address
+				final int address = readAddress(in) << 4;
 				pos += 4;
-				if (bytesRead > 0 && address != lastAddress + 1)
+				if (bytesRead > 0 && (address >> 16) != (lastAddress >> 16) + 1)
 					return 0;
 				lastAddress = address;
 				pos += in.skip(2 /* check sum */);
 				break;
-			case 0x02:
-				// extended segment address
-				// TODO should here be the same as for 0x04? (+break)
+			}
+			case 0x04: {
+				// extended linear address
+				final int address = readAddress(in);
+				pos += 4;
+				if (bytesRead > 0 && address != (lastAddress >> 16) + 1)
+					return 0;
+				lastAddress = address << 16;
+				pos += in.skip(2 /* check sum */);
+				break;
+			}
 			default:
 				pos += in.skip(lineSize * 2 /* 2 hex per one byte */+ 2 /* check sum */);
 				break;

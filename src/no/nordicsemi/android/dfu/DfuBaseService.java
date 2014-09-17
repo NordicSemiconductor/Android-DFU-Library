@@ -48,6 +48,7 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
@@ -161,9 +162,23 @@ public abstract class DfuBaseService extends IntentService {
 	 * {@code boolean error = progressValue >= DfuBaseService.ERROR_MASK;}
 	 */
 	public static final String EXTRA_PROGRESS = "no.nordicsemi.android.dfu.extra.EXTRA_PROGRESS";
-
+	/**
+	 * The number of currently transferred part. The SoftDevice and Bootloader may be send together as one part. If user wants to upload them together with an application it has to be sent
+	 * in another connection as the second part.
+	 * 
+	 * @see DfuBaseService#EXTRA_PARTS_TOTAL
+	 */
 	public static final String EXTRA_PART_CURRENT = "no.nordicsemi.android.dfu.extra.EXTRA_PART_CURRENT";
+	/**
+	 * Number of parts in total.
+	 * 
+	 * @see DfuBaseService#EXTRA_PART_CURRENT
+	 */
 	public static final String EXTRA_PARTS_TOTAL = "no.nordicsemi.android.dfu.extra.EXTRA_PARTS_TOTAL";
+	/** The current upload speed in bytes/millisecond. */
+	public static final String EXTRA_SPEED_B_PER_MS = "no.nordicsemi.android.dfu.extra.EXTRA_SPEED_B_PER_MS";
+	/** The average upload speed in bytes/millisecond for the current part. */
+	public static final String EXTRA_AVG_SPEED_B_PER_MS = "no.nordicsemi.android.dfu.extra.EXTRA_AVG_SPEED_B_PER_MS";
 
 	/**
 	 * The broadcast message contains the following extras:
@@ -179,6 +194,8 @@ public abstract class DfuBaseService extends IntentService {
 	 * </ul>
 	 * </li>
 	 * <li>{@link #EXTRA_DEVICE_ADDRESS} - the target device address</li>
+	 * <li>{@link #EXTRA_PART_CURRENT} - the number of currently transmitted part</li>
+	 * <li>{@link #EXTRA_PARTS_TOTAL} - number number of parts to send, f.e. a SoftDevice and Bootloader may be send together as one part, then application as the second part.</li>
 	 * </ul>
 	 */
 	public static final String BROADCAST_PROGRESS = "no.nordicsemi.android.dfu.broadcast.BROADCAST_PROGRESS";
@@ -286,6 +303,8 @@ public abstract class DfuBaseService extends IntentService {
 	@SuppressWarnings("unused")
 	private int mBytesConfirmed;
 	private int mPacketsSentSinceNotification;
+	/** This value is used to calculate the current transfer speed. */
+	private int mLastBytesSent;
 	/**
 	 * Firmware update may require two connections: one for Soft Device and/or Bootloader upload and second for Application. This fields contains the current part number.
 	 */
@@ -296,6 +315,7 @@ public abstract class DfuBaseService extends IntentService {
 	private boolean mPaused;
 	private boolean mAborted;
 	private boolean mResetRequestSent;
+	private long mLastProgressTime, mStartTime;
 
 	/** Flag indicating whether the image size has been already transfered or not */
 	private boolean mImageSizeSent;
@@ -961,7 +981,7 @@ public abstract class DfuBaseService extends IntentService {
 					sendLogBroadcast(Level.APPLICATION, "Receive Firmware Image request sent");
 
 					// This allow us to calculate upload time
-					final long startTime = System.currentTimeMillis();
+					final long startTime = mLastProgressTime = mStartTime = SystemClock.elapsedRealtime();
 					updateProgressNotification();
 					try {
 						sendLogBroadcast(Level.APPLICATION, "Starting upload...");
@@ -972,7 +992,7 @@ public abstract class DfuBaseService extends IntentService {
 						// TODO reconnect?
 					}
 
-					final long endTime = System.currentTimeMillis();
+					final long endTime = SystemClock.elapsedRealtime();
 					logi("Transfer of " + mBytesSent + " bytes has taken " + (endTime - startTime) + " ms");
 					sendLogBroadcast(Level.APPLICATION, "Upload completed in " + (endTime - startTime) + " ms");
 
@@ -1747,11 +1767,19 @@ public abstract class DfuBaseService extends IntentService {
 	protected abstract Class<? extends Activity> getNotificationTarget();
 
 	private void sendProgressBroadcast(final int progress) {
+		final long now = SystemClock.elapsedRealtime();
+		final float speed = (float) (mBytesSent - mLastBytesSent) / (float) (now - mLastProgressTime);
+		final float avgSpeed = (float) mBytesSent / (float) (now - mStartTime);
+		mLastProgressTime = now;
+		mLastBytesSent = mBytesSent;
+
 		final Intent broadcast = new Intent(BROADCAST_PROGRESS);
 		broadcast.putExtra(EXTRA_DATA, progress);
 		broadcast.putExtra(EXTRA_DEVICE_ADDRESS, mDeviceAddress);
 		broadcast.putExtra(EXTRA_PART_CURRENT, mPartCurrent);
 		broadcast.putExtra(EXTRA_PARTS_TOTAL, mPartsTotal);
+		broadcast.putExtra(EXTRA_SPEED_B_PER_MS, speed);
+		broadcast.putExtra(EXTRA_AVG_SPEED_B_PER_MS, avgSpeed);
 		if (mLogSession != null)
 			broadcast.putExtra(EXTRA_LOG_URI, mLogSession.getSessionUri());
 		LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
