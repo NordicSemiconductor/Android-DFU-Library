@@ -223,7 +223,7 @@ public abstract class DfuBaseService extends IntentService {
 	/**
 	 * If this bit is set than the progress value indicates an error. Use {@link GattError#parse(int)} to obtain error name.
 	 */
-	public static final int ERROR_MASK = 0x1100;
+	public static final int ERROR_MASK = 0x1000; // If user tries to connect to more than 6 devices on Nexus devices (Android 4.4.4) the 0x101 error is thrown. Mask changed 0x0100 -> 0x1000. 
 	public static final int ERROR_DEVICE_DISCONNECTED = ERROR_MASK | 0x00;
 	public static final int ERROR_FILE_NOT_FOUND = ERROR_MASK | 0x01;
 	/** Thrown if service was unable to open the file ({@link IOException} has been thrown). */
@@ -243,9 +243,9 @@ public abstract class DfuBaseService extends IntentService {
 	/** Thrown when the the service does not support given type or mime-type. */
 	public static final int ERROR_FILE_TYPE_UNSUPPORTED = ERROR_MASK | 0x09;
 	/** Flag set then the DFU target returned a DFU error. Look for DFU specification to get error codes. */
-	public static final int ERROR_REMOTE_MASK = 0x1200;
+	public static final int ERROR_REMOTE_MASK = 0x2000;
 	/** The flag set when one of {@link BluetoothGattCallback} methods was called with status other than {@link BluetoothGatt#GATT_SUCCESS}. */
-	public static final int ERROR_CONNECTION_MASK = 0x1400;
+	public static final int ERROR_CONNECTION_MASK = 0x4000;
 
 	/**
 	 * The log events are only broadcasted when there is no nRF Logger installed. The broadcast contains 2 extras:
