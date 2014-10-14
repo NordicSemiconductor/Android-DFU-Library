@@ -1287,6 +1287,7 @@ public abstract class DfuBaseService extends IntentService {
 	 */
 	private void close(final BluetoothGatt gatt) {
 		logi("Cleaning up...");
+		sendLogBroadcast(Level.DEBUG, "gatt.close()");
 		gatt.close();
 		mConnectionState = STATE_CLOSED;
 	}
@@ -1298,6 +1299,7 @@ public abstract class DfuBaseService extends IntentService {
 	 *            the GATT device to be refreshed
 	 */
 	private void refreshDeviceCache(final BluetoothGatt gatt) {
+		sendLogBroadcast(Level.DEBUG, "gatt.refresh()");
 		/*
 		 * There is a refresh() method in BluetoothGatt class but for now it's hidden. We will call it using reflections.
 		 */
@@ -1309,6 +1311,7 @@ public abstract class DfuBaseService extends IntentService {
 			}
 		} catch (Exception e) {
 			loge("An exception occured while refreshing device", e);
+			sendLogBroadcast(Level.WARNING, "Refreshing failed");
 		}
 	}
 
