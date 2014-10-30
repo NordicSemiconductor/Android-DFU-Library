@@ -8,6 +8,7 @@
  ******************************************************************************/
 package no.nordicsemi.android.dfu;
 
+import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -56,7 +57,7 @@ import android.util.Log;
 
 /**
  * The DFU Service provides full support for Over-the-Air (OTA) Device Firmware Update by Nordic Semiconductor.<br />
- * With the Soft Device 7.0.0+ it allows to upload a new Soft Device, new Bootloader and a new Application. For odler soft devices only Application update is supported.
+ * With the Soft Device 7.0.0+ it allows to upload a new Soft Device, new Bootloader and a new Application. For older soft devices only the Application update is supported.
  * <p>
  * To run the service to your application inherit it and overwrite the missing method. Remember to it to the AndroidManifest.xml file. Start the service with the following parameters:
  * 
@@ -64,15 +65,15 @@ import android.util.Log;
  * final Intent service = new Intent(this, YourDfuService.class);
  * service.putExtra(DfuService.EXTRA_DEVICE_ADDRESS, mSelectedDevice.getAddress());
  * service.putExtra(DfuService.EXTRA_DEVICE_NAME, mSelectedDevice.getName());
- * service.putExtra(DfuService.EXTRA_FILE_MIME_TYPE, mFileType == DfuService.TYPE_AUTO ? YourDfuService.MIME_TYPE_ZIP : YourDfuService.MIME_TYPE_HEX);
+ * service.putExtra(DfuService.EXTRA_FILE_MIME_TYPE, mFileType == DfuService.TYPE_AUTO ? YourDfuService.MIME_TYPE_ZIP : YourDfuService.MIME_TYPE_OCTET_STREAM);
  * service.putExtra(DfuService.EXTRA_FILE_TYPE, mFileType);
  * service.putExtra(DfuService.EXTRA_FILE_PATH, mFilePath);
  * service.putExtra(DfuService.EXTRA_FILE_URI, mFileStreamUri);
  * startService(service);
  * </pre>
  * 
- * The {@link #EXTRA_FILE_MIME_TYPE} and {@link #EXTRA_FILE_TYPE} parameters are optional. If not provided the application upload from HEX file is assumed. The service API is compatible with previous
- * versions.
+ * The {@link #EXTRA_FILE_MIME_TYPE} and {@link #EXTRA_FILE_TYPE} parameters are optional. If not provided the application upload from HEX/BIN file is assumed. The service API is compatible with
+ * previous versions.
  * </p>
  * <p>
  * The service will show its progress in the notifications bar and will send local broadcasts the the application.
@@ -90,9 +91,19 @@ public abstract class DfuBaseService extends IntentService {
 	public static final String EXTRA_LOG_URI = "no.nordicsemi.android.dfu.extra.EXTRA_LOG_URI";
 	public static final String EXTRA_FILE_PATH = "no.nordicsemi.android.dfu.extra.EXTRA_FILE_PATH";
 	public static final String EXTRA_FILE_URI = "no.nordicsemi.android.dfu.extra.EXTRA_FILE_URI";
+	/**
+	 * The Init packet URI. This file is required if Extended Init Packet is required. Must point to a 'dat' file corresponding with the selected firmware. The Init packet may contain just the CRC
+	 * (in case of older versions of DFU) or the Extended Init Packet in binary format.
+	 */
+	public static final String EXTRA_INIT_FILE_PATH = "no.nordicsemi.android.dfu.extra.EXTRA_INIT_FILE_PATH";
+	/**
+	 * The Init packet path. This file is required if Extended Init Packet is required. Must point to a 'dat' file corresponding with the selected firmware. The Init packet may contain just the CRC
+	 * (in case of older versions of DFU) or the Extended Init Packet in binary format.
+	 */
+	public static final String EXTRA_INIT_FILE_URI = "no.nordicsemi.android.dfu.extra.EXTRA_INIT_FILE_URI";
 
 	/**
-	 * The input file mime-type. Currently only "application/zip" (ZIP) or "application/octet-stream" (HEX) are supported. If this parameter is empty the "application/octet-stream" is assumed.
+	 * The input file mime-type. Currently only "application/zip" (ZIP) or "application/octet-stream" (HEX or BIN) are supported. If this parameter is empty the "application/octet-stream" is assumed.
 	 */
 	public static final String EXTRA_FILE_MIME_TYPE = "no.nordicsemi.android.dfu.extra.EXTRA_MIME_TYPE";
 
@@ -107,33 +118,58 @@ public abstract class DfuBaseService extends IntentService {
 	 * </ul>
 	 * If this parameter is not provided the type is assumed as follows:
 	 * <ol>
-	 * <li>If the {@link #EXTRA_FILE_MIME_TYPE} field is <code>null</code> or is equal to {@value #MIME_TYPE_HEX} - the {@link #TYPE_APPLICATION} is assumed.</li>
+	 * <li>If the {@link #EXTRA_FILE_MIME_TYPE} field is <code>null</code> or is equal to {@value #MIME_TYPE_OCTET_STREAM} - the {@link #TYPE_APPLICATION} is assumed.</li>
 	 * <li>If the {@link #EXTRA_FILE_MIME_TYPE} field is equal to {@value #MIME_TYPE_ZIP} - the {@link #TYPE_AUTO} is assumed.</li>
 	 * </ol>
 	 */
 	public static final String EXTRA_FILE_TYPE = "no.nordicsemi.android.dfu.extra.EXTRA_FILE_TYPE";
 	/**
+	 * <p>
 	 * The file contains a new version of Soft Device.
+	 * </p>
+	 * <p>
+	 * Since DFU Library 7.0 all firmware may contain an Init packet. The Init packet is required if Extended Init Packet is used by the DFU bootloader. The Init packet for the Soft Device must be
+	 * placed in the [firmware name].dat file as binary file (in the same location).
+	 * </p>
 	 * 
 	 * @see #EXTRA_FILE_TYPE
 	 */
 	public static final int TYPE_SOFT_DEVICE = 0x01;
 	/**
+	 * <p>
 	 * The file contains a new version of Bootloader.
+	 * </p>
+	 * <p>
+	 * Since DFU Library 7.0 all firmware may contain an Init packet. The Init packet is required if Extended Init Packet is used by the DFU bootloader. The Init packet for the bootloader must be
+	 * placed in the [firmware name].dat file as binary file (in the same location).
+	 * </p>
 	 * 
 	 * @see #EXTRA_FILE_TYPE
 	 */
 	public static final int TYPE_BOOTLOADER = 0x02;
 	/**
+	 * <p>
 	 * The file contains a new version of Application.
+	 * </p>
+	 * <p>
+	 * Since DFU Library 7.0 all firmware may contain an Init packet. The Init packet is required if Extended Init Packet is used by the DFU bootloader. The Init packet for the application must be
+	 * placed in the [firmware name].dat file as binary file (in the same location).
+	 * </p>
 	 * 
 	 * @see #EXTRA_FILE_TYPE
 	 */
 	public static final int TYPE_APPLICATION = 0x04;
 	/**
-	 * A ZIP file that combines more than 1 HEX file. The names of files in the ZIP must be: <b>softdevice.hex</b>, <b>bootloader.hex</b>, <b>application.hex</b> in order to be read correctly. In the
-	 * DFU version 2 the Soft Device and Bootloader may be sent together. In case of additional application file included, the service will try to send Soft Device, Bootloader and Application together
-	 * (not supported by DFU v.2) and if it fails, send first SD+BL, reconnect and send application.
+	 * <p>
+	 * A ZIP file that combines more than 1 HEX file. The names of files in the ZIP must be: <b>softdevice.hex</b> (or .bin), <b>bootloader.hex</b> (or .bin), <b>application.hex</b> (or .bin) in order
+	 * to be read correctly. In the DFU version 2 the Soft Device and Bootloader may be sent together. In case of additional application file included, the service will try to send Soft Device,
+	 * Bootloader and Application together (not supported by DFU v.2) and if it fails, send first SD+BL, reconnect and send application.
+	 * </p>
+	 * <p>
+	 * Since the DFU Library 7.0 all firmware may contain an Init packet. The Init packet is required if Extended Init Packet is used by the DFU bootloader. The Init packet for the Soft Device and
+	 * Bootloader must be in 'system.dat' file while for the application in the 'application.dat' file (included in the ZIP). The CRC in the 'system.dat' must be a CRC of both BIN contents if both a
+	 * Soft Device and a Bootloader is present.
+	 * </p>
 	 * 
 	 * @see #EXTRA_FILE_TYPE
 	 */
@@ -224,7 +260,7 @@ public abstract class DfuBaseService extends IntentService {
 	/**
 	 * If this bit is set than the progress value indicates an error. Use {@link GattError#parse(int)} to obtain error name.
 	 */
-	public static final int ERROR_MASK = 0x1000; // If user tries to connect to more than 6 devices on Nexus devices (Android 4.4.4) the 0x101 error is thrown. Mask changed 0x0100 -> 0x1000. 
+	public static final int ERROR_MASK = 0x1000; // When user tries to connect to more than 6 devices on Nexus devices (Android 4.4.4) the 0x101 error is thrown. Mask changed 0x0100 -> 0x1000 to avoid collision. 
 	public static final int ERROR_DEVICE_DISCONNECTED = ERROR_MASK | 0x00;
 	public static final int ERROR_FILE_NOT_FOUND = ERROR_MASK | 0x01;
 	/** Thrown if service was unable to open the file ({@link IOException} has been thrown). */
@@ -320,25 +356,30 @@ public abstract class DfuBaseService extends IntentService {
 
 	/** Flag indicating whether the image size has been already transfered or not */
 	private boolean mImageSizeSent;
+	/** Flag indicating whether the init packet has been already transfered or not */
+	private boolean mInitPacketSent;
 	/** Flag indicating whether the request was completed or not */
 	private boolean mRequestCompleted;
 
 	/** Latest data received from device using notification. */
 	private byte[] mReceivedData = null;
-	private static final int OP_CODE_RECEIVE_START_DFU_KEY = 0x01; // 1
+	private static final int OP_CODE_START_DFU_KEY = 0x01; // 1
+	private static final int OP_CODE_INIT_DFU_PARAMS_KEY = 0x02; // 2
 	private static final int OP_CODE_RECEIVE_FIRMWARE_IMAGE_KEY = 0x03; // 3
-	private static final int OP_CODE_RECEIVE_VALIDATE_KEY = 0x04; // 4
-	private static final int OP_CODE_RECEIVE_ACTIVATE_AND_RESET_KEY = 0x05; // 5
-	private static final int OP_CODE_RECEIVE_RESET_KEY = 0x06; // 6
+	private static final int OP_CODE_VALIDATE_KEY = 0x04; // 4
+	private static final int OP_CODE_ACTIVATE_AND_RESET_KEY = 0x05; // 5
+	private static final int OP_CODE_RESET_KEY = 0x06; // 6
 	//	private static final int OP_CODE_PACKET_REPORT_RECEIVED_IMAGE_SIZE_KEY = 0x07; // 7
 	private static final int OP_CODE_PACKET_RECEIPT_NOTIF_REQ_KEY = 0x08; // 8
 	private static final int OP_CODE_RESPONSE_CODE_KEY = 0x10; // 16
 	private static final int OP_CODE_PACKET_RECEIPT_NOTIF_KEY = 0x11; // 11
-	private static final byte[] OP_CODE_START_DFU = new byte[] { OP_CODE_RECEIVE_START_DFU_KEY, 0x00 };
+	private static final byte[] OP_CODE_START_DFU = new byte[] { OP_CODE_START_DFU_KEY, 0x00 };
+	private static final byte[] OP_CODE_INIT_DFU_PARAMS_START = new byte[] { OP_CODE_INIT_DFU_PARAMS_KEY, 0x00 };
+	private static final byte[] OP_CODE_INIT_DFU_PARAMS_COMPLETE = new byte[] { OP_CODE_INIT_DFU_PARAMS_KEY, 0x01 };
 	private static final byte[] OP_CODE_RECEIVE_FIRMWARE_IMAGE = new byte[] { OP_CODE_RECEIVE_FIRMWARE_IMAGE_KEY };
-	private static final byte[] OP_CODE_VALIDATE = new byte[] { OP_CODE_RECEIVE_VALIDATE_KEY };
-	private static final byte[] OP_CODE_ACTIVATE_AND_RESET = new byte[] { OP_CODE_RECEIVE_ACTIVATE_AND_RESET_KEY };
-	private static final byte[] OP_CODE_RESET = new byte[] { OP_CODE_RECEIVE_RESET_KEY };
+	private static final byte[] OP_CODE_VALIDATE = new byte[] { OP_CODE_VALIDATE_KEY };
+	private static final byte[] OP_CODE_ACTIVATE_AND_RESET = new byte[] { OP_CODE_ACTIVATE_AND_RESET_KEY };
+	private static final byte[] OP_CODE_RESET = new byte[] { OP_CODE_RESET_KEY };
 	//	private static final byte[] OP_CODE_REPORT_RECEIVED_IMAGE_SIZE = new byte[] { OP_CODE_PACKET_REPORT_RECEIVED_IMAGE_SIZE_KEY };
 	private static final byte[] OP_CODE_PACKET_RECEIPT_NOTIF_REQ = new byte[] { OP_CODE_PACKET_RECEIPT_NOTIF_REQ_KEY, 0x00, 0x00 };
 
@@ -352,9 +393,11 @@ public abstract class DfuBaseService extends IntentService {
 	public static final UUID DFU_SERVICE_UUID = new UUID(0x000015301212EFDEl, 0x1523785FEABCD123l);
 	private static final UUID DFU_CONTROL_POINT_UUID = new UUID(0x000015311212EFDEl, 0x1523785FEABCD123l);
 	private static final UUID DFU_PACKET_UUID = new UUID(0x000015321212EFDEl, 0x1523785FEABCD123l);
+	private static final UUID DFU_VERSION = new UUID(0x000015341212EFDEl, 0x1523785FEABCD123l);
 	private static final UUID CLIENT_CHARACTERISTIC_CONFIG = new UUID(0x0000290200001000l, 0x800000805f9b34fbl);
 
-	public static final String MIME_TYPE_HEX = "application/octet-stream";
+	// Since the DFU Library version 7.0 both HEX and BIN files are supported. As both files have the same MIME TYPE the distinction is made based on the file extension. 
+	public static final String MIME_TYPE_OCTET_STREAM = "application/octet-stream";
 	public static final String MIME_TYPE_ZIP = "application/zip";
 
 	private final BroadcastReceiver mDfuActionReceiver = new BroadcastReceiver() {
@@ -399,6 +442,12 @@ public abstract class DfuBaseService extends IntentService {
 
 			logi("Action received: " + action);
 			mConnectionState = STATE_DISCONNECTED;
+
+			// notify waiting thread
+			synchronized (mLock) {
+				mLock.notifyAll();
+				return;
+			}
 		}
 	};
 
@@ -429,6 +478,7 @@ public abstract class DfuBaseService extends IntentService {
 				}
 			} else {
 				loge("Connection state change error: " + status + " newState: " + newState);
+				mPaused = false;
 				mErrorState = ERROR_CONNECTION_MASK | status;
 			}
 
@@ -488,7 +538,7 @@ public abstract class DfuBaseService extends IntentService {
 				 * - do nothing, because we have to wait for the notification to confirm the data received
 				 */
 				if (DFU_PACKET_UUID.equals(characteristic.getUuid())) {
-					if (mImageSizeSent) {
+					if (mImageSizeSent && mInitPacketSent) {
 						// if the PACKET characteristic was written with image data, update counters
 						mBytesSent += characteristic.getValue().length;
 						mPacketsSentSinceNotification++;
@@ -524,9 +574,12 @@ public abstract class DfuBaseService extends IntentService {
 							loge("Error while reading the input stream", e);
 							mErrorState = ERROR_FILE_IO_EXCEPTION;
 						}
-					} else {
+					} else if (!mImageSizeSent) {
 						// we've got confirmation that the image size was sent
 						mImageSizeSent = true;
+					} else if (!mInitPacketSent) {
+						// we've got confirmation that the init packet was sent
+						mInitPacketSent = true;
 					}
 				} else {
 					// if the CONTROL POINT characteristic was written just set the flag to true
@@ -544,6 +597,26 @@ public abstract class DfuBaseService extends IntentService {
 					loge("Characteristic write error: " + status);
 					mErrorState = ERROR_CONNECTION_MASK | status;
 				}
+			}
+
+			// notify waiting thread
+			synchronized (mLock) {
+				mLock.notifyAll();
+				return;
+			}
+		};
+
+		@Override
+		public void onCharacteristicRead(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final int status) {
+			if (status == BluetoothGatt.GATT_SUCCESS) {
+				/*
+				 * This method is called when the DFU Version characteristic has been read.
+				 */
+				mReceivedData = characteristic.getValue();
+				mRequestCompleted = true;
+			} else {
+				loge("Characteristic read error: " + status);
+				mErrorState = ERROR_CONNECTION_MASK | status;
 			}
 
 			// notify waiting thread
@@ -660,24 +733,26 @@ public abstract class DfuBaseService extends IntentService {
 		final String deviceName = intent.getStringExtra(EXTRA_DEVICE_NAME);
 		final String filePath = intent.getStringExtra(EXTRA_FILE_PATH);
 		final Uri fileUri = intent.getParcelableExtra(EXTRA_FILE_URI);
+		final String initFilePath = intent.getStringExtra(EXTRA_INIT_FILE_PATH);
+		final Uri initFileUri = intent.getParcelableExtra(EXTRA_INIT_FILE_URI);
 		final Uri logUri = intent.getParcelableExtra(EXTRA_LOG_URI);
 		int fileType = intent.getIntExtra(EXTRA_FILE_TYPE, TYPE_AUTO);
 		if (filePath != null && fileType == TYPE_AUTO)
 			fileType = filePath.toLowerCase(Locale.US).endsWith("zip") ? TYPE_AUTO : TYPE_APPLICATION;
 		String mimeType = intent.getStringExtra(EXTRA_FILE_MIME_TYPE);
-		mimeType = mimeType != null ? mimeType : (fileType == TYPE_AUTO ? MIME_TYPE_ZIP : MIME_TYPE_HEX);
+		mimeType = mimeType != null ? mimeType : (fileType == TYPE_AUTO ? MIME_TYPE_ZIP : MIME_TYPE_OCTET_STREAM);
 		mLogSession = Logger.openSession(this, logUri);
 		mPartCurrent = intent.getIntExtra(EXTRA_PART_CURRENT, 1);
 		mPartsTotal = intent.getIntExtra(EXTRA_PARTS_TOTAL, 1);
 
 		// Check file type and mime-type
-		if ((fileType & ~(TYPE_SOFT_DEVICE | TYPE_BOOTLOADER | TYPE_APPLICATION)) > 0 || !(MIME_TYPE_ZIP.equals(mimeType) || MIME_TYPE_HEX.equals(mimeType))) {
+		if ((fileType & ~(TYPE_SOFT_DEVICE | TYPE_BOOTLOADER | TYPE_APPLICATION)) > 0 || !(MIME_TYPE_ZIP.equals(mimeType) || MIME_TYPE_OCTET_STREAM.equals(mimeType))) {
 			logw("File type or file mime-type not supported");
 			sendLogBroadcast(Level.WARNING, "File type or file mime-type not supported");
 			sendErrorBroadcast(ERROR_FILE_TYPE_UNSUPPORTED);
 			return;
 		}
-		if (MIME_TYPE_HEX.equals(mimeType) && fileType != TYPE_SOFT_DEVICE && fileType != TYPE_BOOTLOADER && fileType != TYPE_APPLICATION) {
+		if (MIME_TYPE_OCTET_STREAM.equals(mimeType) && fileType != TYPE_SOFT_DEVICE && fileType != TYPE_BOOTLOADER && fileType != TYPE_APPLICATION) {
 			logw("Unable to determine file type");
 			sendLogBroadcast(Level.WARNING, "Unable to determine file type");
 			sendErrorBroadcast(ERROR_FILE_TYPE_UNSUPPORTED);
@@ -727,15 +802,25 @@ public abstract class DfuBaseService extends IntentService {
 		sendLogBroadcast(Level.VERBOSE, "Starting DFU service");
 
 		InputStream is = null;
+		InputStream initIs = null;
 		int imageSizeInBytes;
 		try {
 			// Prepare data to send, calculate stream size
 			try {
 				sendLogBroadcast(Level.VERBOSE, "Opening file...");
-				if (fileUri != null)
+				if (fileUri != null) {
 					is = openInputStream(fileUri, mimeType, mbrSize, fileType);
-				else
+				} else {
 					is = openInputStream(filePath, mimeType, mbrSize, fileType);
+				}
+
+				if (initFileUri != null) {
+					// Try to read the Init Packet file from URI
+					initIs = getContentResolver().openInputStream(initFileUri);
+				} else if (initFilePath != null) {
+					// Try to read the Init Packet file from path
+					initIs = new FileInputStream(initFilePath);
+				}
 
 				mInputStream = is;
 				imageSizeInBytes = mImageSizeInBytes = is.available();
@@ -745,12 +830,25 @@ public abstract class DfuBaseService extends IntentService {
 					fileType = zhis.getContentType();
 				}
 				mFileType = fileType;
+				// Set the Init packet stream in case of a ZIP file
+				if (MIME_TYPE_ZIP.equals(mimeType)) {
+					final ZipHexInputStream zhis = (ZipHexInputStream) is;
+					if (fileType == TYPE_APPLICATION) {
+						if (zhis.getApplicationInit() != null)
+							initIs = new ByteArrayInputStream(zhis.getApplicationInit());
+					} else {
+						if (zhis.getSystemInit() != null)
+							initIs = new ByteArrayInputStream(zhis.getSystemInit());
+					}
+				}
 				sendLogBroadcast(Level.INFO, "Image file opened (" + mImageSizeInBytes + " bytes in total)");
 			} catch (final FileNotFoundException e) {
+				initIs = null;
 				loge("An exception occured while opening file", e);
 				sendErrorBroadcast(ERROR_FILE_NOT_FOUND);
 				return;
 			} catch (final IOException e) {
+				initIs = null;
 				loge("An exception occured while calculating file size", e);
 				sendErrorBroadcast(ERROR_FILE_ERROR);
 				return;
@@ -792,11 +890,38 @@ public abstract class DfuBaseService extends IntentService {
 				terminateConnection(gatt, ERROR_CHARACTERISTICS_NOT_FOUND);
 				return;
 			}
+			/*
+			 * The DFU Version characteristic has been added in SDK 7.0.
+			 * 
+			 * It may return version number in 2 bytes (f.e. 0x05-00), where the first one is the minor version and the second one is the major version.
+			 * In case of 0x05-00 the DFU has the version 0.5.
+			 * 
+			 * Currently the following version numbers are supported:
+			 * 
+			 *   - 0.1 (0x01-00) - Device is connected to the application, not to the Bootloader. The application supports Long Term Key (LTK) sharing and buttonless update.
+			 *                     Enable notifications on the DFU Control Point characteristic and write 0x01-04 into it to jump to the Bootloader. 
+			 *                     Check the Bootloader version again for more info about the Bootloader version.
+			 *                     
+			 *   - 0.5 (0x05-00) - Device is in OTA-DFU Bootloader. The Bootloader supports LTK sharing and required the Extended Init Packet. It supports
+			 *                     a SoftDevice, Bootloader or an Application update. SoftDevice and a Bootloader may be sent together.
+			 *                     
+			 */
+			final BluetoothGattCharacteristic versionCharacteristic = dfuService.getCharacteristic(DFU_VERSION); // this may be null for older versions of the Bootloader
 
 			sendLogBroadcast(Level.INFO, "Connected. Services discovered");
 			try {
-				// enable notifications
 				updateProgressNotification(PROGRESS_STARTING);
+
+				// read the version number if available
+				int version = 0;
+				if (versionCharacteristic != null) {
+					version = readVersion(gatt, versionCharacteristic);
+					final int minor = (version & 0x0F);
+					final int major = (version >> 8);
+					sendLogBroadcast(Level.INFO, "Version number read (version " + major + "." + minor + ")");
+				}
+
+				// enable notifications
 				setCharacteristicNotification(gatt, controlPointCharacteristic, true);
 				sendLogBroadcast(Level.INFO, "Notifications enabled");
 
@@ -852,12 +977,12 @@ public abstract class DfuBaseService extends IntentService {
 						// send Start DFU command to Control Point
 						logi("Sending Start DFU command (Op Code = 1, Upload Mode = " + fileType + ")");
 						writeOpCode(gatt, controlPointCharacteristic, OP_CODE_START_DFU);
-						sendLogBroadcast(Level.APPLICATION, "DFU Start sent (Op Code 1, Upload Mode = " + fileType + ")");
+						sendLogBroadcast(Level.APPLICATION, "DFU Start sent (Op Code = 1, Upload Mode = " + fileType + ")");
 
 						// send image size in bytes to DFU Packet
-						logi("Sending image size array to DFU Packet: [" + softDeviceImageSize + "b, " + bootloaderImageSize + "b, " + appImageSize + "b]");
+						logi("Sending image size array to DFU Packet (" + softDeviceImageSize + "b, " + bootloaderImageSize + "b, " + appImageSize + "b)");
 						writeImageSize(gatt, packetCharacteristic, softDeviceImageSize, bootloaderImageSize, appImageSize);
-						sendLogBroadcast(Level.APPLICATION, "Firmware image size sent [" + softDeviceImageSize + "b, " + bootloaderImageSize + "b, " + appImageSize + "b]");
+						sendLogBroadcast(Level.APPLICATION, "Firmware image size sent (" + softDeviceImageSize + "b, " + bootloaderImageSize + "b, " + appImageSize + "b)");
 
 						// a notification will come with confirmation. Let's wait for it a bit
 						response = readNotificationResponse();
@@ -872,8 +997,8 @@ public abstract class DfuBaseService extends IntentService {
 						 * | 2 | STATUS | See DFU_STATUS_* for status codes |
 						 * +---------+--------+----------------------------------------------------+
 						 */
-						status = getStatusCode(response, OP_CODE_RECEIVE_START_DFU_KEY);
-						sendLogBroadcast(Level.APPLICATION, "Responce received (Op Code: " + response[1] + " Status: " + status + ")");
+						status = getStatusCode(response, OP_CODE_START_DFU_KEY);
+						sendLogBroadcast(Level.APPLICATION, "Responce received (Op Code = " + response[1] + " Status = " + status + ")");
 						if (status != DFU_STATUS_SUCCESS)
 							throw new RemoteDfuException("Starting DFU failed", status);
 					} catch (final RemoteDfuException e) {
@@ -906,7 +1031,7 @@ public abstract class DfuBaseService extends IntentService {
 								sendLogBroadcast(Level.VERBOSE, "Sending only SD/BL");
 								logi("Resending Start DFU command (Op Code = 1, Upload Mode = " + fileType + ")");
 								writeOpCode(gatt, controlPointCharacteristic, OP_CODE_START_DFU);
-								sendLogBroadcast(Level.APPLICATION, "DFU Start sent (Op Code 1, Upload Mode = " + fileType + ")");
+								sendLogBroadcast(Level.APPLICATION, "DFU Start sent (Op Code = 1, Upload Mode = " + fileType + ")");
 
 								// send image size in bytes to DFU Packet
 								logi("Sending image size array to DFU Packet: [" + softDeviceImageSize + "b, " + bootloaderImageSize + "b, " + appImageSize + "b]");
@@ -915,8 +1040,8 @@ public abstract class DfuBaseService extends IntentService {
 
 								// a notification will come with confirmation. Let's wait for it a bit
 								response = readNotificationResponse();
-								status = getStatusCode(response, OP_CODE_RECEIVE_START_DFU_KEY);
-								sendLogBroadcast(Level.APPLICATION, "Responce received (Op Code: " + response[1] + " Status: " + status + ")");
+								status = getStatusCode(response, OP_CODE_START_DFU_KEY);
+								sendLogBroadcast(Level.APPLICATION, "Responce received (Op Code = " + response[1] + " Status = " + status + ")");
 								if (status != DFU_STATUS_SUCCESS)
 									throw new RemoteDfuException("Starting DFU failed", status);
 							} else
@@ -935,7 +1060,7 @@ public abstract class DfuBaseService extends IntentService {
 								sendLogBroadcast(Level.VERBOSE, "Switching to DFU v.1");
 								logi("Resending Start DFU command (Op Code = 1)");
 								writeOpCode(gatt, controlPointCharacteristic, OP_CODE_START_DFU); // If has 2 bytes, but the second one is ignored
-								sendLogBroadcast(Level.APPLICATION, "DFU Start sent (Op Code 1)");
+								sendLogBroadcast(Level.APPLICATION, "DFU Start sent (Op Code = 1)");
 
 								// send image size in bytes to DFU Packet
 								logi("Sending application image size to DFU Packet: " + imageSizeInBytes + " bytes");
@@ -944,8 +1069,8 @@ public abstract class DfuBaseService extends IntentService {
 
 								// a notification will come with confirmation. Let's wait for it a bit
 								response = readNotificationResponse();
-								status = getStatusCode(response, OP_CODE_RECEIVE_START_DFU_KEY);
-								sendLogBroadcast(Level.APPLICATION, "Responce received (Op Code: " + response[1] + " Status: " + status + ")");
+								status = getStatusCode(response, OP_CODE_START_DFU_KEY);
+								sendLogBroadcast(Level.APPLICATION, "Responce received (Op Code = " + response[1] + ", Status = " + status + ")");
 								if (status != DFU_STATUS_SUCCESS)
 									throw new RemoteDfuException("Starting DFU failed", status);
 							} else
@@ -967,13 +1092,54 @@ public abstract class DfuBaseService extends IntentService {
 					//			}
 					//		}
 
+					// Send DFU Init Packet
+					/*
+					 * If the DFU Version characteristic is present and the version returned from it is greater or equal to 0.5, the Extended Init Packet is required.
+					 * For older versions, or if the DFU Version characteristic is not present (pre SDK 7.0.0), the Init Packet (which could have contained only the firmware CRC) was optional.
+					 * To calculate the CRC (CRC-CCTII-16 0xFFFF) the following application may be used: http://www.lammertbies.nl/comm/software/index.html -> CRC library.
+					 * 
+					 * The Init Packet is read from the [firmware].dat file as a binary file. This means:
+					 * 1. If the firmware is in HEX or BIN file, f.e. my_firmware.hex (or .bin), the init packet will be read from my_firmware.dat file.
+					 * 2. If the new firmware consists of more files (combined in the ZIP) or the ZIP file is used to store it, the ZIP must additionally contain the following files:
+					 * 
+					 *    a) If the ZIP file contain a softdevice.hex (or .bin) and/or bootloader.hex (or .bin) the 'system.dat' must also be included.
+					 *       In case when both files are present the CRC should be calculated from the two BIN contents merged together.
+					 *       This means: if there are softdevice.hex and bootloader.hex files in the ZIP file you have to convert them to BIN
+					 *       (f.e. using: http://hex2bin.sourceforge.net/ application), put into one file where the soft device is placed as the first one and calculate the CRC for the 
+					 *       whole big file. 
+					 *       
+					 *    b) If the ZIP file contains a application.hex (or .bin) file the 'application.dat' file must be included and contain the Init packet for the application.
+					 */
+					if (initIs != null) {
+						sendLogBroadcast(Level.VERBOSE, "Writing Initialize DFU Parameters...");
+
+						logi("Sending the Initialize DFU Parameters START (Op Code = 2, Value = 0)");
+						writeOpCode(gatt, controlPointCharacteristic, OP_CODE_INIT_DFU_PARAMS_START);
+
+						try {
+							byte[] data = new byte[20];
+							int size = 0;
+							while ((size = initIs.read(data, 0, data.length)) != -1) {
+								writeInitPacket(gatt, packetCharacteristic, data, size);
+							}
+						} catch (final IOException e) {
+							loge("Error while reading Init packet file");
+							throw new DfuException("Error while reading Init packet file", ERROR_FILE_ERROR);
+						}
+						logi("Sending the Initialize DFU Parameters COMPLETE (Op Code = 2, Value = 1)");
+						writeOpCode(gatt, controlPointCharacteristic, OP_CODE_INIT_DFU_PARAMS_COMPLETE);
+
+						sendLogBroadcast(Level.INFO, "Initialize DFU Parameters completed");
+					} else
+						mInitPacketSent = true;
+
 					// Send the number of packets of firmware before receiving a receipt notification
 					final int numberOfPacketsBeforeNotification = mPacketsBeforeNotification;
 					if (numberOfPacketsBeforeNotification > 0) {
-						logi("Sending the number of packets before notifications (Op Code = 8, value = " + numberOfPacketsBeforeNotification + ")");
+						logi("Sending the number of packets before notifications (Op Code = 8, Value = " + numberOfPacketsBeforeNotification + ")");
 						setNumberOfPackets(OP_CODE_PACKET_RECEIPT_NOTIF_REQ, numberOfPacketsBeforeNotification);
 						writeOpCode(gatt, controlPointCharacteristic, OP_CODE_PACKET_RECEIPT_NOTIF_REQ);
-						sendLogBroadcast(Level.APPLICATION, "Packet Receipt Notif Req (Op Code 8) sent (value: " + numberOfPacketsBeforeNotification + ")");
+						sendLogBroadcast(Level.APPLICATION, "Packet Receipt Notif Req (Op Code = 8) sent (Value = " + numberOfPacketsBeforeNotification + ")");
 					}
 
 					// Initialize firmware upload
@@ -999,8 +1165,8 @@ public abstract class DfuBaseService extends IntentService {
 
 					// Check the result of the operation
 					status = getStatusCode(response, OP_CODE_RECEIVE_FIRMWARE_IMAGE_KEY);
-					sendLogBroadcast(Level.APPLICATION, "Responce received (Op Code: " + response[1] + " Status: " + status + ")");
-					logi("Response received. Op Code: " + response[0] + " Req Op Code: " + response[1] + " status: " + response[2]);
+					logi("Response received. Op Code: " + response[0] + " Req Op Code = " + response[1] + ", Status = " + response[2]);
+					sendLogBroadcast(Level.APPLICATION, "Responce received (Op Code = " + response[1] + ", Status = " + status + ")");
 					if (status != DFU_STATUS_SUCCESS)
 						throw new RemoteDfuException("Device returned error after sending file", status);
 
@@ -1011,9 +1177,9 @@ public abstract class DfuBaseService extends IntentService {
 
 					// A notification will come with status code. Let's wait for it a bit.
 					response = readNotificationResponse();
-					status = getStatusCode(response, OP_CODE_RECEIVE_VALIDATE_KEY);
-					logi("Response received. Op Code: " + response[0] + " Req Op Code: " + response[1] + " status: " + response[2]);
-					sendLogBroadcast(Level.APPLICATION, "Responce received (Op Code: " + response[1] + " Status: " + status + ")");
+					status = getStatusCode(response, OP_CODE_VALIDATE_KEY);
+					logi("Response received. Op Code: " + response[0] + " Req Op Code = " + response[1] + ", Status = " + response[2]);
+					sendLogBroadcast(Level.APPLICATION, "Responce received (Op Code = " + response[1] + ", Status = " + status + ")");
 					if (status != DFU_STATUS_SUCCESS)
 						throw new RemoteDfuException("Device returned validation error", status);
 
@@ -1143,7 +1309,7 @@ public abstract class DfuBaseService extends IntentService {
 	 * Opens the binary input stream that returns the firmware image content. A Path to the file is given.
 	 * 
 	 * @param filePath
-	 *            the path to the HEX file
+	 *            the path to the HEX or BIN file
 	 * @param mimeType
 	 *            the file type
 	 * @param mbrSize
@@ -1156,7 +1322,9 @@ public abstract class DfuBaseService extends IntentService {
 		final InputStream is = new FileInputStream(filePath);
 		if (MIME_TYPE_ZIP.equals(mimeType))
 			return new ZipHexInputStream(is, mbrSize, types);
-		return new HexInputStream(is, mbrSize);
+		if (filePath.toString().toLowerCase(Locale.US).endsWith("hex"))
+			return new HexInputStream(is, mbrSize);
+		return is;
 	}
 
 	/**
@@ -1176,7 +1344,9 @@ public abstract class DfuBaseService extends IntentService {
 		final InputStream is = getContentResolver().openInputStream(stream);
 		if (MIME_TYPE_ZIP.equals(mimeType))
 			return new ZipHexInputStream(is, mbrSize, types);
-		return new HexInputStream(is, mbrSize);
+		if (stream.toString().toLowerCase(Locale.US).endsWith("hex"))
+			return new HexInputStream(is, mbrSize);
+		return is;
 	}
 
 	/**
@@ -1334,6 +1504,52 @@ public abstract class DfuBaseService extends IntentService {
 	}
 
 	/**
+	 * Reads the DFU Version characteristic if such exists. Otherwise it returns 0.
+	 * 
+	 * @param gatt
+	 *            the GATT device
+	 * @param characteristic
+	 *            the characteristic to read
+	 * @return a version number or 0 if not present on the bootloader
+	 * @throws DeviceDisconnectedException
+	 * @throws DfuException
+	 * @throws UploadAbortedException
+	 */
+	private int readVersion(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) throws DeviceDisconnectedException, DfuException, UploadAbortedException {
+		if (mConnectionState != STATE_CONNECTED_AND_READY)
+			throw new DeviceDisconnectedException("Unable to read version number", mConnectionState);
+		// If the DFU Version characteristic is not available we return 0.
+		if (characteristic == null)
+			return 0;
+
+		mErrorState = 0;
+
+		logi("Reading DFU version number...");
+		sendLogBroadcast(Level.VERBOSE, "Reading DFU version number...");
+
+		gatt.readCharacteristic(characteristic);
+
+		// We have to wait until device gets disconnected or an error occur
+		try {
+			synchronized (mLock) {
+				while ((mRequestCompleted == false && mConnectionState == STATE_CONNECTED_AND_READY && mErrorState == 0 && !mAborted) || mPaused)
+					mLock.wait();
+			}
+		} catch (final InterruptedException e) {
+			loge("Sleeping interrupted", e);
+		}
+		if (mAborted)
+			throw new UploadAbortedException();
+		if (mErrorState != 0)
+			throw new DfuException("Unable to read version number", mErrorState);
+		if (mConnectionState != STATE_CONNECTED_AND_READY)
+			throw new DeviceDisconnectedException("Unable to read version number", mConnectionState);
+
+		// The version is a 16-bit UINT
+		return characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 0);
+	}
+
+	/**
 	 * Enables or disables the notifications for given characteristic. This method is SYNCHRONOUS and wait until the
 	 * {@link BluetoothGattCallback#onDescriptorWrite(BluetoothGatt, BluetoothGattDescriptor, int)} will be called or the connection state will change from {@link #STATE_CONNECTED_AND_READY}. If
 	 * connection state will change, or an error will occur, an exception will be thrown.
@@ -1412,7 +1628,7 @@ public abstract class DfuBaseService extends IntentService {
 		 * Sending a command that will make the DFU target to reboot may cause an error 133 (0x85 - Gatt Error). If so, with this flag set, the error will not be shown to the user
 		 * as the peripheral is disconnected anyway. See: mGattCallback#onCharacteristicWrite(...) method
 		 */
-		mResetRequestSent = value[0] == OP_CODE_RECEIVE_RESET_KEY || value[0] == OP_CODE_RECEIVE_ACTIVATE_AND_RESET_KEY;
+		mResetRequestSent = value[0] == OP_CODE_RESET_KEY || value[0] == OP_CODE_ACTIVATE_AND_RESET_KEY;
 
 		characteristic.setValue(value);
 		sendLogBroadcast(Level.VERBOSE, "Writing to characteristic " + characteristic.getUuid());
@@ -1430,9 +1646,9 @@ public abstract class DfuBaseService extends IntentService {
 		}
 		if (mAborted)
 			throw new UploadAbortedException();
-		if (mErrorState != 0)
+		if (!mResetRequestSent && mErrorState != 0)
 			throw new DfuException("Unable to write Op Code " + value[0], mErrorState);
-		if (mConnectionState != STATE_CONNECTED_AND_READY)
+		if (!mResetRequestSent && mConnectionState != STATE_CONNECTED_AND_READY)
 			throw new DeviceDisconnectedException("Unable to write Op Code " + value[0], mConnectionState);
 	}
 
@@ -1534,6 +1750,55 @@ public abstract class DfuBaseService extends IntentService {
 			throw new DfuException("Unable to write Image Sizes", mErrorState);
 		if (mConnectionState != STATE_CONNECTED_AND_READY)
 			throw new DeviceDisconnectedException("Unable to write Image Sizes", mConnectionState);
+	}
+
+	/**
+	 * Writes the Init packet to the characteristic. This method is SYNCHRONOUS and wait until the {@link BluetoothGattCallback#onCharacteristicWrite(BluetoothGatt, BluetoothGattCharacteristic, int)}
+	 * will be called or the connection state will change from {@link #STATE_CONNECTED_AND_READY}. If connection state will change, or an error will occur, an exception will be thrown.
+	 * 
+	 * @param gatt
+	 *            the GATT device
+	 * @param characteristic
+	 *            the characteristic to write to. Should be the DFU PACKET
+	 * @param initPacket
+	 *            the init packet as a byte array. This must be shorter or equal to 20 bytes (TODO check this restriction).
+	 * @throws DeviceDisconnectedException
+	 * @throws DfuException
+	 * @throws UploadAbortedException
+	 */
+	private void writeInitPacket(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final byte[] buffer, final int size) throws DeviceDisconnectedException, DfuException,
+			UploadAbortedException {
+		byte[] locBuffer = buffer;
+		if (buffer.length != size) {
+			locBuffer = new byte[size];
+			System.arraycopy(buffer, 0, locBuffer, 0, size);
+		}
+
+		mErrorState = 0;
+		mInitPacketSent = false;
+
+		characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+		characteristic.setValue(locBuffer);
+		logi("Sending init packet (Value = " + parse(locBuffer) + ")");
+		sendLogBroadcast(Level.VERBOSE, "Writing to characteristic " + characteristic.getUuid());
+		sendLogBroadcast(Level.DEBUG, "gatt.writeCharacteristic(" + characteristic.getUuid() + ")");
+		gatt.writeCharacteristic(characteristic);
+
+		// We have to wait for confirmation
+		try {
+			synchronized (mLock) {
+				while ((mInitPacketSent == false && mConnectionState == STATE_CONNECTED_AND_READY && mErrorState == 0 && !mAborted) || mPaused)
+					mLock.wait();
+			}
+		} catch (final InterruptedException e) {
+			loge("Sleeping interrupted", e);
+		}
+		if (mAborted)
+			throw new UploadAbortedException();
+		if (mErrorState != 0)
+			throw new DfuException("Unable to write Init DFU Parameters", mErrorState);
+		if (mConnectionState != STATE_CONNECTED_AND_READY)
+			throw new DeviceDisconnectedException("Unable to write Init DFU Parameters", mConnectionState);
 	}
 
 	/**
@@ -1863,5 +2128,24 @@ public abstract class DfuBaseService extends IntentService {
 	private void logi(final String message) {
 		if (BuildConfig.DEBUG)
 			Log.i(TAG, message);
+	}
+
+	public String parse(final byte[] data) {
+		if (data == null)
+			return "";
+
+		final int length = data.length;
+		if (length == 0)
+			return "";
+
+		final char[] out = new char[length * 3 - 1];
+		for (int j = 0; j < length; j++) {
+			int v = data[j] & 0xFF;
+			out[j * 3] = HEX_ARRAY[v >>> 4];
+			out[j * 3 + 1] = HEX_ARRAY[v & 0x0F];
+			if (j != length - 1)
+				out[j * 3 + 2] = '-';
+		}
+		return new String(out);
 	}
 }

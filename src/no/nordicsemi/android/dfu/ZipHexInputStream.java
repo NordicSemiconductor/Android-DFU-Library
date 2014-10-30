@@ -7,13 +7,17 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 public class ZipHexInputStream extends ZipInputStream {
-	private static final String SOFTDEVICE_NAME = "softdevice.hex";
-	private static final String BOOTLOADER_NAME = "bootloader.hex";
-	private static final String APPLICATION_NAME = "application.hex";
+	private static final String SOFTDEVICE_NAME = "softdevice.(hex|bin)";
+	private static final String BOOTLOADER_NAME = "bootloader.(hex|bin)";
+	private static final String APPLICATION_NAME = "application.(hex|bin)";
+	private static final String SYSTEM_INIT = "system.dat";
+	private static final String APPLICATION_INIT = "application.dat";
 
 	private byte[] softDeviceBytes;
 	private byte[] bootloaderBytes;
 	private byte[] applicationBytes;
+	private byte[] systemInitBytes;
+	private byte[] applicationInitBytes;
 	private byte[] currentSource;
 	private int bytesReadFromCurrentSource;
 	private int softDeviceSize;
@@ -56,15 +60,20 @@ public class ZipHexInputStream extends ZipInputStream {
 			ZipEntry ze;
 			while ((ze = getNextEntry()) != null) {
 				final String filename = ze.getName();
-				final boolean softDevice = SOFTDEVICE_NAME.matches(filename);
-				final boolean bootloader = BOOTLOADER_NAME.matches(filename);
-				final boolean application = APPLICATION_NAME.matches(filename);
-				if (ze.isDirectory() || !(softDevice || bootloader || application))
-					throw new IOException("ZIP content not supported. Only " + SOFTDEVICE_NAME + ", " + BOOTLOADER_NAME + " or " + APPLICATION_NAME + " are allowed.");
+				final boolean softDevice = filename.matches(SOFTDEVICE_NAME);
+				final boolean bootloader = filename.matches(BOOTLOADER_NAME);
+				final boolean application = filename.matches(APPLICATION_NAME);
+				final boolean systemInit = filename.matches(SYSTEM_INIT);
+				final boolean applicationInit = filename.matches(APPLICATION_INIT);
+				if (ze.isDirectory() || !(softDevice || bootloader || application || systemInit || applicationInit))
+					throw new IOException("ZIP content not supported. Only " + SOFTDEVICE_NAME + ", " + BOOTLOADER_NAME + ", " + APPLICATION_NAME + ", " + SYSTEM_INIT + " or " + APPLICATION_INIT
+							+ " are allowed.");
 
-				// Skip files that not specified in types
-				if (types != DfuBaseService.TYPE_AUTO
-						&& ((softDevice && (types & DfuBaseService.TYPE_SOFT_DEVICE) == 0) || (bootloader && (types & DfuBaseService.TYPE_BOOTLOADER) == 0) || (application && (types & DfuBaseService.TYPE_APPLICATION) == 0))) {
+				// Skip files that are not specified in 'types'
+				if (types != DfuBaseService.TYPE_AUTO && (
+						((softDevice || systemInit) && (types & DfuBaseService.TYPE_SOFT_DEVICE) == 0) ||
+								((bootloader || systemInit) && (types & DfuBaseService.TYPE_BOOTLOADER) == 0) ||
+						((application || applicationInit) && (types & DfuBaseService.TYPE_APPLICATION) == 0))) {
 					continue;
 				}
 
@@ -75,30 +84,46 @@ public class ZipHexInputStream extends ZipInputStream {
 				while ((count = super.read(buffer)) != -1) {
 					baos.write(buffer, 0, count);
 				}
-				final byte[] bytes = baos.toByteArray();
+				byte[] source = baos.toByteArray();
 
 				// Create HexInputStream from bytes and copy BIN content to arrays
-				byte[] source = null;
-				final HexInputStream is = new HexInputStream(bytes, mbrSize);
 				if (softDevice) {
-					source = softDeviceBytes = new byte[softDeviceSize = is.available()];
-					is.read(softDeviceBytes);
+					if (filename.endsWith("hex")) {
+						final HexInputStream is = new HexInputStream(source, mbrSize);
+						source = softDeviceBytes = new byte[softDeviceSize = is.available()];
+						is.read(softDeviceBytes);
+						is.close();
+					} else
+						softDeviceBytes = source;
 					// upload must always start from Soft Device
 					currentSource = source;
 				} else if (bootloader) {
-					source = bootloaderBytes = new byte[bootloaderSize = is.available()];
-					is.read(bootloaderBytes);
+					if (filename.endsWith("hex")) {
+						final HexInputStream is = new HexInputStream(source, mbrSize);
+						source = bootloaderBytes = new byte[bootloaderSize = is.available()];
+						is.read(bootloaderBytes);
+						is.close();
+					} else
+						bootloaderBytes = source;
 					// If the current source is null or application, switch it to the bootloader
 					if (currentSource == applicationBytes)
 						currentSource = source;
 				} else if (application) {
-					source = applicationBytes = new byte[applicationSize = is.available()];
-					is.read(applicationBytes);
+					if (filename.endsWith("hex")) {
+						final HexInputStream is = new HexInputStream(source, mbrSize);
+						source = applicationBytes = new byte[applicationSize = is.available()];
+						is.read(applicationBytes);
+						is.close();
+					} else
+						applicationBytes = source;
 					// Temporarily set the current source to application, it may be overwritten in a moment
 					if (currentSource == null)
 						currentSource = source;
+				} else if (systemInit) {
+					systemInitBytes = source;
+				} else if (applicationInit) {
+					applicationInitBytes = source;
 				}
-				is.close();
 			}
 		} finally {
 			super.close();
@@ -216,5 +241,13 @@ public class ZipHexInputStream extends ZipInputStream {
 
 	public int applicationImageSize() {
 		return applicationSize;
+	}
+
+	public byte[] getSystemInit() {
+		return systemInitBytes;
+	}
+
+	public byte[] getApplicationInit() {
+		return applicationInitBytes;
 	}
 }
