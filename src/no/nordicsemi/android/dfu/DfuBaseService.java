@@ -921,6 +921,45 @@ public abstract class DfuBaseService extends IntentService {
 					sendLogBroadcast(Level.INFO, "Version number read (version " + major + "." + minor + ")");
 				}
 
+				/*
+				 *  Check if we are in the DFU Bootloader or in the Application that supports the buttonless update.
+				 *  
+				 *  In the DFU from SDK 6.1, which was also supporting the buttonless update, there was no DFU Version characteristic. In that case we may find out whether
+				 *  we are in the bootloader or application by simply checking the number of characteristics.  
+				 */
+				if (version == 1 || dfuService.getCharacteristics().size() > 3 /* Generic Access, Generic Attribute, DFU Service */) {
+					// the service is connected to the application, not to the bootloader
+
+					logi("Application with buttonless update found");
+					sendLogBroadcast(Level.INFO, "Application with buttonless update found");
+					sendLogBroadcast(Level.VERBOSE, "Jumping to the DFU Bootloader...");
+
+					// enable notifications
+					setCharacteristicNotification(gatt, controlPointCharacteristic, true);
+					sendLogBroadcast(Level.INFO, "Notifications enabled");
+
+					// send 'jump to bootloader command' (Start DFU)
+					updateProgressNotification(PROGRESS_DISCONNECTING);
+					OP_CODE_START_DFU[1] = 0x04;
+					logi("Sending Start DFU command (Op Code = 1, Upload Mode = 4)");
+					writeOpCode(gatt, controlPointCharacteristic, OP_CODE_START_DFU, true);
+					sendLogBroadcast(Level.APPLICATION, "Jump to bootloader sent (Op Code = 1, Upload Mode = 4)");
+
+					// The device will reset so we don't have to send Disconnect signal.
+					waitUntilDisconnected();
+					sendLogBroadcast(Level.INFO, "Disconnected by the remote device");
+
+					// Close the device
+					refreshDeviceCache(gatt);
+					close(gatt);
+
+					logi("Starting service that will connect to the DFU bootloader");
+					final Intent newIntent = new Intent();
+					newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
+					startService(newIntent);
+					return;
+				}
+
 				// enable notifications
 				setCharacteristicNotification(gatt, controlPointCharacteristic, true);
 				sendLogBroadcast(Level.INFO, "Notifications enabled");
@@ -1195,7 +1234,7 @@ public abstract class DfuBaseService extends IntentService {
 
 					// The device will reset so we don't have to send Disconnect signal.
 					waitUntilDisconnected();
-					sendLogBroadcast(Level.INFO, "Disconnected by remote device");
+					sendLogBroadcast(Level.INFO, "Disconnected by the remote device");
 
 					// Close the device
 					refreshDeviceCache(gatt);
@@ -1621,6 +1660,29 @@ public abstract class DfuBaseService extends IntentService {
 	 * @throws UploadAbortedException
 	 */
 	private void writeOpCode(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final byte[] value) throws DeviceDisconnectedException, DfuException, UploadAbortedException {
+		final boolean reset = value[0] == OP_CODE_RESET_KEY || value[0] == OP_CODE_ACTIVATE_AND_RESET_KEY;
+		writeOpCode(gatt, characteristic, value, reset);
+	}
+
+	/**
+	 * Writes the operation code to the characteristic. This method is SYNCHRONOUS and wait until the
+	 * {@link BluetoothGattCallback#onCharacteristicWrite(BluetoothGatt, BluetoothGattCharacteristic, int)} will be called or the connection state will change from {@link #STATE_CONNECTED_AND_READY}.
+	 * If connection state will change, or an error will occur, an exception will be thrown.
+	 * 
+	 * @param gatt
+	 *            the GATT device
+	 * @param characteristic
+	 *            the characteristic to write to. Should be the DFU CONTROL POINT
+	 * @param value
+	 *            the value to write to the characteristic
+	 * @param reset
+	 *            whether the command trigger restarting the device
+	 * @throws DeviceDisconnectedException
+	 * @throws DfuException
+	 * @throws UploadAbortedException
+	 */
+	private void writeOpCode(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final byte[] value, final boolean reset) throws DeviceDisconnectedException, DfuException,
+			UploadAbortedException {
 		mReceivedData = null;
 		mErrorState = 0;
 		mRequestCompleted = false;
@@ -1628,7 +1690,7 @@ public abstract class DfuBaseService extends IntentService {
 		 * Sending a command that will make the DFU target to reboot may cause an error 133 (0x85 - Gatt Error). If so, with this flag set, the error will not be shown to the user
 		 * as the peripheral is disconnected anyway. See: mGattCallback#onCharacteristicWrite(...) method
 		 */
-		mResetRequestSent = value[0] == OP_CODE_RESET_KEY || value[0] == OP_CODE_ACTIVATE_AND_RESET_KEY;
+		mResetRequestSent = reset;
 
 		characteristic.setValue(value);
 		sendLogBroadcast(Level.VERBOSE, "Writing to characteristic " + characteristic.getUuid());
