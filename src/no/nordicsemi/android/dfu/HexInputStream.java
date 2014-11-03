@@ -25,7 +25,7 @@ import no.nordicsemi.android.dfu.exception.HexFileValidationException;
  * </p>
  */
 public class HexInputStream extends FilterInputStream {
-	private final int LINE_LENGTH = 16;
+	private final int LINE_LENGTH = 20;
 	private final byte[] localBuf;
 	private int localPos;
 	private int pos;
