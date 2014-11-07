@@ -1167,8 +1167,12 @@ public abstract class DfuBaseService extends IntentService {
 						}
 						logi("Sending the Initialize DFU Parameters COMPLETE (Op Code = 2, Value = 1)");
 						writeOpCode(gatt, controlPointCharacteristic, OP_CODE_INIT_DFU_PARAMS_COMPLETE);
-
 						sendLogBroadcast(Level.INFO, "Initialize DFU Parameters completed");
+
+						// a notification will come with confirmation. Let's wait for it a bit
+						response = readNotificationResponse();
+						status = getStatusCode(response, OP_CODE_INIT_DFU_PARAMS_KEY);
+						sendLogBroadcast(Level.APPLICATION, "Responce received (Op Code = " + response[1] + ", Status = " + status + ")");
 					} else
 						mInitPacketSent = true;
 
