@@ -576,9 +576,11 @@ public abstract class DfuBaseService extends IntentService {
 						}
 					} else if (!mImageSizeSent) {
 						// we've got confirmation that the image size was sent
+						sendLogBroadcast(Level.INFO, "Data written to " + characteristic.getUuid() + ", value (0x): " + parse(characteristic));
 						mImageSizeSent = true;
 					} else if (!mInitPacketSent) {
 						// we've got confirmation that the init packet was sent
+						sendLogBroadcast(Level.INFO, "Data written to " + characteristic.getUuid() + ", value (0x): " + parse(characteristic));
 						mInitPacketSent = true;
 					}
 				} else {
@@ -918,7 +920,7 @@ public abstract class DfuBaseService extends IntentService {
 					version = readVersion(gatt, versionCharacteristic);
 					final int minor = (version & 0x0F);
 					final int major = (version >> 8);
-					sendLogBroadcast(Level.INFO, "Version number read (version " + major + "." + minor + ")");
+					sendLogBroadcast(Level.APPLICATION, "Version number read: " + major + "." + minor);
 				}
 
 				/*
@@ -931,12 +933,12 @@ public abstract class DfuBaseService extends IntentService {
 					// the service is connected to the application, not to the bootloader
 
 					logi("Application with buttonless update found");
-					sendLogBroadcast(Level.INFO, "Application with buttonless update found");
+					sendLogBroadcast(Level.WARNING, "Application with buttonless update found");
 					sendLogBroadcast(Level.VERBOSE, "Jumping to the DFU Bootloader...");
 
 					// enable notifications
 					setCharacteristicNotification(gatt, controlPointCharacteristic, true);
-					sendLogBroadcast(Level.INFO, "Notifications enabled");
+					sendLogBroadcast(Level.APPLICATION, "Notifications enabled");
 
 					// send 'jump to bootloader command' (Start DFU)
 					updateProgressNotification(PROGRESS_DISCONNECTING);
@@ -962,7 +964,7 @@ public abstract class DfuBaseService extends IntentService {
 
 				// enable notifications
 				setCharacteristicNotification(gatt, controlPointCharacteristic, true);
-				sendLogBroadcast(Level.INFO, "Notifications enabled");
+				sendLogBroadcast(Level.APPLICATION, "Notifications enabled");
 
 				try {
 					// set up the temporary variable that will hold the responses
@@ -1150,7 +1152,7 @@ public abstract class DfuBaseService extends IntentService {
 					 *    b) If the ZIP file contains a application.hex (or .bin) file the 'application.dat' file must be included and contain the Init packet for the application.
 					 */
 					if (initIs != null) {
-						sendLogBroadcast(Level.VERBOSE, "Writing Initialize DFU Parameters...");
+						sendLogBroadcast(Level.APPLICATION, "Writing Initialize DFU Parameters...");
 
 						logi("Sending the Initialize DFU Parameters START (Op Code = 2, Value = 0)");
 						writeOpCode(gatt, controlPointCharacteristic, OP_CODE_INIT_DFU_PARAMS_START);
@@ -1167,12 +1169,14 @@ public abstract class DfuBaseService extends IntentService {
 						}
 						logi("Sending the Initialize DFU Parameters COMPLETE (Op Code = 2, Value = 1)");
 						writeOpCode(gatt, controlPointCharacteristic, OP_CODE_INIT_DFU_PARAMS_COMPLETE);
-						sendLogBroadcast(Level.INFO, "Initialize DFU Parameters completed");
 
 						// a notification will come with confirmation. Let's wait for it a bit
 						response = readNotificationResponse();
 						status = getStatusCode(response, OP_CODE_INIT_DFU_PARAMS_KEY);
 						sendLogBroadcast(Level.APPLICATION, "Responce received (Op Code = " + response[1] + ", Status = " + status + ")");
+						if (status != DFU_STATUS_SUCCESS)
+							throw new RemoteDfuException("Device returned error after sending init packet", status);
+						sendLogBroadcast(Level.APPLICATION, "Initialize DFU Parameters completed");
 					} else
 						mInitPacketSent = true;
 
