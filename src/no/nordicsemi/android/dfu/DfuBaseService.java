@@ -81,7 +81,7 @@ import android.util.Log;
  */
 public abstract class DfuBaseService extends IntentService {
 	private static final String TAG = "DfuService";
-	final private static char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
+	private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
 
 	/** A key for {@link SharedPreferences} entry that keeps information whether the upload is currently in progress. This may be used to get this information during activity creation. */
 	public static final String DFU_IN_PROGRESS = "no.nordicsemi.android.dfu.PREFS_DFU_IN_PROGRESS";
@@ -390,7 +390,7 @@ public abstract class DfuBaseService extends IntentService {
 	public static final int DFU_STATUS_CRC_ERROR = 5;
 	public static final int DFU_STATUS_OPERATION_FAILED = 6;
 
-	public static final UUID DFU_SERVICE_UUID = new UUID(0x000015301212EFDEl, 0x1523785FEABCD123l);
+	private static final UUID DFU_SERVICE_UUID = new UUID(0x000015301212EFDEl, 0x1523785FEABCD123l);
 	private static final UUID DFU_CONTROL_POINT_UUID = new UUID(0x000015311212EFDEl, 0x1523785FEABCD123l);
 	private static final UUID DFU_PACKET_UUID = new UUID(0x000015321212EFDEl, 0x1523785FEABCD123l);
 	private static final UUID DFU_VERSION = new UUID(0x000015341212EFDEl, 0x1523785FEABCD123l);
@@ -952,7 +952,7 @@ public abstract class DfuBaseService extends IntentService {
 					sendLogBroadcast(Level.INFO, "Disconnected by the remote device");
 
 					// Close the device
-					refreshDeviceCache(gatt);
+					refreshDeviceCache(gatt, false);
 					close(gatt);
 
 					logi("Starting service that will connect to the DFU bootloader");
@@ -1245,7 +1245,7 @@ public abstract class DfuBaseService extends IntentService {
 					sendLogBroadcast(Level.INFO, "Disconnected by the remote device");
 
 					// Close the device
-					refreshDeviceCache(gatt);
+					refreshDeviceCache(gatt, true); // The new application may have lost bonding information (if there was bonding). Force refresh it just for sure.
 					close(gatt);
 
 					/*
@@ -1458,7 +1458,7 @@ public abstract class DfuBaseService extends IntentService {
 		}
 
 		// Close the device
-		refreshDeviceCache(gatt);
+		refreshDeviceCache(gatt, false);
 		close(gatt);
 		updateProgressNotification(error);
 	}
@@ -1515,21 +1515,30 @@ public abstract class DfuBaseService extends IntentService {
 	 * 
 	 * @param gatt
 	 *            the GATT device to be refreshed
+	 * @param force
+	 *            <code>true</code> to force the refresh
 	 */
-	private void refreshDeviceCache(final BluetoothGatt gatt) {
-		sendLogBroadcast(Level.DEBUG, "gatt.refresh()");
+	private void refreshDeviceCache(final BluetoothGatt gatt, final boolean force) {
 		/*
-		 * There is a refresh() method in BluetoothGatt class but for now it's hidden. We will call it using reflections.
+		 * If the device is bonded this is up to the Service Changed characteristic to notify Android that the services has changed.
+		 * There is no need for this trick in that case.
+		 * If not bonded the Android is unable to get the information about changing services. The hidden refresh method may be used to force refreshing the device cache. 
 		 */
-		try {
-			final Method refresh = gatt.getClass().getMethod("refresh");
-			if (refresh != null) {
-				final boolean success = (Boolean) refresh.invoke(gatt);
-				logi("Refreshing result: " + success);
+		if (force || gatt.getDevice().getBondState() == BluetoothDevice.BOND_NONE) {
+			sendLogBroadcast(Level.DEBUG, "gatt.refresh()");
+			/*
+			 * There is a refresh() method in BluetoothGatt class but for now it's hidden. We will call it using reflections.
+			 */
+			try {
+				final Method refresh = gatt.getClass().getMethod("refresh");
+				if (refresh != null) {
+					final boolean success = (Boolean) refresh.invoke(gatt);
+					logi("Refreshing result: " + success);
+				}
+			} catch (Exception e) {
+				loge("An exception occured while refreshing device", e);
+				sendLogBroadcast(Level.WARNING, "Refreshing failed");
 			}
-		} catch (Exception e) {
-			loge("An exception occured while refreshing device", e);
-			sendLogBroadcast(Level.WARNING, "Refreshing failed");
 		}
 	}
 
