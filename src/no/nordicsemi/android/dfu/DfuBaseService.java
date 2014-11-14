@@ -325,6 +325,8 @@ public abstract class DfuBaseService extends IntentService {
 
 	/** Flag set when we got confirmation from the device that notifications are enabled. */
 	private boolean mNotificationsEnabled;
+	/** Flag set when we got confirmation from the device that Service Changed indications are enabled. */
+	private boolean mServiceChangedIndicationsEnabled;
 
 	private final static int MAX_PACKET_SIZE = 20; // the maximum number of bytes in one packet is 20. May be less.
 	/** The number of packets of firmware data to be send before receiving a new Packets receipt notification. 0 disables the packets notifications */
@@ -390,11 +392,17 @@ public abstract class DfuBaseService extends IntentService {
 	public static final int DFU_STATUS_CRC_ERROR = 5;
 	public static final int DFU_STATUS_OPERATION_FAILED = 6;
 
+	private static final UUID GENERIC_ATTRIBUTE_SERVICE_UUID = new UUID(0x0000180100001000l, 0x800000805F9B34FBl);
+	private static final UUID SERVICE_CHANGED_UUID = new UUID(0x00002A0500001000l, 0x800000805F9B34FBl);
+
 	private static final UUID DFU_SERVICE_UUID = new UUID(0x000015301212EFDEl, 0x1523785FEABCD123l);
 	private static final UUID DFU_CONTROL_POINT_UUID = new UUID(0x000015311212EFDEl, 0x1523785FEABCD123l);
 	private static final UUID DFU_PACKET_UUID = new UUID(0x000015321212EFDEl, 0x1523785FEABCD123l);
 	private static final UUID DFU_VERSION = new UUID(0x000015341212EFDEl, 0x1523785FEABCD123l);
 	private static final UUID CLIENT_CHARACTERISTIC_CONFIG = new UUID(0x0000290200001000l, 0x800000805f9b34fbl);
+
+	private static final int NOTIFICATIONS = 1;
+	private static final int INDICATIONS = 2;
 
 	// Since the DFU Library version 7.0 both HEX and BIN files are supported. As both files have the same MIME TYPE the distinction is made based on the file extension. 
 	public static final String MIME_TYPE_OCTET_STREAM = "application/octet-stream";
@@ -460,8 +468,29 @@ public abstract class DfuBaseService extends IntentService {
 					logi("Connected to GATT server");
 					mConnectionState = STATE_CONNECTED;
 
+					/*
+					 *  The onConnectionStateChange callback is called just after establishing connection and before sending Encryption Request BLE event in case of a paired device. 
+					 *  In that case and when the Service Changed CCCD is enabled we will get the indication after initializing the encryption, few hundreds milliseconds later. 
+					 *  If we discover services to right immediately, the onServicesDiscovered callback will be called before the indication and the following service discovery
+					 *  and we may end up with old, application's services instead.
+					 *  
+					 *  This is to support the buttonless switch from application to bootloader mode.
+					 *  
+					 *  NOTE: We are doing this to avoid the hack with calling the hidden gatt.refresh() method, at least for bonded devices.
+					 */
+					if (gatt.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
+						try {
+							synchronized (this) {
+								logd("Waiting 600 ms for a possible Service Changed indication...");
+								wait(600);
+							}
+						} catch (InterruptedException e) {
+							// do nothing
+						}
+					}
+
 					// Attempts to discover services after successful connection.
-					// do not refresh the gatt device here!
+					// NOTE: do not refresh the gatt device here!
 					final boolean success = gatt.discoverServices();
 					logi("Attempting to start service discovery... " + (success ? "succeed" : "failed"));
 
@@ -510,8 +539,13 @@ public abstract class DfuBaseService extends IntentService {
 		public void onDescriptorWrite(final BluetoothGatt gatt, final BluetoothGattDescriptor descriptor, final int status) {
 			if (status == BluetoothGatt.GATT_SUCCESS) {
 				if (CLIENT_CHARACTERISTIC_CONFIG.equals(descriptor.getUuid())) {
-					// we have enabled or disabled characteristic
-					mNotificationsEnabled = descriptor.getValue()[0] == 1;
+					if (SERVICE_CHANGED_UUID.equals(descriptor.getCharacteristic().getUuid())) {
+						// we have enabled notifications for the Service Changed characteristic
+						mServiceChangedIndicationsEnabled = descriptor.getValue()[0] == 2;
+					} else {
+						// we have enabled notifications for this characteristic
+						mNotificationsEnabled = descriptor.getValue()[0] == 1;
+					}
 				}
 			} else {
 				loge("Descriptor write error: " + status);
@@ -931,13 +965,25 @@ public abstract class DfuBaseService extends IntentService {
 				 */
 				if (version == 1 || dfuService.getCharacteristics().size() > 3 /* Generic Access, Generic Attribute, DFU Service */) {
 					// the service is connected to the application, not to the bootloader
-
 					logi("Application with buttonless update found");
 					sendLogBroadcast(Level.WARNING, "Application with buttonless update found");
+
+					// if we are bonded we may want to enable Service Changed characteristic indications
+					if (gatt.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
+						final BluetoothGattService genericAttributeService = gatt.getService(GENERIC_ATTRIBUTE_SERVICE_UUID);
+						if (genericAttributeService != null) {
+							final BluetoothGattCharacteristic serviceChangedCharacteristic = genericAttributeService.getCharacteristic(SERVICE_CHANGED_UUID);
+							if (serviceChangedCharacteristic != null) {
+								enableCCCD(gatt, serviceChangedCharacteristic, INDICATIONS);
+								sendLogBroadcast(Level.APPLICATION, "Service Changed indications enabled");
+							}
+						}
+					}
+
 					sendLogBroadcast(Level.VERBOSE, "Jumping to the DFU Bootloader...");
 
 					// enable notifications
-					setCharacteristicNotification(gatt, controlPointCharacteristic, true);
+					enableCCCD(gatt, controlPointCharacteristic, NOTIFICATIONS);
 					sendLogBroadcast(Level.APPLICATION, "Notifications enabled");
 
 					// send 'jump to bootloader command' (Start DFU)
@@ -963,7 +1009,7 @@ public abstract class DfuBaseService extends IntentService {
 				}
 
 				// enable notifications
-				setCharacteristicNotification(gatt, controlPointCharacteristic, true);
+				enableCCCD(gatt, controlPointCharacteristic, NOTIFICATIONS);
 				sendLogBroadcast(Level.APPLICATION, "Notifications enabled");
 
 				try {
@@ -1230,10 +1276,9 @@ public abstract class DfuBaseService extends IntentService {
 					if (status != DFU_STATUS_SUCCESS)
 						throw new RemoteDfuException("Device returned validation error", status);
 
-					// Disable notifications locally (we don't need to disable them on the device, it will reset)
+					// Disable notifications locally
 					updateProgressNotification(PROGRESS_DISCONNECTING);
 					gatt.setCharacteristicNotification(controlPointCharacteristic, false);
-					sendLogBroadcast(Level.INFO, "Notifications disabled");
 
 					// Send Activate and Reset signal.
 					logi("Sending Activate and Reset request (Op Code = 5)");
@@ -1436,21 +1481,7 @@ public abstract class DfuBaseService extends IntentService {
 		if (mConnectionState != STATE_DISCONNECTED) {
 			updateProgressNotification(PROGRESS_DISCONNECTING);
 
-			// disable notifications
-			try {
-				final BluetoothGattService dfuService = gatt.getService(DFU_SERVICE_UUID);
-				if (dfuService != null) {
-					final BluetoothGattCharacteristic controlPointCharacteristic = dfuService.getCharacteristic(DFU_CONTROL_POINT_UUID);
-					setCharacteristicNotification(gatt, controlPointCharacteristic, false);
-					sendLogBroadcast(Level.INFO, "Notifications disabled");
-				}
-			} catch (final DeviceDisconnectedException e) {
-				// do nothing
-			} catch (final DfuException e) {
-				// do nothing
-			} catch (final Exception e) {
-				// do nothing
-			}
+			// No need to disable notifications 
 
 			// Disconnect from the device
 			disconnect(gatt);
@@ -1619,35 +1650,32 @@ public abstract class DfuBaseService extends IntentService {
 	 * @throws DfuException
 	 * @throws UploadAbortedException
 	 */
-	private void setCharacteristicNotification(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final boolean enable) throws DeviceDisconnectedException, DfuException,
-			UploadAbortedException {
+	private void enableCCCD(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final int type) throws DeviceDisconnectedException, DfuException, UploadAbortedException {
+		final String debugString = type == NOTIFICATIONS ? "notifications" : "indications";
 		if (mConnectionState != STATE_CONNECTED_AND_READY)
-			throw new DeviceDisconnectedException("Unable to set notifications state", mConnectionState);
-		mErrorState = 0;
+			throw new DeviceDisconnectedException("Unable to set " + debugString + " state", mConnectionState);
 
-		if (mNotificationsEnabled == enable)
+		mErrorState = 0;
+		if ((type == NOTIFICATIONS && mNotificationsEnabled) || (type == INDICATIONS && mServiceChangedIndicationsEnabled))
 			return;
 
-		logi((enable ? "Enabling " : "Disabling") + " notifications...");
+		logi("Enabling " + debugString + "...");
+		sendLogBroadcast(Level.VERBOSE, "Enabling " + debugString + " for " + characteristic.getUuid());
 
-		if (enable) {
-			sendLogBroadcast(Level.VERBOSE, "Enabling notifications for " + characteristic.getUuid());
-		} else {
-			sendLogBroadcast(Level.VERBOSE, "Disabling notifications for " + characteristic.getUuid());
-		}
 		// enable notifications locally
-		gatt.setCharacteristicNotification(characteristic, enable);
+		gatt.setCharacteristicNotification(characteristic, true);
 
 		// enable notifications on the device
 		final BluetoothGattDescriptor descriptor = characteristic.getDescriptor(CLIENT_CHARACTERISTIC_CONFIG);
-		descriptor.setValue(enable ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE : BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
-		sendLogBroadcast(Level.DEBUG, "gatt.writeDescriptor(" + descriptor.getUuid() + (enable ? ", value=0x01-00)" : ", value=0x00-00)"));
+		descriptor.setValue(type == NOTIFICATIONS ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE : BluetoothGattDescriptor.ENABLE_INDICATION_VALUE);
+		sendLogBroadcast(Level.DEBUG, "gatt.writeDescriptor(" + descriptor.getUuid() + (type == NOTIFICATIONS ? ", value=0x01-00)" : ", value=0x02-00)"));
 		gatt.writeDescriptor(descriptor);
 
 		// We have to wait until device gets disconnected or an error occur
 		try {
 			synchronized (mLock) {
-				while ((mNotificationsEnabled != enable && mConnectionState == STATE_CONNECTED_AND_READY && mErrorState == 0 && !mAborted) || mPaused)
+				while ((((type == NOTIFICATIONS && !mNotificationsEnabled) || (type == INDICATIONS && !mServiceChangedIndicationsEnabled))
+						&& mConnectionState == STATE_CONNECTED_AND_READY && mErrorState == 0 && !mAborted) || mPaused)
 					mLock.wait();
 			}
 		} catch (final InterruptedException e) {
@@ -1656,9 +1684,9 @@ public abstract class DfuBaseService extends IntentService {
 		if (mAborted)
 			throw new UploadAbortedException();
 		if (mErrorState != 0)
-			throw new DfuException("Unable to set notifications state", mErrorState);
+			throw new DfuException("Unable to set " + debugString + " state", mErrorState);
 		if (mConnectionState != STATE_CONNECTED_AND_READY)
-			throw new DeviceDisconnectedException("Unable to set notifications state", mConnectionState);
+			throw new DeviceDisconnectedException("Unable to set " + debugString + " state", mConnectionState);
 	}
 
 	/**
@@ -2207,6 +2235,11 @@ public abstract class DfuBaseService extends IntentService {
 	private void logi(final String message) {
 		if (BuildConfig.DEBUG)
 			Log.i(TAG, message);
+	}
+
+	private void logd(final String message) {
+		if (BuildConfig.DEBUG)
+			Log.d(TAG, message);
 	}
 
 	public String parse(final byte[] data) {
