@@ -470,19 +470,26 @@ public abstract class DfuBaseService extends IntentService {
 
 					/*
 					 *  The onConnectionStateChange callback is called just after establishing connection and before sending Encryption Request BLE event in case of a paired device. 
-					 *  In that case and when the Service Changed CCCD is enabled we will get the indication after initializing the encryption, few hundreds milliseconds later. 
-					 *  If we discover services to right immediately, the onServicesDiscovered callback will be called before the indication and the following service discovery
-					 *  and we may end up with old, application's services instead.
+					 *  In that case and when the Service Changed CCCD is enabled we will get the indication after initializing the encryption, about 1600 milliseconds later. 
+					 *  If we discover services right after connecting, the onServicesDiscovered callback will be called immediately, before receiving the indication and the following 
+					 *  service discovery and we may end up with old, application's services instead.
 					 *  
-					 *  This is to support the buttonless switch from application to bootloader mode.
+					 *  This is to support the buttonless switch from application to bootloader mode where the DFU bootloader notifies the master about service change.
+					 *  Tested on Nexus 4 (Android 4.4.4 and 5), Nexus 5 (Android 5), Samsung Note 2 (Android 4.4.2). The time after connection to end of service discovery is about 1.6s 
+					 *  on Samsung Note 2.
 					 *  
 					 *  NOTE: We are doing this to avoid the hack with calling the hidden gatt.refresh() method, at least for bonded devices.
 					 */
 					if (gatt.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
 						try {
 							synchronized (this) {
-								logd("Waiting 600 ms for a possible Service Changed indication...");
-								wait(600);
+								logd("Waiting 1600 ms for a possible Service Changed indication...");
+								wait(1600);
+
+								// After 1.6s the services are already discovered so the following gatt.discoverServices() finishes almost immediately.
+
+								// NOTE: This also works with shorted waiting time. The gatt.discoverServices() must be called after the indication is received which is
+								// about 600ms after establishing connection. Values 600 - 1600ms should be OK.
 							}
 						} catch (InterruptedException e) {
 							// do nothing
