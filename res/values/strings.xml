@@ -7,6 +7,7 @@
     <string name="dfu_status_initializing">Initializing&#8230;</string>
     <string name="dfu_status_connecting">Connecting&#8230;</string>
     <string name="dfu_status_starting">Starting DFU&#8230;</string>
+    <string name="dfu_status_switching_to_dfu">Starting bootloader&#8230;</string>
     <string name="dfu_status_uploading">Uploading&#8230;</string>
     <string name="dfu_status_uploading_part" formatted="false">Uploading part %d/%d&#8230;</string>
     <string name="dfu_status_validating">Validating&#8230;</string>
@@ -18,6 +19,7 @@
     
     <string name="dfu_status_connecting_msg">Connecting to %s&#8230;</string>
     <string name="dfu_status_starting_msg">Initializing DFU process&#8230;</string>
+    <string name="dfu_status_switching_to_dfu_msg">Waiting for bootloader&#8230;</string>
     <string name="dfu_status_uploading_components_msg">Transmitting components to %s&#8230;</string>
     <string name="dfu_status_uploading_msg">Transmitting application to %s&#8230;</string>
     <string name="dfu_status_validating_msg">Validating&#8230;</string>

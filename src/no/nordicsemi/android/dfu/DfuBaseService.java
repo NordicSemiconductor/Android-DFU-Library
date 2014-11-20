@@ -23,11 +23,14 @@ import no.nordicsemi.android.dfu.exception.HexFileValidationException;
 import no.nordicsemi.android.dfu.exception.RemoteDfuException;
 import no.nordicsemi.android.dfu.exception.UnknownResponseException;
 import no.nordicsemi.android.dfu.exception.UploadAbortedException;
+import no.nordicsemi.android.dfu.scanner.BootloaderScanner;
+import no.nordicsemi.android.dfu.scanner.BootloaderScannerFactory;
 import no.nordicsemi.android.error.GattError;
 import no.nordicsemi.android.log.ILogSession;
 import no.nordicsemi.android.log.LogContract;
 import no.nordicsemi.android.log.LogContract.Log.Level;
 import no.nordicsemi.android.log.Logger;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.IntentService;
 import android.app.NotificationManager;
@@ -45,10 +48,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.Build;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
@@ -86,8 +88,24 @@ public abstract class DfuBaseService extends IntentService {
 	/** A key for {@link SharedPreferences} entry that keeps information whether the upload is currently in progress. This may be used to get this information during activity creation. */
 	public static final String DFU_IN_PROGRESS = "no.nordicsemi.android.dfu.PREFS_DFU_IN_PROGRESS";
 
+	/** The address of the device to update. */
 	public static final String EXTRA_DEVICE_ADDRESS = "no.nordicsemi.android.dfu.extra.EXTRA_DEVICE_ADDRESS";
+	/** The optional device name. This name will be shown in the notification. */
 	public static final String EXTRA_DEVICE_NAME = "no.nordicsemi.android.dfu.extra.EXTRA_DEVICE_NAME";
+	/**
+	 * <p>
+	 * If the new firmware does not share the bond information with the old one the bond information is lost. Set this flag to <code>true</code> to make the service create new bond with the new
+	 * application when the upload is done (and remove the old one). When set to <code>false</code> (default), the DFU service assumes that the LTK is shared between them. Currently it is not possible
+	 * to remove the old bond and not creating a new one so if your old application supported bonding while the new one does not you have to modify the source code yourself.
+	 * </p>
+	 * <p>
+	 * In case of updating the soft device and bootloader the application is always removed so the bond information with it.
+	 * </p>
+	 * <p>
+	 * Search for occurrences of EXTRA_RESTORE_BOND in this file to check the implementation and get more details.
+	 * </p>
+	 */
+	public static final String EXTRA_RESTORE_BOND = "no.nordicsemi.android.dfu.extra.EXTRA_RESTORE_BOND";
 	public static final String EXTRA_LOG_URI = "no.nordicsemi.android.dfu.extra.EXTRA_LOG_URI";
 	public static final String EXTRA_FILE_PATH = "no.nordicsemi.android.dfu.extra.EXTRA_FILE_PATH";
 	public static final String EXTRA_FILE_URI = "no.nordicsemi.android.dfu.extra.EXTRA_FILE_URI";
@@ -185,6 +203,7 @@ public abstract class DfuBaseService extends IntentService {
 	 * <ul>
 	 * <li>{@link #PROGRESS_CONNECTING}</li>
 	 * <li>{@link #PROGRESS_STARTING}</li>
+	 * <li>{@link #PROGRESS_ENABLING_DFU_MODE}</li>
 	 * <li>{@link #PROGRESS_VALIDATING}</li>
 	 * <li>{@link #PROGRESS_DISCONNECTING}</li>
 	 * <li>{@link #PROGRESS_COMPLETED}</li>
@@ -224,6 +243,7 @@ public abstract class DfuBaseService extends IntentService {
 	 * <ul>
 	 * <li>{@link #PROGRESS_CONNECTING}</li>
 	 * <li>{@link #PROGRESS_STARTING}</li>
+	 * <li>{@link #PROGRESS_ENABLING_DFU_MODE}</li>
 	 * <li>{@link #PROGRESS_VALIDATING}</li>
 	 * <li>{@link #PROGRESS_DISCONNECTING}</li>
 	 * <li>{@link #PROGRESS_COMPLETED}</li>
@@ -240,6 +260,14 @@ public abstract class DfuBaseService extends IntentService {
 	public static final int PROGRESS_CONNECTING = -1;
 	/** Service is enabling notifications and starting transmission. */
 	public static final int PROGRESS_STARTING = -2;
+	/**
+	 * Service has triggered a switch to bootloader mode. It waits for the link loss (this may take up to several seconds) and will:
+	 * <ul>
+	 * <li>Connect back to the same device, now started in the bootloader mode, if the device is bonded.</li>
+	 * <li>Scan for a device with the same address (DFU Version 5) or a device with incremented the last byte of the device address (DFU Version 6+) if the device is not bonded.</li>
+	 * </ul>
+	 */
+	public static final int PROGRESS_ENABLING_DFU_MODE = -3;
 	/** Service is sending validation request to the remote DFU target. */
 	public static final int PROGRESS_VALIDATING = -4;
 	/** Service is disconnecting from the DFU target. */
@@ -457,6 +485,29 @@ public abstract class DfuBaseService extends IntentService {
 				return;
 			}
 		}
+	};
+
+	private final BroadcastReceiver mBondStateBroadcastReceiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(final Context context, final Intent intent) {
+			// obtain the device and check it this is the one that we are connected to
+			final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+			if (!device.getAddress().equals(mDeviceAddress))
+				return;
+
+			// read bond state
+			final int bondState = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, -1);
+			if (bondState == BluetoothDevice.BOND_BONDING)
+				return;
+
+			mRequestCompleted = true;
+
+			// notify waiting thread
+			synchronized (mLock) {
+				mLock.notifyAll();
+				return;
+			}
+		};
 	};
 
 	private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
@@ -747,9 +798,11 @@ public abstract class DfuBaseService extends IntentService {
 		// We must register this as a non-local receiver to get broadcasts from the notification action
 		registerReceiver(mDfuActionReceiver, actionFilter);
 
-		final IntentFilter filter = new IntentFilter();
-		filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
+		final IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECTED);
 		registerReceiver(mConnectionStateBroadcastReceiver, filter);
+
+		final IntentFilter bondFilter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
+		registerReceiver(mBondStateBroadcastReceiver, bondFilter);
 	}
 
 	@Override
@@ -761,6 +814,7 @@ public abstract class DfuBaseService extends IntentService {
 
 		unregisterReceiver(mDfuActionReceiver);
 		unregisterReceiver(mConnectionStateBroadcastReceiver);
+		unregisterReceiver(mBondStateBroadcastReceiver);
 	}
 
 	@Override
@@ -816,7 +870,7 @@ public abstract class DfuBaseService extends IntentService {
 		mRequestCompleted = false;
 		mImageSizeSent = false;
 
-		// read preferences
+		// Read preferences
 		final boolean packetReceiptNotificationEnabled = preferences.getBoolean(DfuSettingsConstants.SETTINGS_PACKET_RECEIPT_NOTIFICATION_ENABLED, true);
 		String value = preferences.getString(DfuSettingsConstants.SETTINGS_NUMBER_OF_PACKETS, String.valueOf(DfuSettingsConstants.SETTINGS_NUMBER_OF_PACKETS_DEFAULT));
 		int numberOfPackets = DfuSettingsConstants.SETTINGS_NUMBER_OF_PACKETS_DEFAULT;
@@ -844,6 +898,9 @@ public abstract class DfuBaseService extends IntentService {
 
 		sendLogBroadcast(Level.VERBOSE, "Starting DFU service");
 
+		/*
+		 * First the service is trying to read the firmware and init packet files.
+		 */
 		InputStream is = null;
 		InputStream initIs = null;
 		int imageSizeInBytes;
@@ -897,7 +954,10 @@ public abstract class DfuBaseService extends IntentService {
 				return;
 			}
 
-			// Let's connect to the device
+			/*
+			 * Now let's connect to the device.
+			 * All the methods below are synchronous. The mLock object is used to wait for asynchronous calls.
+			 */
 			sendLogBroadcast(Level.VERBOSE, "Connecting to DFU target...");
 			updateProgressNotification(PROGRESS_CONNECTING);
 
@@ -955,7 +1015,7 @@ public abstract class DfuBaseService extends IntentService {
 			try {
 				updateProgressNotification(PROGRESS_STARTING);
 
-				// read the version number if available
+				// Read the version number if available. The version number consists of 2 bytes: major and minor. Therefore f.e. the version 5 (00-05) can be read as 0.5.
 				int version = 0;
 				if (versionCharacteristic != null) {
 					version = readVersion(gatt, versionCharacteristic);
@@ -970,7 +1030,7 @@ public abstract class DfuBaseService extends IntentService {
 				 *  In the DFU from SDK 6.1, which was also supporting the buttonless update, there was no DFU Version characteristic. In that case we may find out whether
 				 *  we are in the bootloader or application by simply checking the number of characteristics.  
 				 */
-				if (version == 1 || dfuService.getCharacteristics().size() > 3 /* Generic Access, Generic Attribute, DFU Service */) {
+				if (version == 1 || dfuService.getCharacteristics().size() == 3 /* Generic Access, Generic Attribute, DFU Service */) {
 					// the service is connected to the application, not to the bootloader
 					logi("Application with buttonless update found");
 					sendLogBroadcast(Level.WARNING, "Application with buttonless update found");
@@ -989,12 +1049,12 @@ public abstract class DfuBaseService extends IntentService {
 
 					sendLogBroadcast(Level.VERBOSE, "Jumping to the DFU Bootloader...");
 
-					// enable notifications
+					// Enable notifications
 					enableCCCD(gatt, controlPointCharacteristic, NOTIFICATIONS);
 					sendLogBroadcast(Level.APPLICATION, "Notifications enabled");
 
-					// send 'jump to bootloader command' (Start DFU)
-					updateProgressNotification(PROGRESS_DISCONNECTING);
+					// Send 'jump to bootloader command' (Start DFU)
+					updateProgressNotification(PROGRESS_ENABLING_DFU_MODE);
 					OP_CODE_START_DFU[1] = 0x04;
 					logi("Sending Start DFU command (Op Code = 1, Upload Mode = 4)");
 					writeOpCode(gatt, controlPointCharacteristic, OP_CODE_START_DFU, true);
@@ -1004,23 +1064,48 @@ public abstract class DfuBaseService extends IntentService {
 					waitUntilDisconnected();
 					sendLogBroadcast(Level.INFO, "Disconnected by the remote device");
 
+					/*
+					 * We would like to avoid using the hack with refreshing the device (refresh method is not in the public API). The refresh method clears the cached services and causes a 
+					 * service discovery afterwards (when connected). Android, however, does it itself when receive the Service Changed indication when bonded. 
+					 * In case of unpaired device we may either refresh the services manually (using the hack), or use a different device address in bootloader more. 
+					 * Therefore, since the version 0.6 of the DFU bootloader (available in SDK 8.0), refreshing is not required as this version uses both those methods.
+					 * If you need to use the experimental DFU bootloader in version 0.5 (SDK 7.1) you have to uncomment the following line.
+					 * Unfortunately while being in the application mode we don't know the bootloader version. 
+					 */
+					// refreshDeviceCache(gatt, true);  
+
+					String bootloaderAddress = deviceAddress;
+					if (gatt.getDevice().getBondState() == BluetoothDevice.BOND_NONE) {
+						logi("Scanning for the bootloader (address = " + deviceAddress + ")");
+						sendLogBroadcast(Level.VERBOSE, "Scanning for the bootloader...");
+
+						final BootloaderScanner scanner = BootloaderScannerFactory.getScanner();
+						bootloaderAddress = scanner.searchFor(deviceAddress);
+						logi("Bootloader device found: " + bootloaderAddress);
+						sendLogBroadcast(Level.APPLICATION, "Bootloader with address " + bootloaderAddress + " found");
+
+						// In case the device is not bonded and it is advertising with the same address as before we must refresh the services manually.
+						if (bootloaderAddress.equals(deviceAddress))
+							refreshDeviceCache(gatt, false /* or true, doesn't matter as not bonded */);
+					}
+
 					// Close the device
-					refreshDeviceCache(gatt, false);
 					close(gatt);
 
 					logi("Starting service that will connect to the DFU bootloader");
 					final Intent newIntent = new Intent();
 					newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
+					newIntent.putExtra(EXTRA_DEVICE_ADDRESS, bootloaderAddress);
 					startService(newIntent);
 					return;
 				}
 
-				// enable notifications
+				// Enable notifications
 				enableCCCD(gatt, controlPointCharacteristic, NOTIFICATIONS);
 				sendLogBroadcast(Level.APPLICATION, "Notifications enabled");
 
 				try {
-					// set up the temporary variable that will hold the responses
+					// Set up the temporary variable that will hold the responses
 					byte[] response = null;
 					int status = 0;
 
@@ -1053,11 +1138,11 @@ public abstract class DfuBaseService extends IntentService {
 					 * 2. In case of SD or BL update an error is returned
 					 */
 
-					// obtain size of image(s)
+					// Obtain size of image(s)
 					int softDeviceImageSize = (fileType & TYPE_SOFT_DEVICE) > 0 ? imageSizeInBytes : 0;
 					int bootloaderImageSize = (fileType & TYPE_BOOTLOADER) > 0 ? imageSizeInBytes : 0;
 					int appImageSize = (fileType & TYPE_APPLICATION) > 0 ? imageSizeInBytes : 0;
-					// the sizes above may be overwritten if a ZIP file was passed
+					// The sizes above may be overwritten if a ZIP file was passed
 					if (MIME_TYPE_ZIP.equals(mimeType)) {
 						final ZipHexInputStream zhis = (ZipHexInputStream) is;
 						softDeviceImageSize = zhis.softDeviceImageSize();
@@ -1222,6 +1307,7 @@ public abstract class DfuBaseService extends IntentService {
 						}
 						logi("Sending the Initialize DFU Parameters COMPLETE (Op Code = 2, Value = 1)");
 						writeOpCode(gatt, controlPointCharacteristic, OP_CODE_INIT_DFU_PARAMS_COMPLETE);
+						sendLogBroadcast(Level.APPLICATION, "Initialize DFU Parameters completed");
 
 						// a notification will come with confirmation. Let's wait for it a bit
 						response = readNotificationResponse();
@@ -1229,7 +1315,6 @@ public abstract class DfuBaseService extends IntentService {
 						sendLogBroadcast(Level.APPLICATION, "Responce received (Op Code = " + response[1] + ", Status = " + status + ")");
 						if (status != DFU_STATUS_SUCCESS)
 							throw new RemoteDfuException("Device returned error after sending init packet", status);
-						sendLogBroadcast(Level.APPLICATION, "Initialize DFU Parameters completed");
 					} else
 						mInitPacketSent = true;
 
@@ -1296,9 +1381,40 @@ public abstract class DfuBaseService extends IntentService {
 					waitUntilDisconnected();
 					sendLogBroadcast(Level.INFO, "Disconnected by the remote device");
 
+					/*
+					 * Since version 0.6 the unpaired bootloader advertises as a different device (with the last byte of its address incremented by 1). 
+					 * Therefore there is no need to refresh the cache of the current (DFU bootloader) device. 
+					 */
+					if (version < 6)
+						refreshDeviceCache(gatt, true); // The new application may have lost bonding information (if there was bonding). Force refresh it just for sure.
 					// Close the device
-					refreshDeviceCache(gatt, true); // The new application may have lost bonding information (if there was bonding). Force refresh it just for sure.
 					close(gatt);
+
+					// During the update the bonding information on the target device may have been removed.
+					// To create bond with the new application set the EXTRA_RESTORE_BOND extra to true.
+					// In case the bond information is copied to the new application the new bonding is not required.
+					if (gatt.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
+						final boolean restoreBond = intent.getBooleanExtra(EXTRA_RESTORE_BOND, false);
+
+						if (restoreBond || (fileType & (TYPE_SOFT_DEVICE | TYPE_BOOTLOADER)) > 0) {
+							// In case the SoftDevice and Bootloader were updated the bond information was lost.
+							removeBond(gatt.getDevice());
+
+							// Give some time for removing the bond information. 300ms was to short, let's set it to 2 seconds just to be sure.
+							synchronized (this) {
+								try {
+									wait(2000);
+								} catch (InterruptedException e) {
+									// do nothing
+								}
+							}
+						}
+
+						if (restoreBond && (fileType & TYPE_APPLICATION) > 0) {
+							// Restore pairing when application was updated.
+							createBond(gatt.getDevice());
+						}
+					}
 
 					/*
 					 * We need to send PROGRESS_COMPLETED message only when all files has been transmitted.
@@ -2003,6 +2119,90 @@ public abstract class DfuBaseService extends IntentService {
 		}
 	}
 
+	@SuppressLint("NewApi")
+	public boolean createBond(final BluetoothDevice device) {
+		if (device.getBondState() == BluetoothDevice.BOND_BONDED)
+			return true;
+
+		boolean result = false;
+		mRequestCompleted = false;
+
+		sendLogBroadcast(Level.VERBOSE, "Starting pairing...");
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+			sendLogBroadcast(Level.DEBUG, "gatt.getDevice().createBond()");
+			result = device.createBond();
+		} else {
+			result = createBondApi18(device);
+		}
+
+		// We have to wait until device is bounded
+		try {
+			synchronized (mLock) {
+				while (mRequestCompleted == false && !mAborted)
+					mLock.wait();
+			}
+		} catch (final InterruptedException e) {
+			loge("Sleeping interrupted", e);
+		}
+		return result;
+	}
+
+	public boolean createBondApi18(final BluetoothDevice device) {
+		/*
+		 * There is a createBond() method in BluetoothDevice class but for now it's hidden. We will call it using reflections. It has been revealed in KitKat (Api19)
+		 */
+		try {
+			final Method createBond = device.getClass().getMethod("createBond");
+			if (createBond != null) {
+				sendLogBroadcast(Level.DEBUG, "gatt.getDevice().createBond() (hidden)");
+				return (Boolean) createBond.invoke(device);
+			}
+		} catch (final Exception e) {
+			Log.w(TAG, "An exception occurred while creating bond", e);
+		}
+		return false;
+	}
+
+	/**
+	 * Removes the bond information for the given device.
+	 * 
+	 * @param device
+	 *            the device to unbound
+	 * @return <code>true</code> if operation succeeded, <code>false</code> otherwise
+	 */
+	public boolean removeBond(final BluetoothDevice device) {
+		if (device.getBondState() == BluetoothDevice.BOND_NONE)
+			return true;
+
+		sendLogBroadcast(Level.VERBOSE, "Removing bond information...");
+		boolean result = false;
+		/*
+		 * There is a removeBond() method in BluetoothDevice class but for now it's hidden. We will call it using reflections.
+		 */
+		try {
+			final Method removeBond = device.getClass().getMethod("removeBond");
+			if (removeBond != null) {
+				mRequestCompleted = false;
+				sendLogBroadcast(Level.DEBUG, "gatt.getDevice().removeBond() (hidden)");
+				result = (Boolean) removeBond.invoke(device);
+
+				// We have to wait until device is unbounded
+				try {
+					synchronized (mLock) {
+						while (mRequestCompleted == false && !mAborted)
+							mLock.wait();
+					}
+				} catch (final InterruptedException e) {
+					loge("Sleeping interrupted", e);
+				}
+			}
+			result = true;
+		} catch (final Exception e) {
+			Log.w(TAG, "An exception occurred while removing bond information", e);
+		}
+		return result;
+	}
+
 	/**
 	 * Waits until the notification will arrive. Returns the data returned by the notification. This method will block the thread if response is not ready or connection state will change from
 	 * {@link #STATE_CONNECTED_AND_READY}. If connection state will change, or an error will occur, an exception will be thrown.
@@ -2050,14 +2250,14 @@ public abstract class DfuBaseService extends IntentService {
 	 * Creates or updates the notification in the Notification Manager. Sends broadcast with given progress or error state to the activity.
 	 * 
 	 * @param progress
-	 *            the current progress state or an error number, can be one of {@link #PROGRESS_CONNECTING}, {@link #PROGRESS_STARTING}, {@link #PROGRESS_VALIDATING}, {@link #PROGRESS_DISCONNECTING},
-	 *            {@link #PROGRESS_COMPLETED} or {@link #ERROR_FILE_ERROR}, {@link #ERROR_FILE_INVALID} , etc
+	 *            the current progress state or an error number, can be one of {@link #PROGRESS_CONNECTING}, {@link #PROGRESS_STARTING}, {@link #PROGRESS_ENABLING_DFU_MODE},
+	 *            {@link #PROGRESS_VALIDATING}, {@link #PROGRESS_DISCONNECTING}, {@link #PROGRESS_COMPLETED} or {@link #ERROR_FILE_ERROR}, {@link #ERROR_FILE_INVALID} , etc
 	 */
 	private void updateProgressNotification(final int progress) {
 		final String deviceAddress = mDeviceAddress;
 		final String deviceName = mDeviceName != null ? mDeviceName : getString(R.string.dfu_unknown_name);
 
-		final Bitmap largeIcon = BitmapFactory.decodeResource(getResources(), R.drawable.ic_stat_notify_dfu);
+		// final Bitmap largeIcon = BitmapFactory.decodeResource(getResources(), R.drawable.ic_stat_notify_dfu); <- this looks bad on Android 5
 
 		final NotificationCompat.Builder builder = new NotificationCompat.Builder(this).setSmallIcon(android.R.drawable.stat_sys_upload).setOnlyAlertOnce(true);//.setLargeIcon(largeIcon);
 		switch (progress) {
@@ -2067,6 +2267,10 @@ public abstract class DfuBaseService extends IntentService {
 		case PROGRESS_STARTING:
 			builder.setOngoing(true).setContentTitle(getString(R.string.dfu_status_starting)).setContentText(getString(R.string.dfu_status_starting_msg, deviceName)).setProgress(100, 0, true);
 			break;
+		case PROGRESS_ENABLING_DFU_MODE:
+			builder.setOngoing(true).setContentTitle(getString(R.string.dfu_status_switching_to_dfu)).setContentText(getString(R.string.dfu_status_switching_to_dfu_msg, deviceName))
+					.setProgress(100, 0, true);
+			break;
 		case PROGRESS_VALIDATING:
 			builder.setOngoing(true).setContentTitle(getString(R.string.dfu_status_validating)).setContentText(getString(R.string.dfu_status_validating_msg, deviceName)).setProgress(100, 0, true);
 			break;
@@ -2075,15 +2279,18 @@ public abstract class DfuBaseService extends IntentService {
 					.setProgress(100, 0, true);
 			break;
 		case PROGRESS_COMPLETED:
-			builder.setOngoing(false).setContentTitle(getString(R.string.dfu_status_completed)).setContentText(getString(R.string.dfu_status_completed_msg)).setAutoCancel(true);
+			builder.setOngoing(false).setContentTitle(getString(R.string.dfu_status_completed)).setSmallIcon(android.R.drawable.stat_sys_upload_done)
+					.setContentText(getString(R.string.dfu_status_completed_msg)).setAutoCancel(true);
 			break;
 		case PROGRESS_ABORTED:
-			builder.setOngoing(false).setContentTitle(getString(R.string.dfu_status_aborted)).setContentText(getString(R.string.dfu_status_aborted_msg)).setAutoCancel(true);
+			builder.setOngoing(false).setContentTitle(getString(R.string.dfu_status_aborted)).setSmallIcon(android.R.drawable.stat_sys_upload_done)
+					.setContentText(getString(R.string.dfu_status_aborted_msg)).setAutoCancel(true);
 			break;
 		default:
 			if (progress >= ERROR_MASK) {
 				// progress is an error number
-				builder.setOngoing(false).setContentTitle(getString(R.string.dfu_status_error)).setContentText(getString(R.string.dfu_status_error_msg)).setAutoCancel(true);
+				builder.setOngoing(false).setContentTitle(getString(R.string.dfu_status_error)).setSmallIcon(android.R.drawable.stat_sys_upload_done)
+						.setContentText(getString(R.string.dfu_status_error_msg)).setAutoCancel(true);
 			} else {
 				// progress is in percents
 				final String title = mPartsTotal == 1 ? getString(R.string.dfu_status_uploading) : getString(R.string.dfu_status_uploading_part, mPartCurrent, mPartsTotal);
@@ -2143,6 +2350,7 @@ public abstract class DfuBaseService extends IntentService {
 	 * <li>{@link #PROGRESS_COMPLETED}</li>
 	 * <li>{@link #PROGRESS_ABORTED}</li>
 	 * <li>{@link #PROGRESS_STARTING}</li>
+	 * <li>{@link #PROGRESS_ENABLING_DFU_MODE}</li>
 	 * <li>{@link #PROGRESS_VALIDATING}</li>
 	 * </ul>
 	 * </p>
