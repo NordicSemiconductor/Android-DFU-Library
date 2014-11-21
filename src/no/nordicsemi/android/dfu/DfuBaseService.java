@@ -1030,7 +1030,7 @@ public abstract class DfuBaseService extends IntentService {
 				 *  In the DFU from SDK 6.1, which was also supporting the buttonless update, there was no DFU Version characteristic. In that case we may find out whether
 				 *  we are in the bootloader or application by simply checking the number of characteristics.  
 				 */
-				if (version == 1 || dfuService.getCharacteristics().size() == 3 /* Generic Access, Generic Attribute, DFU Service */) {
+				if (version == 1 || dfuService.getCharacteristics().size() > 3 /* Generic Access, Generic Attribute, DFU Service */) {
 					// the service is connected to the application, not to the bootloader
 					logi("Application with buttonless update found");
 					sendLogBroadcast(Level.WARNING, "Application with buttonless update found");
