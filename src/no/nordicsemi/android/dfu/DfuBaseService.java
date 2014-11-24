@@ -341,7 +341,7 @@ public abstract class DfuBaseService extends IntentService {
 	private final Object mLock = new Object();
 
 	/** The number of the last error that has occurred or 0 if there was no error */
-	private int mErrorState;
+	private int mError;
 	/** The current connection state. If its value is > 0 than an error has occurred. Error number is a negative value of mConnectionState */
 	private int mConnectionState;
 	private final static int STATE_DISCONNECTED = 0;
@@ -381,15 +381,38 @@ public abstract class DfuBaseService extends IntentService {
 	private int mFileType;
 	private boolean mPaused;
 	private boolean mAborted;
-	private boolean mResetRequestSent;
 	private long mLastProgressTime, mStartTime;
-
+	/**
+	 * Flag sent when a request has been sent that will cause the DFU target to reset. Often, after sending such command, Android throws a connection state error. If this flag is set the error will be
+	 * ignored.
+	 */
+	private boolean mResetRequestSent;
 	/** Flag indicating whether the image size has been already transfered or not */
 	private boolean mImageSizeSent;
 	/** Flag indicating whether the init packet has been already transfered or not */
 	private boolean mInitPacketSent;
 	/** Flag indicating whether the request was completed or not */
 	private boolean mRequestCompleted;
+	/**
+	 * <p>
+	 * Flag set to <code>true</code> when the DFU target had send any notification with status other than {@link #DFU_STATUS_SUCCESS}. Setting it to <code>true</code> will abort sending firmware and
+	 * stop logging notifications (read below for explanation).
+	 * </p>
+	 * <p>
+	 * The onCharacteristicWrite(..) callback is written when Android puts the packet to the outgoing queue, not when it physically send the data. Therefore, in case of invalid state of the DFU
+	 * target, Android will first put up to N* packets, one by one, while in fact the first will be transmitted. In case the DFU target is in an invalid state it will notify Android with a
+	 * notification 10-03-02 for each packet of firmware that has been sent. However, just after receiving the first one this service will try to send the reset command while still getting more
+	 * 10-03-02 notifications. This flag will prevent from logging "Notification received..." more than once.
+	 * </p>
+	 * <p>
+	 * Additionally, sometimes after writing the command 6 ({@link #OP_CODE_RESET}), Android will receive a notification and update the characteristic value with 10-03-02 and the callback for write
+	 * reset command will log "[DFU] Data written to ..., value (0x): 10-03-02" instead of "...(x0): 06". But this does not matter for the DFU process.
+	 * </p>
+	 * <p>
+	 * N* - Value of Packet Receipt Notification, 10 by default.
+	 * </p>
+	 */
+	private boolean mRemoteErrorOccured;
 
 	/** Latest data received from device using notification. */
 	private byte[] mReceivedData = null;
@@ -553,7 +576,7 @@ public abstract class DfuBaseService extends IntentService {
 					logi("Attempting to start service discovery... " + (success ? "succeed" : "failed"));
 
 					if (!success) {
-						mErrorState = ERROR_SERVICE_DISCOVERY_NOT_STARTED;
+						mError = ERROR_SERVICE_DISCOVERY_NOT_STARTED;
 					} else {
 						// just return here, lock will be notified when service discovery finishes
 						return;
@@ -566,7 +589,7 @@ public abstract class DfuBaseService extends IntentService {
 			} else {
 				loge("Connection state change error: " + status + " newState: " + newState);
 				mPaused = false;
-				mErrorState = ERROR_CONNECTION_MASK | status;
+				mError = ERROR_CONNECTION_MASK | status;
 			}
 
 			// notify waiting thread
@@ -583,7 +606,7 @@ public abstract class DfuBaseService extends IntentService {
 				mConnectionState = STATE_CONNECTED_AND_READY;
 			} else {
 				loge("Service discovery error: " + status);
-				mErrorState = ERROR_CONNECTION_MASK | status;
+				mError = ERROR_CONNECTION_MASK | status;
 			}
 
 			// notify waiting thread
@@ -607,7 +630,7 @@ public abstract class DfuBaseService extends IntentService {
 				}
 			} else {
 				loge("Descriptor write error: " + status);
-				mErrorState = ERROR_CONNECTION_MASK | status;
+				mError = ERROR_CONNECTION_MASK | status;
 			}
 
 			// notify waiting thread
@@ -646,9 +669,12 @@ public abstract class DfuBaseService extends IntentService {
 						// when neither of them is true, send the next packet
 						try {
 							waitIfPaused();
-							if (mAborted) {
+							// The writing might have been aborted (mAborted = true), an error might have occurred.
+							// In that case quit sending.
+							if (mAborted || mError != 0 || mRemoteErrorOccured || mResetRequestSent) {
 								// notify waiting thread
 								synchronized (mLock) {
+									sendLogBroadcast(Level.WARNING, "Upload terminated");
 									mLock.notifyAll();
 									return;
 								}
@@ -661,10 +687,10 @@ public abstract class DfuBaseService extends IntentService {
 							return;
 						} catch (final HexFileValidationException e) {
 							loge("Invalid HEX file");
-							mErrorState = ERROR_FILE_INVALID;
+							mError = ERROR_FILE_INVALID;
 						} catch (final IOException e) {
 							loge("Error while reading the input stream", e);
-							mErrorState = ERROR_FILE_IO_EXCEPTION;
+							mError = ERROR_FILE_IO_EXCEPTION;
 						}
 					} else if (!mImageSizeSent) {
 						// we've got confirmation that the image size was sent
@@ -689,7 +715,7 @@ public abstract class DfuBaseService extends IntentService {
 					mRequestCompleted = true;
 				else {
 					loge("Characteristic write error: " + status);
-					mErrorState = ERROR_CONNECTION_MASK | status;
+					mError = ERROR_CONNECTION_MASK | status;
 				}
 			}
 
@@ -706,11 +732,12 @@ public abstract class DfuBaseService extends IntentService {
 				/*
 				 * This method is called when the DFU Version characteristic has been read.
 				 */
+				sendLogBroadcast(Level.INFO, "Read Response received from " + characteristic.getUuid() + ", value (0x): " + parse(characteristic));
 				mReceivedData = characteristic.getValue();
 				mRequestCompleted = true;
 			} else {
 				loge("Characteristic read error: " + status);
-				mErrorState = ERROR_CONNECTION_MASK | status;
+				mError = ERROR_CONNECTION_MASK | status;
 			}
 
 			// notify waiting thread
@@ -733,8 +760,12 @@ public abstract class DfuBaseService extends IntentService {
 					mPacketsSentSinceNotification = 0;
 
 					waitIfPaused();
-					if (mAborted)
+					// The writing might have been aborted (mAborted = true), an error might have occurred.
+					// In that case quit sending.
+					if (mAborted || mError != 0 || mRemoteErrorOccured || mResetRequestSent) {
+						sendLogBroadcast(Level.WARNING, "Upload terminated");
 						break;
+					}
 
 					final byte[] buffer = mBuffer;
 					final int size = mInputStream.read(buffer);
@@ -743,14 +774,26 @@ public abstract class DfuBaseService extends IntentService {
 					return;
 				} catch (final HexFileValidationException e) {
 					loge("Invalid HEX file");
-					mErrorState = ERROR_FILE_INVALID;
+					mError = ERROR_FILE_INVALID;
 				} catch (final IOException e) {
 					loge("Error while reading the input stream", e);
-					mErrorState = ERROR_FILE_IO_EXCEPTION;
+					mError = ERROR_FILE_IO_EXCEPTION;
 				}
 				break;
+			case OP_CODE_RESPONSE_CODE_KEY:
 			default:
-				sendLogBroadcast(Level.INFO, "Received Read Response from " + characteristic.getUuid() + ", value (0x): " + parse(characteristic));
+				/*
+				 * If the DFU target device is in invalid state (f.e. the Init Packet is required but has not been selected), the target will send DFU_STATUS_INVALID_STATE error
+				 * for each firmware packet that was send. We are interested may ignore all but the first one.
+				 * After obtaining a remote DFU error the OP_CODE_RESET_KEY will be sent.
+				 */
+				if (mRemoteErrorOccured)
+					break;
+				final int status = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 2);
+				if (status != DFU_STATUS_SUCCESS)
+					mRemoteErrorOccured = true;
+
+				sendLogBroadcast(Level.INFO, "Notification received from " + characteristic.getUuid() + ", value (0x): " + parse(characteristic));
 				mReceivedData = characteristic.getValue();
 				break;
 			}
@@ -862,13 +905,15 @@ public abstract class DfuBaseService extends IntentService {
 		mBytesSent = 0;
 		mBytesConfirmed = 0;
 		mPacketsSentSinceNotification = 0;
-		mErrorState = 0;
+		mError = 0;
+		mLastProgressTime = 0;
 		mAborted = false;
 		mPaused = false;
 		mNotificationsEnabled = false;
 		mResetRequestSent = false;
 		mRequestCompleted = false;
 		mImageSizeSent = false;
+		mRemoteErrorOccured = false;
 
 		// Read preferences
 		final boolean packetReceiptNotificationEnabled = preferences.getBoolean(DfuSettingsConstants.SETTINGS_PACKET_RECEIPT_NOTIFICATION_ENABLED, true);
@@ -963,11 +1008,11 @@ public abstract class DfuBaseService extends IntentService {
 
 			final BluetoothGatt gatt = connect(deviceAddress);
 			// Are we connected?
-			if (mErrorState > 0) { // error occurred
-				final int error = mErrorState & ~ERROR_CONNECTION_MASK;
+			if (mError > 0) { // error occurred
+				final int error = mError & ~ERROR_CONNECTION_MASK;
 				loge("An error occurred while connecting to the device:" + error);
 				sendLogBroadcast(Level.ERROR, String.format("Connection failed (0x%02X): %s", error, GattError.parse(error)));
-				terminateConnection(gatt, mErrorState);
+				terminateConnection(gatt, mError);
 				return;
 			}
 			if (mAborted) {
@@ -1343,10 +1388,7 @@ public abstract class DfuBaseService extends IntentService {
 						throw e;
 						// TODO reconnect?
 					}
-
 					final long endTime = SystemClock.elapsedRealtime();
-					logi("Transfer of " + mBytesSent + " bytes has taken " + (endTime - startTime) + " ms");
-					sendLogBroadcast(Level.APPLICATION, "Upload completed in " + (endTime - startTime) + " ms");
 
 					// Check the result of the operation
 					status = getStatusCode(response, OP_CODE_RECEIVE_FIRMWARE_IMAGE_KEY);
@@ -1354,6 +1396,9 @@ public abstract class DfuBaseService extends IntentService {
 					sendLogBroadcast(Level.APPLICATION, "Responce received (Op Code = " + response[1] + ", Status = " + status + ")");
 					if (status != DFU_STATUS_SUCCESS)
 						throw new RemoteDfuException("Device returned error after sending file", status);
+
+					logi("Transfer of " + mBytesSent + " bytes has taken " + (endTime - startTime) + " ms");
+					sendLogBroadcast(Level.APPLICATION, "Upload completed in " + (endTime - startTime) + " ms");
 
 					// Send Validate request
 					logi("Sending Validate request (Op Code = 4)");
@@ -1583,7 +1628,7 @@ public abstract class DfuBaseService extends IntentService {
 		// Connection error may occur as well.
 		try {
 			synchronized (mLock) {
-				while (((mConnectionState == STATE_CONNECTING || mConnectionState == STATE_CONNECTED) && mErrorState == 0 && !mAborted) || mPaused)
+				while (((mConnectionState == STATE_CONNECTING || mConnectionState == STATE_CONNECTED) && mError == 0 && !mAborted) || mPaused)
 					mLock.wait();
 			}
 		} catch (final InterruptedException e) {
@@ -1643,7 +1688,7 @@ public abstract class DfuBaseService extends IntentService {
 	private void waitUntilDisconnected() {
 		try {
 			synchronized (mLock) {
-				while (mConnectionState != STATE_DISCONNECTED && mErrorState == 0)
+				while (mConnectionState != STATE_DISCONNECTED && mError == 0)
 					mLock.wait();
 			}
 		} catch (final InterruptedException e) {
@@ -1732,7 +1777,8 @@ public abstract class DfuBaseService extends IntentService {
 		if (characteristic == null)
 			return 0;
 
-		mErrorState = 0;
+		mReceivedData = null;
+		mError = 0;
 
 		logi("Reading DFU version number...");
 		sendLogBroadcast(Level.VERBOSE, "Reading DFU version number...");
@@ -1742,7 +1788,7 @@ public abstract class DfuBaseService extends IntentService {
 		// We have to wait until device gets disconnected or an error occur
 		try {
 			synchronized (mLock) {
-				while ((mRequestCompleted == false && mConnectionState == STATE_CONNECTED_AND_READY && mErrorState == 0 && !mAborted) || mPaused)
+				while ((mRequestCompleted == false && mConnectionState == STATE_CONNECTED_AND_READY && mError == 0 && !mAborted) || mPaused)
 					mLock.wait();
 			}
 		} catch (final InterruptedException e) {
@@ -1750,8 +1796,8 @@ public abstract class DfuBaseService extends IntentService {
 		}
 		if (mAborted)
 			throw new UploadAbortedException();
-		if (mErrorState != 0)
-			throw new DfuException("Unable to read version number", mErrorState);
+		if (mError != 0)
+			throw new DfuException("Unable to read version number", mError);
 		if (mConnectionState != STATE_CONNECTED_AND_READY)
 			throw new DeviceDisconnectedException("Unable to read version number", mConnectionState);
 
@@ -1778,7 +1824,8 @@ public abstract class DfuBaseService extends IntentService {
 		if (mConnectionState != STATE_CONNECTED_AND_READY)
 			throw new DeviceDisconnectedException("Unable to set " + debugString + " state", mConnectionState);
 
-		mErrorState = 0;
+		mReceivedData = null;
+		mError = 0;
 		if ((type == NOTIFICATIONS && mNotificationsEnabled) || (type == INDICATIONS && mServiceChangedIndicationsEnabled))
 			return;
 
@@ -1798,7 +1845,7 @@ public abstract class DfuBaseService extends IntentService {
 		try {
 			synchronized (mLock) {
 				while ((((type == NOTIFICATIONS && !mNotificationsEnabled) || (type == INDICATIONS && !mServiceChangedIndicationsEnabled))
-						&& mConnectionState == STATE_CONNECTED_AND_READY && mErrorState == 0 && !mAborted) || mPaused)
+						&& mConnectionState == STATE_CONNECTED_AND_READY && mError == 0 && !mAborted) || mPaused)
 					mLock.wait();
 			}
 		} catch (final InterruptedException e) {
@@ -1806,8 +1853,8 @@ public abstract class DfuBaseService extends IntentService {
 		}
 		if (mAborted)
 			throw new UploadAbortedException();
-		if (mErrorState != 0)
-			throw new DfuException("Unable to set " + debugString + " state", mErrorState);
+		if (mError != 0)
+			throw new DfuException("Unable to set " + debugString + " state", mError);
 		if (mConnectionState != STATE_CONNECTED_AND_READY)
 			throw new DeviceDisconnectedException("Unable to set " + debugString + " state", mConnectionState);
 	}
@@ -1852,7 +1899,7 @@ public abstract class DfuBaseService extends IntentService {
 	private void writeOpCode(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final byte[] value, final boolean reset) throws DeviceDisconnectedException, DfuException,
 			UploadAbortedException {
 		mReceivedData = null;
-		mErrorState = 0;
+		mError = 0;
 		mRequestCompleted = false;
 		/*
 		 * Sending a command that will make the DFU target to reboot may cause an error 133 (0x85 - Gatt Error). If so, with this flag set, the error will not be shown to the user
@@ -1868,7 +1915,7 @@ public abstract class DfuBaseService extends IntentService {
 		// We have to wait for confirmation
 		try {
 			synchronized (mLock) {
-				while ((mRequestCompleted == false && mConnectionState == STATE_CONNECTED_AND_READY && mErrorState == 0 && !mAborted) || mPaused)
+				while ((mRequestCompleted == false && mConnectionState == STATE_CONNECTED_AND_READY && mError == 0 && !mAborted) || mPaused)
 					mLock.wait();
 			}
 		} catch (final InterruptedException e) {
@@ -1876,8 +1923,8 @@ public abstract class DfuBaseService extends IntentService {
 		}
 		if (mAborted)
 			throw new UploadAbortedException();
-		if (!mResetRequestSent && mErrorState != 0)
-			throw new DfuException("Unable to write Op Code " + value[0], mErrorState);
+		if (!mResetRequestSent && mError != 0)
+			throw new DfuException("Unable to write Op Code " + value[0], mError);
 		if (!mResetRequestSent && mConnectionState != STATE_CONNECTED_AND_READY)
 			throw new DeviceDisconnectedException("Unable to write Op Code " + value[0], mConnectionState);
 	}
@@ -1899,7 +1946,7 @@ public abstract class DfuBaseService extends IntentService {
 	private void writeImageSize(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final int imageSize) throws DeviceDisconnectedException, DfuException,
 			UploadAbortedException {
 		mReceivedData = null;
-		mErrorState = 0;
+		mError = 0;
 		mImageSizeSent = false;
 
 		characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
@@ -1912,7 +1959,7 @@ public abstract class DfuBaseService extends IntentService {
 		// We have to wait for confirmation
 		try {
 			synchronized (mLock) {
-				while ((mImageSizeSent == false && mConnectionState == STATE_CONNECTED_AND_READY && mErrorState == 0 && !mAborted) || mPaused)
+				while ((mImageSizeSent == false && mConnectionState == STATE_CONNECTED_AND_READY && mError == 0 && !mAborted) || mPaused)
 					mLock.wait();
 			}
 		} catch (final InterruptedException e) {
@@ -1920,8 +1967,8 @@ public abstract class DfuBaseService extends IntentService {
 		}
 		if (mAborted)
 			throw new UploadAbortedException();
-		if (mErrorState != 0)
-			throw new DfuException("Unable to write Image Size", mErrorState);
+		if (mError != 0)
+			throw new DfuException("Unable to write Image Size", mError);
 		if (mConnectionState != STATE_CONNECTED_AND_READY)
 			throw new DeviceDisconnectedException("Unable to write Image Size", mConnectionState);
 	}
@@ -1953,7 +2000,7 @@ public abstract class DfuBaseService extends IntentService {
 	private void writeImageSize(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final int softDeviceImageSize, final int bootloaderImageSize, final int appImageSize)
 			throws DeviceDisconnectedException, DfuException, UploadAbortedException {
 		mReceivedData = null;
-		mErrorState = 0;
+		mError = 0;
 		mImageSizeSent = false;
 
 		characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
@@ -1968,7 +2015,7 @@ public abstract class DfuBaseService extends IntentService {
 		// We have to wait for confirmation
 		try {
 			synchronized (mLock) {
-				while ((mImageSizeSent == false && mConnectionState == STATE_CONNECTED_AND_READY && mErrorState == 0 && !mAborted) || mPaused)
+				while ((mImageSizeSent == false && mConnectionState == STATE_CONNECTED_AND_READY && mError == 0 && !mAborted) || mPaused)
 					mLock.wait();
 			}
 		} catch (final InterruptedException e) {
@@ -1976,8 +2023,8 @@ public abstract class DfuBaseService extends IntentService {
 		}
 		if (mAborted)
 			throw new UploadAbortedException();
-		if (mErrorState != 0)
-			throw new DfuException("Unable to write Image Sizes", mErrorState);
+		if (mError != 0)
+			throw new DfuException("Unable to write Image Sizes", mError);
 		if (mConnectionState != STATE_CONNECTED_AND_READY)
 			throw new DeviceDisconnectedException("Unable to write Image Sizes", mConnectionState);
 	}
@@ -2003,8 +2050,8 @@ public abstract class DfuBaseService extends IntentService {
 			locBuffer = new byte[size];
 			System.arraycopy(buffer, 0, locBuffer, 0, size);
 		}
-
-		mErrorState = 0;
+		mReceivedData = null;
+		mError = 0;
 		mInitPacketSent = false;
 
 		characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
@@ -2017,7 +2064,7 @@ public abstract class DfuBaseService extends IntentService {
 		// We have to wait for confirmation
 		try {
 			synchronized (mLock) {
-				while ((mInitPacketSent == false && mConnectionState == STATE_CONNECTED_AND_READY && mErrorState == 0 && !mAborted) || mPaused)
+				while ((mInitPacketSent == false && mConnectionState == STATE_CONNECTED_AND_READY && mError == 0 && !mAborted) || mPaused)
 					mLock.wait();
 			}
 		} catch (final InterruptedException e) {
@@ -2025,8 +2072,8 @@ public abstract class DfuBaseService extends IntentService {
 		}
 		if (mAborted)
 			throw new UploadAbortedException();
-		if (mErrorState != 0)
-			throw new DfuException("Unable to write Init DFU Parameters", mErrorState);
+		if (mError != 0)
+			throw new DfuException("Unable to write Init DFU Parameters", mError);
 		if (mConnectionState != STATE_CONNECTED_AND_READY)
 			throw new DeviceDisconnectedException("Unable to write Init DFU Parameters", mConnectionState);
 	}
@@ -2049,7 +2096,7 @@ public abstract class DfuBaseService extends IntentService {
 	private byte[] uploadFirmwareImage(final BluetoothGatt gatt, final BluetoothGattCharacteristic packetCharacteristic, final InputStream inputStream) throws DeviceDisconnectedException,
 			DfuException, UploadAbortedException {
 		mReceivedData = null;
-		mErrorState = 0;
+		mError = 0;
 
 		final byte[] buffer = mBuffer;
 		try {
@@ -2064,7 +2111,7 @@ public abstract class DfuBaseService extends IntentService {
 
 		try {
 			synchronized (mLock) {
-				while ((mReceivedData == null && mConnectionState == STATE_CONNECTED_AND_READY && mErrorState == 0 && !mAborted) || mPaused)
+				while ((mReceivedData == null && mConnectionState == STATE_CONNECTED_AND_READY && mError == 0 && !mAborted) || mPaused)
 					mLock.wait();
 			}
 		} catch (final InterruptedException e) {
@@ -2072,8 +2119,8 @@ public abstract class DfuBaseService extends IntentService {
 		}
 		if (mAborted)
 			throw new UploadAbortedException();
-		if (mErrorState != 0)
-			throw new DfuException("Uploading Fimrware Image failed", mErrorState);
+		if (mError != 0)
+			throw new DfuException("Uploading Fimrware Image failed", mError);
 		if (mConnectionState != STATE_CONNECTED_AND_READY)
 			throw new DeviceDisconnectedException("Uploading Fimrware Image failed: device disconnected", mConnectionState);
 
@@ -2213,10 +2260,11 @@ public abstract class DfuBaseService extends IntentService {
 	 * @throws UploadAbortedException
 	 */
 	private byte[] readNotificationResponse() throws DeviceDisconnectedException, DfuException, UploadAbortedException {
-		mErrorState = 0;
+		// do not clear the mReceiveData here. The response might already be obtained. Clear it in write request instead.
+		mError = 0;
 		try {
 			synchronized (mLock) {
-				while ((mReceivedData == null && mConnectionState == STATE_CONNECTED_AND_READY && mErrorState == 0 && !mAborted) || mPaused)
+				while ((mReceivedData == null && mConnectionState == STATE_CONNECTED_AND_READY && mError == 0 && !mAborted) || mPaused)
 					mLock.wait();
 			}
 		} catch (final InterruptedException e) {
@@ -2224,8 +2272,8 @@ public abstract class DfuBaseService extends IntentService {
 		}
 		if (mAborted)
 			throw new UploadAbortedException();
-		if (mErrorState != 0)
-			throw new DfuException("Unable to write Op Code", mErrorState);
+		if (mError != 0)
+			throw new DfuException("Unable to write Op Code", mError);
 		if (mConnectionState != STATE_CONNECTED_AND_READY)
 			throw new DeviceDisconnectedException("Unable to write Op Code", mConnectionState);
 		return mReceivedData;
@@ -2361,8 +2409,8 @@ public abstract class DfuBaseService extends IntentService {
 
 	private void sendProgressBroadcast(final int progress) {
 		final long now = SystemClock.elapsedRealtime();
-		final float speed = (float) (mBytesSent - mLastBytesSent) / (float) (now - mLastProgressTime);
-		final float avgSpeed = (float) mBytesSent / (float) (now - mStartTime);
+		final float speed = now - mLastProgressTime != 0 ? (float) (mBytesSent - mLastBytesSent) / (float) (now - mLastProgressTime) : 0.0f;
+		final float avgSpeed = now - mStartTime != 0 ? (float) mBytesSent / (float) (now - mStartTime) : 0.0f;
 		mLastProgressTime = now;
 		mLastBytesSent = mBytesSent;
 

@@ -93,8 +93,10 @@ public class ZipHexInputStream extends ZipInputStream {
 						source = softDeviceBytes = new byte[softDeviceSize = is.available()];
 						is.read(softDeviceBytes);
 						is.close();
-					} else
+					} else {
 						softDeviceBytes = source;
+						softDeviceSize = source.length;
+					}
 					// upload must always start from Soft Device
 					currentSource = source;
 				} else if (bootloader) {
@@ -103,8 +105,10 @@ public class ZipHexInputStream extends ZipInputStream {
 						source = bootloaderBytes = new byte[bootloaderSize = is.available()];
 						is.read(bootloaderBytes);
 						is.close();
-					} else
+					} else {
 						bootloaderBytes = source;
+						bootloaderSize = source.length;
+					}
 					// If the current source is null or application, switch it to the bootloader
 					if (currentSource == applicationBytes)
 						currentSource = source;
@@ -114,8 +118,10 @@ public class ZipHexInputStream extends ZipInputStream {
 						source = applicationBytes = new byte[applicationSize = is.available()];
 						is.read(applicationBytes);
 						is.close();
-					} else
+					} else {
 						applicationBytes = source;
+						applicationSize = source.length;
+					}
 					// Temporarily set the current source to application, it may be overwritten in a moment
 					if (currentSource == null)
 						currentSource = source;
