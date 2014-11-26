@@ -59,7 +59,7 @@ import android.util.Log;
 
 /**
  * The DFU Service provides full support for Over-the-Air (OTA) Device Firmware Update by Nordic Semiconductor.<br />
- * With the Soft Device 7.0.0+ it allows to upload a new Soft Device, new Bootloader and a new Application. For older soft devices only the Application update is supported.
+ * With the Soft Device 7.0.0+ it allows to upload a new Soft Device, new Bootloader and a new Application (marked here as DFU v2.0). For older soft devices only the Application update is supported.
  * <p>
  * To run the service to your application inherit it and overwrite the missing method. Remember to it to the AndroidManifest.xml file. Start the service with the following parameters:
  * 
@@ -71,6 +71,10 @@ import android.util.Log;
  * service.putExtra(DfuService.EXTRA_FILE_TYPE, mFileType);
  * service.putExtra(DfuService.EXTRA_FILE_PATH, mFilePath);
  * service.putExtra(DfuService.EXTRA_FILE_URI, mFileStreamUri);
+ * // optionally
+ * service.putExtra(DfuService.EXTRA_INIT_FILE_PATH, mInitFilePath);
+ * service.putExtra(DfuService.EXTRA_INIT_FILE_URI, mInitFileStreamUri);
+ * service.putExtra(DfuService.EXTRA_RESTORE_BOND, mRestoreBond);
  * startService(service);
  * </pre>
  * 
@@ -78,7 +82,7 @@ import android.util.Log;
  * previous versions.
  * </p>
  * <p>
- * The service will show its progress in the notifications bar and will send local broadcasts the the application.
+ * The service will show its progress in the notifications bar and will send local broadcasts to the application.
  * </p>
  */
 public abstract class DfuBaseService extends IntentService {
@@ -212,7 +216,7 @@ public abstract class DfuBaseService extends IntentService {
 	 * </li>
 	 * <li>An error code with {@link #ERROR_MASK} if initialization error occurred</li>
 	 * <li>An error code with {@link #ERROR_REMOTE_MASK} if remote DFU target returned an error</li>
-	 * <li>An error code with {@link #ERROR_CONNECTION_MASK} if connection error occurred (f.e. Gatt error (133) or Internal Gatt Error (129))</li>
+	 * <li>An error code with {@link #ERROR_CONNECTION_MASK} if connection error occurred (f.e. GATT error (133) or Internal GATT Error (129))</li>
 	 * </ul>
 	 * To check if error occurred use:<br />
 	 * {@code boolean error = progressValue >= DfuBaseService.ERROR_MASK;}
@@ -1233,6 +1237,9 @@ public abstract class DfuBaseService extends IntentService {
 							// If user wants to send soft device and/or bootloader + application we may try to send the Soft Device/Bootloader files first, 
 							// and then reconnect and send the application
 							if ((fileType & TYPE_APPLICATION) > 0 && (fileType & (TYPE_SOFT_DEVICE | TYPE_BOOTLOADER)) > 0) {
+								// Clear the remote error flag
+								mRemoteErrorOccured = false;
+
 								logw("DFU target does not support (SD/BL)+App update");
 								sendLogBroadcast(Level.WARNING, "DFU target does not support (SD/BL)+App update");
 
@@ -1276,6 +1283,9 @@ public abstract class DfuBaseService extends IntentService {
 
 							// If operation is not supported by DFU target we may try to upload application with legacy mode, using DFU v.1
 							if (fileType == TYPE_APPLICATION) {
+								// Clear the remote error flag
+								mRemoteErrorOccured = false;
+
 								// The DFU target does not support DFU v.2 protocol
 								logw("DFU target does not support DFU v.2");
 								sendLogBroadcast(Level.WARNING, "DFU target does not support DFU v.2");
@@ -1945,7 +1955,6 @@ public abstract class DfuBaseService extends IntentService {
 	 */
 	private void writeImageSize(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final int imageSize) throws DeviceDisconnectedException, DfuException,
 			UploadAbortedException {
-		mRemoteErrorOccured = false;
 		mReceivedData = null;
 		mError = 0;
 		mImageSizeSent = false;
@@ -2000,7 +2009,6 @@ public abstract class DfuBaseService extends IntentService {
 	 */
 	private void writeImageSize(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final int softDeviceImageSize, final int bootloaderImageSize, final int appImageSize)
 			throws DeviceDisconnectedException, DfuException, UploadAbortedException {
-		mRemoteErrorOccured = false;
 		mReceivedData = null;
 		mError = 0;
 		mImageSizeSent = false;
@@ -2052,7 +2060,6 @@ public abstract class DfuBaseService extends IntentService {
 			locBuffer = new byte[size];
 			System.arraycopy(buffer, 0, locBuffer, 0, size);
 		}
-		mRemoteErrorOccured = false;
 		mReceivedData = null;
 		mError = 0;
 		mInitPacketSent = false;
@@ -2098,7 +2105,6 @@ public abstract class DfuBaseService extends IntentService {
 	 */
 	private byte[] uploadFirmwareImage(final BluetoothGatt gatt, final BluetoothGattCharacteristic packetCharacteristic, final InputStream inputStream) throws DeviceDisconnectedException,
 			DfuException, UploadAbortedException {
-		mRemoteErrorOccured = false;
 		mReceivedData = null;
 		mError = 0;
 
