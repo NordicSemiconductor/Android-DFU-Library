@@ -1945,6 +1945,7 @@ public abstract class DfuBaseService extends IntentService {
 	 */
 	private void writeImageSize(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final int imageSize) throws DeviceDisconnectedException, DfuException,
 			UploadAbortedException {
+		mRemoteErrorOccured = false;
 		mReceivedData = null;
 		mError = 0;
 		mImageSizeSent = false;
@@ -1999,6 +2000,7 @@ public abstract class DfuBaseService extends IntentService {
 	 */
 	private void writeImageSize(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final int softDeviceImageSize, final int bootloaderImageSize, final int appImageSize)
 			throws DeviceDisconnectedException, DfuException, UploadAbortedException {
+		mRemoteErrorOccured = false;
 		mReceivedData = null;
 		mError = 0;
 		mImageSizeSent = false;
@@ -2050,6 +2052,7 @@ public abstract class DfuBaseService extends IntentService {
 			locBuffer = new byte[size];
 			System.arraycopy(buffer, 0, locBuffer, 0, size);
 		}
+		mRemoteErrorOccured = false;
 		mReceivedData = null;
 		mError = 0;
 		mInitPacketSent = false;
@@ -2095,6 +2098,7 @@ public abstract class DfuBaseService extends IntentService {
 	 */
 	private byte[] uploadFirmwareImage(final BluetoothGatt gatt, final BluetoothGattCharacteristic packetCharacteristic, final InputStream inputStream) throws DeviceDisconnectedException,
 			DfuException, UploadAbortedException {
+		mRemoteErrorOccured = false;
 		mReceivedData = null;
 		mError = 0;
 
