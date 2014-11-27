@@ -145,6 +145,8 @@ public abstract class DfuBaseService extends IntentService {
 	 * </ol>
 	 */
 	public static final String EXTRA_FILE_TYPE = "no.nordicsemi.android.dfu.extra.EXTRA_FILE_TYPE";
+	/** This extra field is used when DFU service launched from script. */
+	public static final String EXTRA_FILE_TYPE_AS_STRING = "no.nordicsemi.android.dfu.extra.EXTRA_FILE_TYPE_AS_STRING";
 	/**
 	 * <p>
 	 * The file contains a new version of Soft Device.
@@ -880,7 +882,15 @@ public abstract class DfuBaseService extends IntentService {
 		final String initFilePath = intent.getStringExtra(EXTRA_INIT_FILE_PATH);
 		final Uri initFileUri = intent.getParcelableExtra(EXTRA_INIT_FILE_URI);
 		final Uri logUri = intent.getParcelableExtra(EXTRA_LOG_URI);
+		final String fileTypeAsString = intent.getStringExtra(EXTRA_FILE_TYPE_AS_STRING);
 		int fileType = intent.getIntExtra(EXTRA_FILE_TYPE, TYPE_AUTO);
+		if (fileTypeAsString != null) {
+			try {
+				fileType = Integer.parseInt(fileTypeAsString);
+			} catch (final Exception e) {
+				fileType = TYPE_AUTO;
+			}
+		}
 		if (filePath != null && fileType == TYPE_AUTO)
 			fileType = filePath.toLowerCase(Locale.US).endsWith("zip") ? TYPE_AUTO : TYPE_APPLICATION;
 		String mimeType = intent.getStringExtra(EXTRA_FILE_MIME_TYPE);
@@ -1070,6 +1080,7 @@ public abstract class DfuBaseService extends IntentService {
 					version = readVersion(gatt, versionCharacteristic);
 					final int minor = (version & 0x0F);
 					final int major = (version >> 8);
+					logi("Version number read: " + major + "." + minor);
 					sendLogBroadcast(Level.APPLICATION, "Version number read: " + major + "." + minor);
 				}
 
@@ -1079,9 +1090,9 @@ public abstract class DfuBaseService extends IntentService {
 				 *  In the DFU from SDK 6.1, which was also supporting the buttonless update, there was no DFU Version characteristic. In that case we may find out whether
 				 *  we are in the bootloader or application by simply checking the number of characteristics.  
 				 */
-				if (version == 1 || dfuService.getCharacteristics().size() > 3 /* Generic Access, Generic Attribute, DFU Service */) {
+				if (version == 1 || gatt.getServices().size() > 3 /* Generic Access, Generic Attribute, DFU Service */) {
 					// the service is connected to the application, not to the bootloader
-					logi("Application with buttonless update found");
+					logw("Application with buttonless update found");
 					sendLogBroadcast(Level.WARNING, "Application with buttonless update found");
 
 					// if we are bonded we may want to enable Service Changed characteristic indications
