@@ -145,8 +145,6 @@ public abstract class DfuBaseService extends IntentService {
 	 * </ol>
 	 */
 	public static final String EXTRA_FILE_TYPE = "no.nordicsemi.android.dfu.extra.EXTRA_FILE_TYPE";
-	/** This extra field is used when DFU service launched from script. */
-	public static final String EXTRA_FILE_TYPE_AS_STRING = "no.nordicsemi.android.dfu.extra.EXTRA_FILE_TYPE_AS_STRING";
 	/**
 	 * <p>
 	 * The file contains a new version of Soft Device.
@@ -882,15 +880,7 @@ public abstract class DfuBaseService extends IntentService {
 		final String initFilePath = intent.getStringExtra(EXTRA_INIT_FILE_PATH);
 		final Uri initFileUri = intent.getParcelableExtra(EXTRA_INIT_FILE_URI);
 		final Uri logUri = intent.getParcelableExtra(EXTRA_LOG_URI);
-		final String fileTypeAsString = intent.getStringExtra(EXTRA_FILE_TYPE_AS_STRING);
 		int fileType = intent.getIntExtra(EXTRA_FILE_TYPE, TYPE_AUTO);
-		if (fileTypeAsString != null) {
-			try {
-				fileType = Integer.parseInt(fileTypeAsString);
-			} catch (final Exception e) {
-				fileType = TYPE_AUTO;
-			}
-		}
 		if (filePath != null && fileType == TYPE_AUTO)
 			fileType = filePath.toLowerCase(Locale.US).endsWith("zip") ? TYPE_AUTO : TYPE_APPLICATION;
 		String mimeType = intent.getStringExtra(EXTRA_FILE_MIME_TYPE);
@@ -1402,6 +1392,7 @@ public abstract class DfuBaseService extends IntentService {
 					final long startTime = mLastProgressTime = mStartTime = SystemClock.elapsedRealtime();
 					updateProgressNotification();
 					try {
+						logi("Starting upload...");
 						sendLogBroadcast(Level.APPLICATION, "Starting upload...");
 						response = uploadFirmwareImage(gatt, packetCharacteristic, is);
 					} catch (final DeviceDisconnectedException e) {
@@ -2387,7 +2378,7 @@ public abstract class DfuBaseService extends IntentService {
 		builder.setColor(Color.GRAY);
 
 		// Add Abort action to the notification
-		if (progress != PROGRESS_ABORTED && progress != PROGRESS_COMPLETED) {
+		if (progress != PROGRESS_ABORTED && progress != PROGRESS_COMPLETED && progress < ERROR_MASK) {
 			final Intent abortIntent = new Intent(BROADCAST_ACTION);
 			abortIntent.putExtra(EXTRA_ACTION, ACTION_ABORT);
 			final PendingIntent pendingAbortIntent = PendingIntent.getBroadcast(this, 1, abortIntent, PendingIntent.FLAG_UPDATE_CURRENT);
