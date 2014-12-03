@@ -991,15 +991,20 @@ public abstract class DfuBaseService extends IntentService {
 					}
 				}
 				sendLogBroadcast(Level.INFO, "Image file opened (" + mImageSizeInBytes + " bytes in total)");
+			} catch (final SecurityException e) {
+				initIs = null;
+				loge("A security exception occured while opening file", e);
+				updateProgressNotification(ERROR_FILE_NOT_FOUND);
+				return;
 			} catch (final FileNotFoundException e) {
 				initIs = null;
 				loge("An exception occured while opening file", e);
-				sendErrorBroadcast(ERROR_FILE_NOT_FOUND);
+				updateProgressNotification(ERROR_FILE_NOT_FOUND);
 				return;
 			} catch (final IOException e) {
 				initIs = null;
 				loge("An exception occured while calculating file size", e);
-				sendErrorBroadcast(ERROR_FILE_ERROR);
+				updateProgressNotification(ERROR_FILE_ERROR);
 				return;
 			}
 
@@ -2320,6 +2325,9 @@ public abstract class DfuBaseService extends IntentService {
 		// final Bitmap largeIcon = BitmapFactory.decodeResource(getResources(), R.drawable.ic_stat_notify_dfu); <- this looks bad on Android 5
 
 		final NotificationCompat.Builder builder = new NotificationCompat.Builder(this).setSmallIcon(android.R.drawable.stat_sys_upload).setOnlyAlertOnce(true);//.setLargeIcon(largeIcon);
+		// Android 5
+		builder.setColor(Color.GRAY);
+
 		switch (progress) {
 		case PROGRESS_CONNECTING:
 			builder.setOngoing(true).setContentTitle(getString(R.string.dfu_status_connecting)).setContentText(getString(R.string.dfu_status_connecting_msg, deviceName)).setProgress(100, 0, true);
@@ -2340,7 +2348,7 @@ public abstract class DfuBaseService extends IntentService {
 			break;
 		case PROGRESS_COMPLETED:
 			builder.setOngoing(false).setContentTitle(getString(R.string.dfu_status_completed)).setSmallIcon(android.R.drawable.stat_sys_upload_done)
-					.setContentText(getString(R.string.dfu_status_completed_msg)).setAutoCancel(true);
+					.setContentText(getString(R.string.dfu_status_completed_msg)).setAutoCancel(true).setColor(0xFF00B81A);
 			break;
 		case PROGRESS_ABORTED:
 			builder.setOngoing(false).setContentTitle(getString(R.string.dfu_status_aborted)).setSmallIcon(android.R.drawable.stat_sys_upload_done)
@@ -2350,7 +2358,7 @@ public abstract class DfuBaseService extends IntentService {
 			if (progress >= ERROR_MASK) {
 				// progress is an error number
 				builder.setOngoing(false).setContentTitle(getString(R.string.dfu_status_error)).setSmallIcon(android.R.drawable.stat_sys_upload_done)
-						.setContentText(getString(R.string.dfu_status_error_msg)).setAutoCancel(true);
+						.setContentText(getString(R.string.dfu_status_error_msg)).setAutoCancel(true).setColor(Color.RED);
 			} else {
 				// progress is in percents
 				final String title = mPartsTotal == 1 ? getString(R.string.dfu_status_uploading) : getString(R.string.dfu_status_uploading_part, mPartCurrent, mPartsTotal);
@@ -2374,8 +2382,6 @@ public abstract class DfuBaseService extends IntentService {
 			intent.putExtra(EXTRA_LOG_URI, mLogSession.getSessionUri());
 		final PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 		builder.setContentIntent(pendingIntent);
-		// Android 5
-		builder.setColor(Color.GRAY);
 
 		// Add Abort action to the notification
 		if (progress != PROGRESS_ABORTED && progress != PROGRESS_COMPLETED && progress < ERROR_MASK) {
