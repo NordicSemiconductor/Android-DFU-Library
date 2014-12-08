@@ -23,8 +23,6 @@ import no.nordicsemi.android.dfu.exception.HexFileValidationException;
 import no.nordicsemi.android.dfu.exception.RemoteDfuException;
 import no.nordicsemi.android.dfu.exception.UnknownResponseException;
 import no.nordicsemi.android.dfu.exception.UploadAbortedException;
-import no.nordicsemi.android.dfu.scanner.BootloaderScanner;
-import no.nordicsemi.android.dfu.scanner.BootloaderScannerFactory;
 import no.nordicsemi.android.error.GattError;
 import no.nordicsemi.android.log.ILogSession;
 import no.nordicsemi.android.log.LogContract;
@@ -88,9 +86,6 @@ import android.util.Log;
 public abstract class DfuBaseService extends IntentService {
 	private static final String TAG = "DfuService";
 	private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
-
-	/** A key for {@link SharedPreferences} entry that keeps information whether the upload is currently in progress. This may be used to get this information during activity creation. */
-	public static final String DFU_IN_PROGRESS = "no.nordicsemi.android.dfu.PREFS_DFU_IN_PROGRESS";
 
 	/** The address of the device to update. */
 	public static final String EXTRA_DEVICE_ADDRESS = "no.nordicsemi.android.dfu.extra.EXTRA_DEVICE_ADDRESS";
@@ -867,10 +862,6 @@ public abstract class DfuBaseService extends IntentService {
 	@Override
 	protected void onHandleIntent(final Intent intent) {
 		final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-		// In order to let DfuActivity know whether DFU is in progress, we have to use Shared Preferences 
-		final SharedPreferences.Editor editor = preferences.edit();
-		editor.putBoolean(DFU_IN_PROGRESS, true);
-		editor.commit();
 
 		// Read input parameters
 		final String deviceAddress = intent.getStringExtra(EXTRA_DEVICE_ADDRESS);
@@ -884,7 +875,7 @@ public abstract class DfuBaseService extends IntentService {
 		if (filePath != null && fileType == TYPE_AUTO)
 			fileType = filePath.toLowerCase(Locale.US).endsWith("zip") ? TYPE_AUTO : TYPE_APPLICATION;
 		String mimeType = intent.getStringExtra(EXTRA_FILE_MIME_TYPE);
-		mimeType = mimeType != null ? mimeType : (fileType == TYPE_AUTO ? MIME_TYPE_ZIP : MIME_TYPE_OCTET_STREAM);
+		mimeType = mimeType != null ? mimeType : (fileType == TYPE_AUTO ? MIME_TYPE_ZIP : MIME_TYPE_OCTET_STREAM); // FIXME check if it's better
 		mLogSession = Logger.openSession(this, logUri);
 		mPartCurrent = intent.getIntExtra(EXTRA_PART_CURRENT, 1);
 		mPartsTotal = intent.getIntExtra(EXTRA_PARTS_TOTAL, 1);
@@ -1085,7 +1076,7 @@ public abstract class DfuBaseService extends IntentService {
 				 *  In the DFU from SDK 6.1, which was also supporting the buttonless update, there was no DFU Version characteristic. In that case we may find out whether
 				 *  we are in the bootloader or application by simply checking the number of characteristics.  
 				 */
-				if (version == 1 || gatt.getServices().size() > 3 /* Generic Access, Generic Attribute, DFU Service */) {
+				if (version == 1 || (version == 0 && gatt.getServices().size() > 3 /* No DFU Version char but more services than Generic Access, Generic Attribute, DFU Service */)) {
 					// the service is connected to the application, not to the bootloader
 					logw("Application with buttonless update found");
 					sendLogBroadcast(Level.WARNING, "Application with buttonless update found");
@@ -1122,27 +1113,17 @@ public abstract class DfuBaseService extends IntentService {
 					/*
 					 * We would like to avoid using the hack with refreshing the device (refresh method is not in the public API). The refresh method clears the cached services and causes a 
 					 * service discovery afterwards (when connected). Android, however, does it itself when receive the Service Changed indication when bonded. 
-					 * In case of unpaired device we may either refresh the services manually (using the hack), or use a different device address in bootloader more. 
-					 * Therefore, since the version 0.6 of the DFU bootloader (available in SDK 8.0), refreshing is not required as this version uses both those methods.
-					 * If you need to use the experimental DFU bootloader in version 0.5 (SDK 7.1) you have to uncomment the following line.
-					 * Unfortunately while being in the application mode we don't know the bootloader version. 
+					 * In case of unpaired device we may either refresh the services manually (using the hack), or include the Service Changed characteristic.
+					 * 
+					 * According to Bluetooth Core 4.0 (and 4.1) specification:
+					 * 
+					 * [Vol. 3, Part G, 2.5.2 - Attribute Caching]
+					 * Note: Clients without a trusted relationship must perform service discovery on each connection if the server supports the Services Changed characteristic.
+					 *  
+					 * However, as up to Android 5 the system does NOT respect this requirement and servers are cached for every device, even if Service Changed is enabled -> Android BUG?
+					 * For bonded devices Android performs service re-discovery when SC indication is received. 
 					 */
-					// refreshDeviceCache(gatt, true);  
-
-					String bootloaderAddress = deviceAddress;
-					if (gatt.getDevice().getBondState() == BluetoothDevice.BOND_NONE) {
-						logi("Scanning for the bootloader (address = " + deviceAddress + ")");
-						sendLogBroadcast(Level.VERBOSE, "Scanning for the bootloader...");
-
-						final BootloaderScanner scanner = BootloaderScannerFactory.getScanner();
-						bootloaderAddress = scanner.searchFor(deviceAddress);
-						logi("Bootloader device found: " + bootloaderAddress);
-						sendLogBroadcast(Level.APPLICATION, "Bootloader with address " + bootloaderAddress + " found");
-
-						// In case the device is not bonded and it is advertising with the same address as before we must refresh the services manually.
-						if (bootloaderAddress.equals(deviceAddress))
-							refreshDeviceCache(gatt, false /* or true, doesn't matter as not bonded */);
-					}
+					refreshDeviceCache(gatt, false);
 
 					// Close the device
 					close(gatt);
@@ -1150,7 +1131,6 @@ public abstract class DfuBaseService extends IntentService {
 					logi("Starting service that will connect to the DFU bootloader");
 					final Intent newIntent = new Intent();
 					newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
-					newIntent.putExtra(EXTRA_DEVICE_ADDRESS, bootloaderAddress);
 					startService(newIntent);
 					return;
 				}
@@ -1493,7 +1473,8 @@ public abstract class DfuBaseService extends IntentService {
 						logi("Starting service that will upload application");
 						final Intent newIntent = new Intent();
 						newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
-						newIntent.putExtra(EXTRA_FILE_TYPE, TYPE_APPLICATION);
+						newIntent.putExtra(EXTRA_FILE_MIME_TYPE, MIME_TYPE_ZIP); // ensure this is set (f.e. for scripts)
+						newIntent.putExtra(EXTRA_FILE_TYPE, TYPE_APPLICATION); // set the type to application only
 						newIntent.putExtra(EXTRA_PART_CURRENT, mPartCurrent + 1);
 						newIntent.putExtra(EXTRA_PARTS_TOTAL, mPartsTotal);
 						startService(newIntent);
@@ -1554,10 +1535,6 @@ public abstract class DfuBaseService extends IntentService {
 			}
 		} finally {
 			try {
-				// upload has finished (success of fail)
-				editor.putBoolean(DFU_IN_PROGRESS, false);
-				editor.commit();
-
 				// ensure that input stream is always closed
 				mInputStream = null;
 				if (is != null)
