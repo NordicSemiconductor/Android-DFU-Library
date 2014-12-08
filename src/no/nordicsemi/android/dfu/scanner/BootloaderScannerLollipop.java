@@ -11,7 +11,7 @@ import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.os.Build;
-import android.os.Handler;
+import android.util.Log;
 
 /**
  * @see BootloaderScanner
@@ -36,9 +36,15 @@ public class BootloaderScannerLollipop extends ScanCallback implements Bootloade
 		mFound = false;
 
 		// Add timeout
-		new Handler().postDelayed(new Runnable() {
+		new Thread(new Runnable() {
 			@Override
 			public void run() {
+				try {
+					Thread.sleep(BootloaderScanner.TIMEOUT);
+				} catch (final InterruptedException e) {
+					// do nothing
+				}
+
 				if (mFound)
 					return;
 
@@ -50,7 +56,7 @@ public class BootloaderScannerLollipop extends ScanCallback implements Bootloade
 					mLock.notifyAll();
 				}
 			}
-		}, BootloaderScanner.TIMEOUT);
+		}, "Scanner timer").start();
 
 		final BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
 		final BluetoothLeScanner scanner = adapter.getBluetoothLeScanner();
@@ -76,6 +82,7 @@ public class BootloaderScannerLollipop extends ScanCallback implements Bootloade
 	@Override
 	public void onScanResult(final int callbackType, final ScanResult result) {
 		final String address = result.getDevice().getAddress();
+		Log.d("BootloaderScanner", "Device found: " + address);
 		if (mDeviceAddress.equals(address) || mDeviceAddressIncremented.equals(address)) {
 			mBootloaderAddress = address;
 			mFound = true;

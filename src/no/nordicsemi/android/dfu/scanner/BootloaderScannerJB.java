@@ -2,7 +2,6 @@ package no.nordicsemi.android.dfu.scanner;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.os.Handler;
 
 /**
  * @see BootloaderScanner
@@ -27,9 +26,15 @@ public class BootloaderScannerJB implements BootloaderScanner, BluetoothAdapter.
 		mFound = false;
 
 		// Add timeout
-		new Handler().postDelayed(new Runnable() {
+		new Thread(new Runnable() {
 			@Override
 			public void run() {
+				try {
+					Thread.sleep(BootloaderScanner.TIMEOUT);
+				} catch (final InterruptedException e) {
+					// do nothing
+				}
+
 				if (mFound)
 					return;
 
@@ -41,7 +46,7 @@ public class BootloaderScannerJB implements BootloaderScanner, BluetoothAdapter.
 					mLock.notifyAll();
 				}
 			}
-		}, BootloaderScanner.TIMEOUT);
+		}, "Scanner timer").start();
 
 		final BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
 		adapter.startLeScan(this);
