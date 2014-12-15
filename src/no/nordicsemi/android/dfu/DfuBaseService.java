@@ -306,6 +306,8 @@ public abstract class DfuBaseService extends IntentService {
 	public static final int ERROR_INVALID_RESPONSE = ERROR_MASK | 0x08;
 	/** Thrown when the the service does not support given type or mime-type. */
 	public static final int ERROR_FILE_TYPE_UNSUPPORTED = ERROR_MASK | 0x09;
+	/** Thrown when the the Bluetooth adapter is disabled. */
+	public static final int ERROR_BLUETOOTH_DISABLED = ERROR_MASK | 0x0A;
 	/** Flag set then the DFU target returned a DFU error. Look for DFU specification to get error codes. */
 	public static final int ERROR_REMOTE_MASK = 0x2000;
 	/** The flag set when one of {@link BluetoothGattCallback} methods was called with status other than {@link BluetoothGatt#GATT_SUCCESS}. */
@@ -1008,6 +1010,12 @@ public abstract class DfuBaseService extends IntentService {
 
 			final BluetoothGatt gatt = connect(deviceAddress);
 			// Are we connected?
+			if (gatt == null) {
+				loge("Bluetooth adapter diabled");
+				sendLogBroadcast(Level.ERROR, "Bluetooth adapter disabled");
+				updateProgressNotification(ERROR_BLUETOOTH_DISABLED);
+				return;
+			}
 			if (mError > 0) { // error occurred
 				final int error = mError & ~ERROR_CONNECTION_MASK;
 				loge("An error occurred while connecting to the device:" + error);
@@ -1423,12 +1431,7 @@ public abstract class DfuBaseService extends IntentService {
 					waitUntilDisconnected();
 					sendLogBroadcast(Level.INFO, "Disconnected by the remote device");
 
-					/*
-					 * Since version 0.6 the unpaired bootloader advertises as a different device (with the last byte of its address incremented by 1). 
-					 * Therefore there is no need to refresh the cache of the current (DFU bootloader) device. 
-					 */
-					if (version < 6)
-						refreshDeviceCache(gatt, true); // The new application may have lost bonding information (if there was bonding). Force refresh it just for sure.
+					refreshDeviceCache(gatt, true); // The new application may have lost bonding information (if there was bonding). Force refresh it just to be sure.
 					// Close the device
 					close(gatt);
 
@@ -1605,13 +1608,16 @@ public abstract class DfuBaseService extends IntentService {
 
 	/**
 	 * Connects to the BLE device with given address. This method is SYNCHRONOUS, it wait until the connection status change from {@link #STATE_CONNECTING} to {@link #STATE_CONNECTED_AND_READY} or an
-	 * error occurs.
+	 * error occurs. This method returns <code>null</code> if Bluetooth adapter is disabled.
 	 * 
 	 * @param address
 	 *            the device address
-	 * @return the GATT device
+	 * @return the GATT device or <code>null</code> if Bluetooth adapter is disabled.
 	 */
 	private BluetoothGatt connect(final String address) {
+		if (!mBluetoothAdapter.isEnabled())
+			return null;
+
 		mConnectionState = STATE_CONNECTING;
 
 		logi("Connecting to the device...");

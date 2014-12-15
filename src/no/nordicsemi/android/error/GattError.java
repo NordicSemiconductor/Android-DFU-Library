@@ -100,6 +100,8 @@ public class GattError {
 			return "DFU CHARACTERISTICS NOT FOUND";
 		case DfuBaseService.ERROR_FILE_TYPE_UNSUPPORTED:
 			return "DFU FILE TYPE NOT SUPPORTED";
+		case DfuBaseService.ERROR_BLUETOOTH_DISABLED:
+			return "BLUETOOTH ADAPTER DISABLED";
 		default:
 			if ((DfuBaseService.ERROR_REMOTE_MASK & error) > 0) {
 				switch (error & (~DfuBaseService.ERROR_REMOTE_MASK)) {
