@@ -1085,11 +1085,13 @@ public abstract class DfuBaseService extends IntentService {
 				 *  we are in the bootloader or application by simply checking the number of characteristics.  
 				 */
 				if (version == 1 || (version == 0 && gatt.getServices().size() > 3 /* No DFU Version char but more services than Generic Access, Generic Attribute, DFU Service */)) {
-					// the service is connected to the application, not to the bootloader
+					// The service is connected to the application, not to the bootloader
 					logw("Application with buttonless update found");
 					sendLogBroadcast(Level.WARNING, "Application with buttonless update found");
 
-					// if we are bonded we may want to enable Service Changed characteristic indications
+					// If we are bonded we may want to enable Service Changed characteristic indications. 
+					// Note: This feature will be introduced in the SDK 8.0 as this is the proper way to refresh attribute list on the phone.
+					boolean hasServiceChanged = false;
 					if (gatt.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
 						final BluetoothGattService genericAttributeService = gatt.getService(GENERIC_ATTRIBUTE_SERVICE_UUID);
 						if (genericAttributeService != null) {
@@ -1097,6 +1099,7 @@ public abstract class DfuBaseService extends IntentService {
 							if (serviceChangedCharacteristic != null) {
 								enableCCCD(gatt, serviceChangedCharacteristic, INDICATIONS);
 								sendLogBroadcast(Level.APPLICATION, "Service Changed indications enabled");
+								hasServiceChanged = true;
 							}
 						}
 					}
@@ -1131,7 +1134,7 @@ public abstract class DfuBaseService extends IntentService {
 					 * However, as up to Android 5 the system does NOT respect this requirement and servers are cached for every device, even if Service Changed is enabled -> Android BUG?
 					 * For bonded devices Android performs service re-discovery when SC indication is received. 
 					 */
-					refreshDeviceCache(gatt, false);
+					refreshDeviceCache(gatt, !hasServiceChanged);
 
 					// Close the device
 					close(gatt);
