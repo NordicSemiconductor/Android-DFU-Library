@@ -1470,6 +1470,14 @@ public abstract class DfuBaseService extends IntentService {
 					 * second time to send Application using the new Bootloader. In the first case we do not send PROGRESS_COMPLETED notification.
 					 */
 					if (mPartCurrent == mPartsTotal) {
+						// Delay this event a little bit. Android needs some time to prepare for reconnection.
+						synchronized (mLock) {
+							try {
+								mLock.wait(1400);
+							} catch (final InterruptedException e) {
+								// do nothing
+							}
+						}
 						updateProgressNotification(PROGRESS_COMPLETED);
 					} else {
 						/*
