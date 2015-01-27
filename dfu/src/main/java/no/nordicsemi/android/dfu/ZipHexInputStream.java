@@ -43,11 +43,10 @@ public class ZipHexInputStream extends ZipInputStream {
 	 * 
 	 * @param stream
 	 *            the Zip Input Stream
+	 * @param mbrSize
+	 *            The size of the MRB segment (Master Boot Record) on the device. The parser will cut data from addresses below that number from all HEX files.
 	 * @param types
-	 *            files to read
-	 * @param trim
-	 *            if <code>true</code> the bin data will be trimmed. All data from addresses < 0x1000 will be skipped. In the Soft Device 7.0.0 it's MBR space and this HEX fragment should not be
-	 *            transmitted. However, other DFU implementations (f.e. without Soft Device) may require uploading the whole file.
+	 *            File types that are to be read from the ZIP. Use {@link DfuBaseService#TYPE_APPLICATION} etc.
 	 * @throws java.io.IOException
 	 */
 	public ZipHexInputStream(final InputStream stream, final int mbrSize, final int types) throws IOException {
@@ -127,7 +126,7 @@ public class ZipHexInputStream extends ZipInputStream {
 						currentSource = source;
 				} else if (systemInit) {
 					systemInitBytes = source;
-				} else if (applicationInit) {
+				} else { // if (applicationInit) - always true
 					applicationInitBytes = source;
 				}
 			}
@@ -220,7 +219,7 @@ public class ZipHexInputStream extends ZipInputStream {
 	 * @return the new source, the same as {@link #currentSource}
 	 */
 	private byte[] startNextFile() {
-		byte[] ret = null;
+		byte[] ret;
 		if (currentSource == softDeviceBytes && bootloaderBytes != null) {
 			ret = currentSource = bootloaderBytes;
 		} else if (currentSource != applicationBytes && applicationBytes != null) {

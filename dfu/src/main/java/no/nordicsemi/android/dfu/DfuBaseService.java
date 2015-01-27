@@ -422,7 +422,7 @@ public abstract class DfuBaseService extends IntentService {
 	 */
 	private int mPacketsBeforeNotification = 10;
 
-	private byte[] mBuffer = new byte[MAX_PACKET_SIZE];
+	private final byte[] mBuffer = new byte[MAX_PACKET_SIZE];
 	private InputStream mInputStream;
 	/**
 	 * Size of BIN content of all hex files that are going to be transmitted.

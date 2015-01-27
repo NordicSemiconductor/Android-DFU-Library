@@ -33,16 +33,15 @@ public class HexInputStream extends FilterInputStream {
 	private int size;
 	private int lastAddress;
 	private int available, bytesRead;
-	private int MBRsize;
+	private final int MBRSize;
 
 	/**
 	 * Creates the HEX Input Stream. The constructor calculates the size of the BIN content which is available through {@link #sizeInBytes()}. If HEX file is invalid then the bin size is 0.
 	 * 
 	 * @param in
 	 *            the input stream to read from
-	 * @param trim
-	 *            if <code>true</code> the bin data will be trimmed. All data from addresses < 0x1000 will be skipped. In the Soft Device 7.0.0 it's MBR space and this HEX fragment should not be
-	 *            transmitted. However, other DFU implementations (f.e. without Soft Device) may require uploading the whole file.
+	 * @param mbrSize
+	 *            The MBR (Master Boot Record) size in bytes. Data with addresses below than number will be trimmed and not transferred to DFU target.
 	 * @throws HexFileValidationException
 	 *             if HEX file is invalid. F.e. there is no semicolon (':') on the beginning of each line.
 	 * @throws java.io.IOException
@@ -54,7 +53,7 @@ public class HexInputStream extends FilterInputStream {
 		this.localPos = LINE_LENGTH; // we are at the end of the local buffer, new one must be obtained
 		this.size = localBuf.length;
 		this.lastAddress = 0;
-		this.MBRsize = mbrSize;
+		this.MBRSize = mbrSize;
 
 		this.available = calculateBinSize(mbrSize);
 	}
@@ -65,7 +64,7 @@ public class HexInputStream extends FilterInputStream {
 		this.localPos = LINE_LENGTH; // we are at the end of the local buffer, new one must be obtained
 		this.size = localBuf.length;
 		this.lastAddress = 0;
-		this.MBRsize = mbrSize;
+		this.MBRSize = mbrSize;
 
 		this.available = calculateBinSize(mbrSize);
 	}
@@ -77,7 +76,7 @@ public class HexInputStream extends FilterInputStream {
 
 		int b, lineSize, offset, type;
 		int lastBaseAddress = 0; // last Base Address, default 0 
-		int lastAddress = 0;
+		int lastAddress;
 		try {
 			b = in.read();
 			while (true) {
@@ -214,7 +213,7 @@ public class HexInputStream extends FilterInputStream {
 		final InputStream in = this.in;
 
 		// temporary value
-		int b = 0;
+		int b;
 
 		int lineSize, type, offset;
 		do {
@@ -249,7 +248,7 @@ public class HexInputStream extends FilterInputStream {
 			switch (type) {
 			case 0x00:
 				// data type
-				if (lastAddress + offset < MBRsize) { // skip MBR
+				if (lastAddress + offset < MBRSize) { // skip MBR
 					type = -1; // some other than 0
 					pos += in.skip(lineSize * 2 /* 2 hex per one byte */+ 2 /* check sum */);
 				}
