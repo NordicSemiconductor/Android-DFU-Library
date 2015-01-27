@@ -460,11 +460,11 @@ public abstract class DfuBaseService extends IntentService {
 	 */
 	private boolean mResetRequestSent;
 	/**
-	 * Flag indicating whether the image size has been already transfered or not
+	 * Flag indicating whether the image size has been already transferred or not
 	 */
 	private boolean mImageSizeSent;
 	/**
-	 * Flag indicating whether the init packet has been already transfered or not
+	 * Flag indicating whether the init packet has been already transferred or not
 	 */
 	private boolean mInitPacketSent;
 	/**
@@ -490,7 +490,7 @@ public abstract class DfuBaseService extends IntentService {
 	 * N* - Value of Packet Receipt Notification, 10 by default.
 	 * </p>
 	 */
-	private boolean mRemoteErrorOccured;
+	private boolean mRemoteErrorOccurred;
 
 	/**
 	 * Latest data received from device using notification.
@@ -746,7 +746,7 @@ public abstract class DfuBaseService extends IntentService {
 							waitIfPaused();
 							// The writing might have been aborted (mAborted = true), an error might have occurred.
 							// In that case quit sending.
-							if (mAborted || mError != 0 || mRemoteErrorOccured || mResetRequestSent) {
+							if (mAborted || mError != 0 || mRemoteErrorOccurred || mResetRequestSent) {
 								// notify waiting thread
 								synchronized (mLock) {
 									sendLogBroadcast(Level.WARNING, "Upload terminated");
@@ -835,7 +835,7 @@ public abstract class DfuBaseService extends IntentService {
 						waitIfPaused();
 						// The writing might have been aborted (mAborted = true), an error might have occurred.
 						// In that case quit sending.
-						if (mAborted || mError != 0 || mRemoteErrorOccured || mResetRequestSent) {
+						if (mAborted || mError != 0 || mRemoteErrorOccurred || mResetRequestSent) {
 							sendLogBroadcast(Level.WARNING, "Upload terminated");
 							break;
 						}
@@ -860,11 +860,11 @@ public abstract class DfuBaseService extends IntentService {
 				 * for each firmware packet that was send. We are interested may ignore all but the first one.
 				 * After obtaining a remote DFU error the OP_CODE_RESET_KEY will be sent.
 				 */
-					if (mRemoteErrorOccured)
+					if (mRemoteErrorOccurred)
 						break;
 					final int status = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 2);
 					if (status != DFU_STATUS_SUCCESS)
-						mRemoteErrorOccured = true;
+						mRemoteErrorOccurred = true;
 
 					sendLogBroadcast(Level.INFO, "Notification received from " + characteristic.getUuid() + ", value (0x): " + parse(characteristic));
 					mReceivedData = characteristic.getValue();
@@ -981,7 +981,7 @@ public abstract class DfuBaseService extends IntentService {
 		mResetRequestSent = false;
 		mRequestCompleted = false;
 		mImageSizeSent = false;
-		mRemoteErrorOccured = false;
+		mRemoteErrorOccurred = false;
 
 		// Read preferences
 		final boolean packetReceiptNotificationEnabled = preferences.getBoolean(DfuSettingsConstants.SETTINGS_PACKET_RECEIPT_NOTIFICATION_ENABLED, true);
@@ -1079,7 +1079,7 @@ public abstract class DfuBaseService extends IntentService {
 			final BluetoothGatt gatt = connect(deviceAddress);
 			// Are we connected?
 			if (gatt == null) {
-				loge("Bluetooth adapter diabled");
+				loge("Bluetooth adapter disabled");
 				sendLogBroadcast(Level.ERROR, "Bluetooth adapter disabled");
 				updateProgressNotification(ERROR_BLUETOOTH_DISABLED);
 				return;
@@ -1291,7 +1291,7 @@ public abstract class DfuBaseService extends IntentService {
 						 * +---------+--------+----------------------------------------------------+
 						 */
 						status = getStatusCode(response, OP_CODE_START_DFU_KEY);
-						sendLogBroadcast(Level.APPLICATION, "Responce received (Op Code = " + response[1] + " Status = " + status + ")");
+						sendLogBroadcast(Level.APPLICATION, "Response received (Op Code = " + response[1] + " Status = " + status + ")");
 						if (status != DFU_STATUS_SUCCESS)
 							throw new RemoteDfuException("Starting DFU failed", status);
 					} catch (final RemoteDfuException e) {
@@ -1303,7 +1303,7 @@ public abstract class DfuBaseService extends IntentService {
 							// and then reconnect and send the application
 							if ((fileType & TYPE_APPLICATION) > 0 && (fileType & (TYPE_SOFT_DEVICE | TYPE_BOOTLOADER)) > 0) {
 								// Clear the remote error flag
-								mRemoteErrorOccured = false;
+								mRemoteErrorOccurred = false;
 
 								logw("DFU target does not support (SD/BL)+App update");
 								sendLogBroadcast(Level.WARNING, "DFU target does not support (SD/BL)+App update");
@@ -1337,7 +1337,7 @@ public abstract class DfuBaseService extends IntentService {
 								// a notification will come with confirmation. Let's wait for it a bit
 								response = readNotificationResponse();
 								status = getStatusCode(response, OP_CODE_START_DFU_KEY);
-								sendLogBroadcast(Level.APPLICATION, "Responce received (Op Code = " + response[1] + " Status = " + status + ")");
+								sendLogBroadcast(Level.APPLICATION, "Response received (Op Code = " + response[1] + " Status = " + status + ")");
 								if (status != DFU_STATUS_SUCCESS)
 									throw new RemoteDfuException("Starting DFU failed", status);
 							} else
@@ -1349,7 +1349,7 @@ public abstract class DfuBaseService extends IntentService {
 							// If operation is not supported by DFU target we may try to upload application with legacy mode, using DFU v.1
 							if (fileType == TYPE_APPLICATION) {
 								// Clear the remote error flag
-								mRemoteErrorOccured = false;
+								mRemoteErrorOccurred = false;
 
 								// The DFU target does not support DFU v.2 protocol
 								logw("DFU target does not support DFU v.2");
@@ -1369,7 +1369,7 @@ public abstract class DfuBaseService extends IntentService {
 								// a notification will come with confirmation. Let's wait for it a bit
 								response = readNotificationResponse();
 								status = getStatusCode(response, OP_CODE_START_DFU_KEY);
-								sendLogBroadcast(Level.APPLICATION, "Responce received (Op Code = " + response[1] + ", Status = " + status + ")");
+								sendLogBroadcast(Level.APPLICATION, "Response received (Op Code = " + response[1] + ", Status = " + status + ")");
 								if (status != DFU_STATUS_SUCCESS)
 									throw new RemoteDfuException("Starting DFU failed", status);
 							} else
@@ -1803,7 +1803,7 @@ public abstract class DfuBaseService extends IntentService {
 					logi("Refreshing result: " + success);
 				}
 			} catch (Exception e) {
-				loge("An exception occured while refreshing device", e);
+				loge("An exception occurred while refreshing device", e);
 				sendLogBroadcast(Level.WARNING, "Refreshing failed");
 			}
 		}
@@ -2159,9 +2159,9 @@ public abstract class DfuBaseService extends IntentService {
 		if (mAborted)
 			throw new UploadAbortedException();
 		if (mError != 0)
-			throw new DfuException("Uploading Fimrware Image failed", mError);
+			throw new DfuException("Uploading Firmware Image failed", mError);
 		if (mConnectionState != STATE_CONNECTED_AND_READY)
-			throw new DeviceDisconnectedException("Uploading Fimrware Image failed: device disconnected", mConnectionState);
+			throw new DeviceDisconnectedException("Uploading Firmware Image failed: device disconnected", mConnectionState);
 
 		return mReceivedData;
 	}

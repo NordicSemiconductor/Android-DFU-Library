@@ -75,7 +75,7 @@ public class GattError {
 		case 0x008c:
 			return "GATT SERVICE STARTED";
 		case 0x008d:
-			return "GATT ENCRYPED NO MITM";
+			return "GATT ENCRYPTED NO MITM";
 		case 0x008e:
 			return "GATT NOT ENCRYPTED";
 		case 0x0101:
