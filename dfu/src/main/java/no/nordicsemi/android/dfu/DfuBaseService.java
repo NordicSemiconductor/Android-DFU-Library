@@ -100,6 +100,8 @@ import no.nordicsemi.android.error.GattError;
  * </p>
  */
 public abstract class DfuBaseService extends IntentService {
+	private static final String TAG = "DfuBaseService";
+
 	/**
 	 * The address of the device to update.
 	 */
@@ -399,7 +401,6 @@ public abstract class DfuBaseService extends IntentService {
 	 * Default logging level for important entries
 	 */
 	public final static int LOG_LEVEL_INFO = 5;
-
 	/*
 	 * The nRF Logger API library has been excluded from DfuLibrary.
 	 * All log events are now being sent using local broadcasts and may be logged into nRF Logger in the app module.
@@ -428,28 +429,15 @@ public abstract class DfuBaseService extends IntentService {
 	public static final int ACTION_PAUSE = 0;
 	public static final int ACTION_RESUME = 1;
 	public static final int ACTION_ABORT = 2;
-	// Values of the status field in a packet returned from the DFU target device
+	// DFU status values
 	public static final int DFU_STATUS_SUCCESS = 1;
 	public static final int DFU_STATUS_INVALID_STATE = 2;
 	public static final int DFU_STATUS_NOT_SUPPORTED = 3;
 	public static final int DFU_STATUS_DATA_SIZE_EXCEEDS_LIMIT = 4;
 	public static final int DFU_STATUS_CRC_ERROR = 5;
 	public static final int DFU_STATUS_OPERATION_FAILED = 6;
-	//
-	public static final int NOTIFICATION_ID = 283; // a random number
-	private static final String TAG = "DfuBaseService";
-	// Values of the mConnectionState variable
-	private final static int STATE_DISCONNECTED = 0;
-	private final static int STATE_CONNECTING = -1;
-	private final static int STATE_CONNECTED = -2;
-	private final static int STATE_CONNECTED_AND_READY = -3; // indicates that services were discovered
-	private final static int STATE_DISCONNECTING = -4;
-	private final static int STATE_CLOSED = -5;
-	private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
-	private final static int MAX_PACKET_SIZE = 20; // the maximum number of bytes in one packet is 20. May be less.
-	private final byte[] mBuffer = new byte[MAX_PACKET_SIZE];
-	private static final int OP_CODE_START_DFU_KEY = 0x01; // 1
 	// Operation codes and packets
+	private static final int OP_CODE_START_DFU_KEY = 0x01; // 1
 	private static final byte[] OP_CODE_START_DFU = new byte[]{OP_CODE_START_DFU_KEY, 0x00};
 	private static final int OP_CODE_INIT_DFU_PARAMS_KEY = 0x02; // 2
 	private static final byte[] OP_CODE_INIT_DFU_PARAMS_START = new byte[]{OP_CODE_INIT_DFU_PARAMS_KEY, 0x00};
@@ -462,9 +450,9 @@ public abstract class DfuBaseService extends IntentService {
 	private static final byte[] OP_CODE_ACTIVATE_AND_RESET = new byte[]{OP_CODE_ACTIVATE_AND_RESET_KEY};
 	private static final int OP_CODE_RESET_KEY = 0x06; // 6
 	private static final byte[] OP_CODE_RESET = new byte[]{OP_CODE_RESET_KEY};
-	//	private static final int OP_CODE_PACKET_REPORT_RECEIVED_IMAGE_SIZE_KEY = 0x07; // 7
+	// Not used: private static final int OP_CODE_PACKET_REPORT_RECEIVED_IMAGE_SIZE_KEY = 0x07; // 7
 	private static final int OP_CODE_PACKET_RECEIPT_NOTIF_REQ_KEY = 0x08; // 8
-	//	private static final byte[] OP_CODE_REPORT_RECEIVED_IMAGE_SIZE = new byte[] { OP_CODE_PACKET_REPORT_RECEIVED_IMAGE_SIZE_KEY };
+	// Not used: private static final byte[] OP_CODE_REPORT_RECEIVED_IMAGE_SIZE = new byte[] { OP_CODE_PACKET_REPORT_RECEIVED_IMAGE_SIZE_KEY };
 	private static final byte[] OP_CODE_PACKET_RECEIPT_NOTIF_REQ = new byte[]{OP_CODE_PACKET_RECEIPT_NOTIF_REQ_KEY, 0x00, 0x00};
 	private static final int OP_CODE_RESPONSE_CODE_KEY = 0x10; // 16
 	private static final int OP_CODE_PACKET_RECEIPT_NOTIF_KEY = 0x11; // 11
@@ -477,42 +465,34 @@ public abstract class DfuBaseService extends IntentService {
 	private static final UUID DFU_VERSION = new UUID(0x000015341212EFDEl, 0x1523785FEABCD123l);
 	private static final UUID CLIENT_CHARACTERISTIC_CONFIG = new UUID(0x0000290200001000l, 0x800000805f9b34fbl);
 	//
+	public static final int NOTIFICATION_ID = 283; // a random number
 	private static final int NOTIFICATIONS = 1;
 	private static final int INDICATIONS = 2;
+	private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
+	private static final int MAX_PACKET_SIZE = 20; // the maximum number of bytes in one packet is 20. May be less.
+	private final byte[] mBuffer = new byte[MAX_PACKET_SIZE];
 	/**
 	 * Lock used in synchronization purposes
 	 */
 	private final Object mLock = new Object();
 	private BluetoothAdapter mBluetoothAdapter;
+	private InputStream mInputStream;
 	private String mDeviceAddress;
 	private String mDeviceName;
-	/**
-	 * The number of the last error that has occurred or 0 if there was no error
-	 */
-	private int mError;
 	/**
 	 * The current connection state. If its value is > 0 than an error has occurred. Error number is a negative value of mConnectionState
 	 */
 	private int mConnectionState;
-	private final BroadcastReceiver mConnectionStateBroadcastReceiver = new BroadcastReceiver() {
-		@Override
-		public void onReceive(final Context context, final Intent intent) {
-			// obtain the device and check it this is the one that we are connected to
-			final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-			if (!device.getAddress().equals(mDeviceAddress))
-				return;
-
-			final String action = intent.getAction();
-
-			logi("Action received: " + action);
-			mConnectionState = STATE_DISCONNECTED;
-
-			// notify waiting thread
-			synchronized (mLock) {
-				mLock.notifyAll();
-			}
-		}
-	};
+	private final static int STATE_DISCONNECTED = 0;
+	private final static int STATE_CONNECTING = -1;
+	private final static int STATE_CONNECTED = -2;
+	private final static int STATE_CONNECTED_AND_READY = -3; // indicates that services were discovered
+	private final static int STATE_DISCONNECTING = -4;
+	private final static int STATE_CLOSED = -5;
+	/**
+	 * The number of the last error that has occurred or 0 if there was no error
+	 */
+	private int mError;
 	/**
 	 * Flag set when we got confirmation from the device that notifications are enabled.
 	 */
@@ -525,7 +505,6 @@ public abstract class DfuBaseService extends IntentService {
 	 * The number of packets of firmware data to be send before receiving a new Packets receipt notification. 0 disables the packets notifications
 	 */
 	private int mPacketsBeforeNotification = 10;
-	private InputStream mInputStream;
 	/**
 	 * Size of BIN content of all hex files that are going to be transmitted.
 	 */
@@ -553,8 +532,71 @@ public abstract class DfuBaseService extends IntentService {
 	 */
 	private int mPartsTotal;
 	private int mFileType;
+	private long mLastProgressTime, mStartTime;
+	/**
+	 * Flag sent when a request has been sent that will cause the DFU target to reset. Often, after sending such command, Android throws a connection state error. If this flag is set the error will be
+	 * ignored.
+	 */
+	private boolean mResetRequestSent;
+	/**
+	 * Flag indicating whether the image size has been already transferred or not
+	 */
+	private boolean mImageSizeSent;
+	/**
+	 * Flag indicating whether the init packet has been already transferred or not
+	 */
+	private boolean mInitPacketSent;
+	/**
+	 * Flag indicating whether the request was completed or not
+	 */
+	private boolean mRequestCompleted;
+	/**
+	 * <p>
+	 * Flag set to <code>true</code> when the DFU target had send any notification with status other than {@link #DFU_STATUS_SUCCESS}. Setting it to <code>true</code> will abort sending firmware and
+	 * stop logging notifications (read below for explanation).
+	 * </p>
+	 * <p>
+	 * The onCharacteristicWrite(..) callback is written when Android puts the packet to the outgoing queue, not when it physically send the data. Therefore, in case of invalid state of the DFU
+	 * target, Android will first put up to N* packets, one by one, while in fact the first will be transmitted. In case the DFU target is in an invalid state it will notify Android with a
+	 * notification 10-03-02 for each packet of firmware that has been sent. However, just after receiving the first one this service will try to send the reset command while still getting more
+	 * 10-03-02 notifications. This flag will prevent from logging "Notification received..." more than once.
+	 * </p>
+	 * <p>
+	 * Additionally, sometimes after writing the command 6 ({@link #OP_CODE_RESET}), Android will receive a notification and update the characteristic value with 10-03-02 and the callback for write
+	 * reset command will log "[DFU] Data written to ..., value (0x): 10-03-02" instead of "...(x0): 06". But this does not matter for the DFU process.
+	 * </p>
+	 * <p>
+	 * N* - Value of Packet Receipt Notification, 10 by default.
+	 * </p>
+	 */
+	private boolean mRemoteErrorOccurred;
 	private boolean mPaused;
 	private boolean mAborted;
+	/**
+	 * Latest data received from device using notification.
+	 */
+	private byte[] mReceivedData = null;
+
+	private final BroadcastReceiver mConnectionStateBroadcastReceiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(final Context context, final Intent intent) {
+			// obtain the device and check it this is the one that we are connected to
+			final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+			if (!device.getAddress().equals(mDeviceAddress))
+				return;
+
+			final String action = intent.getAction();
+
+			logi("Action received: " + action);
+			mConnectionState = STATE_DISCONNECTED;
+
+			// notify waiting thread
+			synchronized (mLock) {
+				mLock.notifyAll();
+			}
+		}
+	};
+
 	private final BroadcastReceiver mDfuActionReceiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(final Context context, final Intent intent) {
@@ -584,24 +626,7 @@ public abstract class DfuBaseService extends IntentService {
 			}
 		}
 	};
-	private long mLastProgressTime, mStartTime;
-	/**
-	 * Flag sent when a request has been sent that will cause the DFU target to reset. Often, after sending such command, Android throws a connection state error. If this flag is set the error will be
-	 * ignored.
-	 */
-	private boolean mResetRequestSent;
-	/**
-	 * Flag indicating whether the image size has been already transferred or not
-	 */
-	private boolean mImageSizeSent;
-	/**
-	 * Flag indicating whether the init packet has been already transferred or not
-	 */
-	private boolean mInitPacketSent;
-	/**
-	 * Flag indicating whether the request was completed or not
-	 */
-	private boolean mRequestCompleted;
+
 	private final BroadcastReceiver mBondStateBroadcastReceiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(final Context context, final Intent intent) {
@@ -623,30 +648,7 @@ public abstract class DfuBaseService extends IntentService {
 			}
 		}
 	};
-	/**
-	 * <p>
-	 * Flag set to <code>true</code> when the DFU target had send any notification with status other than {@link #DFU_STATUS_SUCCESS}. Setting it to <code>true</code> will abort sending firmware and
-	 * stop logging notifications (read below for explanation).
-	 * </p>
-	 * <p>
-	 * The onCharacteristicWrite(..) callback is written when Android puts the packet to the outgoing queue, not when it physically send the data. Therefore, in case of invalid state of the DFU
-	 * target, Android will first put up to N* packets, one by one, while in fact the first will be transmitted. In case the DFU target is in an invalid state it will notify Android with a
-	 * notification 10-03-02 for each packet of firmware that has been sent. However, just after receiving the first one this service will try to send the reset command while still getting more
-	 * 10-03-02 notifications. This flag will prevent from logging "Notification received..." more than once.
-	 * </p>
-	 * <p>
-	 * Additionally, sometimes after writing the command 6 ({@link #OP_CODE_RESET}), Android will receive a notification and update the characteristic value with 10-03-02 and the callback for write
-	 * reset command will log "[DFU] Data written to ..., value (0x): 10-03-02" instead of "...(x0): 06". But this does not matter for the DFU process.
-	 * </p>
-	 * <p>
-	 * N* - Value of Packet Receipt Notification, 10 by default.
-	 * </p>
-	 */
-	private boolean mRemoteErrorOccurred;
-	/**
-	 * Latest data received from device using notification.
-	 */
-	private byte[] mReceivedData = null;
+
 	private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
 		@Override
 		public void onConnectionStateChange(final BluetoothGatt gatt, final int status, final int newState) {
