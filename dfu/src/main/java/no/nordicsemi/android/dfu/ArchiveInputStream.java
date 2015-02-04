@@ -28,7 +28,7 @@ import java.io.InputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-public class ZipHexInputStream extends ZipInputStream {
+public class ArchiveInputStream extends ZipInputStream {
 	private static final String SOFTDEVICE_NAME = "softdevice.(hex|bin)";
 	private static final String BOOTLOADER_NAME = "bootloader.(hex|bin)";
 	private static final String APPLICATION_NAME = "application.(hex|bin)";
@@ -49,9 +49,9 @@ public class ZipHexInputStream extends ZipInputStream {
 
 	/**
 	 * <p>
-	 * The {@link no.nordicsemi.android.dfu.ZipHexInputStream} read HEX files from the Zip stream. It may skip some of them, depending on the value of types parameter. This is useful if the service wants to send the Soft
-	 * Device and Bootloader only, and then Application in the next connection despite that ZIP file contains all 3 HEX files. When types is equal to {@link DfuBaseService#TYPE_AUTO} all present files
-	 * are read.
+	 * The ArchiveInputStream read HEX or BIN files from the Zip stream. It may skip some of them, depending on the value of types parameter.
+	 * This is useful if the service wants to send the Soft Device and Bootloader only, and then Application in the next connection despite that ZIP file contains all 3 HEX/BIN files.
+	 * When types is equal to {@link DfuBaseService#TYPE_AUTO} all present files are read.
 	 * </p>
 	 * <p>
 	 * Use bit combination of the following types:
@@ -71,7 +71,7 @@ public class ZipHexInputStream extends ZipInputStream {
 	 *            File types that are to be read from the ZIP. Use {@link DfuBaseService#TYPE_APPLICATION} etc.
 	 * @throws java.io.IOException
 	 */
-	public ZipHexInputStream(final InputStream stream, final int mbrSize, final int types) throws IOException {
+	public ArchiveInputStream(final InputStream stream, final int mbrSize, final int types) throws IOException {
 		super(stream);
 
 		this.bytesRead = 0;
