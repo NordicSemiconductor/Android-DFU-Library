@@ -1564,7 +1564,10 @@ public abstract class DfuBaseService extends IntentService {
 					waitUntilDisconnected();
 					sendLogBroadcast(LOG_LEVEL_INFO, "Disconnected by the remote device");
 
-					refreshDeviceCache(gatt, true); // The new application may have lost bonding information (if there was bonding). Force refresh it just to be sure.
+					// In the DFU version 0.5, in case the device is bonded, the target device does not send the Service Changed indication after
+					// a jump from bootloader mode to app mode. This issue has been fixed in DFU version 0.6 (SDK 8.0). We do not need to enforce
+					// refreshing services since now.
+					refreshDeviceCache(gatt, version == 5);
 					// Close the device
 					close(gatt);
 
@@ -1791,7 +1794,7 @@ public abstract class DfuBaseService extends IntentService {
 		}
 
 		// Close the device
-		refreshDeviceCache(gatt, false);
+		refreshDeviceCache(gatt, false); // This should be true when DFU Version is 0.5
 		close(gatt);
 		updateProgressNotification(error);
 	}
