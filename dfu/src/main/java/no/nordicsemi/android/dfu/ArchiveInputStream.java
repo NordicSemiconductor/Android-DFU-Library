@@ -22,22 +22,43 @@
 
 package no.nordicsemi.android.dfu;
 
+import com.google.gson.Gson;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import no.nordicsemi.android.dfu.manifest.FileInfo;
+import no.nordicsemi.android.dfu.manifest.Manifest;
+import no.nordicsemi.android.dfu.manifest.ManifestFile;
+import no.nordicsemi.android.dfu.manifest.SoftDeviceBootloaderFileInfo;
+
 public class ArchiveInputStream extends ZipInputStream {
-	private static final String SOFTDEVICE_NAME = "softdevice.(hex|bin)";
-	private static final String BOOTLOADER_NAME = "bootloader.(hex|bin)";
-	private static final String APPLICATION_NAME = "application.(hex|bin)";
+	/** The name of the manifest file is fixed. */
+	private static final String MANIFEST = "manifest.json";
+	// Those file names are for backwards compatibility mode
+	private static final String SOFTDEVICE_HEX = "softdevice.hex";
+	private static final String SOFTDEVICE_BIN = "softdevice.bin";
+	private static final String BOOTLOADER_HEX = "bootloader.hex";
+	private static final String BOOTLOADER_BIN = "bootloader.bin";
+	private static final String APPLICATION_HEX = "application.hex";
+	private static final String APPLICATION_BIN = "application.bin";
 	private static final String SYSTEM_INIT = "system.dat";
 	private static final String APPLICATION_INIT = "application.dat";
 
+	/** Contains bytes arrays with BIN files. HEX files are converted to BIN before being added to this map. */
+	private Map<String, byte[]> entries;
+	private Manifest manifest;
+
+	private byte[] applicationBytes;
 	private byte[] softDeviceBytes;
 	private byte[] bootloaderBytes;
-	private byte[] applicationBytes;
+	private byte[] softDeviceAndBootloaderBytes;
 	private byte[] systemInitBytes;
 	private byte[] applicationInitBytes;
 	private byte[] currentSource;
@@ -49,8 +70,9 @@ public class ArchiveInputStream extends ZipInputStream {
 
 	/**
 	 * <p>
-	 * The ArchiveInputStream read HEX or BIN files from the Zip stream. It may skip some of them, depending on the value of types parameter.
-	 * This is useful if the service wants to send the Soft Device and Bootloader only, and then Application in the next connection despite that ZIP file contains all 3 HEX/BIN files.
+	 * The ArchiveInputStream read HEX or BIN files from the Zip stream. It may skip some of them, depending on the value of the types parameter.
+	 * This is useful if the DFU service wants to send the Soft Device and Bootloader only, and then the Application in the following connection, despite
+	 * the ZIP file contains all 3 HEX/BIN files.
 	 * When types is equal to {@link DfuBaseService#TYPE_AUTO} all present files are read.
 	 * </p>
 	 * <p>
@@ -74,86 +96,191 @@ public class ArchiveInputStream extends ZipInputStream {
 	public ArchiveInputStream(final InputStream stream, final int mbrSize, final int types) throws IOException {
 		super(stream);
 
+		this.entries = new HashMap<>();
 		this.bytesRead = 0;
 		this.bytesReadFromCurrentSource = 0;
 
 		try {
-			ZipEntry ze;
-			while ((ze = getNextEntry()) != null) {
-				final String filename = ze.getName();
-				final boolean softDevice = filename.matches(SOFTDEVICE_NAME);
-				final boolean bootloader = filename.matches(BOOTLOADER_NAME);
-				final boolean application = filename.matches(APPLICATION_NAME);
-				final boolean systemInit = filename.matches(SYSTEM_INIT);
-				final boolean applicationInit = filename.matches(APPLICATION_INIT);
-				if (ze.isDirectory() || !(softDevice || bootloader || application || systemInit || applicationInit))
-					throw new IOException("ZIP content not supported. Only " + SOFTDEVICE_NAME + ", " + BOOTLOADER_NAME + ", " + APPLICATION_NAME + ", " + SYSTEM_INIT + " or " + APPLICATION_INIT
-							+ " are allowed.");
+			/*
+			 * This method reads all entries from the ZIP file and puts them to entries map.
+			 * The 'manifest.json' file, if exists, is converted to the manifestData String.
+			 */
+			parseZip(mbrSize);
 
-				// Skip files that are not specified in 'types'
-				if (types != DfuBaseService.TYPE_AUTO && (
-						((softDevice || systemInit) && (types & DfuBaseService.TYPE_SOFT_DEVICE) == 0) ||
-								((bootloader || systemInit) && (types & DfuBaseService.TYPE_BOOTLOADER) == 0) ||
-						((application || applicationInit) && (types & DfuBaseService.TYPE_APPLICATION) == 0))) {
-					continue;
+			/*
+			 * Let's read and parse the 'manifest.json' file.
+			 */
+			if (manifest != null) {
+				boolean valid = false;
+
+				// Read the application
+				if (manifest.getApplicationInfo() != null && (types == DfuBaseService.TYPE_AUTO || (types & DfuBaseService.TYPE_APPLICATION) > 0)) {
+					final FileInfo application = manifest.getApplicationInfo();
+					applicationBytes = entries.get(application.getBinFileName());
+					applicationInitBytes = entries.get(application.getDatFileName());
+
+					if (applicationBytes == null)
+						throw new IOException("Application file " + application.getBinFileName() + " not found.");
+					applicationSize = applicationBytes.length;
+					currentSource = applicationBytes;
+					valid = true;
 				}
 
-				// Read file content to byte array
-				final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				final byte[] buffer = new byte[1024];
-				int count;
-				while ((count = super.read(buffer)) != -1) {
-					baos.write(buffer, 0, count);
-				}
-				byte[] source = baos.toByteArray();
+				// Read the Bootloader
+				if (manifest.getBootloaderInfo() != null && (types == DfuBaseService.TYPE_AUTO || (types & DfuBaseService.TYPE_BOOTLOADER) > 0)) {
+					if (systemInitBytes != null)
+						throw new IOException("Manifest: softdevice and bootloader specified. Use softdevice_bootloader instead.");
 
-				// Create HexInputStream from bytes and copy BIN content to arrays
-				if (softDevice) {
-					if (filename.endsWith("hex")) {
-						final HexInputStream is = new HexInputStream(source, mbrSize);
-						source = softDeviceBytes = new byte[softDeviceSize = is.available()];
-						is.read(softDeviceBytes);
-						is.close();
-					} else {
-						softDeviceBytes = source;
-						softDeviceSize = source.length;
+					final FileInfo bootloader = manifest.getBootloaderInfo();
+					bootloaderBytes = entries.get(bootloader.getBinFileName());
+					systemInitBytes = entries.get(bootloader.getDatFileName());
+
+					if (bootloaderBytes == null)
+						throw new IOException("Bootloader file " + bootloader.getBinFileName() + " not found.");
+					bootloaderSize = bootloaderBytes.length;
+					currentSource = bootloaderBytes;
+					valid = true;
+				}
+
+				// Read the Soft Device
+				if (manifest.getSoftdeviceInfo() != null && (types == DfuBaseService.TYPE_AUTO || (types & DfuBaseService.TYPE_SOFT_DEVICE) > 0)) {
+					final FileInfo softdevice = manifest.getSoftdeviceInfo();
+					softDeviceBytes = entries.get(softdevice.getBinFileName());
+					systemInitBytes = entries.get(softdevice.getDatFileName());
+
+					if (softDeviceBytes == null)
+						throw new IOException("SoftDevice file " + softdevice.getBinFileName() + " not found.");
+					softDeviceSize = softDeviceBytes.length;
+					currentSource = softDeviceBytes;
+					valid = true;
+				}
+
+				// Read the combined Soft Device and Bootloader
+				if (manifest.getSoftdeviceBootloaderInfo() != null && (types == DfuBaseService.TYPE_AUTO ||
+						((types & DfuBaseService.TYPE_SOFT_DEVICE) > 0) && (types & DfuBaseService.TYPE_BOOTLOADER) > 0)) {
+					if (systemInitBytes != null)
+						throw new IOException("Manifest: The softdevice_bootloader may not be used together with softdevice or bootloader.");
+
+					final SoftDeviceBootloaderFileInfo system = manifest.getSoftdeviceBootloaderInfo();
+					softDeviceAndBootloaderBytes = entries.get(system.getBinFileName());
+					systemInitBytes = entries.get(system.getDatFileName());
+
+					if (softDeviceAndBootloaderBytes == null)
+						throw new IOException("File " + system.getBinFileName() + " not found.");
+					softDeviceSize = system.getSoftdeviceSize();
+					bootloaderSize = system.getBootloaderSize();
+					currentSource = softDeviceAndBootloaderBytes;
+					valid = true;
+				}
+
+				if (!valid) {
+					throw new IOException("Manifest file must specify at least one file.");
+				}
+			} else {
+				/*
+				 * Compatibility mode. The 'manifest.json' file does not exist.
+				 *
+				 * In that case the ZIP file must contain one or more of the following files:
+				 *
+				 * - application.hex/dat
+				 *     + application.dat
+				 * - softdevice.hex/dat
+				 * - bootloader.hex/dat
+				 *     + system.dat
+				 */
+				boolean valid = false;
+				// Search for the application
+				if (types == DfuBaseService.TYPE_AUTO || (types & DfuBaseService.TYPE_APPLICATION) > 0) {
+					applicationBytes = entries.get(APPLICATION_HEX); // the entry bytes has already been converted to BIN, just the name remained.
+					if (applicationBytes == null)
+						applicationBytes = entries.get(APPLICATION_BIN);
+					if (applicationBytes != null) {
+						applicationSize = applicationBytes.length;
+						applicationInitBytes = entries.get(APPLICATION_INIT);
+						currentSource = applicationBytes;
+						valid = true;
 					}
-					// upload must always start from Soft Device
-					currentSource = source;
-				} else if (bootloader) {
-					if (filename.endsWith("hex")) {
-						final HexInputStream is = new HexInputStream(source, mbrSize);
-						source = bootloaderBytes = new byte[bootloaderSize = is.available()];
-						is.read(bootloaderBytes);
-						is.close();
-					} else {
-						bootloaderBytes = source;
-						bootloaderSize = source.length;
+				}
+
+				// Search for theBootloader
+				if (types == DfuBaseService.TYPE_AUTO || (types & DfuBaseService.TYPE_BOOTLOADER) > 0) {
+					bootloaderBytes = entries.get(BOOTLOADER_HEX); // the entry bytes has already been converted to BIN, just the name remained.
+					if (bootloaderBytes == null)
+						bootloaderBytes = entries.get(BOOTLOADER_BIN);
+					if (bootloaderBytes != null) {
+						bootloaderSize = bootloaderBytes.length;
+						systemInitBytes = entries.get(SYSTEM_INIT);
+						currentSource = bootloaderBytes;
+						valid = true;
 					}
-					// If the current source is null or application, switch it to the bootloader
-					if (currentSource == applicationBytes)
-						currentSource = source;
-				} else if (application) {
-					if (filename.endsWith("hex")) {
-						final HexInputStream is = new HexInputStream(source, mbrSize);
-						source = applicationBytes = new byte[applicationSize = is.available()];
-						is.read(applicationBytes);
-						is.close();
-					} else {
-						applicationBytes = source;
-						applicationSize = source.length;
+				}
+
+				// Search for the Soft Device
+				if (types == DfuBaseService.TYPE_AUTO || (types & DfuBaseService.TYPE_SOFT_DEVICE) > 0) {
+					softDeviceBytes = entries.get(SOFTDEVICE_HEX); // the entry bytes has already been converted to BIN, just the name remained.
+					if (softDeviceBytes == null)
+						softDeviceBytes = entries.get(SOFTDEVICE_BIN);
+					if (softDeviceBytes != null) {
+						softDeviceSize = softDeviceBytes.length;
+						systemInitBytes = entries.get(SYSTEM_INIT);
+						currentSource = softDeviceBytes;
+						valid = true;
 					}
-					// Temporarily set the current source to application, it may be overwritten in a moment
-					if (currentSource == null)
-						currentSource = source;
-				} else if (systemInit) {
-					systemInitBytes = source;
-				} else { // if (applicationInit) - always true
-					applicationInitBytes = source;
+				}
+
+				if (!valid) {
+					throw new IOException("The ZIP file must contain an Application, a Soft Device and/or a Bootloader.");
 				}
 			}
 		} finally {
 			super.close();
+		}
+	}
+
+	/**
+	 * Reads all files into byte arrays.
+	 * Here we don't know whether the ZIP file is valid.
+	 *
+	 * The ZIP file is valid when contains a 'manifest.json' file and all BIN and DAT files that are specified in the manifest.
+	 *
+	 * For backwards compatibility ArchiveInputStream supports also ZIP archives without 'manifest.json' file
+	 * but than it MUST include at least one of the following files: softdevice.bin/hex, bootloader.bin/hex, application.bin/hex.
+	 * To support the init packet such ZIP file should contain also application.dat and/or system.dat (with the CRC16 of a SD, BL or SD+BL together).
+	 */
+	private void parseZip(int mbrSize) throws IOException {
+		final byte[] buffer = new byte[1024];
+		String manifestData = null;
+
+		ZipEntry ze;
+		while ((ze = getNextEntry()) != null) {
+			final String filename = ze.getName();
+
+			// Read file content to byte array
+			final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			int count;
+			while ((count = super.read(buffer)) != -1) {
+				baos.write(buffer, 0, count);
+			}
+			byte[] source = baos.toByteArray();
+
+			// In case of HEX file convert it to BIN
+			if (filename.toLowerCase(Locale.US).endsWith("hex")) {
+				final HexInputStream is = new HexInputStream(source, mbrSize);
+				source = new byte[is.available()];
+				is.read(source);
+				is.close();
+			}
+
+			// Save the file content either as a manifest data or by adding it to entries
+			if (MANIFEST.equals(filename))
+				manifestData = new String(source, "UTF-8");
+			else
+				entries.put(filename, source);
+		}
+
+		if (manifestData != null) {
+			final ManifestFile manifestFile = new Gson().fromJson(manifestData, ManifestFile.class);
+			manifest = manifestFile.getManifest();
 		}
 	}
 
@@ -162,6 +289,7 @@ public class ArchiveInputStream extends ZipInputStream {
 		softDeviceBytes = null;
 		bootloaderBytes = null;
 		softDeviceBytes = null;
+		softDeviceAndBootloaderBytes = null;
 		softDeviceSize = bootloaderSize = applicationSize = 0;
 		currentSource = null;
 		bytesRead = bytesReadFromCurrentSource = 0;
@@ -188,6 +316,14 @@ public class ArchiveInputStream extends ZipInputStream {
 		}
 		bytesRead += size;
 		return size;
+	}
+
+	/**
+	 * Returns the manifest object if it was specified in the ZIP file.
+	 * @return the manifest object
+	 */
+	public Manifest getManifest() {
+		return manifest;
 	}
 
 	/**
@@ -222,10 +358,18 @@ public class ArchiveInputStream extends ZipInputStream {
 
 		if ((t & DfuBaseService.TYPE_SOFT_DEVICE) == 0) {
 			softDeviceBytes = null;
+			if (softDeviceAndBootloaderBytes != null) {
+				softDeviceAndBootloaderBytes = null;
+				bootloaderSize = 0;
+			}
 			softDeviceSize = 0;
 		}
 		if ((t & DfuBaseService.TYPE_BOOTLOADER) == 0) {
 			bootloaderBytes = null;
+			if (softDeviceAndBootloaderBytes != null) {
+				softDeviceAndBootloaderBytes = null;
+				softDeviceSize = 0;
+			}
 			bootloaderSize = 0;
 		}
 		if ((t & DfuBaseService.TYPE_APPLICATION) == 0) {
@@ -234,6 +378,8 @@ public class ArchiveInputStream extends ZipInputStream {
 		}
 		return t;
 	}
+
+
 
 	/**
 	 * Sets the currentSource to the new file or to <code>null</code> if the last file has been transmitted.
