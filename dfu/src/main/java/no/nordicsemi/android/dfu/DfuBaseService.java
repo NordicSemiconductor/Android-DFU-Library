@@ -1304,7 +1304,7 @@ public abstract class DfuBaseService extends IntentService {
 									 * read from the application's ATT table, but rather passed as an argument of the "reboot to bootloader" method.
 									 */
 									final boolean keepBond = intent.getBooleanExtra(EXTRA_KEEP_BOND, false);
-									if (keepBond && (fileType & (TYPE_APPLICATION | TYPE_BOOTLOADER)) > 0) {
+									if (keepBond && (fileType & TYPE_SOFT_DEVICE) == 0) {
 										sendLogBroadcast(LOG_LEVEL_VERBOSE, "Restarting service...");
 
 										updateProgressNotification(PROGRESS_DISCONNECTING);
