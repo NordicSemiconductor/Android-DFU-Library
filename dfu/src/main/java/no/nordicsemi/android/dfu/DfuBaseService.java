@@ -118,13 +118,28 @@ public abstract class DfuBaseService extends IntentService {
 	 * your old application supported bonding while the new one does not you have to modify the source code yourself.
 	 * </p>
 	 * <p>
-	 * In case of updating the soft device the application is always removed so the bond information with it.
+	 * In case of updating the soft device the application is always removed together with the bond information.
 	 * </p>
 	 * <p>
 	 * Search for occurrences of EXTRA_RESTORE_BOND in this file to check the implementation and get more details.
 	 * </p>
 	 */
 	public static final String EXTRA_RESTORE_BOND = "no.nordicsemi.android.dfu.extra.EXTRA_RESTORE_BOND";
+	/**
+	 * <p>This flag indicated whether the bond information should be kept or removed after an upgrade of the Application.
+	 * If an application is being updated on a bonded device with the DFU Bootloader that has been configured to preserve the bond information for the new application,
+	 * set it to <code>true</code>.</p>
+	 *
+	 * <p>By default the DFU Bootloader clears the whole application's memory. It may be however configured in the \Nordic\nrf51\components\libraries\bootloader_dfu\dfu_types.h
+	 * file (line 56: <code>#define DFU_APP_DATA_RESERVED 0x0000</code>) to preserve some pages. The BLE_APP_HRM_DFU sample app stores the LTK and System Attributes in the first
+	 * two pages, so in order to preserve the bond information this value should be changed to 0x0800 or more.
+	 * When those data are preserved, the new Application will notify the app with the Service Changed indication when launched for the first time. Otherwise this
+	 * service will remove the bond information from the phone and force to refresh the device cache (see {@link #refreshDeviceCache(android.bluetooth.BluetoothGatt, boolean)}).</p>
+	 *
+	 * <p>In contrast to {@link #EXTRA_RESTORE_BOND} this flag will not remove the old bonding and recreate a new one, but will keep the bond information untouched.</p>
+	 * <p>The default value of this flag is <code>false</code></p>
+	 */
+	public static final String EXTRA_KEEP_BOND = "no.nordicsemi.android.dfu.extra.EXTRA_KEEP_BOND";
 	/**
 	 * A path to the file with the new firmware. It may point to a HEX, BIN or a ZIP file.
 	 * Some file manager applications return the path as a String while other return a Uri. Use the {@link #EXTRA_FILE_URI} in the later case.
@@ -149,7 +164,7 @@ public abstract class DfuBaseService extends IntentService {
 	 * empty the "application/octet-stream" is assumed.
 	 */
 	public static final String EXTRA_FILE_MIME_TYPE = "no.nordicsemi.android.dfu.extra.EXTRA_MIME_TYPE";
-	// Since the DFU Library version 7.0 both HEX and BIN files are supported. As both files have the same MIME TYPE the distinction is made based on the file extension.
+	// Since the DFU Library version 0.5 both HEX and BIN files are supported. As both files have the same MIME TYPE the distinction is made based on the file extension.
 	public static final String MIME_TYPE_OCTET_STREAM = "application/octet-stream";
 	public static final String MIME_TYPE_ZIP = "application/zip";
 	/**
@@ -158,7 +173,9 @@ public abstract class DfuBaseService extends IntentService {
 	 * <li>{@link #TYPE_SOFT_DEVICE} - only Soft Device update</li>
 	 * <li>{@link #TYPE_BOOTLOADER} - only Bootloader update</li>
 	 * <li>{@link #TYPE_APPLICATION} - only application update</li>
-	 * <li>{@link #TYPE_AUTO} - the file is a ZIP file that may contain more than one HEX/BIN + DAT files. The ZIP file MAY contain only the following files:
+	 * <li>{@link #TYPE_AUTO} - the file is a ZIP file that may contain more than one HEX/BIN + DAT files. Since SDK 8.0 the ZIP Distribution packet is a recommended
+	 * way of delivering firmware files. Please, see the DFU documentation for more details. A ZIP distribution packet may be created using the 'nrf utility'
+	 * command line application, that is a part of Master Control Panel 3.8.0.The ZIP file MAY contain only the following files:
 	 * <b>softdevice.hex/bin</b>, <b>bootloader.hex/bin</b>, <b>application.hex/bin</b> to determine the type based on its name. At lease one of them MUST be present.
 	 * </li>
 	 * </ul>
@@ -174,8 +191,8 @@ public abstract class DfuBaseService extends IntentService {
 	 * The file contains a new version of Soft Device.
 	 * </p>
 	 * <p>
-	 * Since DFU Library 7.0 all firmware may contain an Init packet. The Init packet is required if Extended Init Packet is used by the DFU bootloader. The Init packet for the Soft Device must be
-	 * placed in the [firmware name].dat file as binary file (in the same location).
+	 * Since DFU Library 7.0 all firmware may contain an Init packet. The Init packet is required if Extended Init Packet is used by the DFU bootloader (SDK 7.0+)..
+	 * The Init packet for the bootloader must be placed in the .dat file.
 	 * </p>
 	 *
 	 * @see #EXTRA_FILE_TYPE
@@ -186,8 +203,8 @@ public abstract class DfuBaseService extends IntentService {
 	 * The file contains a new version of Bootloader.
 	 * </p>
 	 * <p>
-	 * Since DFU Library 7.0 all firmware may contain an Init packet. The Init packet is required if Extended Init Packet is used by the DFU bootloader. The Init packet for the bootloader must be
-	 * placed in the [firmware name].dat file as binary file (in the same location).
+	 * Since DFU Library 7.0 all firmware may contain an Init packet. The Init packet is required if Extended Init Packet is used by the DFU bootloader (SDK 7.0+).
+	 * The Init packet for the bootloader must be placed in the .dat file.
 	 * </p>
 	 *
 	 * @see #EXTRA_FILE_TYPE
@@ -198,8 +215,8 @@ public abstract class DfuBaseService extends IntentService {
 	 * The file contains a new version of Application.
 	 * </p>
 	 * <p>
-	 * Since DFU Library 7.0 all firmware may contain an Init packet. The Init packet is required if Extended Init Packet is used by the DFU bootloader. The Init packet for the application must be
-	 * placed in the [firmware name].dat file as binary file (in the same location).
+	 * Since DFU Library 0.5 all firmware may contain an Init packet. The Init packet is required if Extended Init Packet is used by the DFU bootloader (SDK 7.0+).
+	 * The Init packet for the application must be placed in the .dat file.
 	 * </p>
 	 *
 	 * @see #EXTRA_FILE_TYPE
@@ -207,14 +224,19 @@ public abstract class DfuBaseService extends IntentService {
 	public static final int TYPE_APPLICATION = 0x04;
 	/**
 	 * <p>
-	 * A ZIP file that combines more than 1 HEX file. The names of files in the ZIP must be: <b>softdevice.hex</b> (or .bin), <b>bootloader.hex</b> (or .bin), <b>application.hex</b> (or .bin) in order
-	 * to be read correctly. In the DFU version 2 the Soft Device and Bootloader may be sent together. In case of additional application file included, the service will try to send Soft Device,
-	 * Bootloader and Application together (not supported by DFU v.2) and if it fails, send first SD+BL, reconnect and send application.
+	 * A ZIP file that consists of more than 1 file. Since SDK 8.0 the ZIP Distribution packet is a recommended way of delivering firmware files. Please, see the DFU documentation for
+	 * more details. A ZIP distribution packet may be created using the 'nrf utility' command line application, that is a part of Master Control Panel 3.8.0.
+	 * For backwards compatibility this library supports also ZIP files without the manifest file. Instead they must follow the fixed naming convention:
+	 * The names of files in the ZIP must be: <b>softdevice.hex</b> (or .bin), <b>bootloader.hex</b> (or .bin), <b>application.hex</b> (or .bin) in order
+	 * to be read correctly. Using the Soft Device v7.0.0+ the Soft Device and Bootloader may be updated and sent together. In case of additional application file included,
+	 * the service will try to send Soft Device, Bootloader and Application together (which is not supported currently) and if it fails, send first SD+BL, reconnect and send the application
+	 * in the following connection.
 	 * </p>
 	 * <p>
-	 * Since the DFU Library 7.0 all firmware may contain an Init packet. The Init packet is required if Extended Init Packet is used by the DFU bootloader. The Init packet for the Soft Device and
-	 * Bootloader must be in 'system.dat' file while for the application in the 'application.dat' file (included in the ZIP). The CRC in the 'system.dat' must be a CRC of both BIN contents if both a
-	 * Soft Device and a Bootloader is present.
+	 * Since the DFU Library 0.5 you may specify the Init packet, that will be send prior to the firmware. The init packet contains some verification data, like a device type and
+	 * revision, application version or a list of supported Soft Devices. The Init packet is required if Extended Init Packet is used by the DFU bootloader (SDK 7.0+).
+	 * In case of using the compatibility ZIP files the Init packet for the Soft Device and Bootloader must be in the 'system.dat' file while for the application
+	 * in the 'application.dat' file (included in the ZIP). The CRC in the 'system.dat' must be a CRC of both BIN contents if both a Soft Device and a Bootloader is present.
 	 * </p>
 	 *
 	 * @see #EXTRA_FILE_TYPE
@@ -747,6 +769,27 @@ public abstract class DfuBaseService extends IntentService {
 		}
 
 		@Override
+		public void onDescriptorRead(final BluetoothGatt gatt, final BluetoothGattDescriptor descriptor, final int status) {
+			if (status == BluetoothGatt.GATT_SUCCESS) {
+				if (CLIENT_CHARACTERISTIC_CONFIG.equals(descriptor.getUuid())) {
+					if (SERVICE_CHANGED_UUID.equals(descriptor.getCharacteristic().getUuid())) {
+						// We have enabled indications for the Service Changed characteristic
+						mServiceChangedIndicationsEnabled = descriptor.getValue()[0] == 2;
+						mRequestCompleted = true;
+					}
+				}
+			} else {
+				loge("Descriptor read error: " + status);
+				mError = ERROR_CONNECTION_MASK | status;
+			}
+
+			// Notify waiting thread
+			synchronized (mLock) {
+				mLock.notifyAll();
+			}
+		}
+
+		@Override
 		public void onDescriptorWrite(final BluetoothGatt gatt, final BluetoothGattDescriptor descriptor, final int status) {
 			if (status == BluetoothGatt.GATT_SUCCESS) {
 				if (CLIENT_CHARACTERISTIC_CONFIG.equals(descriptor.getUuid())) {
@@ -1185,12 +1228,15 @@ public abstract class DfuBaseService extends IntentService {
 			 *
 			 * Currently the following version numbers are supported:
 			 *
-			 *   - 0.1 (0x01-00) - Device is connected to the application, not to the Bootloader. The application supports Long Term Key (LTK) sharing and buttonless update.
-			 *                     Enable notifications on the DFU Control Point characteristic and write 0x01-04 into it to jump to the Bootloader.
+			 *   - 0.1 (0x01-00) - The service is connected to the device in application mode, not to the DFU Bootloader. The application supports Long Term Key (LTK)
+			 *                     sharing and buttonless update. Enable notifications on the DFU Control Point characteristic and write 0x01-04 into it to jump to the Bootloader.
 			 *                     Check the Bootloader version again for more info about the Bootloader version.
 			 *
-			 *   - 0.5 (0x05-00) - Device is in OTA-DFU Bootloader. The Bootloader supports LTK sharing and required the Extended Init Packet. It supports
+			 *   - 0.5 (0x05-00) - The device is in the OTA-DFU Bootloader mode. The Bootloader supports LTK sharing and requires the Extended Init Packet. It supports
 			 *                     a SoftDevice, Bootloader or an Application update. SoftDevice and a Bootloader may be sent together.
+			 *
+			 *   - 0.6 (0x06-00) - The device is in the OTA-DFU Bootloader mode. The DFU Bootloader is from SDK 8.0 and has the same features as version 0.5. It also
+			 *                     supports also sending Service Changed notification in application mode after successful or aborted upload so no refreshing services is required.
 			 */
 			final BluetoothGattCharacteristic versionCharacteristic = dfuService.getCharacteristic(DFU_VERSION); // this may be null for older versions of the Bootloader
 
@@ -1227,8 +1273,58 @@ public abstract class DfuBaseService extends IntentService {
 						if (genericAttributeService != null) {
 							final BluetoothGattCharacteristic serviceChangedCharacteristic = genericAttributeService.getCharacteristic(SERVICE_CHANGED_UUID);
 							if (serviceChangedCharacteristic != null) {
-								enableCCCD(gatt, serviceChangedCharacteristic, INDICATIONS);
-								sendLogBroadcast(LOG_LEVEL_APPLICATION, "Service Changed indications enabled");
+								// Let's read the current value of the Service Changed CCCD
+								final boolean serviceChangedIndicationsEnabled = isServiceChangedCCCDEnabled(gatt, serviceChangedCharacteristic);
+
+								if (!serviceChangedIndicationsEnabled) {
+									enableCCCD(gatt, serviceChangedCharacteristic, INDICATIONS);
+									sendLogBroadcast(LOG_LEVEL_APPLICATION, "Service Changed indications enabled");
+
+									/*
+									 * NOTE: The DFU Bootloader from SDK 8.0 (v0.6 and 0.5) has the following issue:
+									 *
+									 * When the central device (phone) connects to a bonded device (or connects and bonds) which supports the Service Changed characteristic,
+									 * but does not have the Service Changed indications enabled, the phone must enable them, disconnect and reconnect before starting the
+									 * DFU operation. This is because the current version of the Soft Device saves the ATT table on the DISCONNECTED event.
+									 * Sending the "jump to Bootloader" command (0x01-04) will cause the disconnect followed be a reset. The Soft Device does not
+									 * have time to store the ATT table on Flash memory before the reset.
+									 *
+									 * This applies only if:
+									 * - the device was bonded before an upgrade,
+									 * - the Application or the Bootloader is upgraded (upgrade of the Soft Device will erase the bond information anyway),
+									 *     - Application:
+									  *        if the DFU Bootloader has been modified and compiled to preserve the LTK and the ATT table after application upgrade (at least 2 pages)
+									 *         See: \Nordic\nrf51\components\libraries\bootloader_dfu\dfu_types.h, line 56:
+									 *          #define DFU_APP_DATA_RESERVED           0x0000  ->  0x0800+   //< Size of Application Data that must be preserved between application updates...
+									 *     - Bootloader:
+									 *         The Application memory should not be removed when the Bootloader is upgraded, so the Bootloader configuration does not matter.
+									 *
+									 * If the bond information is not to be preserved between the old and new applications, we may skip this disconnect/reconnect process.
+									 * The DFU Bootloader will send the SD indication anyway when we will just continue here, as the information whether it should send it or not it is not being
+									 * read from the application's ATT table, but rather passed as an argument of the "reboot to bootloader" method.
+									 */
+									final boolean keepBond = intent.getBooleanExtra(EXTRA_KEEP_BOND, false);
+									if (keepBond && (fileType & (TYPE_APPLICATION | TYPE_BOOTLOADER)) > 0) {
+										sendLogBroadcast(LOG_LEVEL_VERBOSE, "Restarting service...");
+
+										updateProgressNotification(PROGRESS_DISCONNECTING);
+										sendLogBroadcast(LOG_LEVEL_VERBOSE, "Disconnecting...");
+										gatt.disconnect();
+										waitUntilDisconnected();
+										sendLogBroadcast(LOG_LEVEL_INFO, "Disconnected");
+
+										// Close the device
+										close(gatt);
+
+										logi("Restarting service");
+										final Intent newIntent = new Intent();
+										newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
+										startService(newIntent);
+										return;
+									}
+								} else {
+									sendLogBroadcast(LOG_LEVEL_APPLICATION, "Service Changed indications enabled");
+								}
 								hasServiceChanged = true;
 							}
 						}
@@ -1286,12 +1382,12 @@ public abstract class DfuBaseService extends IntentService {
 					int status;
 
 					/*
-					 * DFU v.1 supports updating only an Application.
+					 * The first version of DFU supported only an Application update.
 					 * Initializing procedure:
 					 * [DFU Start (0x01)] -> DFU Control Point
 					 * [App size in bytes (UINT32)] -> DFU Packet
 					 * ---------------------------------------------------------------------
-					 * DFU v.2 supports updating Soft Device, Bootloader and Application
+					 * Since SDK 6.0 and Soft Device 7.0+ the DFU supports upgrading Soft Device, Bootloader and Application.
 					 * Initializing procedure:
 					 * [DFU Start (0x01), <Update Mode>] -> DFU Control Point
 					 * [SD size in bytes (UINT32), Bootloader size in bytes (UINT32), Application size in bytes (UINT32)] -> DFU Packet
@@ -1304,14 +1400,14 @@ public abstract class DfuBaseService extends IntentService {
 					 * If <Upload Mode> equals 5, 6 or 7 DFU target may return OPERATION_NOT_SUPPORTED [10, 01, 03]. In that case service will try to send
 					 * Soft Device and/or Bootloader first, reconnect to the new Bootloader and send the Application in the second connection.
 					 * --------------------------------------------------------------------
-					 * If DFU target supports only the DFU v.1 a response [10, 01, 03] will be send as a notification on DFU Control Point characteristic, where:
+					 * If DFU target supports only the old DFU, a response [10, 01, 03] will be send as a notification on DFU Control Point characteristic, where:
 					 * 10 - Response for...
 					 * 01 - DFU Start command
 					 * 03 - Operation Not Supported
 					 * (see table below)
 					 * In that case:
-					 * 1. If this is application update - service will try to upload using DFU v.1
-					 * 2. In case of SD or BL update an error is returned
+					 * 1. If this is application update - service will try to upload using the old DFU protocol.
+					 * 2. In case of SD or BL update an error is returned.
 					 */
 
 					// Obtain size of image(s)
@@ -1329,17 +1425,17 @@ public abstract class DfuBaseService extends IntentService {
 					try {
 						OP_CODE_START_DFU[1] = (byte) fileType;
 
-						// send Start DFU command to Control Point
+						// Send Start DFU command to Control Point
 						logi("Sending Start DFU command (Op Code = 1, Upload Mode = " + fileType + ")");
 						writeOpCode(gatt, controlPointCharacteristic, OP_CODE_START_DFU);
 						sendLogBroadcast(LOG_LEVEL_APPLICATION, "DFU Start sent (Op Code = 1, Upload Mode = " + fileType + ")");
 
-						// send image size in bytes to DFU Packet
+						// Send image size in bytes to DFU Packet
 						logi("Sending image size array to DFU Packet (" + softDeviceImageSize + "b, " + bootloaderImageSize + "b, " + appImageSize + "b)");
 						writeImageSize(gatt, packetCharacteristic, softDeviceImageSize, bootloaderImageSize, appImageSize);
 						sendLogBroadcast(LOG_LEVEL_APPLICATION, "Firmware image size sent (" + softDeviceImageSize + "b, " + bootloaderImageSize + "b, " + appImageSize + "b)");
 
-						// a notification will come with confirmation. Let's wait for it a bit
+						// A notification will come with confirmation. Let's wait for it a bit
 						response = readNotificationResponse();
 
 						/*
@@ -1361,8 +1457,8 @@ public abstract class DfuBaseService extends IntentService {
 							if (e.getErrorNumber() != DFU_STATUS_NOT_SUPPORTED)
 								throw e;
 
-							// If user wants to send soft device and/or bootloader + application we may try to send the Soft Device/Bootloader files first,
-							// and then reconnect and send the application
+							// If user wants to send the Soft Device and/or the Bootloader + Application we may try to send the Soft Device/Bootloader files first,
+							// and then reconnect and send the application in the second connection.
 							if ((fileType & TYPE_APPLICATION) > 0 && (fileType & (TYPE_SOFT_DEVICE | TYPE_BOOTLOADER)) > 0) {
 								// Clear the remote error flag
 								mRemoteErrorOccurred = false;
@@ -1375,7 +1471,7 @@ public abstract class DfuBaseService extends IntentService {
 								OP_CODE_START_DFU[1] = (byte) fileType;
 								mPartsTotal = 2;
 
-								// set new content type in the ZIP Input Stream and update sizes of images
+								// Set new content type in the ZIP Input Stream and update sizes of images
 								final ArchiveInputStream zhis = (ArchiveInputStream) is;
 								zhis.setContentType(fileType);
 								try {
@@ -1385,18 +1481,18 @@ public abstract class DfuBaseService extends IntentService {
 									// never happen
 								}
 
-								// send Start DFU command to Control Point
+								// Send Start DFU command to Control Point
 								sendLogBroadcast(LOG_LEVEL_VERBOSE, "Sending only SD/BL");
 								logi("Resending Start DFU command (Op Code = 1, Upload Mode = " + fileType + ")");
 								writeOpCode(gatt, controlPointCharacteristic, OP_CODE_START_DFU);
 								sendLogBroadcast(LOG_LEVEL_APPLICATION, "DFU Start sent (Op Code = 1, Upload Mode = " + fileType + ")");
 
-								// send image size in bytes to DFU Packet
+								// Send image size in bytes to DFU Packet
 								logi("Sending image size array to DFU Packet: [" + softDeviceImageSize + "b, " + bootloaderImageSize + "b, " + appImageSize + "b]");
 								writeImageSize(gatt, packetCharacteristic, softDeviceImageSize, bootloaderImageSize, appImageSize);
 								sendLogBroadcast(LOG_LEVEL_APPLICATION, "Firmware image size sent [" + softDeviceImageSize + "b, " + bootloaderImageSize + "b, " + appImageSize + "b]");
 
-								// a notification will come with confirmation. Let's wait for it a bit
+								// A notification will come with confirmation. Let's wait for it a bit
 								response = readNotificationResponse();
 								status = getStatusCode(response, OP_CODE_START_DFU_KEY);
 								sendLogBroadcast(LOG_LEVEL_APPLICATION, "Response received (Op Code = " + response[1] + " Status = " + status + ")");
@@ -1408,7 +1504,7 @@ public abstract class DfuBaseService extends IntentService {
 							if (e1.getErrorNumber() != DFU_STATUS_NOT_SUPPORTED)
 								throw e1;
 
-							// If operation is not supported by DFU target we may try to upload application with legacy mode, using DFU v.1
+							// If operation is not supported by DFU target we may try to upload application with legacy mode, using the old DFU protocol
 							if (fileType == TYPE_APPLICATION) {
 								// Clear the remote error flag
 								mRemoteErrorOccurred = false;
@@ -1417,18 +1513,18 @@ public abstract class DfuBaseService extends IntentService {
 								logw("DFU target does not support DFU v.2");
 								sendLogBroadcast(LOG_LEVEL_WARNING, "DFU target does not support DFU v.2");
 
-								// send Start DFU command to Control Point
+								// Send Start DFU command to Control Point
 								sendLogBroadcast(LOG_LEVEL_VERBOSE, "Switching to DFU v.1");
 								logi("Resending Start DFU command (Op Code = 1)");
 								writeOpCode(gatt, controlPointCharacteristic, OP_CODE_START_DFU); // If has 2 bytes, but the second one is ignored
 								sendLogBroadcast(LOG_LEVEL_APPLICATION, "DFU Start sent (Op Code = 1)");
 
-								// send image size in bytes to DFU Packet
+								// Send image size in bytes to DFU Packet
 								logi("Sending application image size to DFU Packet: " + imageSizeInBytes + " bytes");
 								writeImageSize(gatt, packetCharacteristic, mImageSizeInBytes);
 								sendLogBroadcast(LOG_LEVEL_APPLICATION, "Firmware image size sent (" + imageSizeInBytes + " bytes)");
 
-								// a notification will come with confirmation. Let's wait for it a bit
+								// A notification will come with confirmation. Let's wait for it a bit
 								response = readNotificationResponse();
 								status = getStatusCode(response, OP_CODE_START_DFU_KEY);
 								sendLogBroadcast(LOG_LEVEL_APPLICATION, "Response received (Op Code = " + response[1] + ", Status = " + status + ")");
@@ -1453,24 +1549,26 @@ public abstract class DfuBaseService extends IntentService {
 					//			}
 					//		}
 
-					// Send DFU Init Packet
 					/*
 					 * If the DFU Version characteristic is present and the version returned from it is greater or equal to 0.5, the Extended Init Packet is required.
 					 * For older versions, or if the DFU Version characteristic is not present (pre SDK 7.0.0), the Init Packet (which could have contained only the firmware CRC) was optional.
 					 * To calculate the CRC (CRC-CCTII-16 0xFFFF) the following application may be used: http://www.lammertbies.nl/comm/software/index.html -> CRC library.
 					 *
-					 * The Init Packet is read from the [firmware].dat file as a binary file. This means:
-					 * 1. If the firmware is in HEX or BIN file, f.e. my_firmware.hex (or .bin), the init packet will be read from my_firmware.dat file.
-					 * 2. If the new firmware consists of more files (combined in the ZIP) or the ZIP file is used to store it, the ZIP must additionally contain the following files:
+					 * The Init Packet is read from the *.dat file as a binary file. This service you allows to specify the init packet file in two ways.
+					 * Since SDK 8.0 and the DFU Library v0.6 using the Distribution packet (ZIP) is recommended. The distribution packet can be created using the
+					 * *nrf utility* tool, available together with Master Control Panel v 3.8.0. See the DFU documentation at http://developer.nordicsemi.com for more details.
+					 * An init file may be also provided as a separate file using the {@link #EXTRA_INIT_FILE_PATH} or {@link #EXTRA_INIT_FILE_URI} or in the ZIP file
+					 * with the deprecated fixed naming convention:
 					 *
 					 *    a) If the ZIP file contain a softdevice.hex (or .bin) and/or bootloader.hex (or .bin) the 'system.dat' must also be included.
 					 *       In case when both files are present the CRC should be calculated from the two BIN contents merged together.
 					 *       This means: if there are softdevice.hex and bootloader.hex files in the ZIP file you have to convert them to BIN
-					 *       (f.e. using: http://hex2bin.sourceforge.net/ application), put into one file where the soft device is placed as the first one and calculate the CRC for the
-					 *       whole big file.
+					 *       (e.g. using: http://hex2bin.sourceforge.net/ application), copy them into a single file where the soft device is placed as the first one and calculate
+					 *       the CRC for the whole file.
 					 *
 					 *    b) If the ZIP file contains a application.hex (or .bin) file the 'application.dat' file must be included and contain the Init packet for the application.
 					 */
+					// Send DFU Init Packet
 					if (initIs != null) {
 						sendLogBroadcast(LOG_LEVEL_APPLICATION, "Writing Initialize DFU Parameters...");
 
@@ -1491,7 +1589,7 @@ public abstract class DfuBaseService extends IntentService {
 						writeOpCode(gatt, controlPointCharacteristic, OP_CODE_INIT_DFU_PARAMS_COMPLETE);
 						sendLogBroadcast(LOG_LEVEL_APPLICATION, "Initialize DFU Parameters completed");
 
-						// a notification will come with confirmation. Let's wait for it a bit
+						// A notification will come with confirmation. Let's wait for it a bit
 						response = readNotificationResponse();
 						status = getStatusCode(response, OP_CODE_INIT_DFU_PARAMS_KEY);
 						sendLogBroadcast(LOG_LEVEL_APPLICATION, "Response received (Op Code = " + response[1] + ", Status = " + status + ")");
@@ -1514,7 +1612,7 @@ public abstract class DfuBaseService extends IntentService {
 					writeOpCode(gatt, controlPointCharacteristic, OP_CODE_RECEIVE_FIRMWARE_IMAGE);
 					sendLogBroadcast(LOG_LEVEL_APPLICATION, "Receive Firmware Image request sent");
 
-					// This allow us to calculate upload time
+					// Send the firmware. The method below sends the first packet and waits until the whole firmware is sent.
 					final long startTime = mLastProgressTime = mStartTime = SystemClock.elapsedRealtime();
 					updateProgressNotification();
 					try {
@@ -1565,9 +1663,12 @@ public abstract class DfuBaseService extends IntentService {
 					sendLogBroadcast(LOG_LEVEL_INFO, "Disconnected by the remote device");
 
 					// In the DFU version 0.5, in case the device is bonded, the target device does not send the Service Changed indication after
-					// a jump from bootloader mode to app mode. This issue has been fixed in DFU version 0.6 (SDK 8.0). We do not need to enforce
-					// refreshing services since now.
-					refreshDeviceCache(gatt, version == 5);
+					// a jump from bootloader mode to app mode. This issue has been fixed in DFU version 0.6 (SDK 8.0). If the DFU bootloader has been
+					// configured to preserve the bond information we do not need to enforce refreshing services, as it will notify the phone using the
+					// Service Changed indication.
+					final boolean keepBond = intent.getBooleanExtra(EXTRA_KEEP_BOND, false);
+					refreshDeviceCache(gatt, version == 5 || !keepBond);
+
 					// Close the device
 					close(gatt);
 
@@ -1577,8 +1678,8 @@ public abstract class DfuBaseService extends IntentService {
 					if (gatt.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
 						final boolean restoreBond = intent.getBooleanExtra(EXTRA_RESTORE_BOND, false);
 
-						if (restoreBond || (fileType & (TYPE_SOFT_DEVICE | TYPE_BOOTLOADER)) > 0) {
-							// In case the SoftDevice and Bootloader were updated the bond information was lost.
+						if (restoreBond || !keepBond || (fileType & TYPE_SOFT_DEVICE) > 0) {
+							// The bond information was lost.
 							removeBond(gatt.getDevice());
 
 							// Give some time for removing the bond information. 300ms was to short, let's set it to 2 seconds just to be sure.
@@ -1599,8 +1700,8 @@ public abstract class DfuBaseService extends IntentService {
 
 					/*
 					 * We need to send PROGRESS_COMPLETED message only when all files has been transmitted.
-					 * In case user wants to send Soft Device and/or Bootloader and Application service will be started twice: one to send SD+BL,
-					 * second time to send Application using the new Bootloader. In the first case we do not send PROGRESS_COMPLETED notification.
+					 * In case you want to send the Soft Device and/or Bootloader and the Application, the service will be started twice: one to send SD+BL, and the
+					 * second time to send the Application only (using the new Bootloader). In the first case we do not send PROGRESS_COMPLETED notification.
 					 */
 					if (mPartCurrent == mPartsTotal) {
 						// Delay this event a little bit. Android needs some time to prepare for reconnection.
@@ -1682,7 +1783,7 @@ public abstract class DfuBaseService extends IntentService {
 			}
 		} finally {
 			try {
-				// ensure that input stream is always closed
+				// Ensure that input stream is always closed
 				mInputStream = null;
 				if (is != null)
 					is.close();
@@ -1854,7 +1955,8 @@ public abstract class DfuBaseService extends IntentService {
 		/*
 		 * If the device is bonded this is up to the Service Changed characteristic to notify Android that the services has changed.
 		 * There is no need for this trick in that case.
-		 * If not bonded the Android is unable to get the information about changing services. The hidden refresh method may be used to force refreshing the device cache.
+		 * If not bonded, the Android should not keep the services cached when the Service Changed characteristic is present in the target device database.
+		 * However, due to the Android bug (still exists in Android 5.0.1), it is keeping them anyway and the only way to clear services is by using this hidden refresh method.
 		 */
 		if (force || gatt.getDevice().getBondState() == BluetoothDevice.BOND_NONE) {
 			sendLogBroadcast(LOG_LEVEL_DEBUG, "gatt.refresh()");
@@ -1913,7 +2015,7 @@ public abstract class DfuBaseService extends IntentService {
 
 		gatt.readCharacteristic(characteristic);
 
-		// We have to wait until device gets disconnected or an error occur
+		// We have to wait until device receives a response or an error occur
 		try {
 			synchronized (mLock) {
 				while ((!mRequestCompleted && mConnectionState == STATE_CONNECTED_AND_READY && mError == 0 && !mAborted) || mPaused)
@@ -1966,7 +2068,7 @@ public abstract class DfuBaseService extends IntentService {
 		sendLogBroadcast(LOG_LEVEL_DEBUG, "gatt.writeDescriptor(" + descriptor.getUuid() + (type == NOTIFICATIONS ? ", value=0x01-00)" : ", value=0x02-00)"));
 		gatt.writeDescriptor(descriptor);
 
-		// We have to wait until device gets disconnected or an error occur
+		// We have to wait until device receives a response or an error occur
 		try {
 			synchronized (mLock) {
 				while ((((type == NOTIFICATIONS && !mNotificationsEnabled) || (type == INDICATIONS && !mServiceChangedIndicationsEnabled))
@@ -1982,6 +2084,54 @@ public abstract class DfuBaseService extends IntentService {
 			throw new DfuException("Unable to set " + debugString + " state", mError);
 		if (mConnectionState != STATE_CONNECTED_AND_READY)
 			throw new DeviceDisconnectedException("Unable to set " + debugString + " state", mConnectionState);
+	}
+
+	/**
+	 * Reads the value of the Service Changed Client Characteristic Configuration descriptor (CCCD).
+	 *
+	 * @param gatt           the GATT device
+	 * @param characteristic the Service Changed characteristic
+	 * @return <code>true</code> if Service Changed CCCD is enabled ans set to INDICATE
+	 * @throws DeviceDisconnectedException
+	 * @throws DfuException
+	 * @throws UploadAbortedException
+	 */
+	private boolean isServiceChangedCCCDEnabled(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) throws DeviceDisconnectedException, DfuException, UploadAbortedException {
+		if (mConnectionState != STATE_CONNECTED_AND_READY)
+			throw new DeviceDisconnectedException("Unable to read Service Changed CCCD", mConnectionState);
+		// If the Service Changed characteristic or the CCCD is not available we return false.
+		if (characteristic == null)
+			return false;
+
+		final BluetoothGattDescriptor descriptor = characteristic.getDescriptor(CLIENT_CHARACTERISTIC_CONFIG);
+		if (descriptor == null)
+			return false;
+
+		mRequestCompleted = false;
+		mError = 0;
+
+		logi("Reading Service Changed CCCD value...");
+		sendLogBroadcast(LOG_LEVEL_VERBOSE, "Reading Service Changed CCCD value...");
+
+		gatt.readDescriptor(descriptor);
+
+		// We have to wait until device receives a response or an error occur
+		try {
+			synchronized (mLock) {
+				while ((!mRequestCompleted && mConnectionState == STATE_CONNECTED_AND_READY && mError == 0 && !mAborted) || mPaused)
+					mLock.wait();
+			}
+		} catch (final InterruptedException e) {
+			loge("Sleeping interrupted", e);
+		}
+		if (mAborted)
+			throw new UploadAbortedException();
+		if (mError != 0)
+			throw new DfuException("Unable to read Service Changed CCCD", mError);
+		if (mConnectionState != STATE_CONNECTED_AND_READY)
+			throw new DeviceDisconnectedException("Unable to read Service Changed CCCD", mConnectionState);
+
+		return mServiceChangedIndicationsEnabled;
 	}
 
 	/**
@@ -2090,8 +2240,8 @@ public abstract class DfuBaseService extends IntentService {
 
 	/**
 	 * <p>
-	 * Writes the Soft Device, Bootloader and Application image sizes to the characteristic. Soft Device and Bootloader update was added in DFU v.2. Sizes of SD, BL and App are uploaded as 3x UINT32
-	 * even though some of them may be 0s. F.e. if only App is being updated the data will be <0x00000000, 0x00000000, [App size]>
+	 * Writes the Soft Device, Bootloader and Application image sizes to the characteristic. Soft Device and Bootloader update is supported since Soft Device s110 v7.0.0.
+	 * Sizes of SD, BL and App are uploaded as 3x UINT32 even though some of them may be 0s. F.e. if only App is being updated the data will be <0x00000000, 0x00000000, [App size]>
 	 * </p>
 	 * <p>
 	 * This method is SYNCHRONOUS and wait until the {@link android.bluetooth.BluetoothGattCallback#onCharacteristicWrite(android.bluetooth.BluetoothGatt, android.bluetooth.BluetoothGattCharacteristic, int)} will be called or the connection state will
