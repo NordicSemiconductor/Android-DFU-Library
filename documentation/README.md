@@ -138,6 +138,7 @@ service.putExtra(DfuService.EXTRA_FILE_URI, mFileStreamUri);
 // In case of a ZIP file, the init packet (a DAT file) must be included inside the ZIP file.
 service.putExtra(DfuService.EXTRA_INIT_FILE_PATH, mInitFilePath); 
 service.putExtra(DfuService.EXTRA_INIT_FILE_URI, mInitFileStreamUri);
+service.putExtra(DfuService.EXTRA_KEEP_BOND, mKeepBond);
 
 startService(service);
 ```

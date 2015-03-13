@@ -29,6 +29,7 @@ The library is compatible with nRF51 devices with S-Series Soft Device and the D
 * **SDK 6.0.0** - DFU Bootloader supports Soft Device and Bootloader update. As the updated Bootloader may be dependent on the new Soft Device, those two may be sent and installed together.
 * **SDK 6.1.0** - Buttonless update support for non-bonded devices.
 * **SDK 7.0.0** - The extended init packet is required. The init packet contains additional validation information: device type and revision, application version, compatible Soft Devices and the firmware CRC.
+* **SDK 8.0.0** - The bond information may be preserved after an application update. The new application, when first started, will send the Service Change indication to the phone to refresh the services.
     - Buttonless update support for bonded devices - sharing the LTK between an app and the bootloader.
 
 Check platform folders for mode details about compatibility for each library.
