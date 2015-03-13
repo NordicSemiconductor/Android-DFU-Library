@@ -22,10 +22,43 @@
 
 package no.nordicsemi.android.error;
 
+import android.bluetooth.BluetoothGatt;
+
 import no.nordicsemi.android.dfu.DfuBaseService;
 
+/**
+ * Parses the error numbers according to the <b>gatt_api.h</b> file from bluedroid stack.
+ * See: https://android.googlesource.com/platform/external/bluetooth/bluedroid/+/android-5.1.0_r1/stack/include/gatt_api.h (and other versions) for details.
+ */
 public class GattError {
 
+	// Starts at line 106 of gatt_api.h file
+	public static String parseConnectionError(final int error) {
+		switch (error) {
+			case BluetoothGatt.GATT_SUCCESS:
+				return "SUCCESS";
+			case 0x01:
+				return "GATT CONN L2C FAILURE";
+			case 0x08:
+				return "GATT CONN TIMEOUT";
+			case 0x13:
+				return "GATT CONN TERMINATE PEER USER";
+			case 0x16:
+				return "GATT CONN TERMINATE LOCAL HOST";
+			case 0x3E:
+				return "GATT CONN FAIL ESTABLISH";
+			case 0x22:
+				return "GATT CONN LMP TIMEOUT";
+			case 0x0100:
+				return "GATT CONN CANCEL ";
+			case 0x0085:
+				return "GATT ERROR"; // Device not reachable
+			default:
+				return "UNKNOWN (" + error + ")";
+		}
+	}
+
+	// Starts at line 29 of the gatt_api.h file
 	public static String parse(final int error) {
 		switch (error) {
 			case 0x0001:
