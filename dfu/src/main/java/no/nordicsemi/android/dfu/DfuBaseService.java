@@ -1838,11 +1838,15 @@ public abstract class DfuBaseService extends IntentService {
 
 		final String[] projection = {MediaStore.Images.Media.DISPLAY_NAME};
 		final Cursor cursor = getContentResolver().query(stream, projection, null, null, null);
-		if (cursor.moveToNext()) {
-			final String fileName = cursor.getString(0 /* DISPLAY_NAME*/);
+		try {
+			if (cursor.moveToNext()) {
+				final String fileName = cursor.getString(0 /* DISPLAY_NAME*/);
 
-			if (fileName.toLowerCase(Locale.US).endsWith("hex"))
-				return new HexInputStream(is, mbrSize);
+				if (fileName.toLowerCase(Locale.US).endsWith("hex"))
+					return new HexInputStream(is, mbrSize);
+			}
+		} finally {
+			cursor.close();
 		}
 		return is;
 	}
