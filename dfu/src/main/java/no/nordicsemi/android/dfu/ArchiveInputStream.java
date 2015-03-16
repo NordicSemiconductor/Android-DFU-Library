@@ -38,6 +38,12 @@ import no.nordicsemi.android.dfu.manifest.Manifest;
 import no.nordicsemi.android.dfu.manifest.ManifestFile;
 import no.nordicsemi.android.dfu.manifest.SoftDeviceBootloaderFileInfo;
 
+/**
+ * <p>Reads the firmware files from the a ZIP file. The ZIP file must be either created using the <b>nrf utility</b> tool, available together with Master Control Panel v3.8.0+,
+ * or follow the backward compatibility syntax: must contain only files with names: application.hex/bin, softdevice.hex/dat or bootloader.hex/bin, optionally also application.dat
+ * and/or system.dat with init packets.</p>
+ * <p>The ArchiveInputStream will read only files with types specified by <b>types</b> parameter of the constructor.</p>
+ */
 public class ArchiveInputStream extends ZipInputStream {
 	/** The name of the manifest file is fixed. */
 	private static final String MANIFEST = "manifest.json";
@@ -379,8 +385,6 @@ public class ArchiveInputStream extends ZipInputStream {
 		return t;
 	}
 
-
-
 	/**
 	 * Sets the currentSource to the new file or to <code>null</code> if the last file has been transmitted.
 	 * 
@@ -400,26 +404,51 @@ public class ArchiveInputStream extends ZipInputStream {
 	}
 
 	@Override
+	/**
+	 * Returns the number of bytes that has not been read yet. This value includes only firmwares matching the content type set by the construcotor or the {@link #setContentType(int)} method.
+	 */
 	public int available() {
 		return softDeviceSize + bootloaderSize + applicationSize - bytesRead;
 	}
 
+	/**
+	 * Returns the total size of the SoftDevice firmware. In case the firmware was given as a HEX, this method returns the size of the BIN content of the file.
+	 * @return the size of the SoftDevice firmware (BIN part)
+	 */
 	public int softDeviceImageSize() {
 		return softDeviceSize;
 	}
 
+	/**
+	 * Returns the total size of the Bootloader firmware. In case the firmware was given as a HEX, this method returns the size of the BIN content of the file.
+	 * @return the size of the Bootloader firmware (BIN part)
+	 */
 	public int bootloaderImageSize() {
 		return bootloaderSize;
 	}
 
+	/**
+	 * Returns the total size of the Application firmware. In case the firmware was given as a HEX, this method returns the size of the BIN content of the file.
+	 * @return the size of the Application firmware (BIN part)
+	 */
 	public int applicationImageSize() {
 		return applicationSize;
 	}
 
+	/**
+	 * Returns the content of the init file for SoftDevice and/or Bootloader. When both SoftDevice and Bootloader are present in the ZIP file (as two files using the compatibility mode
+	 * or as one file using the new Distribution packet) the system init contains validation data for those two files combined (e.g. the CRC value). This method may return
+	 * <code>null</code> if there is no SoftDevice nor Bootloader in the ZIP or the DAT file is not present there.
+	 * @return the content of the init packet for SoftDevice and/or Bootloader
+	 */
 	public byte[] getSystemInit() {
 		return systemInitBytes;
 	}
 
+	/**
+	 * Returns the content of the init file for the Application or <code>null</code> if no application file in the ZIP, or the DAT file is not provided.
+	 * @return the content of the init packet for Application
+	 */
 	public byte[] getApplicationInit() {
 		return applicationInitBytes;
 	}

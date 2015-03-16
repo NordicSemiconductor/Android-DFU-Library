@@ -24,6 +24,9 @@ package no.nordicsemi.android.dfu.exception;
 
 import java.io.IOException;
 
+/**
+ * The HEX file could not be parsed.
+ */
 public class HexFileValidationException extends IOException {
 	private static final long serialVersionUID = -6467104024030837875L;
 

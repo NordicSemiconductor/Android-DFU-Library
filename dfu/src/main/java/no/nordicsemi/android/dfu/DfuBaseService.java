@@ -352,6 +352,16 @@ public abstract class DfuBaseService extends IntentService {
 	 */
 	public static final String BROADCAST_ERROR = "no.nordicsemi.android.dfu.broadcast.BROADCAST_ERROR";
 	/**
+	 * The type of the error. This extra contains information about that kind of error has occurred. Connection state errors and other errors may share the same numbers.
+	 * For example, the {@link BluetoothGattCallback#onCharacteristicWrite(BluetoothGatt, BluetoothGattCharacteristic, int)} method may return a status code 8 (GATT INSUF AUTHORIZATION),
+	 * while the status code 8 returned by {@link BluetoothGattCallback#onConnectionStateChange(BluetoothGatt, int, int)} is a GATT CONN TIMEOUT error.
+	 */
+	public static final String EXTRA_ERROR_TYPE = "no.nordicsemi.android.dfu.extra.EXTRA_ERROR_TYPE";
+	public static final int ERROR_TYPE_OTHER = 0;
+	public static final int ERROR_TYPE_COMMUNICATION_STATE = 1;
+	public static final int ERROR_TYPE_COMMUNICATION = 2;
+	public static final int ERROR_TYPE_DFU_REMOTE = 3;
+	/**
 	 * If this bit is set than the progress value indicates an error. Use {@link GattError#parse(int)} to obtain error name.
 	 */
 	public static final int ERROR_MASK = 0x1000;
@@ -401,6 +411,11 @@ public abstract class DfuBaseService extends IntentService {
 	 * The flag set when one of {@link android.bluetooth.BluetoothGattCallback} methods was called with status other than {@link android.bluetooth.BluetoothGatt#GATT_SUCCESS}.
 	 */
 	public static final int ERROR_CONNECTION_MASK = 0x4000;
+	/**
+	 * The flag set when the {@link android.bluetooth.BluetoothGattCallback#onConnectionStateChange(android.bluetooth.BluetoothGatt, int, int)} method was called with
+	 * status other than {@link android.bluetooth.BluetoothGatt#GATT_SUCCESS}.
+	 */
+	public static final int ERROR_CONNECTION_STATE_MASK = 0x8000;
 	/**
 	 * The log events are only broadcast when there is no nRF Logger installed. The broadcast contains 2 extras:
 	 * <ul>
@@ -743,7 +758,7 @@ public abstract class DfuBaseService extends IntentService {
 			} else {
 				loge("Connection state change error: " + status + " newState: " + newState);
 				mPaused = false;
-				mError = ERROR_CONNECTION_MASK | status;
+				mError = ERROR_CONNECTION_STATE_MASK | status;
 			}
 
 			// Notify waiting thread
@@ -1191,9 +1206,9 @@ public abstract class DfuBaseService extends IntentService {
 				return;
 			}
 			if (mError > 0) { // error occurred
-				final int error = mError & ~ERROR_CONNECTION_MASK;
+				final int error = mError & ~ERROR_CONNECTION_STATE_MASK;
 				loge("An error occurred while connecting to the device:" + error);
-				sendLogBroadcast(LOG_LEVEL_ERROR, String.format("Connection failed (0x%02X): %s", error, GattError.parse(error)));
+				sendLogBroadcast(LOG_LEVEL_ERROR, String.format("Connection failed (0x%02X): %s", error, GattError.parseConnectionError(error)));
 				terminateConnection(gatt, mError);
 				return;
 			}
@@ -1649,11 +1664,8 @@ public abstract class DfuBaseService extends IntentService {
 					if (status != DFU_STATUS_SUCCESS)
 						throw new RemoteDfuException("Device returned validation error", status);
 
-					// Disable notifications locally
-					updateProgressNotification(PROGRESS_DISCONNECTING);
-					gatt.setCharacteristicNotification(controlPointCharacteristic, false);
-
 					// Send Activate and Reset signal.
+					updateProgressNotification(PROGRESS_DISCONNECTING);
 					logi("Sending Activate and Reset request (Op Code = 5)");
 					writeOpCode(gatt, controlPointCharacteristic, OP_CODE_ACTIVATE_AND_RESET);
 					sendLogBroadcast(LOG_LEVEL_APPLICATION, "Activate and Reset request sent");
@@ -1763,13 +1775,18 @@ public abstract class DfuBaseService extends IntentService {
 				sendLogBroadcast(LOG_LEVEL_ERROR, "Device has disconnected");
 				// TODO reconnect n times?
 				loge(e.getMessage());
-				if (mNotificationsEnabled)
-					gatt.setCharacteristicNotification(controlPointCharacteristic, false);
 				close(gatt);
 				updateProgressNotification(ERROR_DEVICE_DISCONNECTED);
 			} catch (final DfuException e) {
-				final int error = e.getErrorNumber() & ~ERROR_CONNECTION_MASK;
-				sendLogBroadcast(LOG_LEVEL_ERROR, String.format("Error (0x%02X): %s", error, GattError.parse(error)));
+				int error = e.getErrorNumber();
+				// Connection state errors and other Bluetooth GATT callbacks share the same error numbers. Therefore we are using bit masks to identify the type.
+				if ((error & ERROR_CONNECTION_STATE_MASK) > 0) {
+					error &= ~ERROR_CONNECTION_STATE_MASK;
+					sendLogBroadcast(LOG_LEVEL_ERROR, String.format("Error (0x%02X): %s", error, GattError.parseConnectionError(error)));
+				} else {
+					error &= ~ERROR_CONNECTION_MASK;
+					sendLogBroadcast(LOG_LEVEL_ERROR, String.format("Error (0x%02X): %s", error, GattError.parse(error)));
+				}
 				loge(e.getMessage());
 				if (mConnectionState == STATE_CONNECTED_AND_READY)
 					try {
@@ -1779,7 +1796,7 @@ public abstract class DfuBaseService extends IntentService {
 					} catch (final Exception e1) {
 						// do nothing
 					}
-				terminateConnection(gatt, e.getErrorNumber());
+				terminateConnection(gatt, e.getErrorNumber() /* we return the whole error number, including the error type mask */);
 			}
 		} finally {
 			try {
@@ -1899,7 +1916,7 @@ public abstract class DfuBaseService extends IntentService {
 		}
 
 		// Close the device
-		refreshDeviceCache(gatt, false); // This should be true when DFU Version is 0.5
+		refreshDeviceCache(gatt, false); // This should be set to true when DFU Version is 0.5 or lower
 		close(gatt);
 		updateProgressNotification(error);
 	}
@@ -2670,7 +2687,19 @@ public abstract class DfuBaseService extends IntentService {
 
 	private void sendErrorBroadcast(final int error) {
 		final Intent broadcast = new Intent(BROADCAST_ERROR);
-		broadcast.putExtra(EXTRA_DATA, error & ~ERROR_CONNECTION_MASK);
+		if ((error & ERROR_CONNECTION_MASK) > 0) {
+			broadcast.putExtra(EXTRA_DATA, error & ~ERROR_CONNECTION_MASK);
+			broadcast.putExtra(EXTRA_ERROR_TYPE, ERROR_TYPE_COMMUNICATION);
+		} else if ((error & ERROR_CONNECTION_STATE_MASK) > 0) {
+			broadcast.putExtra(EXTRA_DATA, error & ~ERROR_CONNECTION_STATE_MASK);
+			broadcast.putExtra(EXTRA_ERROR_TYPE, ERROR_TYPE_COMMUNICATION_STATE);
+		} else if ((error & ERROR_REMOTE_MASK) > 0) {
+			broadcast.putExtra(EXTRA_DATA, error);
+			broadcast.putExtra(EXTRA_ERROR_TYPE, ERROR_TYPE_DFU_REMOTE);
+		} else {
+			broadcast.putExtra(EXTRA_DATA, error);
+			broadcast.putExtra(EXTRA_ERROR_TYPE, ERROR_TYPE_OTHER);
+		}
 		broadcast.putExtra(EXTRA_DEVICE_ADDRESS, mDeviceAddress);
 		LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
 	}
