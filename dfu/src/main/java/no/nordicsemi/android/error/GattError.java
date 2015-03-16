@@ -33,6 +33,11 @@ import no.nordicsemi.android.dfu.DfuBaseService;
 public class GattError {
 
 	// Starts at line 106 of gatt_api.h file
+	/**
+	 * Converts the connection status given by the {@link android.bluetooth.BluetoothGattCallback#onConnectionStateChange(android.bluetooth.BluetoothGatt, int, int)} to error name.
+	 * @param error the status number
+	 * @return the error name as stated in the gatt_api.h file
+	 */
 	public static String parseConnectionError(final int error) {
 		switch (error) {
 			case BluetoothGatt.GATT_SUCCESS:
@@ -59,6 +64,11 @@ public class GattError {
 	}
 
 	// Starts at line 29 of the gatt_api.h file
+	/**
+	 * Converts the bluetooth communication status given by other BluetoothGattCallbacks to error name. It also parses the DFU errors.
+	 * @param error the status number
+	 * @return the error name as stated in the gatt_api.h file
+	 */
 	public static String parse(final int error) {
 		switch (error) {
 			case 0x0001:
