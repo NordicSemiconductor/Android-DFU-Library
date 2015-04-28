@@ -135,12 +135,16 @@ public class GattError {
 				return "GATT ENCRYPTED NO MITM";
 			case 0x008e:
 				return "GATT NOT ENCRYPTED";
-			case 0x01FF:
+			case 0x008f:
+				return "GATT CONGESTED";
+			case 0x00FD:
+				return "GATT CCCD CFG ERROR";
+			case 0x00FE:
+				return "GATT PROCEDURE IN PROGRESS";
+			case 0x00FF:
 				return "GATT VALUE OUT OF RANGE";
 			case 0x0101:
 				return "TOO MANY OPEN CONNECTIONS";
-			case 0x00FF:
-				return "DFU SERVICE DISCOVERY NOT STARTED";
 			case DfuBaseService.ERROR_DEVICE_DISCONNECTED:
 				return "DFU DEVICE DISCONNECTED";
 			case DfuBaseService.ERROR_FILE_ERROR:
@@ -152,7 +156,7 @@ public class GattError {
 			case DfuBaseService.ERROR_FILE_NOT_FOUND:
 				return "DFU FILE NOT FOUND";
 			case DfuBaseService.ERROR_SERVICE_DISCOVERY_NOT_STARTED:
-				return "DFU ERROR WHILE SERVICE DISCOVERY";
+				return "DFU SERVICE DISCOVERY NOT STARTED";
 			case DfuBaseService.ERROR_SERVICE_NOT_FOUND:
 				return "DFU SERVICE NOT FOUND";
 			case DfuBaseService.ERROR_CHARACTERISTICS_NOT_FOUND:
