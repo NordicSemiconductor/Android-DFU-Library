@@ -66,6 +66,7 @@ import no.nordicsemi.android.dfu.exception.HexFileValidationException;
 import no.nordicsemi.android.dfu.exception.RemoteDfuException;
 import no.nordicsemi.android.dfu.exception.UnknownResponseException;
 import no.nordicsemi.android.dfu.exception.UploadAbortedException;
+import no.nordicsemi.android.dfu.scanner.BootloaderScannerFactory;
 import no.nordicsemi.android.error.GattError;
 
 /**
@@ -1727,14 +1728,32 @@ public abstract class DfuBaseService extends IntentService {
 						updateProgressNotification(PROGRESS_COMPLETED);
 					} else {
 						/*
-						 * The current service handle will try to upload Soft Device and/or Bootloader.
-						 * We need to enqueue another Intent that will try to send application only.
+						 * In case when the Soft Device has been upgraded, and the application should be send in the following connection, we have to
+						 * make sure that we know the address the device is advertising with. Depending on the method used to start the DFU bootloader the first time
+						 * the new Bootloader may advertise with the same address or one incremented by 1.
+						 * When the buttonless update was used, the bootloader will use the same address as the application. The cached list of services on the Android device
+						 * should be cleared thanks to the Service Changed characteristic (the fact that it exists if not bonded, or the Service Changed indication on bonded one).
+						 * In case of forced DFU mode (using a button), the Bootloader does not know whether there was the Service Changed characteristic present in the list of
+						 * application's services so it must advertise with a different address. The same situation applies when the new Soft Device was uploaded and the old
+						 * application has been removed in this process.
+						 *
+						 * We could have save the fact of jumping as a parameter of the service but it ma be that some Android devices must first scan a device before connecting to it.
+						 * It a device with the address+1 has never been detected before the service could have failed on connection.
+						 */
+						sendLogBroadcast(LOG_LEVEL_VERBOSE, "Scanning for the DFU bootloader...");
+						final String newAddress = BootloaderScannerFactory.getScanner().searchFor(mDeviceAddress);
+						sendLogBroadcast(LOG_LEVEL_INFO, "The Bootloader found (" + newAddress + ")");
+
+						/*
+						 * The current service instance has uploaded the Soft Device and/or Bootloader.
+						 * We need to start another instance that will try to send application only.
 						 */
 						logi("Starting service that will upload application");
 						final Intent newIntent = new Intent();
 						newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
-						newIntent.putExtra(EXTRA_FILE_MIME_TYPE, MIME_TYPE_ZIP); // ensure this is set (f.e. for scripts)
+						newIntent.putExtra(EXTRA_FILE_MIME_TYPE, MIME_TYPE_ZIP); // ensure this is set (e.g. for scripts)
 						newIntent.putExtra(EXTRA_FILE_TYPE, TYPE_APPLICATION); // set the type to application only
+						newIntent.putExtra(EXTRA_DEVICE_ADDRESS, newAddress);
 						newIntent.putExtra(EXTRA_PART_CURRENT, mPartCurrent + 1);
 						newIntent.putExtra(EXTRA_PARTS_TOTAL, mPartsTotal);
 						startService(newIntent);
