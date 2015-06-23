@@ -1,10 +1,10 @@
 apply plugin: 'com.android.library'
 
-ext {
-    PUBLISH_GROUP_ID = 'no.nordicsemi.android'
-    PUBLISH_ARTIFACT_ID = 'dfu-library'
-    PUBLISH_VERSION = '0.6.0'
-}
+//ext {
+//    PUBLISH_GROUP_ID = 'no.nordicsemi.android'
+//    PUBLISH_ARTIFACT_ID = 'dfu-library'
+//    PUBLISH_VERSION = '0.6.0'
+//}
 
 android {
     compileSdkVersion 22
@@ -26,9 +26,9 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:support-v4:22.1.1'
+    compile 'com.android.support:support-v4:22.2.0'
     compile 'com.google.code.gson:gson:2.3.1'
 }
 
 // Generate maven package: gradlew clean build generateRelease
-apply from: 'https://raw.githubusercontent.com/blundell/release-android-library/master/android-release-aar.gradle'
+//apply from: 'https://raw.githubusercontent.com/blundell/release-android-library/master/android-release-aar.gradle'
