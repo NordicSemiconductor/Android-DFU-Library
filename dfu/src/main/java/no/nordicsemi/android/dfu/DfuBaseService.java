@@ -1740,9 +1740,13 @@ public abstract class DfuBaseService extends IntentService {
 						 * We could have save the fact of jumping as a parameter of the service but it ma be that some Android devices must first scan a device before connecting to it.
 						 * It a device with the address+1 has never been detected before the service could have failed on connection.
 						 */
-						sendLogBroadcast(LOG_LEVEL_VERBOSE, "Scanning for the DFU bootloader...");
+						sendLogBroadcast(LOG_LEVEL_VERBOSE, "Scanning for the DFU Bootloader...");
 						final String newAddress = BootloaderScannerFactory.getScanner().searchFor(mDeviceAddress);
-						sendLogBroadcast(LOG_LEVEL_INFO, "The Bootloader found (" + newAddress + ")");
+						if (newAddress != null)
+							sendLogBroadcast(LOG_LEVEL_INFO, "DFU Bootloader found with address " + newAddress);
+						else {
+							sendLogBroadcast(LOG_LEVEL_INFO, "DFU Bootloader not found. Trying the same address...");
+						}
 
 						/*
 						 * The current service instance has uploaded the Soft Device and/or Bootloader.
@@ -1753,7 +1757,8 @@ public abstract class DfuBaseService extends IntentService {
 						newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
 						newIntent.putExtra(EXTRA_FILE_MIME_TYPE, MIME_TYPE_ZIP); // ensure this is set (e.g. for scripts)
 						newIntent.putExtra(EXTRA_FILE_TYPE, TYPE_APPLICATION); // set the type to application only
-						newIntent.putExtra(EXTRA_DEVICE_ADDRESS, newAddress);
+						if (newAddress != null)
+							newIntent.putExtra(EXTRA_DEVICE_ADDRESS, newAddress);
 						newIntent.putExtra(EXTRA_PART_CURRENT, mPartCurrent + 1);
 						newIntent.putExtra(EXTRA_PARTS_TOTAL, mPartsTotal);
 						startService(newIntent);

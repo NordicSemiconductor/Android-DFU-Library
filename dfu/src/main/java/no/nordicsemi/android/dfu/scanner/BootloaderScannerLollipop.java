@@ -22,14 +22,10 @@
 
 package no.nordicsemi.android.dfu.scanner;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import android.annotation.TargetApi;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
-import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.os.Build;
@@ -81,11 +77,15 @@ public class BootloaderScannerLollipop extends ScanCallback implements Bootloade
 
 		final BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
 		final BluetoothLeScanner scanner = adapter.getBluetoothLeScanner();
-		final List<ScanFilter> filters = new ArrayList<>();
-		filters.add(new ScanFilter.Builder().setDeviceAddress(mDeviceAddress).build());
-		filters.add(new ScanFilter.Builder().setDeviceAddress(mDeviceAddressIncremented).build());
+		/*
+		 * Scanning with filters does not work on Nexus 9 (Android 5.1). No devices are found and scanner terminates on timeout.
+		 * We will match the device address in the callback method instead. It's not like it should be, but at least it works.
+		 */
+		//final List<ScanFilter> filters = new ArrayList<>();
+		//filters.add(new ScanFilter.Builder().setDeviceAddress(mDeviceAddress).build());
+		//filters.add(new ScanFilter.Builder().setDeviceAddress(mDeviceAddressIncremented).build());
 		final ScanSettings settings = new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build();
-		scanner.startScan(filters, settings, this);
+		scanner.startScan(/*filters*/ null, settings, this);
 
 		try {
 			synchronized (mLock) {
