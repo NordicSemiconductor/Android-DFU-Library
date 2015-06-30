@@ -145,7 +145,7 @@ startService(service);
 
 Please, see [How to create init packet](https://github.com/NordicSemiconductor/nRF-Master-Control-Panel/tree/master/init%20packet%20handling "Init packet handling") document for more information about the init packet.
 
-The service will send local broadcast events using **LocalBroadcaseManager**.
+The service will send local broadcast events using **LocalBroadcastManager**.
 
 
 ```java
