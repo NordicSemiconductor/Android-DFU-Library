@@ -17,7 +17,7 @@ DFU library has been designed to make it very easy to include these devices into
 
 ### Documentation
 
-See the [documentation](documentation) for mode information.
+See the [documentation](documentation) for more information.
 
 ### Requirements
 
