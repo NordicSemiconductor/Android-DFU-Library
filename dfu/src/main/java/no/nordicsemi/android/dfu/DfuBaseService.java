@@ -405,6 +405,10 @@ public abstract class DfuBaseService extends IntentService {
 	 */
 	public static final int ERROR_BLUETOOTH_DISABLED = ERROR_MASK | 0x0A;
 	/**
+	 * DFU Bootloader version 0.6+ requires sending the Init packet. If such bootloader version is detected, but the init packet has not been set this error is thrown.
+	 */
+	public static final int ERROR_INIT_PACKET_REQUIRED = ERROR_MASK | 0x0B;
+	/**
 	 * Flag set then the DFU target returned a DFU error. Look for DFU specification to get error codes.
 	 */
 	public static final int ERROR_REMOTE_MASK = 0x2000;
@@ -1388,6 +1392,18 @@ public abstract class DfuBaseService extends IntentService {
 					return;
 				}
 
+				/*
+				 * If the DFU Version characteristic is present and the version returned from it is greater or equal to 0.5, the Extended Init Packet is required.
+				 * If the InputStream with init packet is null we may safely abort sending and reset the device as it would happen eventually in few moments.
+				 * The DFU target would send DFU INVALID STATE error if the init packet would not be sent before starting file transmission.
+				 */
+				if (version >= 5 && initIs == null) {
+					logw("Init packet not set for the DFU Bootloader version " + version);
+					sendLogBroadcast(LOG_LEVEL_ERROR, "The Init packet is required by this version DFU Bootloader");
+					terminateConnection(gatt, ERROR_INIT_PACKET_REQUIRED);
+					return;
+				}
+
 				// Enable notifications
 				enableCCCD(gatt, controlPointCharacteristic, NOTIFICATIONS);
 				sendLogBroadcast(LOG_LEVEL_APPLICATION, "Notifications enabled");
@@ -1568,11 +1584,12 @@ public abstract class DfuBaseService extends IntentService {
 					/*
 					 * If the DFU Version characteristic is present and the version returned from it is greater or equal to 0.5, the Extended Init Packet is required.
 					 * For older versions, or if the DFU Version characteristic is not present (pre SDK 7.0.0), the Init Packet (which could have contained only the firmware CRC) was optional.
-					 * To calculate the CRC (CRC-CCTII-16 0xFFFF) the following application may be used: http://www.lammertbies.nl/comm/software/index.html -> CRC library.
+					 * Deprecated: To calculate the CRC (CRC-CCTII-16 0xFFFF) the following application may be used: http://www.lammertbies.nl/comm/software/index.html -> CRC library.
+					 * New: To calculate the CRC (CRC-CCTII-16 0xFFFF) the 'nrf utility' may be used (see below).
 					 *
 					 * The Init Packet is read from the *.dat file as a binary file. This service you allows to specify the init packet file in two ways.
 					 * Since SDK 8.0 and the DFU Library v0.6 using the Distribution packet (ZIP) is recommended. The distribution packet can be created using the
-					 * *nrf utility* tool, available together with Master Control Panel v 3.8.0. See the DFU documentation at http://developer.nordicsemi.com for more details.
+					 * *nrf utility* tool, available together with Master Control Panel v 3.8.0+. See the DFU documentation at http://developer.nordicsemi.com for more details.
 					 * An init file may be also provided as a separate file using the {@link #EXTRA_INIT_FILE_PATH} or {@link #EXTRA_INIT_FILE_URI} or in the ZIP file
 					 * with the deprecated fixed naming convention:
 					 *

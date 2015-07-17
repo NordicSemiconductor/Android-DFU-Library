@@ -165,6 +165,8 @@ public class GattError {
 				return "DFU FILE TYPE NOT SUPPORTED";
 			case DfuBaseService.ERROR_BLUETOOTH_DISABLED:
 				return "BLUETOOTH ADAPTER DISABLED";
+			case DfuBaseService.ERROR_INIT_PACKET_REQUIRED:
+				return "INIT PACKET REQUIRED";
 			default:
 				if ((DfuBaseService.ERROR_REMOTE_MASK & error) > 0) {
 					switch (error & (~DfuBaseService.ERROR_REMOTE_MASK)) {
