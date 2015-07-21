@@ -20,7 +20,7 @@
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ************************************************************************************************************************************************/
 
-package no.nordicsemi.android.dfu;
+package no.nordicsemi.android.dfu.internal;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -28,7 +28,7 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import no.nordicsemi.android.dfu.exception.HexFileValidationException;
+import no.nordicsemi.android.dfu.internal.exception.HexFileValidationException;
 
 /**
  * Reads the binary content from the HEX file using IntelHex standard: http://www.interlog.com/~speff/usefulinfo/Hexfrmt.pdf.
@@ -61,7 +61,7 @@ public class HexInputStream extends FilterInputStream {
 	 * @throws java.io.IOException
 	 *             if the stream is closed or another IOException occurs.
 	 */
-	protected HexInputStream(final InputStream in, final int mbrSize) throws HexFileValidationException, IOException {
+	public HexInputStream(final InputStream in, final int mbrSize) throws HexFileValidationException, IOException {
 		super(new BufferedInputStream(in));
 		this.localBuf = new byte[LINE_LENGTH];
 		this.localPos = LINE_LENGTH; // we are at the end of the local buffer, new one must be obtained
@@ -72,7 +72,7 @@ public class HexInputStream extends FilterInputStream {
 		this.available = calculateBinSize(mbrSize);
 	}
 
-	protected HexInputStream(final byte[] data, final int mbrSize) throws HexFileValidationException, IOException {
+	public HexInputStream(final byte[] data, final int mbrSize) throws HexFileValidationException, IOException {
 		super(new ByteArrayInputStream(data));
 		this.localBuf = new byte[LINE_LENGTH];
 		this.localPos = LINE_LENGTH; // we are at the end of the local buffer, new one must be obtained

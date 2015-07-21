@@ -20,7 +20,7 @@
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ************************************************************************************************************************************************/
 
-package no.nordicsemi.android.dfu.exception;
+package no.nordicsemi.android.dfu.internal.exception;
 
 public class UnknownResponseException extends Exception {
 	private static final long serialVersionUID = -8716125467309979289L;

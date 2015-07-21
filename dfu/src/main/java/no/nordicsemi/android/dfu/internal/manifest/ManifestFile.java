@@ -20,29 +20,12 @@
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package no.nordicsemi.android.dfu.manifest;
+package no.nordicsemi.android.dfu.internal.manifest;
 
-import com.google.gson.annotations.SerializedName;
+public class ManifestFile {
+	protected Manifest manifest;
 
-public class Manifest {
-	protected FileInfo application;
-	protected FileInfo bootloader;
-	protected FileInfo softdevice;
-	@SerializedName("softdevice_bootloader") protected SoftDeviceBootloaderFileInfo softdeviceBootloader;
-
-	public FileInfo getApplicationInfo() {
-		return application;
-	}
-
-	public FileInfo getBootloaderInfo() {
-		return bootloader;
-	}
-
-	public FileInfo getSoftdeviceInfo() {
-		return softdevice;
-	}
-
-	public SoftDeviceBootloaderFileInfo getSoftdeviceBootloaderInfo() {
-		return softdeviceBootloader;
+	public Manifest getManifest() {
+		return manifest;
 	}
 }

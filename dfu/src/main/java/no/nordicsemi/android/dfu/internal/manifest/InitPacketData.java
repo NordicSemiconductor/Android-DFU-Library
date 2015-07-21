@@ -1,4 +1,4 @@
-/*************************************************************************************************************************************************
+/*
  * Copyright (c) 2015, Nordic Semiconductor
  * All rights reserved.
  *
@@ -18,30 +18,53 @@
  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- ************************************************************************************************************************************************/
-
-package no.nordicsemi.android.dfu.exception;
-
-/**
- * Device has disconnected.
  */
-public class DeviceDisconnectedException extends Exception {
-	private static final long serialVersionUID = -6901728550661937942L;
 
-	private final int mState;
+package no.nordicsemi.android.dfu.internal.manifest;
 
-	public DeviceDisconnectedException(final String message, final int state) {
-		super(message);
+import com.google.gson.annotations.SerializedName;
 
-		mState = state;
+import java.util.List;
+
+public class InitPacketData {
+	@SerializedName("packet_version") protected int packetVersion;
+	@SerializedName("compression_type") protected int compressionType;
+	@SerializedName("application_version") protected long applicationVersion;
+	@SerializedName("device_revision") protected int deviceRevision;
+	@SerializedName("device_type") protected int deviceType;
+	@SerializedName("firmware_crc16") protected int firmwareCRC16;
+	@SerializedName("firmware_hash") protected String firmwareHash;
+	@SerializedName("softdevice_req") protected List<Integer> softdeviceReq;
+
+	public int getPacketVersion() {
+		return packetVersion;
 	}
 
-	public int getConnectionState() {
-		return mState;
+	public int getCompressionType() {
+		return compressionType;
 	}
 
-	@Override
-	public String getMessage() {
-		return super.getMessage() + " (connection state: " + mState + ")";
+	public long getApplicationVersion() {
+		return applicationVersion;
+	}
+
+	public int getDeviceRevision() {
+		return deviceRevision;
+	}
+
+	public int getDeviceType() {
+		return deviceType;
+	}
+
+	public int getFirmwareCRC16() {
+		return firmwareCRC16;
+	}
+
+	public String getFirmwareHash() {
+		return firmwareHash;
+	}
+
+	public List<Integer> getSoftdeviceReq() {
+		return softdeviceReq;
 	}
 }

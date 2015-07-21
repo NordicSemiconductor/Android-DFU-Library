@@ -1,4 +1,4 @@
-/*
+/*************************************************************************************************************************************************
  * Copyright (c) 2015, Nordic Semiconductor
  * All rights reserved.
  *
@@ -18,26 +18,32 @@
  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ ************************************************************************************************************************************************/
+
+package no.nordicsemi.android.dfu.internal.exception;
+
+import no.nordicsemi.android.dfu.DfuBaseService;
+
+/**
+ * A DFU error occurred on the remote DFU target.
  */
+public class DfuException extends Exception {
+	private static final long serialVersionUID = -6901728550661937942L;
 
-package no.nordicsemi.android.dfu.manifest;
+	private final int mError;
 
-import com.google.gson.annotations.SerializedName;
+	public DfuException(final String message, final int state) {
+		super(message);
 
-public class FileInfo {
-	@SerializedName("bin_file") protected String binFile;
-	@SerializedName("dat_file") protected String datFile;
-	@SerializedName("init_packet_data") protected InitPacketData initPacketData;
-
-	public String getBinFileName() {
-		return binFile;
+		mError = state;
 	}
 
-	public String getDatFileName() {
-		return datFile;
+	public int getErrorNumber() {
+		return mError;
 	}
 
-	public InitPacketData getInitPacketData() {
-		return initPacketData;
+	@Override
+	public String getMessage() {
+		return super.getMessage() + " (error " + (mError & ~DfuBaseService.ERROR_CONNECTION_MASK) + ")";
 	}
 }

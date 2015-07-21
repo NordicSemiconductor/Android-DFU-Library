@@ -1,4 +1,4 @@
-/*************************************************************************************************************************************************
+/*
  * Copyright (c) 2015, Nordic Semiconductor
  * All rights reserved.
  *
@@ -18,30 +18,21 @@
  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- ************************************************************************************************************************************************/
-
-package no.nordicsemi.android.dfu.exception;
-
-/**
- * A DFU error occurred on the remote DFU target.
  */
-public class RemoteDfuException extends Exception {
-	private static final long serialVersionUID = -6901728550661937942L;
 
-	private final int mState;
+package no.nordicsemi.android.dfu.internal.manifest;
 
-	public RemoteDfuException(final String message, final int state) {
-		super(message);
+import com.google.gson.annotations.SerializedName;
 
-		mState = state;
+public class SoftDeviceBootloaderFileInfo extends FileInfo {
+	@SerializedName("bl_size") protected int bootloaderSize;
+	@SerializedName("sd_size") protected int softdeviceSize;
+
+	public int getSoftdeviceSize() {
+		return softdeviceSize;
 	}
 
-	public int getErrorNumber() {
-		return mState;
-	}
-
-	@Override
-	public String getMessage() {
-		return super.getMessage() + " (error " + mState + ")";
+	public int getBootloaderSize() {
+		return bootloaderSize;
 	}
 }

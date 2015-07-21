@@ -20,12 +20,24 @@
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package no.nordicsemi.android.dfu.manifest;
+package no.nordicsemi.android.dfu.internal.manifest;
 
-public class ManifestFile {
-	protected Manifest manifest;
+import com.google.gson.annotations.SerializedName;
 
-	public Manifest getManifest() {
-		return manifest;
+public class FileInfo {
+	@SerializedName("bin_file") protected String binFile;
+	@SerializedName("dat_file") protected String datFile;
+	@SerializedName("init_packet_data") protected InitPacketData initPacketData;
+
+	public String getBinFileName() {
+		return binFile;
+	}
+
+	public String getDatFileName() {
+		return datFile;
+	}
+
+	public InitPacketData getInitPacketData() {
+		return initPacketData;
 	}
 }

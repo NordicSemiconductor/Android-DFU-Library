@@ -20,30 +20,12 @@
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ************************************************************************************************************************************************/
 
-package no.nordicsemi.android.dfu.exception;
+package no.nordicsemi.android.dfu.internal.exception;
 
-import no.nordicsemi.android.dfu.DfuBaseService;
-
-/**
- * A DFU error occurred on the remote DFU target.
- */
-public class DfuException extends Exception {
+public class UploadAbortedException extends Exception {
 	private static final long serialVersionUID = -6901728550661937942L;
 
-	private final int mError;
-
-	public DfuException(final String message, final int state) {
-		super(message);
-
-		mError = state;
-	}
-
-	public int getErrorNumber() {
-		return mError;
-	}
-
-	@Override
-	public String getMessage() {
-		return super.getMessage() + " (error " + (mError & ~DfuBaseService.ERROR_CONNECTION_MASK) + ")";
+	public UploadAbortedException() {
+		super();
 	}
 }

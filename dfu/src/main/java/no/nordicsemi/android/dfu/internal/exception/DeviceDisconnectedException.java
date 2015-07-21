@@ -20,17 +20,28 @@
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ************************************************************************************************************************************************/
 
-package no.nordicsemi.android.dfu.exception;
-
-import java.io.IOException;
+package no.nordicsemi.android.dfu.internal.exception;
 
 /**
- * The HEX file could not be parsed.
+ * Device has disconnected.
  */
-public class HexFileValidationException extends IOException {
-	private static final long serialVersionUID = -6467104024030837875L;
+public class DeviceDisconnectedException extends Exception {
+	private static final long serialVersionUID = -6901728550661937942L;
 
-	public HexFileValidationException(final String message) {
+	private final int mState;
+
+	public DeviceDisconnectedException(final String message, final int state) {
 		super(message);
+
+		mState = state;
+	}
+
+	public int getConnectionState() {
+		return mState;
+	}
+
+	@Override
+	public String getMessage() {
+		return super.getMessage() + " (connection state: " + mState + ")";
 	}
 }

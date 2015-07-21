@@ -20,7 +20,7 @@
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ************************************************************************************************************************************************/
 
-package no.nordicsemi.android.dfu;
+package no.nordicsemi.android.dfu.internal;
 
 import com.google.gson.Gson;
 
@@ -33,10 +33,11 @@ import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import no.nordicsemi.android.dfu.manifest.FileInfo;
-import no.nordicsemi.android.dfu.manifest.Manifest;
-import no.nordicsemi.android.dfu.manifest.ManifestFile;
-import no.nordicsemi.android.dfu.manifest.SoftDeviceBootloaderFileInfo;
+import no.nordicsemi.android.dfu.DfuBaseService;
+import no.nordicsemi.android.dfu.internal.manifest.FileInfo;
+import no.nordicsemi.android.dfu.internal.manifest.Manifest;
+import no.nordicsemi.android.dfu.internal.manifest.ManifestFile;
+import no.nordicsemi.android.dfu.internal.manifest.SoftDeviceBootloaderFileInfo;
 
 /**
  * <p>Reads the firmware files from the a ZIP file. The ZIP file must be either created using the <b>nrf utility</b> tool, available together with Master Control Panel v3.8.0+,

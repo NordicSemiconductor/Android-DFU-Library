@@ -20,23 +20,22 @@
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ************************************************************************************************************************************************/
 
-package no.nordicsemi.android.dfu.scanner;
+package no.nordicsemi.android.dfu;
 
-import android.os.Build;
-
-/**
- * The factory should be used to create the {@link BootloaderScanner} instance appropriate for the Android version.
- */
-public class BootloaderScannerFactory {
-
+public interface DfuLogListener {
 	/**
-	 * Returns the scanner implementation.
-	 *
-	 * @return the bootloader scanner
+	 * Method called when a log event was sent from the DFU service.
+	 * @param deviceAddress the target device address
+	 * @param level the log level, one of:
+	 * 		<ul>
+	 * 		    <li>{@link DfuBaseService#LOG_LEVEL_DEBUG}</li>
+	 * 		    <li>{@link DfuBaseService#LOG_LEVEL_VERBOSE}</li>
+	 * 		    <li>{@link DfuBaseService#LOG_LEVEL_INFO}</li>
+	 * 		    <li>{@link DfuBaseService#LOG_LEVEL_APPLICATION}</li>
+	 * 		    <li>{@link DfuBaseService#LOG_LEVEL_WARNING}</li>
+	 * 		    <li>{@link DfuBaseService#LOG_LEVEL_ERROR}</li>
+	 * 		</ul>
+	 * @param message the log message
 	 */
-	public static BootloaderScanner getScanner() {
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-			return new BootloaderScannerLollipop();
-		return new BootloaderScannerJB();
-	}
+	public void onLogEvent(final String deviceAddress, final int level, final String message);
 }

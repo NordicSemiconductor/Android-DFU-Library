@@ -57,16 +57,19 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
+import java.security.InvalidParameterException;
 import java.util.Locale;
 import java.util.UUID;
 
-import no.nordicsemi.android.dfu.exception.DeviceDisconnectedException;
-import no.nordicsemi.android.dfu.exception.DfuException;
-import no.nordicsemi.android.dfu.exception.HexFileValidationException;
-import no.nordicsemi.android.dfu.exception.RemoteDfuException;
-import no.nordicsemi.android.dfu.exception.UnknownResponseException;
-import no.nordicsemi.android.dfu.exception.UploadAbortedException;
-import no.nordicsemi.android.dfu.scanner.BootloaderScannerFactory;
+import no.nordicsemi.android.dfu.internal.exception.DeviceDisconnectedException;
+import no.nordicsemi.android.dfu.internal.exception.DfuException;
+import no.nordicsemi.android.dfu.internal.exception.HexFileValidationException;
+import no.nordicsemi.android.dfu.internal.exception.RemoteDfuException;
+import no.nordicsemi.android.dfu.internal.exception.UnknownResponseException;
+import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
+import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
+import no.nordicsemi.android.dfu.internal.ArchiveInputStream;
+import no.nordicsemi.android.dfu.internal.HexInputStream;
 import no.nordicsemi.android.error.GattError;
 
 /**
@@ -79,17 +82,17 @@ import no.nordicsemi.android.error.GattError;
  * Start the service with the following parameters:
  * <p/>
  * <pre>
- * final Intent service = new Intent(this, YourDfuService.class);
- * service.putExtra(DfuService.EXTRA_DEVICE_ADDRESS, mSelectedDevice.getAddress()); // Target device address
- * service.putExtra(DfuService.EXTRA_DEVICE_NAME, mSelectedDevice.getName()); // This name will be shown on the notification
- * service.putExtra(DfuService.EXTRA_FILE_MIME_TYPE, mFileType == DfuService.TYPE_AUTO ? YourDfuService.MIME_TYPE_ZIP : YourDfuService.MIME_TYPE_OCTET_STREAM);
- * service.putExtra(DfuService.EXTRA_FILE_TYPE, mFileType);
- * service.putExtra(DfuService.EXTRA_FILE_PATH, mFilePath);
- * service.putExtra(DfuService.EXTRA_FILE_URI, mFileStreamUri);
+ * final Intent service = new Intent(this, yourClass);
+ * service.putExtra(EXTRA_DEVICE_ADDRESS, mSelectedDevice.getAddress()); // Target device address
+ * service.putExtra(EXTRA_DEVICE_NAME, mSelectedDevice.getName()); // This name will be shown on the notification
+ * service.putExtra(EXTRA_FILE_MIME_TYPE, mFileType == TYPE_AUTO ? YourMIME_TYPE_ZIP : YourMIME_TYPE_OCTET_STREAM);
+ * service.putExtra(EXTRA_FILE_TYPE, mFileType);
+ * service.putExtra(EXTRA_FILE_PATH, mFilePath);
+ * service.putExtra(EXTRA_FILE_URI, mFileStreamUri);
  * // optionally
- * service.putExtra(DfuService.EXTRA_INIT_FILE_PATH, mInitFilePath);
- * service.putExtra(DfuService.EXTRA_INIT_FILE_URI, mInitFileStreamUri);
- * service.putExtra(DfuService.EXTRA_RESTORE_BOND, mRestoreBond);
+ * service.putExtra(EXTRA_INIT_FILE_PATH, mInitFilePath);
+ * service.putExtra(EXTRA_INIT_FILE_URI, mInitFileStreamUri);
+ * service.putExtra(EXTRA_RESTORE_BOND, mRestoreBond);
  * startService(service);
  * </pre>
  * <p/>
@@ -144,12 +147,17 @@ public abstract class DfuBaseService extends IntentService {
 	/**
 	 * A path to the file with the new firmware. It may point to a HEX, BIN or a ZIP file.
 	 * Some file manager applications return the path as a String while other return a Uri. Use the {@link #EXTRA_FILE_URI} in the later case.
+	 * For files included in /res/raw resource directory please use {@link #EXTRA_FILE_RES_ID} instead.
 	 */
 	public static final String EXTRA_FILE_PATH = "no.nordicsemi.android.dfu.extra.EXTRA_FILE_PATH";
 	/**
 	 * See {@link #EXTRA_FILE_PATH} for details.
 	 */
 	public static final String EXTRA_FILE_URI = "no.nordicsemi.android.dfu.extra.EXTRA_FILE_URI";
+	/**
+	 * See {@link #EXTRA_FILE_PATH} for details.
+	 */
+	public static final String EXTRA_FILE_RES_ID = "no.nordicsemi.android.dfu.extra.EXTRA_FILE_RES_ID";
 	/**
 	 * The Init packet URI. This file is required if the Extended Init Packet is required (SDK 7.0+). Must point to a 'dat' file corresponding with the selected firmware.
 	 * The Init packet may contain just the CRC (in case of older versions of DFU) or the Extended Init Packet in binary format (SDK 7.0+).
@@ -160,6 +168,11 @@ public abstract class DfuBaseService extends IntentService {
 	 * The Init packet may contain just the CRC (in case of older versions of DFU) or the Extended Init Packet in binary format (SDK 7.0+).
 	 */
 	public static final String EXTRA_INIT_FILE_URI = "no.nordicsemi.android.dfu.extra.EXTRA_INIT_FILE_URI";
+	/**
+	 * The Init packet URI. This file is required if the Extended Init Packet is required (SDK 7.0+). Must point to a 'dat' file corresponding with the selected firmware.
+	 * The Init packet may contain just the CRC (in case of older versions of DFU) or the Extended Init Packet in binary format (SDK 7.0+).
+	 */
+	public static final String EXTRA_INIT_FILE_RES_ID = "no.nordicsemi.android.dfu.extra.EXTRA_INIT_FILE_RES_ID";
 	/**
 	 * The input file mime-type. Currently only "application/zip" (ZIP) or "application/octet-stream" (HEX or BIN) are supported. If this parameter is
 	 * empty the "application/octet-stream" is assumed.
@@ -611,14 +624,15 @@ public abstract class DfuBaseService extends IntentService {
 	private boolean mRequestCompleted;
 	/**
 	 * <p>
-	 * Flag set to <code>true</code> when the DFU target had send any notification with status other than {@link #DFU_STATUS_SUCCESS}. Setting it to <code>true</code> will abort sending firmware and
+	 * Flag set to <code>true</code> when the DFU target had send a notification with status other than {@link #DFU_STATUS_SUCCESS}. Setting it to <code>true</code> will abort sending firmware and
 	 * stop logging notifications (read below for explanation).
 	 * </p>
 	 * <p>
-	 * The onCharacteristicWrite(..) callback is written when Android puts the packet to the outgoing queue, not when it physically send the data. Therefore, in case of invalid state of the DFU
-	 * target, Android will first put up to N* packets, one by one, while in fact the first will be transmitted. In case the DFU target is in an invalid state it will notify Android with a
-	 * notification 10-03-02 for each packet of firmware that has been sent. However, just after receiving the first one this service will try to send the reset command while still getting more
-	 * 10-03-02 notifications. This flag will prevent from logging "Notification received..." more than once.
+	 * The onCharacteristicWrite(..) callback is called when Android writes the packet into the outgoing queue, not when it physically sends the data.
+	 * This means that the service will first put up to N* packets, one by one, to the queue, while in fact the first one is transmitted.
+	 * In case the DFU target is in an invalid state it will notify Android with a notification 10-03-02 for each packet of firmware that has been sent.
+	 * After receiving the first such notification, the DFU service will add the reset command to the outgoing queue, but it will still be receiving such notifications
+	 * until all the data packets are sent. Those notifications should be ignored. This flag will prevent from logging "Notification received..." more than once.
 	 * </p>
 	 * <p>
 	 * Additionally, sometimes after writing the command 6 ({@link #OP_CODE_RESET}), Android will receive a notification and update the characteristic value with 10-03-02 and the callback for write
@@ -629,7 +643,9 @@ public abstract class DfuBaseService extends IntentService {
 	 * </p>
 	 */
 	private boolean mRemoteErrorOccurred;
+	/** Flag set to true if sending was paused. */
 	private boolean mPaused;
+	/** Flag set to true if sending was aborted. */
 	private boolean mAborted;
 	/**
 	 * Latest data received from device using notification.
@@ -1069,8 +1085,10 @@ public abstract class DfuBaseService extends IntentService {
 		final String deviceName = intent.getStringExtra(EXTRA_DEVICE_NAME);
 		final String filePath = intent.getStringExtra(EXTRA_FILE_PATH);
 		final Uri fileUri = intent.getParcelableExtra(EXTRA_FILE_URI);
+		final int fileResId = intent.getIntExtra(EXTRA_FILE_RES_ID, 0);
 		final String initFilePath = intent.getStringExtra(EXTRA_INIT_FILE_PATH);
 		final Uri initFileUri = intent.getParcelableExtra(EXTRA_INIT_FILE_URI);
+		final int initFileResId = intent.getIntExtra(EXTRA_INIT_FILE_RES_ID, 0);
 		int fileType = intent.getIntExtra(EXTRA_FILE_TYPE, TYPE_AUTO);
 		if (filePath != null && fileType == TYPE_AUTO)
 			fileType = filePath.toLowerCase(Locale.US).endsWith("zip") ? TYPE_AUTO : TYPE_APPLICATION;
@@ -1149,8 +1167,10 @@ public abstract class DfuBaseService extends IntentService {
 				sendLogBroadcast(LOG_LEVEL_VERBOSE, "Opening file...");
 				if (fileUri != null) {
 					is = openInputStream(fileUri, mimeType, mbrSize, fileType);
-				} else {
+				} else if (filePath != null) {
 					is = openInputStream(filePath, mimeType, mbrSize, fileType);
+				} else if (fileResId > 0) {
+					is = openInputStream(fileResId, mimeType, mbrSize, fileType);
 				}
 
 				if (initFileUri != null) {
@@ -1159,6 +1179,9 @@ public abstract class DfuBaseService extends IntentService {
 				} else if (initFilePath != null) {
 					// Try to read the Init Packet file from path
 					initIs = new FileInputStream(initFilePath);
+				} else if (initFileResId > 0) {
+					// Try to read the Init Packet file from given resource
+					initIs = getResources().openRawResource(initFileResId);
 				}
 
 				mInputStream = is;
@@ -1865,7 +1888,7 @@ public abstract class DfuBaseService extends IntentService {
 	/**
 	 * Opens the binary input stream that returns the firmware image content. A Path to the file is given.
 	 *
-	 * @param filePath the path to the HEX or BIN file
+	 * @param filePath the path to the HEX, BIN or ZIP file
 	 * @param mimeType the file type
 	 * @param mbrSize  the size of MBR, by default 0x1000
 	 * @param types    the content files types in ZIP
@@ -1906,6 +1929,27 @@ public abstract class DfuBaseService extends IntentService {
 		} finally {
 			cursor.close();
 		}
+		return is;
+	}
+
+	/**
+	 * Opens the binary input stream that returns the firmware image content. A resource id in the res/raw is given.
+	 *
+	 * @param resId the if of the resource file
+	 * @param mimeType the file type
+	 * @param mbrSize  the size of MBR, by default 0x1000
+	 * @param types    the content files types in ZIP
+	 * @return the input stream with binary image content
+	 */
+	private InputStream openInputStream(final int resId, final String mimeType, final int mbrSize, final int types) throws IOException {
+		final InputStream is = getResources().openRawResource(resId);
+		if (MIME_TYPE_ZIP.equals(mimeType))
+			return new ArchiveInputStream(is, mbrSize, types);
+		is.mark(2);
+		int firstByte = is.read();
+		is.reset();
+		if (firstByte == ':')
+			return new HexInputStream(is, mbrSize);
 		return is;
 	}
 
