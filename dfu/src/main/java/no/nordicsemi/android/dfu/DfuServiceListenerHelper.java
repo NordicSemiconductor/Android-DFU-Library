@@ -22,6 +22,9 @@
 
 package no.nordicsemi.android.dfu;
 
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -31,6 +34,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import java.util.HashMap;
 import java.util.Map;
 
+import no.nordicsemi.android.dfu.internal.scanner.BootloaderScanner;
 import no.nordicsemi.android.error.GattError;
 
 /**
@@ -55,13 +59,23 @@ public class DfuServiceListenerHelper {
 		}
 
 		private void setLogListener(final String deviceAddress, final DfuLogListener listener) {
+			// When using the buttonless update and updating the SoftDevice the application will be removed to make space for the new SoftDevice.
+			// The new bootloader will afterwards advertise with the address incremented by 1. We need to make sure that the listener will receive also events from this device.
 			mListeners.put(deviceAddress, listener);
+			mListeners.put(getIncrementedAddress(deviceAddress), listener); // assuming the address is a valid BLE address
 		}
 
 		private boolean removeLogListener(final DfuLogListener listener) {
 			if (mGlobalLogListener == listener)
 				mGlobalLogListener = null;
 
+			// We do it 2 times as the listener was added for 2 addresses
+			for (final Map.Entry<String, DfuLogListener> entry : mListeners.entrySet()) {
+				if (entry.getValue() == listener) {
+					mListeners.remove(entry.getKey());
+					break;
+				}
+			}
 			for (final Map.Entry<String, DfuLogListener> entry : mListeners.entrySet()) {
 				if (entry.getValue() == listener) {
 					mListeners.remove(entry.getKey());
@@ -102,13 +116,23 @@ public class DfuServiceListenerHelper {
 		}
 
 		private void setProgressListener(final String deviceAddress, final DfuProgressListener listener) {
+			// When using the buttonless update and updating the SoftDevice the application will be removed to make space for the new SoftDevice.
+			// The new bootloader will afterwards advertise with the address incremented by 1. We need to make sure that the listener will receive also events from this device.
 			mListeners.put(deviceAddress, listener);
+			mListeners.put(getIncrementedAddress(deviceAddress), listener); // assuming the address is a valid BLE address
 		}
 
 		private boolean removeProgressListener(final DfuProgressListener listener) {
 			if (mGlobalProgressListener == listener)
 				mGlobalProgressListener = null;
 
+			// We do it 2 times as the listener was added for 2 addresses
+			for (final Map.Entry<String, DfuProgressListener> entry : mListeners.entrySet()) {
+				if (entry.getValue() == listener) {
+					mListeners.remove(entry.getKey());
+					break;
+				}
+			}
 			for (final Map.Entry<String, DfuProgressListener> entry : mListeners.entrySet()) {
 				if (entry.getValue() == listener) {
 					mListeners.remove(entry.getKey());
@@ -336,5 +360,12 @@ public class DfuServiceListenerHelper {
 				mLogBroadcastReceiver = null;
 			}
 		}
+	}
+
+	private static String getIncrementedAddress(final String deviceAddress) {
+		final String firstBytes = deviceAddress.substring(0, 15);
+		final String lastByte = deviceAddress.substring(15); // assuming that the device address is correct
+		final String lastByteIncremented = String.format("%02X", (Integer.valueOf(lastByte, 16) + BootloaderScanner.ADDRESS_DIFF) & 0xFF);
+		return firstBytes + lastByteIncremented;
 	}
 }

@@ -43,12 +43,12 @@ public class BootloaderScannerLollipop extends ScanCallback implements Bootloade
 
 	@Override
 	public String searchFor(final String deviceAddress) {
-		final String fistBytes = deviceAddress.substring(0, 15);
+		final String firstBytes = deviceAddress.substring(0, 15);
 		final String lastByte = deviceAddress.substring(15); // assuming that the device address is correct
 		final String lastByteIncremented = String.format("%02X", (Integer.valueOf(lastByte, 16) + ADDRESS_DIFF) & 0xFF);
 
 		mDeviceAddress = deviceAddress;
-		mDeviceAddressIncremented = fistBytes + lastByteIncremented;
+		mDeviceAddressIncremented = firstBytes + lastByteIncremented;
 		mBootloaderAddress = null;
 		mFound = false;
 
