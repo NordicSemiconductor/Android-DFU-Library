@@ -32,9 +32,9 @@ import java.security.InvalidParameterException;
 
 /**
  * Starting the DfuService service requires a knowledge of some EXTRA_* constants used to pass parameters to the service.
- * The DfuServiceStater class may be used to make this process easier. It provides simple API that covers all low lever operations.
+ * The DfuServiceInitiator class may be used to make this process easier. It provides simple API that covers all low lever operations.
  */
-public class DfuServiceStarter {
+public class DfuServiceInitiator {
 	private final String deviceAddress;
 	private String deviceName;
 
@@ -56,7 +56,7 @@ public class DfuServiceStarter {
 	 * In the latter case an init file may also be set using the setInitFile(...) method. Init files are required by DFU Bootloader version 0.5 or newer (SDK 7.0.0+).
 	 * @param deviceAddress the target device device address
 	 */
-	public DfuServiceStarter(final String deviceAddress) {
+	public DfuServiceInitiator(final String deviceAddress) {
 		this.deviceAddress = deviceAddress;
 	}
 
@@ -66,7 +66,7 @@ public class DfuServiceStarter {
 	 * @param name the device name (optional)
 	 * @return the builder
 	 */
-	public DfuServiceStarter setDeviceName(final String name) {
+	public DfuServiceInitiator setDeviceName(final String name) {
 		this.deviceName = name;
 		return this;
 	}
@@ -77,62 +77,52 @@ public class DfuServiceStarter {
 	 * @param keepBond whether the bond information should be preserved in the new application.
 	 * @return the builder
 	 */
-	public DfuServiceStarter setKeepBond(final boolean keepBond) {
+	public DfuServiceInitiator setKeepBond(final boolean keepBond) {
 		this.keepBond = keepBond;
 		return this;
 	}
 
 	/**
 	 * Sets the URI to the Distribution packet (ZIP) or to a ZIP file matching the deprecated naming convention.
-	 * @param fileType the file type, a bit field created from:
-	 *  	<ul>
-	 * 		    <li>{@link DfuBaseService#TYPE_APPLICATION} - the Application will be sent</li>
-	 * 		    <li>{@link DfuBaseService#TYPE_SOFT_DEVICE} - he Soft Device will be sent</li>
-	 * 		    <li>{@link DfuBaseService#TYPE_BOOTLOADER} - the Bootloader will be sent</li>
-	 * 		</ul>
-	 * 	    or {@link DfuBaseService#TYPE_AUTO} - a type will be automatically selected based on the ZIP content
 	 * @param uri the URI of the file
 	 * @return the builder
-	 * @see #setZip(int, String)
-	 * @see #setZip(int, int)
+	 * @see #setZip(String)
+	 * @see #setZip(int)
 	 */
-	public DfuServiceStarter setZip(final int fileType, final Uri uri) {
-		return init(uri, null, 0, fileType, DfuBaseService.MIME_TYPE_ZIP);
+	public DfuServiceInitiator setZip(final Uri uri) {
+		return init(uri, null, 0, DfuBaseService.TYPE_AUTO, DfuBaseService.MIME_TYPE_ZIP);
 	}
 
 	/**
 	 * Sets the path to the Distribution packet (ZIP) or the a ZIP file matching the deprecated naming convention.
-	 * @param fileType see {@link #setZip(int, Uri)} for details
 	 * @param path path to the file
 	 * @return the builder
-	 * @see #setZip(int, Uri)
-	 * @see #setZip(int, int)
+	 * @see #setZip(Uri)
+	 * @see #setZip(int)
 	 */
-	public DfuServiceStarter setZip(final int fileType, final String path) {
-		return init(null, path, 0, fileType, DfuBaseService.MIME_TYPE_ZIP);
+	public DfuServiceInitiator setZip(final String path) {
+		return init(null, path, 0, DfuBaseService.TYPE_AUTO, DfuBaseService.MIME_TYPE_ZIP);
 	}
 
 	/**
 	 * Sets the resource ID of the Distribution packet (ZIP) or the a ZIP file matching the deprecated naming convention. The file should be in the /res/raw folder.
-	 * @param fileType see {@link #setZip(int, Uri)} for details
 	 * @param rawResId file's resource ID
 	 * @return the builder
-	 * @see #setZip(int, Uri)
-	 * @see #setZip(int, String)
+	 * @see #setZip(Uri)
+	 * @see #setZip(String)
 	 */
-	public DfuServiceStarter setZip(final int fileType, final int rawResId) {
-		return init(null, null, rawResId, fileType, DfuBaseService.MIME_TYPE_ZIP);
+	public DfuServiceInitiator setZip(final int rawResId) {
+		return init(null, null, rawResId, DfuBaseService.TYPE_AUTO, DfuBaseService.MIME_TYPE_ZIP);
 	}
 
 	/**
 	 * Sets the URI or path of the ZIP file. If the URI and path are not null the URI will be used.
-	 * @param fileType see {@link #setZip(int, Uri)} for details
 	 * @param uri the URI of the file
 	 * @param path the path of the file
 	 * @return the builder
 	 */
-	public DfuServiceStarter setZip(final int fileType, final Uri uri, final String path) {
-		return init(uri, path, 0, fileType, DfuBaseService.MIME_TYPE_ZIP);
+	public DfuServiceInitiator setZip(final Uri uri, final String path) {
+		return init(uri, path, 0, DfuBaseService.TYPE_AUTO, DfuBaseService.MIME_TYPE_ZIP);
 	}
 
 	/**
@@ -148,7 +138,7 @@ public class DfuServiceStarter {
 	 * @return the builder
 	 */
 	@Deprecated
-	public DfuServiceStarter setBinOrHex(final int fileType, final Uri uri) {
+	public DfuServiceInitiator setBinOrHex(final int fileType, final Uri uri) {
 		if (fileType == DfuBaseService.TYPE_AUTO)
 			throw new UnsupportedOperationException("You must specify the file type");
 		return init(uri, null, 0, fileType, DfuBaseService.MIME_TYPE_OCTET_STREAM);
@@ -162,7 +152,7 @@ public class DfuServiceStarter {
 	 * @return the builder
 	 */
 	@Deprecated
-	public DfuServiceStarter setBinOrHex(final int fileType, final String path) {
+	public DfuServiceInitiator setBinOrHex(final int fileType, final String path) {
 		if (fileType == DfuBaseService.TYPE_AUTO)
 			throw new UnsupportedOperationException("You must specify the file type");
 		return init(null, path, 0, fileType, DfuBaseService.MIME_TYPE_OCTET_STREAM);
@@ -175,9 +165,10 @@ public class DfuServiceStarter {
 	 * @param uri the URI of the file
 	 * @param path path to the file
 	 * @return the builder
+	 * @deprecated The Distribution packet (ZIP) should be used for DFU Bootloader version 0.5 or newer
 	 */
 	@Deprecated
-	public DfuServiceStarter setBinOrHex(final int fileType, final Uri uri, final String path) {
+	public DfuServiceInitiator setBinOrHex(final int fileType, final Uri uri, final String path) {
 		if (fileType == DfuBaseService.TYPE_AUTO)
 			throw new UnsupportedOperationException("You must specify the file type");
 		return init(null, path, 0, fileType, DfuBaseService.MIME_TYPE_OCTET_STREAM);
@@ -191,7 +182,7 @@ public class DfuServiceStarter {
 	 * @return the builder
 	 */
 	@Deprecated
-	public DfuServiceStarter setBinOrHex(final int fileType, final int rawResId) {
+	public DfuServiceInitiator setBinOrHex(final int fileType, final int rawResId) {
 		if (fileType == DfuBaseService.TYPE_AUTO)
 			throw new UnsupportedOperationException("You must specify the file type");
 		return init(null, null, rawResId, fileType, DfuBaseService.MIME_TYPE_OCTET_STREAM);
@@ -204,7 +195,7 @@ public class DfuServiceStarter {
 	 * @return the builder
 	 */
 	@Deprecated
-	public DfuServiceStarter setInitFile(final Uri initFileUri) {
+	public DfuServiceInitiator setInitFile(final Uri initFileUri) {
 		return init(initFileUri, null, 0);
 	}
 
@@ -215,7 +206,7 @@ public class DfuServiceStarter {
 	 * @return the builder
 	 */
 	@Deprecated
-	public DfuServiceStarter setInitFile(final String initFilePath) {
+	public DfuServiceInitiator setInitFile(final String initFilePath) {
 		return init(null, initFilePath, 0);
 	}
 
@@ -226,7 +217,7 @@ public class DfuServiceStarter {
 	 * @return the builder
 	 */
 	@Deprecated
-	public DfuServiceStarter setInitFile(final int initFileResId) {
+	public DfuServiceInitiator setInitFile(final int initFileResId) {
 		return init(null, null, initFileResId);
 	}
 
@@ -237,7 +228,7 @@ public class DfuServiceStarter {
 	 * @return the builder
 	 */
 	@Deprecated
-	public DfuServiceStarter setInitFile(final Uri initFileUri, final String initFilePath) {
+	public DfuServiceInitiator setInitFile(final Uri initFileUri, final String initFilePath) {
 		return init(initFileUri, initFilePath, 0);
 	}
 
@@ -267,7 +258,7 @@ public class DfuServiceStarter {
 		context.startService(intent);
 	}
 
-	private DfuServiceStarter init(final Uri initFileUri, final String initFilePath, final int initFileResId) {
+	private DfuServiceInitiator init(final Uri initFileUri, final String initFilePath, final int initFileResId) {
 		if (DfuBaseService.MIME_TYPE_ZIP.equals(mimeType))
 			throw new InvalidParameterException("Init file must be located inside the ZIP");
 
@@ -277,7 +268,7 @@ public class DfuServiceStarter {
 		return this;
 	}
 
-	private DfuServiceStarter init(final Uri fileUri, final String filePath, final int fileResId, final int fileType, final String mimeType) {
+	private DfuServiceInitiator init(final Uri fileUri, final String filePath, final int fileResId, final int fileType, final String mimeType) {
 		this.fileUri = fileUri;
 		this.filePath = filePath;
 		this.fileResId = fileResId;

@@ -1287,7 +1287,33 @@ public abstract class DfuBaseService extends IntentService {
 			try {
 				updateProgressNotification(PROGRESS_STARTING);
 
-				// Read the version number if available. The version number consists of 2 bytes: major and minor. Therefore f.e. the version 5 (00-05) can be read as 0.5.
+				/*
+				 * Read the version number if available.
+				 * The version number consists of 2 bytes: major and minor. Therefore f.e. the version 5 (00-05) can be read as 0.5.
+				 *
+				 * Currently supported versions are:
+				 *  * no DFU Version characteristic - we may be either in the bootloader mode or in the app mode. The DFU Bootloader from SDK 6.1 did not have this characteristic,
+				 *                                    but it also supported the buttonless update. Usually, the application must have had some additional services (like Heart Rate, etc)
+				 *                                    so if the number of services greater is than 3 (Generic Access, Generic Attribute, DFU Service) we can also assume we are in
+				 *                                    the application mode and jump is required.
+				 *
+				 *  * version = 1 (major = 0, minor = 1) - Application with DFU buttonless update supported. A jump to DFU mode is required.
+				 *
+				 *  * version = 5 (major = 0, minor = 5) - Since version 5 the Extended Init Packet is required. Keep in mind that if we are in the app mode the DFU Version characteristic
+				 *  								  still returns version = 1, as it is independent from the DFU Bootloader. The version = 5 is reported only after successful jump to
+				 *  								  the DFU mode. In version = 5 the bond information is always lost. Released in SDK 7.0.0.
+				 *
+				 *  * version = 6 (major = 0, minor = 6) - The DFU Bootloader may be configured to keep the bond information after application update. Please, see the {@link #EXTRA_KEEP_BOND}
+				 *  								  documentation for more information about how to enable the feature (disabled by default). A change in the DFU bootloader source and
+				 *  								  setting the {@link DfuServiceInitiator#setKeepBond} to true is required. Released in SDK 8.0.0.
+				 *
+				 *  * version = 7 (major = 0, minor = 7) - The SHA-256 firmware hash is used in the Extended Init Packet instead of CRC-16. This feature is transparent for the DFU Service.
+				 *
+				 *  * version = 8 (major = 0, minor = 8) - The Extended Init Packet is signed using the private key. The bootloader, using the public key, is able to verify the content.
+				 *  								  Released in SDK 9.0.0 as experimental feature.
+				 *  								  Caution! The firmware type (Application, Bootloader, SoftDevice or SoftDevice+Bootloader) is not encrypted as it is not a part of the
+				 *  								  Extended Init Packet. A change in the protocol will be required to fix this issue.
+				 */
 				int version = 0;
 				if (versionCharacteristic != null) {
 					version = readVersion(gatt, versionCharacteristic);
