@@ -57,10 +57,11 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
-import java.security.InvalidParameterException;
 import java.util.Locale;
 import java.util.UUID;
 
+import no.nordicsemi.android.dfu.internal.ArchiveInputStream;
+import no.nordicsemi.android.dfu.internal.HexInputStream;
 import no.nordicsemi.android.dfu.internal.exception.DeviceDisconnectedException;
 import no.nordicsemi.android.dfu.internal.exception.DfuException;
 import no.nordicsemi.android.dfu.internal.exception.HexFileValidationException;
@@ -68,8 +69,6 @@ import no.nordicsemi.android.dfu.internal.exception.RemoteDfuException;
 import no.nordicsemi.android.dfu.internal.exception.UnknownResponseException;
 import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
-import no.nordicsemi.android.dfu.internal.ArchiveInputStream;
-import no.nordicsemi.android.dfu.internal.HexInputStream;
 import no.nordicsemi.android.error.GattError;
 
 /**
@@ -79,25 +78,18 @@ import no.nordicsemi.android.error.GattError;
  * To run the service to your application extend it in your project and overwrite the missing method. Remember to add your class to the AndroidManifest.xml file.
  * </p>
  * <p>
- * Start the service with the following parameters:
+ * The {@link DfuServiceInitiator} object should be used to start the DFU Service.
  * <p/>
  * <pre>
- * final Intent service = new Intent(this, yourClass);
- * service.putExtra(EXTRA_DEVICE_ADDRESS, mSelectedDevice.getAddress()); // Target device address
- * service.putExtra(EXTRA_DEVICE_NAME, mSelectedDevice.getName()); // This name will be shown on the notification
- * service.putExtra(EXTRA_FILE_MIME_TYPE, mFileType == TYPE_AUTO ? YourMIME_TYPE_ZIP : YourMIME_TYPE_OCTET_STREAM);
- * service.putExtra(EXTRA_FILE_TYPE, mFileType);
- * service.putExtra(EXTRA_FILE_PATH, mFilePath);
- * service.putExtra(EXTRA_FILE_URI, mFileStreamUri);
- * // optionally
- * service.putExtra(EXTRA_INIT_FILE_PATH, mInitFilePath);
- * service.putExtra(EXTRA_INIT_FILE_URI, mInitFileStreamUri);
- * service.putExtra(EXTRA_RESTORE_BOND, mRestoreBond);
- * startService(service);
+ * final DfuServiceInitiator starter = new DfuServiceInitiator(mSelectedDevice.getAddress())
+ * 		.setDeviceName(mSelectedDevice.getName())
+ * 		.setKeepBond(keepBond)
+ * 		.setZip(mFileStreamUri, mFilePath)
+ *		.start(this, DfuService.class);
  * </pre>
- * <p/>
- * The {@link #EXTRA_FILE_MIME_TYPE} and {@link #EXTRA_FILE_TYPE} parameters are optional. If not provided the application upload from HEX/BIN file is assumed.
- * The service API is compatible with previous versions.
+ * <p>
+ *     You may register the progress and log listeners using the {@link DfuServiceListenerHelper} helper class. See {@link DfuProgressListener} and {@link DfuLogListener} for
+ *     more information.
  * </p>
  * <p>
  * The service will show its progress on the notification bar and will send local broadcasts to the application.
