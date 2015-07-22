@@ -33,6 +33,15 @@ import java.util.Map;
 
 import no.nordicsemi.android.error.GattError;
 
+/**
+ * A helper class that should be used to register listeners for DFU Service broadcast events.
+ * The {@link DfuProgressListener} should be registered to listen for DFU status updates and errors, while the {@link DfuLogListener} listener receives the log updates.
+ * Listeners may be registered for a specified device (given with device address) or for any device. Keep in mind, that while updating the SoftDevice using the buttonless update
+ * the device may change its address in the bootloader mode.
+ *
+ * <p>Use {@link #registerProgressListener(Context, DfuProgressListener)} or {@link #registerLogListener(Context, DfuLogListener)} to register your listeners. Remember about unregistering them
+ * when your context is destroyed.</p>
+ */
 public class DfuServiceListenerHelper {
 	private static LogBroadcastReceiver mLogBroadcastReceiver;
 	private static ProgressBroadcastsReceiver mProgressBroadcastReceiver;

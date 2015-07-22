@@ -22,6 +22,10 @@
 
 package no.nordicsemi.android.dfu;
 
+/**
+ * Listener for status, progress and error events. This listener should be used instead of creating the BroadcastReceiver on your own.
+ * @see DfuServiceListenerHelper
+ */
 public interface DfuProgressListener {
 
 	/**
