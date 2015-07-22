@@ -1216,6 +1216,10 @@ public abstract class DfuBaseService extends IntentService {
 				loge("An exception occurred while calculating file size", e);
 				updateProgressNotification(ERROR_FILE_ERROR);
 				return;
+			} catch (final Exception e) {
+				loge("An exception occurred while opening files. Did you set the firmware file?", e);
+				updateProgressNotification(ERROR_FILE_ERROR);
+				return;
 			}
 
 			/*

@@ -171,7 +171,7 @@ public class DfuServiceInitiator {
 	public DfuServiceInitiator setBinOrHex(final int fileType, final Uri uri, final String path) {
 		if (fileType == DfuBaseService.TYPE_AUTO)
 			throw new UnsupportedOperationException("You must specify the file type");
-		return init(null, path, 0, fileType, DfuBaseService.MIME_TYPE_OCTET_STREAM);
+		return init(uri, path, 0, fileType, DfuBaseService.MIME_TYPE_OCTET_STREAM);
 	}
 
 	/**
