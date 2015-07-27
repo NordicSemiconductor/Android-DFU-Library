@@ -66,6 +66,7 @@ import no.nordicsemi.android.dfu.internal.exception.DeviceDisconnectedException;
 import no.nordicsemi.android.dfu.internal.exception.DfuException;
 import no.nordicsemi.android.dfu.internal.exception.HexFileValidationException;
 import no.nordicsemi.android.dfu.internal.exception.RemoteDfuException;
+import no.nordicsemi.android.dfu.internal.exception.SizeValidationException;
 import no.nordicsemi.android.dfu.internal.exception.UnknownResponseException;
 import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
@@ -378,7 +379,7 @@ public abstract class DfuBaseService extends IntentService {
 	 */
 	public static final int ERROR_FILE_ERROR = ERROR_MASK | 0x02;
 	/**
-	 * Thrown then input file is not a valid HEX or ZIP file.
+	 * Thrown when input file is not a valid HEX or ZIP file.
 	 */
 	public static final int ERROR_FILE_INVALID = ERROR_MASK | 0x03;
 	/**
@@ -386,7 +387,7 @@ public abstract class DfuBaseService extends IntentService {
 	 */
 	public static final int ERROR_FILE_IO_EXCEPTION = ERROR_MASK | 0x04;
 	/**
-	 * Error thrown then {@code gatt.discoverServices();} returns false.
+	 * Error thrown when {@code gatt.discoverServices();} returns false.
 	 */
 	public static final int ERROR_SERVICE_DISCOVERY_NOT_STARTED = ERROR_MASK | 0x05;
 	/**
@@ -413,6 +414,10 @@ public abstract class DfuBaseService extends IntentService {
 	 * DFU Bootloader version 0.6+ requires sending the Init packet. If such bootloader version is detected, but the init packet has not been set this error is thrown.
 	 */
 	public static final int ERROR_INIT_PACKET_REQUIRED = ERROR_MASK | 0x0B;
+    /**
+     * Thrown when the firmware file is not word-aligned. The firmware size must be dividable by 4 bytes.
+     */
+    public static final int ERROR_FILE_SIZE_INVALID = ERROR_MASK | 0x0C;
 	/**
 	 * Flag set then the DFU target returned a DFU error. Look for DFU specification to get error codes.
 	 */
@@ -770,6 +775,8 @@ public abstract class DfuBaseService extends IntentService {
 				}
 			} else {
 				loge("Connection state change error: " + status + " newState: " + newState);
+				if (newState == BluetoothGatt.STATE_DISCONNECTED)
+					mConnectionState = STATE_DISCONNECTED;
 				mPaused = false;
 				mError = ERROR_CONNECTION_STATE_MASK | status;
 			}
@@ -1178,6 +1185,10 @@ public abstract class DfuBaseService extends IntentService {
 
 				mInputStream = is;
 				imageSizeInBytes = mImageSizeInBytes = is.available();
+
+                if ((imageSizeInBytes % 4) != 0)
+                    throw new SizeValidationException("The new firmware is not word-aligned.");
+
 				// Update the file type bit field basing on the ZIP content
 				if (fileType == TYPE_AUTO && MIME_TYPE_ZIP.equals(mimeType)) {
 					final ArchiveInputStream zhis = (ArchiveInputStream) is;
@@ -1187,6 +1198,15 @@ public abstract class DfuBaseService extends IntentService {
 				// Set the Init packet stream in case of a ZIP file
 				if (MIME_TYPE_ZIP.equals(mimeType)) {
 					final ArchiveInputStream zhis = (ArchiveInputStream) is;
+
+                    // Validate sizes
+                    if ((fileType & TYPE_APPLICATION) > 0 && (zhis.applicationImageSize() % 4) != 0)
+                        throw new SizeValidationException("Application firmware is not word-aligned.");
+                    if ((fileType & TYPE_BOOTLOADER) > 0 && (zhis.bootloaderImageSize() % 4) != 0)
+                        throw new SizeValidationException("Bootloader firmware is not word-aligned.");
+                    if ((fileType & TYPE_SOFT_DEVICE) > 0 && (zhis.softDeviceImageSize() % 4) != 0)
+                        throw new SizeValidationException("Soft Device firmware is not word-aligned.");
+
 					if (fileType == TYPE_APPLICATION) {
 						if (zhis.getApplicationInit() != null)
 							initIs = new ByteArrayInputStream(zhis.getApplicationInit());
@@ -1204,6 +1224,10 @@ public abstract class DfuBaseService extends IntentService {
 				loge("An exception occurred while opening file", e);
 				updateProgressNotification(ERROR_FILE_NOT_FOUND);
 				return;
+            } catch (final SizeValidationException e) {
+                loge("Firmware not word-aligned", e);
+                updateProgressNotification(ERROR_FILE_SIZE_INVALID);
+                return;
 			} catch (final IOException e) {
 				loge("An exception occurred while calculating file size", e);
 				updateProgressNotification(ERROR_FILE_ERROR);
@@ -2844,13 +2868,11 @@ public abstract class DfuBaseService extends IntentService {
 	}
 
 	private void loge(final String message) {
-		if (BuildConfig.DEBUG)
-			Log.e(TAG, message);
+        Log.e(TAG, message);
 	}
 
 	private void loge(final String message, final Throwable e) {
-		if (BuildConfig.DEBUG)
-			Log.e(TAG, message, e);
+		Log.e(TAG, message, e);
 	}
 
 	private void logw(final String message) {
