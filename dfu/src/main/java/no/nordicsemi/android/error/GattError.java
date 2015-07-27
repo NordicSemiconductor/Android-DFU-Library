@@ -151,6 +151,8 @@ public class GattError {
 				return "DFU FILE ERROR";
 			case DfuBaseService.ERROR_FILE_INVALID:
 				return "DFU NOT A VALID HEX FILE";
+			case DfuBaseService.ERROR_FILE_SIZE_INVALID:
+				return "DFU FILE NOT WORD ALIGNED";
 			case DfuBaseService.ERROR_FILE_IO_EXCEPTION:
 				return "DFU IO EXCEPTION";
 			case DfuBaseService.ERROR_FILE_NOT_FOUND:
