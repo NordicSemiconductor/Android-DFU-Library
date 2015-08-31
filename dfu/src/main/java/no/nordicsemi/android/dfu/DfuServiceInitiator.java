@@ -38,6 +38,8 @@ public class DfuServiceInitiator {
 	private final String deviceAddress;
 	private String deviceName;
 
+	private boolean disableNotification;
+
 	private Uri fileUri;
 	private String filePath;
 	private int fileResId;
@@ -68,6 +70,17 @@ public class DfuServiceInitiator {
 	 */
 	public DfuServiceInitiator setDeviceName(final String name) {
 		this.deviceName = name;
+		return this;
+	}
+
+	/**
+	 * Sets whether the progress notification in the status bar should be disabled.
+	 * Defaults to false.
+	 * @param disableNotification whether to disable the notification
+	 * @return the builder
+	 */
+	public DfuServiceInitiator setDisableNotification(final boolean disableNotification) {
+		this.disableNotification = disableNotification;
 		return this;
 	}
 
@@ -245,6 +258,7 @@ public class DfuServiceInitiator {
 
 		intent.putExtra(DfuBaseService.EXTRA_DEVICE_ADDRESS, deviceAddress);
 		intent.putExtra(DfuBaseService.EXTRA_DEVICE_NAME, deviceName);
+		intent.putExtra(DfuBaseService.EXTRA_DISABLE_NOTIFICATION, disableNotification);
 		intent.putExtra(DfuBaseService.EXTRA_FILE_MIME_TYPE, mimeType);
 		intent.putExtra(DfuBaseService.EXTRA_FILE_TYPE, fileType);
 		intent.putExtra(DfuBaseService.EXTRA_FILE_URI, fileUri);

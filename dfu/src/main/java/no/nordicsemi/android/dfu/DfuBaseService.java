@@ -107,6 +107,10 @@ public abstract class DfuBaseService extends IntentService {
 	 */
 	public static final String EXTRA_DEVICE_NAME = "no.nordicsemi.android.dfu.extra.EXTRA_DEVICE_NAME";
 	/**
+	 * A boolean indicating whether to disable the progress notification in the status bar. Defaults to false.
+	 */
+	public static final String EXTRA_DISABLE_NOTIFICATION = "no.nordicsemi.android.dfu.extra.EXTRA_DISABLE_NOTIFICATION";
+	/**
 	 * <p>
 	 * If the new firmware (application) does not share the bond information with the old one, the bond information is lost. Set this flag to <code>true</code>
 	 * to make the service create new bond with the new application when the upload is done (and remove the old one). When set to <code>false</code> (default),
@@ -543,6 +547,7 @@ public abstract class DfuBaseService extends IntentService {
 	private InputStream mInputStream;
 	private String mDeviceAddress;
 	private String mDeviceName;
+	private boolean mDisableNotification;
 	/**
 	 * The current connection state. If its value is > 0 than an error has occurred. Error number is a negative value of mConnectionState
 	 */
@@ -1075,6 +1080,7 @@ public abstract class DfuBaseService extends IntentService {
 		// Read input parameters
 		final String deviceAddress = intent.getStringExtra(EXTRA_DEVICE_ADDRESS);
 		final String deviceName = intent.getStringExtra(EXTRA_DEVICE_NAME);
+		final boolean disableNotification = intent.getBooleanExtra(EXTRA_DISABLE_NOTIFICATION, false);
 		final String filePath = intent.getStringExtra(EXTRA_FILE_PATH);
 		final Uri fileUri = intent.getParcelableExtra(EXTRA_FILE_URI);
 		final int fileResId = intent.getIntExtra(EXTRA_FILE_RES_ID, 0);
@@ -1105,6 +1111,7 @@ public abstract class DfuBaseService extends IntentService {
 
 		mDeviceAddress = deviceAddress;
 		mDeviceName = deviceName;
+		mDisableNotification = disableNotification;
 		mConnectionState = STATE_DISCONNECTED;
 		mBytesSent = 0;
 		mBytesConfirmed = 0;
@@ -2675,6 +2682,16 @@ public abstract class DfuBaseService extends IntentService {
 	 *                 {@link #PROGRESS_VALIDATING}, {@link #PROGRESS_DISCONNECTING}, {@link #PROGRESS_COMPLETED} or {@link #ERROR_FILE_ERROR}, {@link #ERROR_FILE_INVALID} , etc
 	 */
 	private void updateProgressNotification(final int progress) {
+
+		// send progress or error broadcast
+		if (progress < ERROR_MASK)
+			sendProgressBroadcast(progress);
+		else
+			sendErrorBroadcast(progress);
+
+		if (mDisableNotification) return;
+		// create or update notification:
+
 		final String deviceAddress = mDeviceAddress;
 		final String deviceName = mDeviceName != null ? mDeviceName : getString(R.string.dfu_unknown_name);
 
@@ -2722,11 +2739,6 @@ public abstract class DfuBaseService extends IntentService {
 					builder.setOngoing(true).setContentTitle(title).setContentText(text).setProgress(100, progress, false);
 				}
 		}
-		// send progress or error broadcast
-		if (progress < ERROR_MASK)
-			sendProgressBroadcast(progress);
-		else
-			sendErrorBroadcast(progress);
 
 		// update the notification
 		final Intent intent = new Intent(this, getNotificationTarget());
