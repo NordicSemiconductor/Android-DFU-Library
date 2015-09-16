@@ -28,4 +28,5 @@ public interface DfuSettingsConstants {
 	public static final String SETTINGS_MBR_SIZE = "settings_mbr_size";
 	public static final int SETTINGS_DEFAULT_MBR_SIZE = 0x1000;
 	public static final int SETTINGS_NUMBER_OF_PACKETS_DEFAULT = 10;
+	public static final String SETTINGS_ASSUME_DFU_NODE = "settings_assume_dfu_mode";
 }

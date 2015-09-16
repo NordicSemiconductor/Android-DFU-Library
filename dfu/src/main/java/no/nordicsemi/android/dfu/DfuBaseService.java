@@ -1158,6 +1158,18 @@ public abstract class DfuBaseService extends IntentService {
 		} catch (final NumberFormatException e) {
 			mbrSize = DfuSettingsConstants.SETTINGS_DEFAULT_MBR_SIZE;
 		}
+		/*
+		 * In case of old DFU bootloader versions, where there was no DFU Version characteristic, the service was unable to determine whether it was in the application mode, or in
+		 * bootloader mode. In that case, if the following boolean value is set to false (default) the bootloader will count number of services on the device. In case of 3 service
+		 * it will start the DFU procedure (Generic Access, Generic Attribute, DFU Service). If more services will be found, it assumes that a jump to the DFU bootloader is required.
+		 *
+		 * However, in some cases, the DFU bootloader is used to flash firmware on other chip via nRF5x. In that case the application may support DFU operation without switching
+		 * to the bootloader mode itself.
+		 *
+		 * For newer implementations of DFU in such case the DFU Version should return value other than 0x0100 (major 0, minor 1) which means that the application does not support
+		 * DFU process itself but rather support jump to the bootloader mode.
+		 */
+		final boolean assumeDfuMode = preferences.getBoolean(DfuSettingsConstants.SETTINGS_ASSUME_DFU_NODE, false);
 
 		sendLogBroadcast(LOG_LEVEL_VERBOSE, "Starting DFU service");
 
@@ -1354,9 +1366,10 @@ public abstract class DfuBaseService extends IntentService {
 				 *  Check if we are in the DFU Bootloader or in the Application that supports the buttonless update.
 				 *
 				 *  In the DFU from SDK 6.1, which was also supporting the buttonless update, there was no DFU Version characteristic. In that case we may find out whether
-				 *  we are in the bootloader or application by simply checking the number of characteristics.
+				 *  we are in the bootloader or application by simply checking the number of characteristics. This may be overridden by setting the DfuSettingsConstants.SETTINGS_ASSUME_DFU_NODE
+				 *  property to true in Shared Preferences.
 				 */
-				if (version == 1 || (version == 0 && gatt.getServices().size() > 3 /* No DFU Version char but more services than Generic Access, Generic Attribute, DFU Service */)) {
+				if (version == 1 || (!assumeDfuMode && version == 0 && gatt.getServices().size() > 3 /* No DFU Version char but more services than Generic Access, Generic Attribute, DFU Service */)) {
 					// The service is connected to the application, not to the bootloader
 					logw("Application with buttonless update found");
 					sendLogBroadcast(LOG_LEVEL_WARNING, "Application with buttonless update found");
