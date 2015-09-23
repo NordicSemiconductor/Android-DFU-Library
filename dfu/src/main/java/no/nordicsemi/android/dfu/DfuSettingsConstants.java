@@ -71,8 +71,8 @@ public interface DfuSettingsConstants {
 
 	/**
 	 * This property must contain a boolean value.
-	 * <p>The {@link DfuBaseService}, after connected to a DFU target will check whether it is in application or in DFU bootloader mode. For DFU implementations from SDK 7.0 or newer
-	 * this is done by reading the value of DFU Version characteristic. It the returned value is equal to 0x0100 (major = 0, minor = 1) it means that we are in the application mode and
+	 * <p>The {@link DfuBaseService}, when connected to a DFU target will check whether it is in application or in DFU bootloader mode. For DFU implementations from SDK 7.0 or newer
+	 * this is done by reading the value of DFU Version characteristic. If the returned value is equal to 0x0100 (major = 0, minor = 1) it means that we are in the application mode and
 	 * jump to the bootloader mode is required.
 	 * <p>However, for DFU implementations from older SDKs, where there was no DFU Version characteristic, the service must guess. If this option is set to false (default) it will count
 	 * number of device's services. If the count is equal to 3 (Generic Access, Generic Attribute, DFU Service) it will assume that it's in DFU mode. If greater than 3 - in app mode.
