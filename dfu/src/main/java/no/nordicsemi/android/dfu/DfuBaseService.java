@@ -751,6 +751,7 @@ public abstract class DfuBaseService extends IntentService {
 						try {
 							synchronized (this) {
 								logd("Waiting 1600 ms for a possible Service Changed indication...");
+								sendLogBroadcast(LOG_LEVEL_DEBUG, "wait(1600)");
 								wait(1600);
 
 								// After 1.6s the services are already discovered so the following gatt.discoverServices() finishes almost immediately.
@@ -764,6 +765,7 @@ public abstract class DfuBaseService extends IntentService {
 					}
 
 					// Attempts to discover services after successful connection.
+					sendLogBroadcast(LOG_LEVEL_DEBUG, "gatt.discoverServices()");
 					final boolean success = gatt.discoverServices();
 					logi("Attempting to start service discovery... " + (success ? "succeed" : "failed"));
 
@@ -1171,7 +1173,7 @@ public abstract class DfuBaseService extends IntentService {
 		 */
 		final boolean assumeDfuMode = preferences.getBoolean(DfuSettingsConstants.SETTINGS_ASSUME_DFU_NODE, false);
 
-		sendLogBroadcast(LOG_LEVEL_VERBOSE, "Starting DFU service");
+		sendLogBroadcast(LOG_LEVEL_VERBOSE, "DFU service started");
 
 		/*
 		 * First the service is trying to read the firmware and init packet files.
@@ -1255,6 +1257,16 @@ public abstract class DfuBaseService extends IntentService {
 				loge("An exception occurred while opening files. Did you set the firmware file?", e);
 				updateProgressNotification(ERROR_FILE_ERROR);
 				return;
+			}
+
+			// Wait a second... If we were connected before it's good to give some time before we start reconnecting.
+			synchronized (this) {
+				try {
+					sendLogBroadcast(LOG_LEVEL_DEBUG, "wait(1000)");
+					wait(1000);
+				} catch (InterruptedException e) {
+					// do nothing
+				}
 			}
 
 			/*
@@ -1416,16 +1428,14 @@ public abstract class DfuBaseService extends IntentService {
 									if (keepBond && (fileType & TYPE_SOFT_DEVICE) == 0) {
 										sendLogBroadcast(LOG_LEVEL_VERBOSE, "Restarting service...");
 
-										updateProgressNotification(PROGRESS_DISCONNECTING);
-										sendLogBroadcast(LOG_LEVEL_VERBOSE, "Disconnecting...");
-										gatt.disconnect();
-										waitUntilDisconnected();
-										sendLogBroadcast(LOG_LEVEL_INFO, "Disconnected");
+										// Disconnect
+										disconnect(gatt);
 
 										// Close the device
 										close(gatt);
 
 										logi("Restarting service");
+										sendLogBroadcast(LOG_LEVEL_VERBOSE, "Restarting service...");
 										final Intent newIntent = new Intent();
 										newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
 										startService(newIntent);
@@ -2034,6 +2044,7 @@ public abstract class DfuBaseService extends IntentService {
 
 		logi("Connecting to the device...");
 		final BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
+		sendLogBroadcast(LOG_LEVEL_DEBUG, "gatt = device.connectGatt(autoConnect = false)");
 		final BluetoothGatt gatt = device.connectGatt(this, false, mGattCallback);
 
 		// We have to wait until the device is connected and services are discovered
@@ -2057,13 +2068,8 @@ public abstract class DfuBaseService extends IntentService {
 	 */
 	private void terminateConnection(final BluetoothGatt gatt, final int error) {
 		if (mConnectionState != STATE_DISCONNECTED) {
-			updateProgressNotification(PROGRESS_DISCONNECTING);
-
-			// No need to disable notifications
-
 			// Disconnect from the device
 			disconnect(gatt);
-			sendLogBroadcast(LOG_LEVEL_INFO, "Disconnected");
 		}
 
 		// Close the device
@@ -2082,13 +2088,18 @@ public abstract class DfuBaseService extends IntentService {
 		if (mConnectionState == STATE_DISCONNECTED)
 			return;
 
+		sendLogBroadcast(LOG_LEVEL_VERBOSE, "Disconnecting...");
+		updateProgressNotification(PROGRESS_DISCONNECTING);
+
 		mConnectionState = STATE_DISCONNECTING;
 
 		logi("Disconnecting from the device...");
+		sendLogBroadcast(LOG_LEVEL_DEBUG, "gatt.disconnect()");
 		gatt.disconnect();
 
 		// We have to wait until device gets disconnected or an error occur
 		waitUntilDisconnected();
+		sendLogBroadcast(LOG_LEVEL_INFO, "Disconnected");
 	}
 
 	/**
@@ -2131,7 +2142,7 @@ public abstract class DfuBaseService extends IntentService {
 		 * However, due to the Android bug (still exists in Android 5.0.1), it is keeping them anyway and the only way to clear services is by using this hidden refresh method.
 		 */
 		if (force || gatt.getDevice().getBondState() == BluetoothDevice.BOND_NONE) {
-			sendLogBroadcast(LOG_LEVEL_DEBUG, "gatt.refresh()");
+			sendLogBroadcast(LOG_LEVEL_DEBUG, "gatt.refresh() (hidden)");
 			/*
 			 * There is a refresh() method in BluetoothGatt class but for now it's hidden. We will call it using reflections.
 			 */
