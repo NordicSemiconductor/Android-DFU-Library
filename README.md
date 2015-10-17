@@ -1,5 +1,15 @@
 # DFU Library
 
+[ ![Download](https://api.bintray.com/packages/nordic/android/dfu-library/images/download.svg) ](https://bintray.com/nordic/android/dfu-library/_latestVersion)
+
+### Usage
+
+The compat library may be found on jcenter and Maven Central repository. Add it to your project by adding the following dependency:
+
+```Groovy
+compile 'no.nordicsemi.android:dfu:0.6'
+```
+
 ### Device Firmware Update (DFU)
 
 The nRF51 Series chips are flash-based SoCs, and as such they represent the most flexible solution available. A key feature of the nRF51 Series and their associated software architecture
