@@ -9,7 +9,7 @@ apply plugin: 'com.android.library'
  * A newer then described version of maven plugin dependency is required (see project's gradle.build).
  */
 
-apply plugin: 'com.github.dcendents.android-maven'
+/*apply plugin: 'com.github.dcendents.android-maven'
 apply plugin: 'com.jfrog.bintray'
 
 ext {
@@ -37,7 +37,7 @@ ext {
     licenseName = 'The BSD 3-Clause License'
     licenseUrl = 'http://opensource.org/licenses/BSD-3-Clause'
     allLicenses = ["BSD 3-Clause"]
-}
+}*/
 
 android {
     compileSdkVersion 23
@@ -62,6 +62,7 @@ dependencies {
     compile 'com.android.support:support-v4:23.1.1'
     compile 'com.google.code.gson:gson:2.3.1'
 }
+/*
 
 // The following script creates a POM file required to publish on Maven Central
 apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/installv1.gradle'
@@ -104,4 +105,4 @@ bintray {
             }
         }
     }
-}
+}*/
