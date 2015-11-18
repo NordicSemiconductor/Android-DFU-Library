@@ -1264,7 +1264,7 @@ public abstract class DfuBaseService extends IntentService {
 				try {
 					sendLogBroadcast(LOG_LEVEL_DEBUG, "wait(1000)");
 					wait(1000);
-				} catch (InterruptedException e) {
+				} catch (final InterruptedException e) {
 					// do nothing
 				}
 			}
@@ -2196,13 +2196,16 @@ public abstract class DfuBaseService extends IntentService {
 		logi("Reading DFU version number...");
 		sendLogBroadcast(LOG_LEVEL_VERBOSE, "Reading DFU version number...");
 
+		characteristic.setValue((byte[])null);
 		gatt.readCharacteristic(characteristic);
 
 		// We have to wait until device receives a response or an error occur
 		try {
 			synchronized (mLock) {
-				while ((!mRequestCompleted && mConnectionState == STATE_CONNECTED_AND_READY && mError == 0 && !mAborted) || mPaused)
+				while (((!mRequestCompleted || characteristic.getValue() == null ) && mConnectionState == STATE_CONNECTED_AND_READY && mError == 0 && !mAborted) || mPaused) {
+					mRequestCompleted = false;
 					mLock.wait();
+				}
 			}
 		} catch (final InterruptedException e) {
 			loge("Sleeping interrupted", e);
