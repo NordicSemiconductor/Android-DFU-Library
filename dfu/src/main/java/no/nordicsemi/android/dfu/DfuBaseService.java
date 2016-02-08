@@ -606,7 +606,7 @@ public abstract class DfuBaseService extends IntentService {
 	 */
 	private int mPartsTotal;
 	private int mFileType;
-	private long mLastProgressTime, mStartTime;
+	private long mLastNotificationTime, mLastProgressTime, mStartTime;
 	/**
 	 * Flag sent when a request has been sent that will cause the DFU target to reset. Often, after sending such command, Android throws a connection state error. If this flag is set the error will be
 	 * ignored.
@@ -679,6 +679,7 @@ public abstract class DfuBaseService extends IntentService {
 		public void onReceive(final Context context, final Intent intent) {
 			final int action = intent.getIntExtra(EXTRA_ACTION, 0);
 
+			logi("User action received: " + action);
 			switch (action) {
 				case ACTION_PAUSE:
 					mPaused = true;
@@ -733,6 +734,7 @@ public abstract class DfuBaseService extends IntentService {
 			if (status == BluetoothGatt.GATT_SUCCESS) {
 				if (newState == BluetoothGatt.STATE_CONNECTED) {
 					logi("Connected to GATT server");
+					sendLogBroadcast(LOG_LEVEL_INFO, "Connected to " + mDeviceAddress);
 					mConnectionState = STATE_CONNECTED;
 
 					/*
@@ -759,12 +761,13 @@ public abstract class DfuBaseService extends IntentService {
 								// NOTE: This also works with shorted waiting time. The gatt.discoverServices() must be called after the indication is received which is
 								// about 600ms after establishing connection. Values 600 - 1600ms should be OK.
 							}
-						} catch (InterruptedException e) {
+						} catch (final InterruptedException e) {
 							// Do nothing
 						}
 					}
 
 					// Attempts to discover services after successful connection.
+					sendLogBroadcast(LOG_LEVEL_VERBOSE, "Discovering services...");
 					sendLogBroadcast(LOG_LEVEL_DEBUG, "gatt.discoverServices()");
 					final boolean success = gatt.discoverServices();
 					logi("Attempting to start service discovery... " + (success ? "succeed" : "failed"));
@@ -803,20 +806,6 @@ public abstract class DfuBaseService extends IntentService {
 				loge("Service discovery error: " + status);
 				mError = ERROR_CONNECTION_MASK | status;
 			}
-			
-			// Add one second delay to avoid the traffic jam before the DFU mode is enabled
-			// Related:
-			//   issue:        https://github.com/NordicSemiconductor/Android-DFU-Library/issues/10
-			//   pull request: https://github.com/NordicSemiconductor/Android-DFU-Library/pull/12
-			synchronized (this) {
-				try {
-					sendLogBroadcast(LOG_LEVEL_DEBUG, "wait(1000)");
-					wait(1000);
-				} catch (final InterruptedException e) {
-					// Do nothing
-				}
-			}
-			// End
 
 			// Notify waiting thread
 			synchronized (mLock) {
@@ -852,9 +841,11 @@ public abstract class DfuBaseService extends IntentService {
 					if (SERVICE_CHANGED_UUID.equals(descriptor.getCharacteristic().getUuid())) {
 						// We have enabled indications for the Service Changed characteristic
 						mServiceChangedIndicationsEnabled = descriptor.getValue()[0] == 2;
+						sendLogBroadcast(LOG_LEVEL_VERBOSE, "Indications enabled for " + descriptor.getCharacteristic().getUuid());
 					} else {
 						// We have enabled notifications for this characteristic
 						mNotificationsEnabled = descriptor.getValue()[0] == 1;
+						sendLogBroadcast(LOG_LEVEL_VERBOSE, "Notifications enabled for " + descriptor.getCharacteristic().getUuid());
 					}
 				}
 			} else {
@@ -1348,7 +1339,22 @@ public abstract class DfuBaseService extends IntentService {
 			 */
 			final BluetoothGattCharacteristic versionCharacteristic = dfuService.getCharacteristic(DFU_VERSION); // this may be null for older versions of the Bootloader
 
-			sendLogBroadcast(LOG_LEVEL_INFO, "Connected. Services discovered");
+			sendLogBroadcast(LOG_LEVEL_INFO, "Services discovered");
+
+			// Add one second delay to avoid the traffic jam before the DFU mode is enabled
+			// Related:
+			//   issue:        https://github.com/NordicSemiconductor/Android-DFU-Library/issues/10
+			//   pull request: https://github.com/NordicSemiconductor/Android-DFU-Library/pull/12
+			synchronized (this) {
+				try {
+					sendLogBroadcast(LOG_LEVEL_DEBUG, "wait(1000)");
+					wait(1000);
+				} catch (final InterruptedException e) {
+					// Do nothing
+				}
+			}
+			// End
+
 			try {
 				updateProgressNotification(PROGRESS_STARTING);
 
@@ -1386,6 +1392,8 @@ public abstract class DfuBaseService extends IntentService {
 					final int major = (version >> 8);
 					logi("Version number read: " + major + "." + minor);
 					sendLogBroadcast(LOG_LEVEL_APPLICATION, "Version number read: " + major + "." + minor);
+				} else {
+					sendLogBroadcast(LOG_LEVEL_APPLICATION, "DFU Version characteristic not found");
 				}
 
 				/*
@@ -1469,6 +1477,19 @@ public abstract class DfuBaseService extends IntentService {
 					enableCCCD(gatt, controlPointCharacteristic, NOTIFICATIONS);
 					sendLogBroadcast(LOG_LEVEL_APPLICATION, "Notifications enabled");
 
+					// Wait a second here before going further
+					// Related:
+					//   pull request: https://github.com/NordicSemiconductor/Android-DFU-Library/pull/11
+					synchronized (this) {
+						try {
+							sendLogBroadcast(LOG_LEVEL_DEBUG, "wait(1000)");
+							wait(1000);
+						} catch (final InterruptedException e) {
+							// Do nothing
+						}
+					}
+					// End
+
 					// Send 'jump to bootloader command' (Start DFU)
 					updateProgressNotification(PROGRESS_ENABLING_DFU_MODE);
 					OP_CODE_START_DFU[1] = 0x04;
@@ -1520,6 +1541,19 @@ public abstract class DfuBaseService extends IntentService {
 				// Enable notifications
 				enableCCCD(gatt, controlPointCharacteristic, NOTIFICATIONS);
 				sendLogBroadcast(LOG_LEVEL_APPLICATION, "Notifications enabled");
+
+				// Wait a second here before going further
+				// Related:
+				//   pull request: https://github.com/NordicSemiconductor/Android-DFU-Library/pull/11
+				synchronized (this) {
+					try {
+						sendLogBroadcast(LOG_LEVEL_DEBUG, "wait(1000)");
+						wait(1000);
+					} catch (final InterruptedException e) {
+						// Do nothing
+					}
+				}
+				// End
 
 				try {
 					// Set up the temporary variable that will hold the responses
@@ -2210,7 +2244,7 @@ public abstract class DfuBaseService extends IntentService {
 		logi("Reading DFU version number...");
 		sendLogBroadcast(LOG_LEVEL_VERBOSE, "Reading DFU version number...");
 
-		characteristic.setValue((byte[])null);
+		characteristic.setValue((byte[]) null);
 		gatt.readCharacteristic(characteristic);
 
 		// We have to wait until device receives a response or an error occur
@@ -2260,6 +2294,7 @@ public abstract class DfuBaseService extends IntentService {
 		sendLogBroadcast(LOG_LEVEL_VERBOSE, "Enabling " + debugString + " for " + characteristic.getUuid());
 
 		// enable notifications locally
+		sendLogBroadcast(LOG_LEVEL_DEBUG, "gatt.setCharacteristicNotification(" + characteristic.getUuid() + ", true)");
 		gatt.setCharacteristicNotification(characteristic, true);
 
 		// enable notifications on the device
@@ -2274,12 +2309,6 @@ public abstract class DfuBaseService extends IntentService {
 				while ((((type == NOTIFICATIONS && !mNotificationsEnabled) || (type == INDICATIONS && !mServiceChangedIndicationsEnabled))
 						&& mConnectionState == STATE_CONNECTED_AND_READY && mError == 0 && !mAborted) || mPaused)
 					mLock.wait();
-
-				// Related:
-				//   pull request: https://github.com/NordicSemiconductor/Android-DFU-Library/pull/11
-				sendLogBroadcast(LOG_LEVEL_DEBUG, "wait(1000)");
-				mLock.wait(1000);
-				// End
 			}
 		} catch (final InterruptedException e) {
 			loge("Sleeping interrupted", e);
@@ -2753,20 +2782,24 @@ public abstract class DfuBaseService extends IntentService {
 	 *                 {@link #PROGRESS_VALIDATING}, {@link #PROGRESS_DISCONNECTING}, {@link #PROGRESS_COMPLETED} or {@link #ERROR_FILE_ERROR}, {@link #ERROR_FILE_INVALID} , etc
 	 */
 	private void updateProgressNotification(final int progress) {
-
 		// send progress or error broadcast
-		if (progress < ERROR_MASK)
+		if (progress < ERROR_MASK) {
 			sendProgressBroadcast(progress);
-		else
+
+			// the notification may not be refreshed too quickly as the ABORT button becomes not clickable
+			final long now = SystemClock.elapsedRealtime();
+			if (now - mLastNotificationTime < 250)
+				return;
+			mLastNotificationTime = now;
+		} else
 			sendErrorBroadcast(progress);
 
-		if (mDisableNotification) return;
-		// create or update notification:
+		if (mDisableNotification)
+			return;
 
+		// create or update notification:
 		final String deviceAddress = mDeviceAddress;
 		final String deviceName = mDeviceName != null ? mDeviceName : getString(R.string.dfu_unknown_name);
-
-		// final Bitmap largeIcon = BitmapFactory.decodeResource(getResources(), R.drawable.ic_stat_notify_dfu); <- this looks bad on Android 5
 
 		final NotificationCompat.Builder builder = new NotificationCompat.Builder(this).setSmallIcon(android.R.drawable.stat_sys_upload).setOnlyAlertOnce(true);//.setLargeIcon(largeIcon);
 		// Android 5
