@@ -2269,6 +2269,10 @@ public abstract class DfuBaseService extends IntentService {
 				while ((((type == NOTIFICATIONS && !mNotificationsEnabled) || (type == INDICATIONS && !mServiceChangedIndicationsEnabled))
 						&& mConnectionState == STATE_CONNECTED_AND_READY && mError == 0 && !mAborted) || mPaused)
 					mLock.wait();
+
+				// To prevent BLE device to disconnect with status 133 or 14 or 8, we need to sleep a bit more.
+				// Remove wait, to reproduce this issue on HTC M9, running Android 5.1.1.
+				mLock.wait(1000);
 			}
 		} catch (final InterruptedException e) {
 			loge("Sleeping interrupted", e);
