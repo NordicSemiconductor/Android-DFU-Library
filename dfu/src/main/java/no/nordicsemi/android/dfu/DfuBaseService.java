@@ -803,6 +803,15 @@ public abstract class DfuBaseService extends IntentService {
 				loge("Service discovery error: " + status);
 				mError = ERROR_CONNECTION_MASK | status;
 			}
+			
+			// Add one second delay to avoid the traffic jam before the DFU mode is enabled
+			synchronized (this) {
+                		try {
+                    			wait(1000);
+                		} catch (InterruptedException e) {
+                    			// Do nothing
+                		}
+            		}
 
 			// Notify waiting thread
 			synchronized (mLock) {
