@@ -7,7 +7,7 @@
 The compat library may be found on jcenter and Maven Central repository. Add it to your project by adding the following dependency:
 
 ```Groovy
-compile 'no.nordicsemi.android:dfu:0.6.1'
+compile 'no.nordicsemi.android:dfu:0.6.2'
 ```
 
 ### Device Firmware Update (DFU)
@@ -31,7 +31,7 @@ See the [documentation](documentation) for more information.
 
 ### Requirements
 
-The library is compatible with nRF51 devices with S-Series Soft Device and the DFU Bootloader flashed on. 
+The library is compatible with nRF51 and nRF52 devices with S-Series Soft Device and the DFU Bootloader flashed on. 
 
 ### DFU History
 
@@ -49,3 +49,4 @@ Check platform folders for mode details about compatibility for each library.
 - [DFU Introduction](http://developer.nordicsemi.com/nRF51_SDK/doc/7.2.0/s110/html/a00062.html "BLE Bootloader/DFU")
 - [How to create init packet](https://github.com/NordicSemiconductor/nRF-Master-Control-Panel/tree/master/init%20packet%20handling "Init packet handling")
 - [nRF51 Development Kit (DK)](http://www.nordicsemi.com/eng/Products/nRF51-DK "nRF51 DK") (compatible with Arduino Uno Revision 3)
+- [nRF52 Development Kit (DK)](http://www.nordicsemi.com/eng/Products/Bluetooth-Smart-Bluetooth-low-energy/nRF52-DK "nRF52 DK") (compatible with Arduino Uno Revision 3)

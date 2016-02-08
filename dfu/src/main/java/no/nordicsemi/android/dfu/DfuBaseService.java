@@ -805,13 +805,18 @@ public abstract class DfuBaseService extends IntentService {
 			}
 			
 			// Add one second delay to avoid the traffic jam before the DFU mode is enabled
+			// Related:
+			//   issue:        https://github.com/NordicSemiconductor/Android-DFU-Library/issues/10
+			//   pull request: https://github.com/NordicSemiconductor/Android-DFU-Library/pull/12
 			synchronized (this) {
-                		try {
-                    			wait(1000);
-                		} catch (InterruptedException e) {
-                    			// Do nothing
-                		}
-            		}
+				try {
+					sendLogBroadcast(LOG_LEVEL_DEBUG, "wait(1000)");
+					wait(1000);
+				} catch (final InterruptedException e) {
+					// Do nothing
+				}
+			}
+			// End
 
 			// Notify waiting thread
 			synchronized (mLock) {
@@ -2269,6 +2274,12 @@ public abstract class DfuBaseService extends IntentService {
 				while ((((type == NOTIFICATIONS && !mNotificationsEnabled) || (type == INDICATIONS && !mServiceChangedIndicationsEnabled))
 						&& mConnectionState == STATE_CONNECTED_AND_READY && mError == 0 && !mAborted) || mPaused)
 					mLock.wait();
+
+				// Related:
+				//   pull request: https://github.com/NordicSemiconductor/Android-DFU-Library/pull/11
+				sendLogBroadcast(LOG_LEVEL_DEBUG, "wait(1000)");
+				wait(1000);
+				// End
 			}
 		} catch (final InterruptedException e) {
 			loge("Sleeping interrupted", e);
