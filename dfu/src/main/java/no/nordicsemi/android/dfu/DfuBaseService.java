@@ -2278,7 +2278,7 @@ public abstract class DfuBaseService extends IntentService {
 				// Related:
 				//   pull request: https://github.com/NordicSemiconductor/Android-DFU-Library/pull/11
 				sendLogBroadcast(LOG_LEVEL_DEBUG, "wait(1000)");
-				wait(1000);
+				mLock.wait(1000);
 				// End
 			}
 		} catch (final InterruptedException e) {
