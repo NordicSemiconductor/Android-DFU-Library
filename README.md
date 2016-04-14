@@ -10,6 +10,9 @@ The compat library may be found on jcenter and Maven Central repository. Add it 
 compile 'no.nordicsemi.android:dfu:0.6.2'
 ```
 
+If you use proguard, add the following line to your proguard rules:
+```-keep class no.nordicsemi.android.dfu.** { *; }```
+
 ### Device Firmware Update (DFU)
 
 The nRF5x Series chips are flash-based SoCs, and as such they represent the most flexible solution available. A key feature of the nRF5x Series and their associated software architecture
