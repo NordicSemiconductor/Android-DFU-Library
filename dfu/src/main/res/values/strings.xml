@@ -23,7 +23,7 @@
     <string name="dfu_status_uploading_components_msg">Transmitting components to %s&#8230;</string>
     <string name="dfu_status_uploading_msg">Transmitting application to %s&#8230;</string>
     <string name="dfu_status_validating_msg">Validating&#8230;</string>
-    <string name="dfu_status_completed_msg">Application has been send successfully.</string>
+    <string name="dfu_status_completed_msg">Application has been sent successfully.</string>
     <string name="dfu_status_aborted_msg">Application upload has been canceled.</string>
     <string name="dfu_status_disconnecting_msg">Disconnecting from %s&#8230;</string>
     <string name="dfu_status_error_msg">DFU process failed.</string>
