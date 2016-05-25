@@ -170,7 +170,7 @@ public class GattError {
 			case DfuBaseService.ERROR_INIT_PACKET_REQUIRED:
 				return "INIT PACKET REQUIRED";
 			default:
-				if ((DfuBaseService.ERROR_REMOTE_MASK & error) > 0) {
+				/*if ((DfuBaseService.ERROR_REMOTE_MASK & error) > 0) {
 					switch (error & (~DfuBaseService.ERROR_REMOTE_MASK)) {
 						case DfuBaseService.DFU_STATUS_INVALID_STATE:
 							return "REMOTE DFU INVALID STATE";
@@ -183,7 +183,7 @@ public class GattError {
 						case DfuBaseService.DFU_STATUS_OPERATION_FAILED:
 							return "REMOTE DFU OPERATION FAILED";
 					}
-				}
+				}*/ // TODO
 				return "UNKNOWN (" + error + ")";
 		}
 	}

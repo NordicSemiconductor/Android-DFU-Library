@@ -22,7 +22,6 @@
 
 package no.nordicsemi.android.dfu;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.IntentService;
 import android.app.NotificationManager;
@@ -43,7 +42,6 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
-import android.os.Build;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
@@ -56,9 +54,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Method;
 import java.util.Locale;
-import java.util.UUID;
 
 import no.nordicsemi.android.dfu.internal.ArchiveInputStream;
 import no.nordicsemi.android.dfu.internal.HexInputStream;
@@ -99,6 +95,8 @@ import no.nordicsemi.android.error.GattError;
 public abstract class DfuBaseService extends IntentService {
 	private static final String TAG = "DfuBaseService";
 
+	public static final int NOTIFICATION_ID = 283; // a random number
+
 	/**
 	 * The address of the device to update.
 	 */
@@ -132,7 +130,7 @@ public abstract class DfuBaseService extends IntentService {
 	 * set it to <code>true</code>.</p>
 	 *
 	 * <p>By default the DFU Bootloader clears the whole application's memory. It may be however configured in the \Nordic\nrf51\components\libraries\bootloader_dfu\dfu_types.h
-	 * file (line 56: <code>#define DFU_APP_DATA_RESERVED 0x0000</code>) to preserve some pages. The BLE_APP_HRM_DFU sample app stores the LTK and System Attributes in the first
+	 * file (sdk 11, line 76: <code>#define DFU_APP_DATA_RESERVED 0x0000</code>) to preserve some pages. The BLE_APP_HRM_DFU sample app stores the LTK and System Attributes in the first
 	 * two pages, so in order to preserve the bond information this value should be changed to 0x0800 or more.
 	 * When those data are preserved, the new Application will notify the app with the Service Changed indication when launched for the first time. Otherwise this
 	 * service will remove the bond information from the phone and force to refresh the device cache (see {@link #refreshDeviceCache(android.bluetooth.BluetoothGatt, boolean)}).</p>
@@ -423,7 +421,7 @@ public abstract class DfuBaseService extends IntentService {
      */
     public static final int ERROR_FILE_SIZE_INVALID = ERROR_MASK | 0x0C;
 	/**
-	 * Flag set then the DFU target returned a DFU error. Look for DFU specification to get error codes.
+	 * Flag set when the DFU target returned a DFU error. Look for DFU specification to get error codes.
 	 */
 	public static final int ERROR_REMOTE_MASK = 0x2000;
 	/**
@@ -501,178 +499,26 @@ public abstract class DfuBaseService extends IntentService {
 	 */
 	public static final int ACTION_ABORT = 2;
 
-	// DFU status values
-	public static final int DFU_STATUS_SUCCESS = 1;
-	public static final int DFU_STATUS_INVALID_STATE = 2;
-	public static final int DFU_STATUS_NOT_SUPPORTED = 3;
-	public static final int DFU_STATUS_DATA_SIZE_EXCEEDS_LIMIT = 4;
-	public static final int DFU_STATUS_CRC_ERROR = 5;
-	public static final int DFU_STATUS_OPERATION_FAILED = 6;
-	// Operation codes and packets
-	private static final int OP_CODE_START_DFU_KEY = 0x01; // 1
-	private static final int OP_CODE_INIT_DFU_PARAMS_KEY = 0x02; // 2
-	private static final int OP_CODE_RECEIVE_FIRMWARE_IMAGE_KEY = 0x03; // 3
-	private static final int OP_CODE_VALIDATE_KEY = 0x04; // 4
-	private static final int OP_CODE_ACTIVATE_AND_RESET_KEY = 0x05; // 5
-	private static final int OP_CODE_RESET_KEY = 0x06; // 6
-	//private static final int OP_CODE_PACKET_REPORT_RECEIVED_IMAGE_SIZE_KEY = 0x07; // 7
-	private static final int OP_CODE_PACKET_RECEIPT_NOTIF_REQ_KEY = 0x08; // 8
-	private static final int OP_CODE_RESPONSE_CODE_KEY = 0x10; // 16
-	private static final int OP_CODE_PACKET_RECEIPT_NOTIF_KEY = 0x11; // 11
-	private static final byte[] OP_CODE_START_DFU = new byte[]{OP_CODE_START_DFU_KEY, 0x00};
-	private static final byte[] OP_CODE_INIT_DFU_PARAMS_START = new byte[]{OP_CODE_INIT_DFU_PARAMS_KEY, 0x00};
-	private static final byte[] OP_CODE_INIT_DFU_PARAMS_COMPLETE = new byte[]{OP_CODE_INIT_DFU_PARAMS_KEY, 0x01};
-	private static final byte[] OP_CODE_RECEIVE_FIRMWARE_IMAGE = new byte[]{OP_CODE_RECEIVE_FIRMWARE_IMAGE_KEY};
-	private static final byte[] OP_CODE_VALIDATE = new byte[]{OP_CODE_VALIDATE_KEY};
-	private static final byte[] OP_CODE_ACTIVATE_AND_RESET = new byte[]{OP_CODE_ACTIVATE_AND_RESET_KEY};
-	private static final byte[] OP_CODE_RESET = new byte[]{OP_CODE_RESET_KEY};
-	//private static final byte[] OP_CODE_REPORT_RECEIVED_IMAGE_SIZE = new byte[] { OP_CODE_PACKET_REPORT_RECEIVED_IMAGE_SIZE_KEY };
-	private static final byte[] OP_CODE_PACKET_RECEIPT_NOTIF_REQ = new byte[]{OP_CODE_PACKET_RECEIPT_NOTIF_REQ_KEY, 0x00, 0x00};
-
-	// UUIDs used by the DFU
-	private static final UUID GENERIC_ATTRIBUTE_SERVICE_UUID = new UUID(0x0000180100001000l, 0x800000805F9B34FBl);
-	private static final UUID SERVICE_CHANGED_UUID = new UUID(0x00002A0500001000l, 0x800000805F9B34FBl);
-	private static final UUID DFU_SERVICE_UUID = new UUID(0x000015301212EFDEl, 0x1523785FEABCD123l);
-	private static final UUID DFU_CONTROL_POINT_UUID = new UUID(0x000015311212EFDEl, 0x1523785FEABCD123l);
-	private static final UUID DFU_PACKET_UUID = new UUID(0x000015321212EFDEl, 0x1523785FEABCD123l);
-	private static final UUID DFU_VERSION = new UUID(0x000015341212EFDEl, 0x1523785FEABCD123l);
-	private static final UUID CLIENT_CHARACTERISTIC_CONFIG = new UUID(0x0000290200001000l, 0x800000805f9b34fbl);
-	//
-	public static final int NOTIFICATION_ID = 283; // a random number
-	private static final int NOTIFICATIONS = 1;
-	private static final int INDICATIONS = 2;
-	private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
-	private static final int MAX_PACKET_SIZE = 20; // the maximum number of bytes in one packet is 20. May be less.
-	private final byte[] mBuffer = new byte[MAX_PACKET_SIZE];
 	/**
 	 * Lock used in synchronization purposes
 	 */
 	private final Object mLock = new Object();
 	private BluetoothAdapter mBluetoothAdapter;
-	private InputStream mInputStream;
 	private String mDeviceAddress;
 	private String mDeviceName;
 	private boolean mDisableNotification;
 	/**
-	 * The current connection state. If its value is > 0 than an error has occurred. Error number is a negative value of mConnectionState
+	 * Stores the last progress percent. Used to prevent from sending progress notifications with the same value.
+	 * @see #updateProgressNotification(int)
 	 */
-	private int mConnectionState;
-	private final static int STATE_DISCONNECTED = 0;
-	private final static int STATE_CONNECTING = -1;
-	private final static int STATE_CONNECTED = -2;
-	private final static int STATE_CONNECTED_AND_READY = -3; // indicates that services were discovered
-	private final static int STATE_DISCONNECTING = -4;
-	private final static int STATE_CLOSED = -5;
-	/**
-	 * The number of the last error that has occurred or 0 if there was no error
-	 */
-	private int mError;
-	/**
-	 * Flag set when we got confirmation from the device that notifications are enabled.
-	 */
-	private boolean mNotificationsEnabled;
-	/**
-	 * Flag set when we got confirmation from the device that Service Changed indications are enabled.
-	 */
-	private boolean mServiceChangedIndicationsEnabled;
-	/**
-	 * The number of packets of firmware data to be send before receiving a new Packets receipt notification. 0 disables the packets notifications
-	 */
-	private int mPacketsBeforeNotification = 10;
-	/**
-	 * Size of BIN content of all hex files that are going to be transmitted.
-	 */
-	private int mImageSizeInBytes;
-	/**
-	 * Number of bytes transmitted.
-	 */
-	private int mBytesSent;
-	/**
-	 * Number of bytes confirmed by the notification.
-	 */
-	@SuppressWarnings("unused")
-	private int mBytesConfirmed;
-	private int mPacketsSentSinceNotification;
+	private int mLastProgress = -1;
 	/**
 	 * This value is used to calculate the current transfer speed.
 	 */
 	private int mLastBytesSent;
-	/**
-	 * Firmware update may require two connections: one for Soft Device and/or Bootloader upload and second for Application. This fields contains the current part number.
-	 */
-	private int mPartCurrent;
-	/**
-	 * Total number of parts.
-	 */
-	private int mPartsTotal;
-	private int mFileType;
 	private long mLastNotificationTime, mLastProgressTime, mStartTime;
-	/**
-	 * Flag sent when a request has been sent that will cause the DFU target to reset. Often, after sending such command, Android throws a connection state error. If this flag is set the error will be
-	 * ignored.
-	 */
-	private boolean mResetRequestSent;
-	/**
-	 * Flag indicating whether the image size has been already transferred or not
-	 */
-	private boolean mImageSizeSent;
-	/**
-	 * Flag indicating whether the init packet has been already transferred or not
-	 */
-	private boolean mInitPacketSent;
-	/**
-	 * Flag indicating whether the request was completed or not
-	 */
-	private boolean mRequestCompleted;
-	/**
-	 * <p>
-	 * Flag set to <code>true</code> when the DFU target had send a notification with status other than {@link #DFU_STATUS_SUCCESS}. Setting it to <code>true</code> will abort sending firmware and
-	 * stop logging notifications (read below for explanation).
-	 * </p>
-	 * <p>
-	 * The onCharacteristicWrite(..) callback is called when Android writes the packet into the outgoing queue, not when it physically sends the data.
-	 * This means that the service will first put up to N* packets, one by one, to the queue, while in fact the first one is transmitted.
-	 * In case the DFU target is in an invalid state it will notify Android with a notification 10-03-02 for each packet of firmware that has been sent.
-	 * After receiving the first such notification, the DFU service will add the reset command to the outgoing queue, but it will still be receiving such notifications
-	 * until all the data packets are sent. Those notifications should be ignored. This flag will prevent from logging "Notification received..." more than once.
-	 * </p>
-	 * <p>
-	 * Additionally, sometimes after writing the command 6 ({@link #OP_CODE_RESET}), Android will receive a notification and update the characteristic value with 10-03-02 and the callback for write
-	 * reset command will log "[DFU] Data written to ..., value (0x): 10-03-02" instead of "...(x0): 06". But this does not matter for the DFU process.
-	 * </p>
-	 * <p>
-	 * N* - Value of Packet Receipt Notification, 10 by default.
-	 * </p>
-	 */
-	private boolean mRemoteErrorOccurred;
-	/** Flag set to true if sending was paused. */
-	private boolean mPaused;
-	/** Flag set to true if sending was aborted. */
-	private boolean mAborted;
-	/**
-	 * Latest data received from device using notification.
-	 */
-	private byte[] mReceivedData = null;
 
-	private final BroadcastReceiver mConnectionStateBroadcastReceiver = new BroadcastReceiver() {
-		@Override
-		public void onReceive(final Context context, final Intent intent) {
-			// Obtain the device and check it this is the one that we are connected to
-			final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-			if (!device.getAddress().equals(mDeviceAddress))
-				return;
-
-			final String action = intent.getAction();
-
-			logi("Action received: " + action);
-			mConnectionState = STATE_DISCONNECTED;
-
-			// Notify waiting thread
-			synchronized (mLock) {
-				mLock.notifyAll();
-			}
-		}
-	};
+	private BaseDfuImpl mDfuImpl;
 
 	private final BroadcastReceiver mDfuActionReceiver = new BroadcastReceiver() {
 		@Override
@@ -682,370 +528,17 @@ public abstract class DfuBaseService extends IntentService {
 			logi("User action received: " + action);
 			switch (action) {
 				case ACTION_PAUSE:
-					mPaused = true;
+					mDfuImpl.pause();
 					break;
 				case ACTION_RESUME:
-					mPaused = false;
-
-					// Notify waiting thread
-					synchronized (mLock) {
-						mLock.notifyAll();
-					}
+					mDfuImpl.resume();
 					break;
 				case ACTION_ABORT:
-					mPaused = false;
-					mAborted = true;
-
-					// Notify waiting thread
-					synchronized (mLock) {
-						mLock.notifyAll();
-					}
+					mDfuImpl.abort();
 					break;
 			}
 		}
 	};
-
-	private final BroadcastReceiver mBondStateBroadcastReceiver = new BroadcastReceiver() {
-		@Override
-		public void onReceive(final Context context, final Intent intent) {
-			// Obtain the device and check it this is the one that we are connected to
-			final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-			if (!device.getAddress().equals(mDeviceAddress))
-				return;
-
-			// Read bond state
-			final int bondState = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, -1);
-			if (bondState == BluetoothDevice.BOND_BONDING)
-				return;
-
-			mRequestCompleted = true;
-
-			// Notify waiting thread
-			synchronized (mLock) {
-				mLock.notifyAll();
-			}
-		}
-	};
-
-	private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
-		@Override
-		public void onConnectionStateChange(final BluetoothGatt gatt, final int status, final int newState) {
-			// Check whether an error occurred
-			if (status == BluetoothGatt.GATT_SUCCESS) {
-				if (newState == BluetoothGatt.STATE_CONNECTED) {
-					logi("Connected to GATT server");
-					sendLogBroadcast(LOG_LEVEL_INFO, "Connected to " + mDeviceAddress);
-					mConnectionState = STATE_CONNECTED;
-
-					/*
-					 *  The onConnectionStateChange callback is called just after establishing connection and before sending Encryption Request BLE event in case of a paired device. 
-					 *  In that case and when the Service Changed CCCD is enabled we will get the indication after initializing the encryption, about 1600 milliseconds later. 
-					 *  If we discover services right after connecting, the onServicesDiscovered callback will be called immediately, before receiving the indication and the following 
-					 *  service discovery and we may end up with old, application's services instead.
-					 *  
-					 *  This is to support the buttonless switch from application to bootloader mode where the DFU bootloader notifies the master about service change.
-					 *  Tested on Nexus 4 (Android 4.4.4 and 5), Nexus 5 (Android 5), Samsung Note 2 (Android 4.4.2). The time after connection to end of service discovery is about 1.6s 
-					 *  on Samsung Note 2.
-					 *  
-					 *  NOTE: We are doing this to avoid the hack with calling the hidden gatt.refresh() method, at least for bonded devices.
-					 */
-					if (gatt.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
-						try {
-							synchronized (this) {
-								logd("Waiting 1600 ms for a possible Service Changed indication...");
-								sendLogBroadcast(LOG_LEVEL_DEBUG, "wait(1600)");
-								wait(1600);
-
-								// After 1.6s the services are already discovered so the following gatt.discoverServices() finishes almost immediately.
-
-								// NOTE: This also works with shorted waiting time. The gatt.discoverServices() must be called after the indication is received which is
-								// about 600ms after establishing connection. Values 600 - 1600ms should be OK.
-							}
-						} catch (final InterruptedException e) {
-							// Do nothing
-						}
-					}
-
-					// Attempts to discover services after successful connection.
-					sendLogBroadcast(LOG_LEVEL_VERBOSE, "Discovering services...");
-					sendLogBroadcast(LOG_LEVEL_DEBUG, "gatt.discoverServices()");
-					final boolean success = gatt.discoverServices();
-					logi("Attempting to start service discovery... " + (success ? "succeed" : "failed"));
-
-					if (!success) {
-						mError = ERROR_SERVICE_DISCOVERY_NOT_STARTED;
-					} else {
-						// Just return here, lock will be notified when service discovery finishes
-						return;
-					}
-				} else if (newState == BluetoothGatt.STATE_DISCONNECTED) {
-					logi("Disconnected from GATT server");
-					mPaused = false;
-					mConnectionState = STATE_DISCONNECTED;
-				}
-			} else {
-				loge("Connection state change error: " + status + " newState: " + newState);
-				if (newState == BluetoothGatt.STATE_DISCONNECTED)
-					mConnectionState = STATE_DISCONNECTED;
-				mPaused = false;
-				mError = ERROR_CONNECTION_STATE_MASK | status;
-			}
-
-			// Notify waiting thread
-			synchronized (mLock) {
-				mLock.notifyAll();
-			}
-		}
-
-		@Override
-		public void onServicesDiscovered(final BluetoothGatt gatt, final int status) {
-			if (status == BluetoothGatt.GATT_SUCCESS) {
-				logi("Services discovered");
-				mConnectionState = STATE_CONNECTED_AND_READY;
-			} else {
-				loge("Service discovery error: " + status);
-				mError = ERROR_CONNECTION_MASK | status;
-			}
-
-			// Notify waiting thread
-			synchronized (mLock) {
-				mLock.notifyAll();
-			}
-		}
-
-		@Override
-		public void onDescriptorRead(final BluetoothGatt gatt, final BluetoothGattDescriptor descriptor, final int status) {
-			if (status == BluetoothGatt.GATT_SUCCESS) {
-				if (CLIENT_CHARACTERISTIC_CONFIG.equals(descriptor.getUuid())) {
-					if (SERVICE_CHANGED_UUID.equals(descriptor.getCharacteristic().getUuid())) {
-						// We have enabled indications for the Service Changed characteristic
-						mServiceChangedIndicationsEnabled = descriptor.getValue()[0] == 2;
-						mRequestCompleted = true;
-					}
-				}
-			} else {
-				loge("Descriptor read error: " + status);
-				mError = ERROR_CONNECTION_MASK | status;
-			}
-
-			// Notify waiting thread
-			synchronized (mLock) {
-				mLock.notifyAll();
-			}
-		}
-
-		@Override
-		public void onDescriptorWrite(final BluetoothGatt gatt, final BluetoothGattDescriptor descriptor, final int status) {
-			if (status == BluetoothGatt.GATT_SUCCESS) {
-				if (CLIENT_CHARACTERISTIC_CONFIG.equals(descriptor.getUuid())) {
-					if (SERVICE_CHANGED_UUID.equals(descriptor.getCharacteristic().getUuid())) {
-						// We have enabled indications for the Service Changed characteristic
-						mServiceChangedIndicationsEnabled = descriptor.getValue()[0] == 2;
-						sendLogBroadcast(LOG_LEVEL_VERBOSE, "Indications enabled for " + descriptor.getCharacteristic().getUuid());
-					} else {
-						// We have enabled notifications for this characteristic
-						mNotificationsEnabled = descriptor.getValue()[0] == 1;
-						sendLogBroadcast(LOG_LEVEL_VERBOSE, "Notifications enabled for " + descriptor.getCharacteristic().getUuid());
-					}
-				}
-			} else {
-				loge("Descriptor write error: " + status);
-				mError = ERROR_CONNECTION_MASK | status;
-			}
-
-			// Notify waiting thread
-			synchronized (mLock) {
-				mLock.notifyAll();
-			}
-		}
-
-		@Override
-		public void onCharacteristicWrite(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final int status) {
-			if (status == BluetoothGatt.GATT_SUCCESS) {
-				/*
-				 * This method is called when either a CONTROL POINT or PACKET characteristic has been written.
-				 * If it is the CONTROL POINT characteristic, just set the {@link mRequestCompleted} flag to true. The main thread will continue its task when notified.
-				 * If the PACKET characteristic was written we must:
-				 * - if the image size was written in DFU Start procedure, just set flag to true
-				 * otherwise
-				 * - send the next packet, if notification is not required at that moment, or
-				 * - do nothing, because we have to wait for the notification to confirm the data received
-				 */
-				if (DFU_PACKET_UUID.equals(characteristic.getUuid())) {
-					if (mImageSizeSent && mInitPacketSent) {
-						// If the PACKET characteristic was written with image data, update counters
-						mBytesSent += characteristic.getValue().length;
-						mPacketsSentSinceNotification++;
-
-						// If a packet receipt notification is expected, or the last packet was sent, do nothing. There onCharacteristicChanged listener will catch either
-						// a packet confirmation (if there are more bytes to send) or the image received notification (it upload process was completed)
-						final boolean notificationExpected = mPacketsBeforeNotification > 0 && mPacketsSentSinceNotification == mPacketsBeforeNotification;
-						final boolean lastPacketTransferred = mBytesSent == mImageSizeInBytes;
-
-						if (notificationExpected || lastPacketTransferred)
-							return;
-
-						// When neither of them is true, send the next packet
-						try {
-							waitIfPaused();
-							// The writing might have been aborted (mAborted = true), an error might have occurred.
-							// In that case stop sending.
-							if (mAborted || mError != 0 || mRemoteErrorOccurred || mResetRequestSent) {
-								// notify waiting thread
-								synchronized (mLock) {
-									sendLogBroadcast(LOG_LEVEL_WARNING, "Upload terminated");
-									mLock.notifyAll();
-									return;
-								}
-							}
-
-							final byte[] buffer = mBuffer;
-							final int size = mInputStream.read(buffer);
-							writePacket(gatt, characteristic, buffer, size);
-							updateProgressNotification();
-							return;
-						} catch (final HexFileValidationException e) {
-							loge("Invalid HEX file");
-							mError = ERROR_FILE_INVALID;
-						} catch (final IOException e) {
-							loge("Error while reading the input stream", e);
-							mError = ERROR_FILE_IO_EXCEPTION;
-						}
-					} else if (!mImageSizeSent) {
-						// We've got confirmation that the image size was sent
-						sendLogBroadcast(LOG_LEVEL_INFO, "Data written to " + characteristic.getUuid() + ", value (0x): " + parse(characteristic));
-						mImageSizeSent = true;
-					} else {
-						// We've got confirmation that the init packet was sent
-						sendLogBroadcast(LOG_LEVEL_INFO, "Data written to " + characteristic.getUuid() + ", value (0x): " + parse(characteristic));
-						mInitPacketSent = true;
-					}
-				} else {
-					// If the CONTROL POINT characteristic was written just set the flag to true. The main thread will continue its task when notified.
-					sendLogBroadcast(LOG_LEVEL_INFO, "Data written to " + characteristic.getUuid() + ", value (0x): " + parse(characteristic));
-					mRequestCompleted = true;
-				}
-			} else {
-				/*
-				 * If a Reset (Op Code = 6) or Activate and Reset (Op Code = 5) commands are sent, the DFU target resets and sometimes does it so quickly that does not manage to send
-				 * any ACK to the controller and error 133 is thrown here. This bug should be fixed in SDK 8.0+ where the target would gracefully disconnect before restarting.
-				 */
-				if (mResetRequestSent)
-					mRequestCompleted = true;
-				else {
-					loge("Characteristic write error: " + status);
-					mError = ERROR_CONNECTION_MASK | status;
-				}
-			}
-
-			// Notify waiting thread
-			synchronized (mLock) {
-				mLock.notifyAll();
-			}
-		}
-
-		@Override
-		public void onCharacteristicRead(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final int status) {
-			if (status == BluetoothGatt.GATT_SUCCESS) {
-				/*
-				 * This method is called when the DFU Version characteristic has been read.
-				 */
-				sendLogBroadcast(LOG_LEVEL_INFO, "Read Response received from " + characteristic.getUuid() + ", value (0x): " + parse(characteristic));
-				mReceivedData = characteristic.getValue();
-				mRequestCompleted = true;
-			} else {
-				loge("Characteristic read error: " + status);
-				mError = ERROR_CONNECTION_MASK | status;
-			}
-
-			// Notify waiting thread
-			synchronized (mLock) {
-				mLock.notifyAll();
-			}
-		}
-
-		@Override
-		public void onCharacteristicChanged(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) {
-			final int responseType = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
-
-			switch (responseType) {
-				case OP_CODE_PACKET_RECEIPT_NOTIF_KEY:
-					final BluetoothGattCharacteristic packetCharacteristic = gatt.getService(DFU_SERVICE_UUID).getCharacteristic(DFU_PACKET_UUID);
-
-					try {
-						mBytesConfirmed = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 1);
-						mPacketsSentSinceNotification = 0;
-
-						waitIfPaused();
-						// The writing might have been aborted (mAborted = true), an error might have occurred.
-						// In that case quit sending.
-						if (mAborted || mError != 0 || mRemoteErrorOccurred || mResetRequestSent) {
-							sendLogBroadcast(LOG_LEVEL_WARNING, "Upload terminated");
-							break;
-						}
-
-						final byte[] buffer = mBuffer;
-						final int size = mInputStream.read(buffer);
-						writePacket(gatt, packetCharacteristic, buffer, size);
-						updateProgressNotification();
-						return;
-					} catch (final HexFileValidationException e) {
-						loge("Invalid HEX file");
-						mError = ERROR_FILE_INVALID;
-					} catch (final IOException e) {
-						loge("Error while reading the input stream", e);
-						mError = ERROR_FILE_IO_EXCEPTION;
-					}
-					break;
-				case OP_CODE_RESPONSE_CODE_KEY:
-				default:
-				/*
-				 * If the DFU target device is in invalid state (f.e. the Init Packet is required but has not been selected), the target will send DFU_STATUS_INVALID_STATE error
-				 * for each firmware packet that was send. We are interested may ignore all but the first one.
-				 * After obtaining a remote DFU error the OP_CODE_RESET_KEY will be sent.
-				 */
-					if (mRemoteErrorOccurred)
-						break;
-					final int status = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 2);
-					if (status != DFU_STATUS_SUCCESS)
-						mRemoteErrorOccurred = true;
-
-					sendLogBroadcast(LOG_LEVEL_INFO, "Notification received from " + characteristic.getUuid() + ", value (0x): " + parse(characteristic));
-					mReceivedData = characteristic.getValue();
-					break;
-			}
-
-			// Notify waiting thread
-			synchronized (mLock) {
-				mLock.notifyAll();
-			}
-		}
-
-		// This method is repeated here and in the service class for performance matters.
-		private String parse(final BluetoothGattCharacteristic characteristic) {
-			final byte[] data = characteristic.getValue();
-			if (data == null)
-				return "";
-			final int length = data.length;
-			if (length == 0)
-				return "";
-
-			final char[] out = new char[length * 3 - 1];
-			for (int j = 0; j < length; j++) {
-				int v = data[j] & 0xFF;
-				out[j * 3] = HEX_ARRAY[v >>> 4];
-				out[j * 3 + 1] = HEX_ARRAY[v & 0x0F];
-				if (j != length - 1)
-					out[j * 3 + 2] = '-';
-			}
-			return new String(out);
-		}
-	};
-	/**
-	 * Stores the last progress percent. Used to prevent from sending progress notifications with the same value.
-	 * @see #updateProgressNotification(int)
-	 */
-	private int mLastProgress = -1;
 
 	public DfuBaseService() {
 		super(TAG);
@@ -1067,12 +560,6 @@ public abstract class DfuBaseService extends IntentService {
 		final IntentFilter actionFilter = makeDfuActionIntentFilter();
 		manager.registerReceiver(mDfuActionReceiver, actionFilter);
 		registerReceiver(mDfuActionReceiver, actionFilter); // Additionally we must register this receiver as a non-local to get broadcasts from the notification actions
-
-		final IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECTED);
-		registerReceiver(mConnectionStateBroadcastReceiver, filter);
-
-		final IntentFilter bondFilter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
-		registerReceiver(mBondStateBroadcastReceiver, bondFilter);
 	}
 
 	@Override
@@ -1083,8 +570,9 @@ public abstract class DfuBaseService extends IntentService {
 		manager.unregisterReceiver(mDfuActionReceiver);
 
 		unregisterReceiver(mDfuActionReceiver);
-		unregisterReceiver(mConnectionStateBroadcastReceiver);
-		unregisterReceiver(mBondStateBroadcastReceiver);
+		if (mDfuImpl != null) {
+			mDfuImpl.unregister();
+		}
 	}
 
 	@Override
@@ -1999,17 +1487,6 @@ public abstract class DfuBaseService extends IntentService {
 	}
 
 	/**
-	 * Sets number of data packets that will be send before the notification will be received.
-	 *
-	 * @param data  control point data packet
-	 * @param value number of packets before receiving notification. If this value is 0, then the notification of packet receipt will be disabled by the DFU target.
-	 */
-	private void setNumberOfPackets(final byte[] data, final int value) {
-		data[1] = (byte) (value & 0xFF);
-		data[2] = (byte) ((value >> 8) & 0xFF);
-	}
-
-	/**
 	 * Opens the binary input stream that returns the firmware image content. A Path to the file is given.
 	 *
 	 * @param filePath the path to the HEX, BIN or ZIP file
@@ -2078,721 +1555,25 @@ public abstract class DfuBaseService extends IntentService {
 	}
 
 	/**
-	 * Connects to the BLE device with given address. This method is SYNCHRONOUS, it wait until the connection status change from {@link #STATE_CONNECTING} to {@link #STATE_CONNECTED_AND_READY} or an
-	 * error occurs. This method returns <code>null</code> if Bluetooth adapter is disabled.
+	 * Creates or updates the notification in the Notification Manager. Sends broadcast with given progress state to the activity.
 	 *
-	 * @param address the device address
-	 * @return the GATT device or <code>null</code> if Bluetooth adapter is disabled.
+	 * @param info the current progress information
 	 */
-	private BluetoothGatt connect(final String address) {
-		if (!mBluetoothAdapter.isEnabled())
-			return null;
-
-		mConnectionState = STATE_CONNECTING;
-
-		logi("Connecting to the device...");
-		final BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
-		sendLogBroadcast(LOG_LEVEL_DEBUG, "gatt = device.connectGatt(autoConnect = false)");
-		final BluetoothGatt gatt = device.connectGatt(this, false, mGattCallback);
-
-		// We have to wait until the device is connected and services are discovered
-		// Connection error may occur as well.
-		try {
-			synchronized (mLock) {
-				while (((mConnectionState == STATE_CONNECTING || mConnectionState == STATE_CONNECTED) && mError == 0 && !mAborted) || mPaused)
-					mLock.wait();
-			}
-		} catch (final InterruptedException e) {
-			loge("Sleeping interrupted", e);
-		}
-		return gatt;
-	}
-
-	/**
-	 * Disconnects from the device and cleans local variables in case of error. This method is SYNCHRONOUS and wait until the disconnecting process will be completed.
-	 *
-	 * @param gatt  the GATT device to be disconnected
-	 * @param error error number
-	 */
-	private void terminateConnection(final BluetoothGatt gatt, final int error) {
-		if (mConnectionState != STATE_DISCONNECTED) {
-			// Disconnect from the device
-			disconnect(gatt);
-		}
-
-		// Close the device
-		refreshDeviceCache(gatt, false); // This should be set to true when DFU Version is 0.5 or lower
-		close(gatt);
-		updateProgressNotification(error);
-	}
-
-	/**
-	 * Disconnects from the device. This is SYNCHRONOUS method and waits until the callback returns new state. Terminates immediately if device is already disconnected. Do not call this method
-	 * directly, use {@link #terminateConnection(android.bluetooth.BluetoothGatt, int)} instead.
-	 *
-	 * @param gatt the GATT device that has to be disconnected
-	 */
-	private void disconnect(final BluetoothGatt gatt) {
-		if (mConnectionState == STATE_DISCONNECTED)
-			return;
-
-		sendLogBroadcast(LOG_LEVEL_VERBOSE, "Disconnecting...");
-		updateProgressNotification(PROGRESS_DISCONNECTING);
-
-		mConnectionState = STATE_DISCONNECTING;
-
-		logi("Disconnecting from the device...");
-		sendLogBroadcast(LOG_LEVEL_DEBUG, "gatt.disconnect()");
-		gatt.disconnect();
-
-		// We have to wait until device gets disconnected or an error occur
-		waitUntilDisconnected();
-		sendLogBroadcast(LOG_LEVEL_INFO, "Disconnected");
-	}
-
-	/**
-	 * Wait until the connection state will change to {@link #STATE_DISCONNECTED} or until an error occurs.
-	 */
-	private void waitUntilDisconnected() {
-		try {
-			synchronized (mLock) {
-				while (mConnectionState != STATE_DISCONNECTED && mError == 0)
-					mLock.wait();
-			}
-		} catch (final InterruptedException e) {
-			loge("Sleeping interrupted", e);
-		}
-	}
-
-	/**
-	 * Closes the GATT device and cleans up.
-	 *
-	 * @param gatt the GATT device to be closed
-	 */
-	private void close(final BluetoothGatt gatt) {
-		logi("Cleaning up...");
-		sendLogBroadcast(LOG_LEVEL_DEBUG, "gatt.close()");
-		gatt.close();
-		mConnectionState = STATE_CLOSED;
-	}
-
-	/**
-	 * Clears the device cache. After uploading new firmware the DFU target will have other services than before.
-	 *
-	 * @param gatt  the GATT device to be refreshed
-	 * @param force <code>true</code> to force the refresh
-	 */
-	private void refreshDeviceCache(final BluetoothGatt gatt, final boolean force) {
-		/*
-		 * If the device is bonded this is up to the Service Changed characteristic to notify Android that the services has changed.
-		 * There is no need for this trick in that case.
-		 * If not bonded, the Android should not keep the services cached when the Service Changed characteristic is present in the target device database.
-		 * However, due to the Android bug (still exists in Android 5.0.1), it is keeping them anyway and the only way to clear services is by using this hidden refresh method.
-		 */
-		if (force || gatt.getDevice().getBondState() == BluetoothDevice.BOND_NONE) {
-			sendLogBroadcast(LOG_LEVEL_DEBUG, "gatt.refresh() (hidden)");
-			/*
-			 * There is a refresh() method in BluetoothGatt class but for now it's hidden. We will call it using reflections.
-			 */
-			try {
-				final Method refresh = gatt.getClass().getMethod("refresh");
-				if (refresh != null) {
-					final boolean success = (Boolean) refresh.invoke(gatt);
-					logi("Refreshing result: " + success);
-				}
-			} catch (Exception e) {
-				loge("An exception occurred while refreshing device", e);
-				sendLogBroadcast(LOG_LEVEL_WARNING, "Refreshing failed");
-			}
-		}
-	}
-
-	/**
-	 * Checks whether the response received is valid and returns the status code.
-	 *
-	 * @param response the response received from the DFU device.
-	 * @param request  the expected Op Code
-	 * @return the status code
-	 * @throws UnknownResponseException if response was not valid
-	 */
-	private int getStatusCode(final byte[] response, final int request) throws UnknownResponseException {
-		if (response == null || response.length != 3 || response[0] != OP_CODE_RESPONSE_CODE_KEY || response[1] != request || response[2] < 1 || response[2] > 6)
-			throw new UnknownResponseException("Invalid response received", response, request);
-		return response[2];
-	}
-
-	/**
-	 * Reads the DFU Version characteristic if such exists. Otherwise it returns 0.
-	 *
-	 * @param gatt           the GATT device
-	 * @param characteristic the characteristic to read
-	 * @return a version number or 0 if not present on the bootloader
-	 * @throws DeviceDisconnectedException
-	 * @throws DfuException
-	 * @throws UploadAbortedException
-	 */
-	private int readVersion(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) throws DeviceDisconnectedException, DfuException, UploadAbortedException {
-		if (mConnectionState != STATE_CONNECTED_AND_READY)
-			throw new DeviceDisconnectedException("Unable to read version number", mConnectionState);
-		// If the DFU Version characteristic is not available we return 0.
-		if (characteristic == null)
-			return 0;
-
-		mReceivedData = null;
-		mError = 0;
-
-		logi("Reading DFU version number...");
-		sendLogBroadcast(LOG_LEVEL_VERBOSE, "Reading DFU version number...");
-
-		characteristic.setValue((byte[]) null);
-		gatt.readCharacteristic(characteristic);
-
-		// We have to wait until device receives a response or an error occur
-		try {
-			synchronized (mLock) {
-				while (((!mRequestCompleted || characteristic.getValue() == null ) && mConnectionState == STATE_CONNECTED_AND_READY && mError == 0 && !mAborted) || mPaused) {
-					mRequestCompleted = false;
-					mLock.wait();
-				}
-			}
-		} catch (final InterruptedException e) {
-			loge("Sleeping interrupted", e);
-		}
-		if (mAborted)
-			throw new UploadAbortedException();
-		if (mError != 0)
-			throw new DfuException("Unable to read version number", mError);
-		if (mConnectionState != STATE_CONNECTED_AND_READY)
-			throw new DeviceDisconnectedException("Unable to read version number", mConnectionState);
-
-		// The version is a 16-bit unsigned int
-		return characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 0);
-	}
-
-	/**
-	 * Enables or disables the notifications for given characteristic. This method is SYNCHRONOUS and wait until the
-	 * {@link android.bluetooth.BluetoothGattCallback#onDescriptorWrite(android.bluetooth.BluetoothGatt, android.bluetooth.BluetoothGattDescriptor, int)} will be called or the connection state will change from {@link #STATE_CONNECTED_AND_READY}. If
-	 * connection state will change, or an error will occur, an exception will be thrown.
-	 *
-	 * @param gatt           the GATT device
-	 * @param characteristic the characteristic to enable or disable notifications for
-	 * @param type           {@link #NOTIFICATIONS} or {@link #INDICATIONS}
-	 * @throws DfuException
-	 * @throws UploadAbortedException
-	 */
-	private void enableCCCD(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final int type) throws DeviceDisconnectedException, DfuException, UploadAbortedException {
-		final String debugString = type == NOTIFICATIONS ? "notifications" : "indications";
-		if (mConnectionState != STATE_CONNECTED_AND_READY)
-			throw new DeviceDisconnectedException("Unable to set " + debugString + " state", mConnectionState);
-
-		mReceivedData = null;
-		mError = 0;
-		if ((type == NOTIFICATIONS && mNotificationsEnabled) || (type == INDICATIONS && mServiceChangedIndicationsEnabled))
-			return;
-
-		logi("Enabling " + debugString + "...");
-		sendLogBroadcast(LOG_LEVEL_VERBOSE, "Enabling " + debugString + " for " + characteristic.getUuid());
-
-		// enable notifications locally
-		sendLogBroadcast(LOG_LEVEL_DEBUG, "gatt.setCharacteristicNotification(" + characteristic.getUuid() + ", true)");
-		gatt.setCharacteristicNotification(characteristic, true);
-
-		// enable notifications on the device
-		final BluetoothGattDescriptor descriptor = characteristic.getDescriptor(CLIENT_CHARACTERISTIC_CONFIG);
-		descriptor.setValue(type == NOTIFICATIONS ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE : BluetoothGattDescriptor.ENABLE_INDICATION_VALUE);
-		sendLogBroadcast(LOG_LEVEL_DEBUG, "gatt.writeDescriptor(" + descriptor.getUuid() + (type == NOTIFICATIONS ? ", value=0x01-00)" : ", value=0x02-00)"));
-		gatt.writeDescriptor(descriptor);
-
-		// We have to wait until device receives a response or an error occur
-		try {
-			synchronized (mLock) {
-				while ((((type == NOTIFICATIONS && !mNotificationsEnabled) || (type == INDICATIONS && !mServiceChangedIndicationsEnabled))
-						&& mConnectionState == STATE_CONNECTED_AND_READY && mError == 0 && !mAborted) || mPaused)
-					mLock.wait();
-			}
-		} catch (final InterruptedException e) {
-			loge("Sleeping interrupted", e);
-		}
-		if (mAborted)
-			throw new UploadAbortedException();
-		if (mError != 0)
-			throw new DfuException("Unable to set " + debugString + " state", mError);
-		if (mConnectionState != STATE_CONNECTED_AND_READY)
-			throw new DeviceDisconnectedException("Unable to set " + debugString + " state", mConnectionState);
-	}
-
-	/**
-	 * Reads the value of the Service Changed Client Characteristic Configuration descriptor (CCCD).
-	 *
-	 * @param gatt           the GATT device
-	 * @param characteristic the Service Changed characteristic
-	 * @return <code>true</code> if Service Changed CCCD is enabled ans set to INDICATE
-	 * @throws DeviceDisconnectedException
-	 * @throws DfuException
-	 * @throws UploadAbortedException
-	 */
-	private boolean isServiceChangedCCCDEnabled(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) throws DeviceDisconnectedException, DfuException, UploadAbortedException {
-		if (mConnectionState != STATE_CONNECTED_AND_READY)
-			throw new DeviceDisconnectedException("Unable to read Service Changed CCCD", mConnectionState);
-		// If the Service Changed characteristic or the CCCD is not available we return false.
-		if (characteristic == null)
-			return false;
-
-		final BluetoothGattDescriptor descriptor = characteristic.getDescriptor(CLIENT_CHARACTERISTIC_CONFIG);
-		if (descriptor == null)
-			return false;
-
-		mRequestCompleted = false;
-		mError = 0;
-
-		logi("Reading Service Changed CCCD value...");
-		sendLogBroadcast(LOG_LEVEL_VERBOSE, "Reading Service Changed CCCD value...");
-
-		gatt.readDescriptor(descriptor);
-
-		// We have to wait until device receives a response or an error occur
-		try {
-			synchronized (mLock) {
-				while ((!mRequestCompleted && mConnectionState == STATE_CONNECTED_AND_READY && mError == 0 && !mAborted) || mPaused)
-					mLock.wait();
-			}
-		} catch (final InterruptedException e) {
-			loge("Sleeping interrupted", e);
-		}
-		if (mAborted)
-			throw new UploadAbortedException();
-		if (mError != 0)
-			throw new DfuException("Unable to read Service Changed CCCD", mError);
-		if (mConnectionState != STATE_CONNECTED_AND_READY)
-			throw new DeviceDisconnectedException("Unable to read Service Changed CCCD", mConnectionState);
-
-		return mServiceChangedIndicationsEnabled;
-	}
-
-	/**
-	 * Writes the operation code to the characteristic. This method is SYNCHRONOUS and wait until the
-	 * {@link android.bluetooth.BluetoothGattCallback#onCharacteristicWrite(android.bluetooth.BluetoothGatt, android.bluetooth.BluetoothGattCharacteristic, int)} will be called or the connection state will change from {@link #STATE_CONNECTED_AND_READY}.
-	 * If connection state will change, or an error will occur, an exception will be thrown.
-	 *
-	 * @param gatt           the GATT device
-	 * @param characteristic the characteristic to write to. Should be the DFU CONTROL POINT
-	 * @param value          the value to write to the characteristic
-	 * @throws DeviceDisconnectedException
-	 * @throws DfuException
-	 * @throws UploadAbortedException
-	 */
-	private void writeOpCode(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final byte[] value) throws DeviceDisconnectedException, DfuException, UploadAbortedException {
-		final boolean reset = value[0] == OP_CODE_RESET_KEY || value[0] == OP_CODE_ACTIVATE_AND_RESET_KEY;
-		writeOpCode(gatt, characteristic, value, reset);
-	}
-
-	/**
-	 * Writes the operation code to the characteristic. This method is SYNCHRONOUS and wait until the
-	 * {@link android.bluetooth.BluetoothGattCallback#onCharacteristicWrite(android.bluetooth.BluetoothGatt, android.bluetooth.BluetoothGattCharacteristic, int)} will be called or the connection state will change from {@link #STATE_CONNECTED_AND_READY}.
-	 * If connection state will change, or an error will occur, an exception will be thrown.
-	 *
-	 * @param gatt           the GATT device
-	 * @param characteristic the characteristic to write to. Should be the DFU CONTROL POINT
-	 * @param value          the value to write to the characteristic
-	 * @param reset          whether the command trigger restarting the device
-	 * @throws DeviceDisconnectedException
-	 * @throws DfuException
-	 * @throws UploadAbortedException
-	 */
-	private void writeOpCode(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final byte[] value, final boolean reset) throws DeviceDisconnectedException, DfuException,
-			UploadAbortedException {
-		mReceivedData = null;
-		mError = 0;
-		mRequestCompleted = false;
-		/*
-		 * Sending a command that will make the DFU target to reboot may cause an error 133 (0x85 - Gatt Error). If so, with this flag set, the error will not be shown to the user
-		 * as the peripheral is disconnected anyway. See: mGattCallback#onCharacteristicWrite(...) method
-		 */
-		mResetRequestSent = reset;
-
-		characteristic.setValue(value);
-		sendLogBroadcast(LOG_LEVEL_VERBOSE, "Writing to characteristic " + characteristic.getUuid());
-		sendLogBroadcast(LOG_LEVEL_DEBUG, "gatt.writeCharacteristic(" + characteristic.getUuid() + ")");
-		gatt.writeCharacteristic(characteristic);
-
-		// We have to wait for confirmation
-		try {
-			synchronized (mLock) {
-				while ((!mRequestCompleted && mConnectionState == STATE_CONNECTED_AND_READY && mError == 0 && !mAborted) || mPaused)
-					mLock.wait();
-			}
-		} catch (final InterruptedException e) {
-			loge("Sleeping interrupted", e);
-		}
-		if (mAborted)
-			throw new UploadAbortedException();
-		if (!mResetRequestSent && mError != 0)
-			throw new DfuException("Unable to write Op Code " + value[0], mError);
-		if (!mResetRequestSent && mConnectionState != STATE_CONNECTED_AND_READY)
-			throw new DeviceDisconnectedException("Unable to write Op Code " + value[0], mConnectionState);
-	}
-
-	/**
-	 * Writes the image size to the characteristic. This method is SYNCHRONOUS and wait until the {@link android.bluetooth.BluetoothGattCallback#onCharacteristicWrite(android.bluetooth.BluetoothGatt, android.bluetooth.BluetoothGattCharacteristic, int)}
-	 * will be called or the connection state will change from {@link #STATE_CONNECTED_AND_READY}. If connection state will change, or an error will occur, an exception will be thrown.
-	 *
-	 * @param gatt           the GATT device
-	 * @param characteristic the characteristic to write to. Should be the DFU PACKET
-	 * @param imageSize      the image size in bytes
-	 * @throws DeviceDisconnectedException
-	 * @throws DfuException
-	 * @throws UploadAbortedException
-	 */
-	private void writeImageSize(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final int imageSize) throws DeviceDisconnectedException, DfuException,
-			UploadAbortedException {
-		mReceivedData = null;
-		mError = 0;
-		mImageSizeSent = false;
-
-		characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
-		characteristic.setValue(new byte[4]);
-		characteristic.setValue(imageSize, BluetoothGattCharacteristic.FORMAT_UINT32, 0);
-		sendLogBroadcast(LOG_LEVEL_VERBOSE, "Writing to characteristic " + characteristic.getUuid());
-		sendLogBroadcast(LOG_LEVEL_DEBUG, "gatt.writeCharacteristic(" + characteristic.getUuid() + ")");
-		gatt.writeCharacteristic(characteristic);
-
-		// We have to wait for confirmation
-		try {
-			synchronized (mLock) {
-				while ((!mImageSizeSent && mConnectionState == STATE_CONNECTED_AND_READY && mError == 0 && !mAborted) || mPaused)
-					mLock.wait();
-			}
-		} catch (final InterruptedException e) {
-			loge("Sleeping interrupted", e);
-		}
-		if (mAborted)
-			throw new UploadAbortedException();
-		if (mError != 0)
-			throw new DfuException("Unable to write Image Size", mError);
-		if (mConnectionState != STATE_CONNECTED_AND_READY)
-			throw new DeviceDisconnectedException("Unable to write Image Size", mConnectionState);
-	}
-
-	/**
-	 * <p>
-	 * Writes the Soft Device, Bootloader and Application image sizes to the characteristic. Soft Device and Bootloader update is supported since Soft Device s110 v7.0.0.
-	 * Sizes of SD, BL and App are uploaded as 3x UINT32 even though some of them may be 0s. F.e. if only App is being updated the data will be <0x00000000, 0x00000000, [App size]>
-	 * </p>
-	 * <p>
-	 * This method is SYNCHRONOUS and wait until the {@link android.bluetooth.BluetoothGattCallback#onCharacteristicWrite(android.bluetooth.BluetoothGatt, android.bluetooth.BluetoothGattCharacteristic, int)} will be called or the connection state will
-	 * change from {@link #STATE_CONNECTED_AND_READY}. If connection state will change, or an error will occur, an exception will be thrown.
-	 * </p>
-	 *
-	 * @param gatt                the GATT device
-	 * @param characteristic      the characteristic to write to. Should be the DFU PACKET
-	 * @param softDeviceImageSize the Soft Device image size in bytes
-	 * @param bootloaderImageSize the Bootloader image size in bytes
-	 * @param appImageSize        the Application image size in bytes
-	 * @throws DeviceDisconnectedException
-	 * @throws DfuException
-	 * @throws UploadAbortedException
-	 */
-	private void writeImageSize(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final int softDeviceImageSize, final int bootloaderImageSize, final int appImageSize)
-			throws DeviceDisconnectedException, DfuException, UploadAbortedException {
-		mReceivedData = null;
-		mError = 0;
-		mImageSizeSent = false;
-
-		characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
-		characteristic.setValue(new byte[12]);
-		characteristic.setValue(softDeviceImageSize, BluetoothGattCharacteristic.FORMAT_UINT32, 0);
-		characteristic.setValue(bootloaderImageSize, BluetoothGattCharacteristic.FORMAT_UINT32, 4);
-		characteristic.setValue(appImageSize, BluetoothGattCharacteristic.FORMAT_UINT32, 8);
-		sendLogBroadcast(LOG_LEVEL_VERBOSE, "Writing to characteristic " + characteristic.getUuid());
-		sendLogBroadcast(LOG_LEVEL_DEBUG, "gatt.writeCharacteristic(" + characteristic.getUuid() + ")");
-		gatt.writeCharacteristic(characteristic);
-
-		// We have to wait for confirmation
-		try {
-			synchronized (mLock) {
-				while ((!mImageSizeSent && mConnectionState == STATE_CONNECTED_AND_READY && mError == 0 && !mAborted) || mPaused)
-					mLock.wait();
-			}
-		} catch (final InterruptedException e) {
-			loge("Sleeping interrupted", e);
-		}
-		if (mAborted)
-			throw new UploadAbortedException();
-		if (mError != 0)
-			throw new DfuException("Unable to write Image Sizes", mError);
-		if (mConnectionState != STATE_CONNECTED_AND_READY)
-			throw new DeviceDisconnectedException("Unable to write Image Sizes", mConnectionState);
-	}
-
-	/**
-	 * Writes the Init packet to the characteristic. This method is SYNCHRONOUS and wait until the {@link android.bluetooth.BluetoothGattCallback#onCharacteristicWrite(android.bluetooth.BluetoothGatt, android.bluetooth.BluetoothGattCharacteristic, int)}
-	 * will be called or the connection state will change from {@link #STATE_CONNECTED_AND_READY}. If connection state will change, or an error will occur, an exception will be thrown.
-	 *
-	 * @param gatt           the GATT device
-	 * @param characteristic the characteristic to write to. Should be the DFU PACKET
-	 * @param buffer         the init packet as a byte array. This must be shorter or equal to 20 bytes (TODO check this restriction).
-	 * @param size           the init packet size
-	 * @throws DeviceDisconnectedException
-	 * @throws DfuException
-	 * @throws UploadAbortedException
-	 */
-	private void writeInitPacket(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final byte[] buffer, final int size) throws DeviceDisconnectedException, DfuException,
-			UploadAbortedException {
-		byte[] locBuffer = buffer;
-		if (buffer.length != size) {
-			locBuffer = new byte[size];
-			System.arraycopy(buffer, 0, locBuffer, 0, size);
-		}
-		mReceivedData = null;
-		mError = 0;
-		mInitPacketSent = false;
-
-		characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
-		characteristic.setValue(locBuffer);
-		logi("Sending init packet (Value = " + parse(locBuffer) + ")");
-		sendLogBroadcast(LOG_LEVEL_VERBOSE, "Writing to characteristic " + characteristic.getUuid());
-		sendLogBroadcast(LOG_LEVEL_DEBUG, "gatt.writeCharacteristic(" + characteristic.getUuid() + ")");
-		gatt.writeCharacteristic(characteristic);
-
-		// We have to wait for confirmation
-		try {
-			synchronized (mLock) {
-				while ((!mInitPacketSent && mConnectionState == STATE_CONNECTED_AND_READY && mError == 0 && !mAborted) || mPaused)
-					mLock.wait();
-			}
-		} catch (final InterruptedException e) {
-			loge("Sleeping interrupted", e);
-		}
-		if (mAborted)
-			throw new UploadAbortedException();
-		if (mError != 0)
-			throw new DfuException("Unable to write Init DFU Parameters", mError);
-		if (mConnectionState != STATE_CONNECTED_AND_READY)
-			throw new DeviceDisconnectedException("Unable to write Init DFU Parameters", mConnectionState);
-	}
-
-	/**
-	 * Starts sending the data. This method is SYNCHRONOUS and terminates when the whole file will be uploaded or the connection status will change from {@link #STATE_CONNECTED_AND_READY}. If
-	 * connection state will change, or an error will occur, an exception will be thrown.
-	 *
-	 * @param gatt                 the GATT device (DFU target)
-	 * @param packetCharacteristic the characteristic to write file content to. Must be the DFU PACKET
-	 * @return The response value received from notification with Op Code = 3 when all bytes will be uploaded successfully.
-	 * @throws DeviceDisconnectedException Thrown when the device will disconnect in the middle of the transmission. The error core will be saved in {@link #mConnectionState}.
-	 * @throws DfuException                Thrown if DFU error occur
-	 * @throws UploadAbortedException
-	 */
-	private byte[] uploadFirmwareImage(final BluetoothGatt gatt, final BluetoothGattCharacteristic packetCharacteristic, final InputStream inputStream) throws DeviceDisconnectedException,
-			DfuException, UploadAbortedException {
-		mReceivedData = null;
-		mError = 0;
-
-		final byte[] buffer = mBuffer;
-		try {
-			final int size = inputStream.read(buffer);
-			sendLogBroadcast(LOG_LEVEL_VERBOSE, "Sending firmware to characteristic " + packetCharacteristic.getUuid() + "...");
-			writePacket(gatt, packetCharacteristic, buffer, size);
-		} catch (final HexFileValidationException e) {
-			throw new DfuException("HEX file not valid", ERROR_FILE_INVALID);
-		} catch (final IOException e) {
-			throw new DfuException("Error while reading file", ERROR_FILE_IO_EXCEPTION);
-		}
-
-		try {
-			synchronized (mLock) {
-				while ((mReceivedData == null && mConnectionState == STATE_CONNECTED_AND_READY && mError == 0 && !mAborted) || mPaused)
-					mLock.wait();
-			}
-		} catch (final InterruptedException e) {
-			loge("Sleeping interrupted", e);
-		}
-		if (mAborted)
-			throw new UploadAbortedException();
-		if (mError != 0)
-			throw new DfuException("Uploading Firmware Image failed", mError);
-		if (mConnectionState != STATE_CONNECTED_AND_READY)
-			throw new DeviceDisconnectedException("Uploading Firmware Image failed: device disconnected", mConnectionState);
-
-		return mReceivedData;
-	}
-
-	/**
-	 * Writes the buffer to the characteristic. The maximum size of the buffer is 20 bytes. This method is ASYNCHRONOUS and returns immediately after adding the data to TX queue.
-	 *
-	 * @param gatt           the GATT device
-	 * @param characteristic the characteristic to write to. Should be the DFU PACKET
-	 * @param buffer         the buffer with 1-20 bytes
-	 * @param size           the number of bytes from the buffer to send
-	 */
-	private void writePacket(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final byte[] buffer, final int size) {
-		byte[] locBuffer = buffer;
-		if (buffer.length != size) {
-			locBuffer = new byte[size];
-			System.arraycopy(buffer, 0, locBuffer, 0, size);
-		}
-		characteristic.setValue(locBuffer);
-		gatt.writeCharacteristic(characteristic);
-		// FIXME BLE buffer overflow
-		// after writing to the device with WRITE_NO_RESPONSE property the onCharacteristicWrite callback is received immediately after writing data to a buffer.
-		// The real sending is much slower than adding to the buffer. This method does not return false if writing didn't succeed.. just the callback is not invoked.
-		//
-		// More info: this works fine on Nexus 5 (Android 4.4) (4.3 seconds) and on Samsung S4 (Android 4.3) (20 seconds) so this is a driver issue.
-		// Nexus 4 and 7 uses Qualcomm chip, Nexus 5 and Samsung uses Broadcom chips.
-	}
-
-	private void waitIfPaused() {
-		synchronized (mLock) {
-			try {
-				while (mPaused)
-					mLock.wait();
-			} catch (final InterruptedException e) {
-				loge("Sleeping interrupted", e);
-			}
-		}
-	}
-
-	@SuppressLint("NewApi")
-	private boolean createBond(final BluetoothDevice device) {
-		if (device.getBondState() == BluetoothDevice.BOND_BONDED)
-			return true;
-
-		boolean result;
-		mRequestCompleted = false;
-
-		sendLogBroadcast(LOG_LEVEL_VERBOSE, "Starting pairing...");
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-			sendLogBroadcast(LOG_LEVEL_DEBUG, "gatt.getDevice().createBond()");
-			result = device.createBond();
-		} else {
-			result = createBondApi18(device);
-		}
-
-		// We have to wait until device is bounded
-		try {
-			synchronized (mLock) {
-				while (!mRequestCompleted && !mAborted)
-					mLock.wait();
-			}
-		} catch (final InterruptedException e) {
-			loge("Sleeping interrupted", e);
-		}
-		return result;
-	}
-
-	private boolean createBondApi18(final BluetoothDevice device) {
-		/*
-		 * There is a createBond() method in BluetoothDevice class but for now it's hidden. We will call it using reflections. It has been revealed in KitKat (Api19)
-		 */
-		try {
-			final Method createBond = device.getClass().getMethod("createBond");
-			if (createBond != null) {
-				sendLogBroadcast(LOG_LEVEL_DEBUG, "gatt.getDevice().createBond() (hidden)");
-				return (Boolean) createBond.invoke(device);
-			}
-		} catch (final Exception e) {
-			Log.w(TAG, "An exception occurred while creating bond", e);
-		}
-		return false;
-	}
-
-	/**
-	 * Removes the bond information for the given device.
-	 *
-	 * @param device the device to unbound
-	 * @return <code>true</code> if operation succeeded, <code>false</code> otherwise
-	 */
-	private boolean removeBond(final BluetoothDevice device) {
-		if (device.getBondState() == BluetoothDevice.BOND_NONE)
-			return true;
-
-		sendLogBroadcast(LOG_LEVEL_VERBOSE, "Removing bond information...");
-		boolean result = false;
-		/*
-		 * There is a removeBond() method in BluetoothDevice class but for now it's hidden. We will call it using reflections.
-		 */
-		try {
-			final Method removeBond = device.getClass().getMethod("removeBond");
-			if (removeBond != null) {
-				mRequestCompleted = false;
-				sendLogBroadcast(LOG_LEVEL_DEBUG, "gatt.getDevice().removeBond() (hidden)");
-				result = (Boolean) removeBond.invoke(device);
-
-				// We have to wait until device is unbounded
-				try {
-					synchronized (mLock) {
-						while (!mRequestCompleted && !mAborted)
-							mLock.wait();
-					}
-				} catch (final InterruptedException e) {
-					loge("Sleeping interrupted", e);
-				}
-			}
-			result = true;
-		} catch (final Exception e) {
-			Log.w(TAG, "An exception occurred while removing bond information", e);
-		}
-		return result;
-	}
-
-	/**
-	 * Waits until the notification will arrive. Returns the data returned by the notification. This method will block the thread if response is not ready or connection state will change from
-	 * {@link #STATE_CONNECTED_AND_READY}. If connection state will change, or an error will occur, an exception will be thrown.
-	 *
-	 * @return the value returned by the Control Point notification
-	 * @throws DeviceDisconnectedException
-	 * @throws DfuException
-	 * @throws UploadAbortedException
-	 */
-	private byte[] readNotificationResponse() throws DeviceDisconnectedException, DfuException, UploadAbortedException {
-		// do not clear the mReceiveData here. The response might already be obtained. Clear it in write request instead.
-		mError = 0;
-		try {
-			synchronized (mLock) {
-				while ((mReceivedData == null && mConnectionState == STATE_CONNECTED_AND_READY && mError == 0 && !mAborted) || mPaused)
-					mLock.wait();
-			}
-		} catch (final InterruptedException e) {
-			loge("Sleeping interrupted", e);
-		}
-		if (mAborted)
-			throw new UploadAbortedException();
-		if (mError != 0)
-			throw new DfuException("Unable to write Op Code", mError);
-		if (mConnectionState != STATE_CONNECTED_AND_READY)
-			throw new DeviceDisconnectedException("Unable to write Op Code", mConnectionState);
-		return mReceivedData;
-	}
-
-	/**
-	 * Creates or updates the notification in the Notification Manager. Sends broadcast with current progress to the activity.
-	 */
-	private void updateProgressNotification() {
-		final int progress = (int) (100.0f * mBytesSent / mImageSizeInBytes);
+	/* package */ void updateProgressNotification(final DfuProgressInfo info) {
+		final int progress = info.getProgress();
 		if (mLastProgress == progress)
 			return;
 
 		mLastProgress = progress;
-		updateProgressNotification(progress);
-	}
 
-	/**
-	 * Creates or updates the notification in the Notification Manager. Sends broadcast with given progress or error state to the activity.
-	 *
-	 * @param progress the current progress state or an error number, can be one of {@link #PROGRESS_CONNECTING}, {@link #PROGRESS_STARTING}, {@link #PROGRESS_ENABLING_DFU_MODE},
-	 *                 {@link #PROGRESS_VALIDATING}, {@link #PROGRESS_DISCONNECTING}, {@link #PROGRESS_COMPLETED} or {@link #ERROR_FILE_ERROR}, {@link #ERROR_FILE_INVALID} , etc
-	 */
-	private void updateProgressNotification(final int progress) {
 		// send progress or error broadcast
-		if (progress < ERROR_MASK) {
-			sendProgressBroadcast(progress);
+		sendProgressBroadcast(info);
 
-			// the notification may not be refreshed too quickly as the ABORT button becomes not clickable
-			final long now = SystemClock.elapsedRealtime();
-			if (now - mLastNotificationTime < 250)
-				return;
-			mLastNotificationTime = now;
-		} else
-			sendErrorBroadcast(progress);
+		// the notification may not be refreshed too quickly as the ABORT button becomes not clickable
+		final long now = SystemClock.elapsedRealtime();
+		if (now - mLastNotificationTime < 250)
+			return;
+		mLastNotificationTime = now;
 
 		if (mDisableNotification)
 			return;
@@ -2810,14 +1591,14 @@ public abstract class DfuBaseService extends IntentService {
 				builder.setOngoing(true).setContentTitle(getString(R.string.dfu_status_connecting)).setContentText(getString(R.string.dfu_status_connecting_msg, deviceName)).setProgress(100, 0, true);
 				break;
 			case PROGRESS_STARTING:
-				builder.setOngoing(true).setContentTitle(getString(R.string.dfu_status_starting)).setContentText(getString(R.string.dfu_status_starting_msg, deviceName)).setProgress(100, 0, true);
+				builder.setOngoing(true).setContentTitle(getString(R.string.dfu_status_starting)).setContentText(getString(R.string.dfu_status_starting_msg)).setProgress(100, 0, true);
 				break;
 			case PROGRESS_ENABLING_DFU_MODE:
-				builder.setOngoing(true).setContentTitle(getString(R.string.dfu_status_switching_to_dfu)).setContentText(getString(R.string.dfu_status_switching_to_dfu_msg, deviceName))
+				builder.setOngoing(true).setContentTitle(getString(R.string.dfu_status_switching_to_dfu)).setContentText(getString(R.string.dfu_status_switching_to_dfu_msg))
 						.setProgress(100, 0, true);
 				break;
 			case PROGRESS_VALIDATING:
-				builder.setOngoing(true).setContentTitle(getString(R.string.dfu_status_validating)).setContentText(getString(R.string.dfu_status_validating_msg, deviceName)).setProgress(100, 0, true);
+				builder.setOngoing(true).setContentTitle(getString(R.string.dfu_status_validating)).setContentText(getString(R.string.dfu_status_validating_msg)).setProgress(100, 0, true);
 				break;
 			case PROGRESS_DISCONNECTING:
 				builder.setOngoing(true).setContentTitle(getString(R.string.dfu_status_disconnecting)).setContentText(getString(R.string.dfu_status_disconnecting_msg, deviceName))
@@ -2832,16 +1613,10 @@ public abstract class DfuBaseService extends IntentService {
 						.setContentText(getString(R.string.dfu_status_aborted_msg)).setAutoCancel(true);
 				break;
 			default:
-				if (progress >= ERROR_MASK) {
-					// progress is an error number
-					builder.setOngoing(false).setContentTitle(getString(R.string.dfu_status_error)).setSmallIcon(android.R.drawable.stat_sys_upload_done)
-							.setContentText(getString(R.string.dfu_status_error_msg)).setAutoCancel(true).setColor(Color.RED);
-				} else {
 					// progress is in percents
-					final String title = mPartsTotal == 1 ? getString(R.string.dfu_status_uploading) : getString(R.string.dfu_status_uploading_part, mPartCurrent, mPartsTotal);
-					final String text = (mFileType & TYPE_APPLICATION) > 0 ? getString(R.string.dfu_status_uploading_msg, deviceName) : getString(R.string.dfu_status_uploading_components_msg, deviceName);
+					final String title = info.getTotalParts() == 1 ? getString(R.string.dfu_status_uploading) : getString(R.string.dfu_status_uploading_part, info.getCurrentPart(), info.getTotalParts());
+					final String text = getString(R.string.dfu_status_uploading_msg, deviceName);
 					builder.setOngoing(true).setContentTitle(title).setContentText(text).setProgress(100, progress, false);
-				}
 		}
 
 		// update the notification
@@ -2849,17 +1624,55 @@ public abstract class DfuBaseService extends IntentService {
 		intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		intent.putExtra(EXTRA_DEVICE_ADDRESS, deviceAddress);
 		intent.putExtra(EXTRA_DEVICE_NAME, deviceName);
-		intent.putExtra(EXTRA_PROGRESS, progress); // this may contains ERROR_CONNECTION_MASK bit!
+		intent.putExtra(EXTRA_PROGRESS, info.getProgress());
 		final PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 		builder.setContentIntent(pendingIntent);
 
 		// Add Abort action to the notification
-		if (progress != PROGRESS_ABORTED && progress != PROGRESS_COMPLETED && progress < ERROR_MASK) {
+		if (progress != PROGRESS_ABORTED && progress != PROGRESS_COMPLETED) {
 			final Intent abortIntent = new Intent(BROADCAST_ACTION);
 			abortIntent.putExtra(EXTRA_ACTION, ACTION_ABORT);
 			final PendingIntent pendingAbortIntent = PendingIntent.getBroadcast(this, 1, abortIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 			builder.addAction(R.drawable.ic_action_notify_cancel, getString(R.string.dfu_action_abort), pendingAbortIntent);
 		}
+
+		final NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+		manager.notify(NOTIFICATION_ID, builder.build());
+	}
+
+	/**
+	 * Creates or updates the notification in the Notification Manager. Sends broadcast with given error numbre to the activity.
+	 *
+	 * @param error the error number
+	 */
+	/* package */ void updateProgressNotification(final int error) {
+		sendErrorBroadcast(error);
+
+		if (mDisableNotification)
+			return;
+
+		// create or update notification:
+		final String deviceAddress = mDeviceAddress;
+		final String deviceName = mDeviceName != null ? mDeviceName : getString(R.string.dfu_unknown_name);
+
+		final NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
+				.setSmallIcon(android.R.drawable.stat_sys_upload)
+				.setOnlyAlertOnce(true)
+				.setColor(Color.RED)
+				.setOngoing(false)
+				.setContentTitle(getString(R.string.dfu_status_error))
+				.setSmallIcon(android.R.drawable.stat_sys_upload_done)
+				.setContentText(getString(R.string.dfu_status_error_msg))
+				.setAutoCancel(true);
+
+		// update the notification
+		final Intent intent = new Intent(this, getNotificationTarget());
+		intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+		intent.putExtra(EXTRA_DEVICE_ADDRESS, deviceAddress);
+		intent.putExtra(EXTRA_DEVICE_NAME, deviceName);
+		intent.putExtra(EXTRA_PROGRESS, error); // this may contains ERROR_CONNECTION_MASK bit!
+		final PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+		builder.setContentIntent(pendingIntent);
 
 		final NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 		manager.notify(NOTIFICATION_ID, builder.build());
@@ -2891,24 +1704,24 @@ public abstract class DfuBaseService extends IntentService {
 	 */
 	protected abstract Class<? extends Activity> getNotificationTarget();
 
-	private void sendProgressBroadcast(final int progress) {
+	private void sendProgressBroadcast(final DfuProgressInfo info) {
 		final long now = SystemClock.elapsedRealtime();
-		final float speed = now - mLastProgressTime != 0 ? (float) (mBytesSent - mLastBytesSent) / (float) (now - mLastProgressTime) : 0.0f;
-		final float avgSpeed = now - mStartTime != 0 ? (float) mBytesSent / (float) (now - mStartTime) : 0.0f;
+		final float speed = now - mLastProgressTime != 0 ? (float) (info.getBytesSent() - mLastBytesSent) / (float) (now - mLastProgressTime) : 0.0f;
+		final float avgSpeed = now - mStartTime != 0 ? (float) info.getBytesSent() / (float) (now - mStartTime) : 0.0f;
 		mLastProgressTime = now;
-		mLastBytesSent = mBytesSent;
+		mLastBytesSent = info.getBytesSent();
 
 		final Intent broadcast = new Intent(BROADCAST_PROGRESS);
-		broadcast.putExtra(EXTRA_DATA, progress);
+		broadcast.putExtra(EXTRA_DATA, info.getProgress());
 		broadcast.putExtra(EXTRA_DEVICE_ADDRESS, mDeviceAddress);
-		broadcast.putExtra(EXTRA_PART_CURRENT, mPartCurrent);
-		broadcast.putExtra(EXTRA_PARTS_TOTAL, mPartsTotal);
+		broadcast.putExtra(EXTRA_PART_CURRENT, info.getCurrentPart());
+		broadcast.putExtra(EXTRA_PARTS_TOTAL, info.getTotalParts());
 		broadcast.putExtra(EXTRA_SPEED_B_PER_MS, speed);
 		broadcast.putExtra(EXTRA_AVG_SPEED_B_PER_MS, avgSpeed);
 		LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
 	}
 
-	private void sendErrorBroadcast(final int error) {
+	/* package */ void sendErrorBroadcast(final int error) {
 		final Intent broadcast = new Intent(BROADCAST_ERROR);
 		if ((error & ERROR_CONNECTION_MASK) > 0) {
 			broadcast.putExtra(EXTRA_DATA, error & ~ERROR_CONNECTION_MASK);
@@ -2927,7 +1740,7 @@ public abstract class DfuBaseService extends IntentService {
 		LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
 	}
 
-	private void sendLogBroadcast(final int level, final String message) {
+	/* package */ void sendLogBroadcast(final int level, final String message) {
 		final String fullMessage = "[DFU] " + message;
 		final Intent broadcast = new Intent(BROADCAST_LOG);
 		broadcast.putExtra(EXTRA_LOG_MESSAGE, fullMessage);
@@ -2980,24 +1793,5 @@ public abstract class DfuBaseService extends IntentService {
 	private void logd(final String message) {
 		if (BuildConfig.DEBUG)
 			Log.d(TAG, message);
-	}
-
-	private String parse(final byte[] data) {
-		if (data == null)
-			return "";
-
-		final int length = data.length;
-		if (length == 0)
-			return "";
-
-		final char[] out = new char[length * 3 - 1];
-		for (int j = 0; j < length; j++) {
-			int v = data[j] & 0xFF;
-			out[j * 3] = HEX_ARRAY[v >>> 4];
-			out[j * 3 + 1] = HEX_ARRAY[v & 0x0F];
-			if (j != length - 1)
-				out[j * 3 + 2] = '-';
-		}
-		return new String(out);
 	}
 }
