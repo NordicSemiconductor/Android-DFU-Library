@@ -28,20 +28,7 @@ package no.nordicsemi.android.dfu.internal.exception;
 public class DeviceDisconnectedException extends Exception {
 	private static final long serialVersionUID = -6901728550661937942L;
 
-	private final int mState;
-
-	public DeviceDisconnectedException(final String message, final int state) {
+	public DeviceDisconnectedException(final String message) {
 		super(message);
-
-		mState = state;
-	}
-
-	public int getConnectionState() {
-		return mState;
-	}
-
-	@Override
-	public String getMessage() {
-		return super.getMessage() + " (connection state: " + mState + ")";
 	}
 }

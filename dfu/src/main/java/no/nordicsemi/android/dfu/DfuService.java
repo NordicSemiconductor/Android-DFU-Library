@@ -23,54 +23,33 @@
 package no.nordicsemi.android.dfu;
 
 import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothGattCallback;
 import android.content.Intent;
 
 import java.io.InputStream;
-import java.util.UUID;
 
 import no.nordicsemi.android.dfu.internal.exception.DeviceDisconnectedException;
 import no.nordicsemi.android.dfu.internal.exception.DfuException;
 import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 
-/* package */ class SecureDfuImpl extends BaseCustomDfuImpl {
+/* package */ interface DfuService {
+	/** Pauses the DFU process. */
+	void pause();
 
-	SecureDfuImpl(final DfuBaseService service) {
-		super(service);
-	}
+	/** Resumes the paused DFU process. */
+	void resume();
 
-	@Override
-	protected BaseBluetoothGattCallback getGattCallback() {
-		return null;
-	}
+	/** Terminates the DFU process. The device will disconnect and restore old application or bootloader. */
+	void abort();
 
-	@Override
-	protected UUID getControlPointCharacteristicUUID() {
-		return null;
-	}
+	/** This method must return true if the device is compatible with this DFU implementation, false otherwise. */
+	boolean hasRequiredService(final BluetoothGatt gatt);
 
-	@Override
-	protected UUID getPacketCharacteristicUUID() {
-		return null;
-	}
+	/** This method must return true if the device is compatible with this DFU implementation, false otherwise. */
+	boolean hasRequiredCharacteristics(final BluetoothGatt gatt);
 
-	@Override
-	protected UUID getDfuServiceUUID() {
-		return null;
-	}
+	/** Initializes the DFU implementation and does some initial setting up. */
+	boolean initialize(final Intent intent, final BluetoothGatt gatt, final int fileType, final InputStream firmwareStream, final InputStream initPacketStream) throws DfuException, DeviceDisconnectedException, UploadAbortedException;
 
-	@Override
-	public boolean hasRequiredService(BluetoothGatt gatt) {
-		return false;
-	}
-
-	@Override
-	public boolean hasRequiredCharacteristics(BluetoothGatt gatt) {
-		return false;
-	}
-
-	@Override
-	public void performDfu(Intent intent) throws DfuException, DeviceDisconnectedException, UploadAbortedException {
-
-	}
+	/** Performs the DFU process. */
+	void performDfu(final Intent intent) throws DfuException, DeviceDisconnectedException, UploadAbortedException;
 }

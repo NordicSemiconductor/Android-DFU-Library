@@ -20,57 +20,13 @@
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ************************************************************************************************************************************************/
 
-package no.nordicsemi.android.dfu;
+package no.nordicsemi.android.error;
 
-import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothGattCallback;
-import android.content.Intent;
-
-import java.io.InputStream;
-import java.util.UUID;
-
-import no.nordicsemi.android.dfu.internal.exception.DeviceDisconnectedException;
-import no.nordicsemi.android.dfu.internal.exception.DfuException;
-import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
-
-/* package */ class SecureDfuImpl extends BaseCustomDfuImpl {
-
-	SecureDfuImpl(final DfuBaseService service) {
-		super(service);
-	}
-
-	@Override
-	protected BaseBluetoothGattCallback getGattCallback() {
-		return null;
-	}
-
-	@Override
-	protected UUID getControlPointCharacteristicUUID() {
-		return null;
-	}
-
-	@Override
-	protected UUID getPacketCharacteristicUUID() {
-		return null;
-	}
-
-	@Override
-	protected UUID getDfuServiceUUID() {
-		return null;
-	}
-
-	@Override
-	public boolean hasRequiredService(BluetoothGatt gatt) {
-		return false;
-	}
-
-	@Override
-	public boolean hasRequiredCharacteristics(BluetoothGatt gatt) {
-		return false;
-	}
-
-	@Override
-	public void performDfu(Intent intent) throws DfuException, DeviceDisconnectedException, UploadAbortedException {
-
-	}
+public final class LegacyDfuError {
+	// DFU status values
+	public static final int INVALID_STATE = 2;
+	public static final int NOT_SUPPORTED = 3;
+	public static final int DATA_SIZE_EXCEEDS_LIMIT = 4;
+	public static final int CRC_ERROR = 5;
+	public static final int OPERATION_FAILED = 6;
 }

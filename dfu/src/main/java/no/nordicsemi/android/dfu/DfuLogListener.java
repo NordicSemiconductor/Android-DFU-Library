@@ -41,5 +41,5 @@ public interface DfuLogListener {
 	 * 		</ul>
 	 * @param message the log message
 	 */
-	public void onLogEvent(final String deviceAddress, final int level, final String message);
+	void onLogEvent(final String deviceAddress, final int level, final String message);
 }

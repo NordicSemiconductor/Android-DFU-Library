@@ -22,48 +22,62 @@
 
 package no.nordicsemi.android.dfu;
 
+import android.os.SystemClock;
+import android.support.annotation.NonNull;
+
 /* package */ class DfuProgressInfo {
+	interface ProgressListener {
+		void updateProgressNotification();
+	}
+
+	private final ProgressListener mListener;
 	private int progress;
 	private int bytesSent;
+	private int lastBytesSent;
 	private int bytesReceived;
 	private int imageSizeInBytes;
 	private int maxObjectSizeInBytes;
 	private int currentPart;
 	private int totalParts;
+	private long timeStart, lastProgressTime;
 
-	public DfuProgressInfo(final int imageSizeInBytes) {
-		this.imageSizeInBytes = imageSizeInBytes;
-		this.maxObjectSizeInBytes = Integer.MAX_VALUE; // by default the whole firmware will be sent as a single object
+	public DfuProgressInfo(final @NonNull ProgressListener listener) {
+		mListener = listener;
 	}
 
-	public DfuProgressInfo setPart(final int currentPart, final int totalParts) {
+	public DfuProgressInfo init(final int imageSizeInBytes, final int currentPart, final int totalParts) {
+		this.imageSizeInBytes = imageSizeInBytes;
+		this.maxObjectSizeInBytes = Integer.MAX_VALUE; // by default the whole firmware will be sent as a single object
 		this.currentPart = currentPart;
 		this.totalParts = totalParts;
 		return this;
 	}
 
-	public DfuProgressInfo setProgress(final int progress) {
-		this.progress = progress;
+	public DfuProgressInfo setTotalPart(final int totalParts) {
+		this.totalParts = totalParts;
 		return this;
 	}
 
-	public DfuProgressInfo setBytesSent(final int bytesSent) {
+	public void setProgress(final int progress) {
+		this.progress = progress;
+		mListener.updateProgressNotification();
+	}
+
+	public void setBytesSent(final int bytesSent) {
+		if (this.bytesSent == 0 && bytesSent == 0) {
+			timeStart = SystemClock.elapsedRealtime();
+		}
 		this.bytesSent = bytesSent;
 		this.progress = (int) (100.0f * bytesSent / imageSizeInBytes);
-		return this;
+		mListener.updateProgressNotification();
 	}
 
-	public DfuProgressInfo addBytesSent(final int increment) {
-		return setBytesSent(bytesSent + increment);
+	public void addBytesSent(final int increment) {
+		setBytesSent(bytesSent + increment);
 	}
 
-	public DfuProgressInfo setBytesReceived(final int bytesReceived) {
+	public void setBytesReceived(final int bytesReceived) {
 		this.bytesReceived = bytesReceived;
-		return this;
-	}
-
-	public DfuProgressInfo addBytesReceived(final int increment) {
-		return setBytesReceived(bytesReceived + increment);
 	}
 
 	public void setMaxObjectSizeInBytes(final int bytes) {
@@ -98,11 +112,28 @@ package no.nordicsemi.android.dfu;
 		return imageSizeInBytes;
 	}
 
+	public float getSpeed() {
+		final long now = SystemClock.elapsedRealtime();
+		final float speed = now - timeStart != 0 ? (float) (bytesSent - lastBytesSent) / (float) (now - lastProgressTime) : 0.0f;
+		lastProgressTime = now;
+		lastBytesSent = bytesSent;
+		return speed;
+	}
+
+	public float getAverageSpeed() {
+		final long now = SystemClock.elapsedRealtime();
+		return now - timeStart != 0 ? (float) bytesSent / (float) (now - timeStart) : 0.0f;
+	}
+
 	public int getCurrentPart() {
 		return currentPart;
 	}
 
 	public int getTotalParts() {
 		return totalParts;
+	}
+
+	public boolean isLastPart() {
+		return currentPart == totalParts;
 	}
 }

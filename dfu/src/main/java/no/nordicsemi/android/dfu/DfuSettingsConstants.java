@@ -30,7 +30,7 @@ public interface DfuSettingsConstants {
 	 * <p>If true (default) the Packet Receipt Notification procedure will be enabled. See DFU documentation on http://infocenter.nordicsemi.com for more details.
 	 * The number of packets before receiving a Packet Receipt Notification is set with property {@link #SETTINGS_NUMBER_OF_PACKETS}.
 	 */
-	public static final String SETTINGS_PACKET_RECEIPT_NOTIFICATION_ENABLED = "settings_packet_receipt_notification_enabled";
+	String SETTINGS_PACKET_RECEIPT_NOTIFICATION_ENABLED = "settings_packet_receipt_notification_enabled";
 
 	/**
 	 * This property must contain a positive integer value, usually from range 1-200.
@@ -41,7 +41,7 @@ public interface DfuSettingsConstants {
 	 * the device chip manufacturer) and the queue may reach its limit. When does, the transmission stops and Android Bluetooth hangs. Using PRN procedure eliminates this problem as
 	 * the notification is send when all packets were delivered the queue is empty.
 	 */
-	public static final String SETTINGS_NUMBER_OF_PACKETS = "settings_number_of_packets";
+	String SETTINGS_NUMBER_OF_PACKETS = "settings_number_of_packets";
 
 	/**
 	 * The default value of {@link #SETTINGS_NUMBER_OF_PACKETS} property. Different phones sent a different number of packets each connection interval. The values are (for tested phones):
@@ -52,7 +52,7 @@ public interface DfuSettingsConstants {
 	 * </ul>
 	 * The least common multiplier is 12 which is reasonably small. You may try other values, like 24 etc. Values higher than ~300 may cause the Bluetooth outgoing queue overflow error.
 	 */
-	public static final int SETTINGS_NUMBER_OF_PACKETS_DEFAULT = 12;
+	int SETTINGS_NUMBER_OF_PACKETS_DEFAULT = 12;
 
 	/**
 	 * This property must contain an integer value.
@@ -61,13 +61,13 @@ public interface DfuSettingsConstants {
 	 * a firmware in HEX onto another MCU via nRF chip, set this value to 0.
 	 * <p>If you are using the PC nrf util tool to create a ZIP Distribution Packet with the firmware and Init Packet this option does not apply as the nrf tool will convert HEX to BIN itself.
 	 */
-	public static final String SETTINGS_MBR_SIZE = "settings_mbr_size";
+	String SETTINGS_MBR_SIZE = "settings_mbr_size";
 
 	/**
 	 * The default value of the MBR size.
 	 * @see #SETTINGS_DEFAULT_MBR_SIZE
 	 */
-	public static final int SETTINGS_DEFAULT_MBR_SIZE = 0x1000;
+	int SETTINGS_DEFAULT_MBR_SIZE = 0x1000;
 
 	/**
 	 * This property must contain a boolean value.
@@ -79,5 +79,5 @@ public interface DfuSettingsConstants {
 	 * This guessing may not be always correct. One situation may be when the nRF chip is used to flash update on external MCU using DFU. The DFU procedure may be implemented in the
 	 * application, which may (and usually does) have more services. In such case set the value of this property to true.
 	 */
-	public static final String SETTINGS_ASSUME_DFU_NODE = "settings_assume_dfu_mode";
+	String SETTINGS_ASSUME_DFU_NODE = "settings_assume_dfu_mode";
 }

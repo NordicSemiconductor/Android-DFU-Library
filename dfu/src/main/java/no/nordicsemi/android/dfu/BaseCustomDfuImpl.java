@@ -24,9 +24,10 @@ package no.nordicsemi.android.dfu;
 
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.UUID;
 
 import no.nordicsemi.android.dfu.internal.exception.DeviceDisconnectedException;
@@ -38,11 +39,11 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	/**
 	 * Flag indicating whether the init packet has been already transferred or not.
 	 */
-	private boolean mInitPacketSent;
+	private boolean mInitPacketInProgress;
 	/**
 	 * Flag indicating whether the firmware is being transmitted or not.
 	 */
-	private boolean mFirmwareUploadStarted;
+	private boolean mFirmwareUploadInProgress;
 	/**
 	 * The number of packets of firmware data to be send before receiving a new Packets receipt notification. 0 disables the packets notifications.
 	 */
@@ -91,14 +92,13 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 				 * - do nothing, because we have to wait for the notification to confirm the data received
 				 */
 				if (characteristic.getUuid().equals(getPacketCharacteristicUUID())) {
-					if (mInitPacketSent) {
+					if (mInitPacketInProgress) {
 						// We've got confirmation that the init packet was sent
 						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Data written to " + characteristic.getUuid() + ", value (0x): " + parse(characteristic));
-						mInitPacketSent = false;
-					} else if (mFirmwareUploadStarted) {
+						mInitPacketInProgress = false;
+					} else if (mFirmwareUploadInProgress) {
 						// If the PACKET characteristic was written with image data, update counters
 						mProgressInfo.addBytesSent(characteristic.getValue().length);
-						mService.updateProgressNotification(mProgressInfo);
 						mPacketsSentSinceNotification++;
 
 						// If a packet receipt notification is expected, or the last packet was sent, do nothing. There onCharacteristicChanged listener will catch either
@@ -110,7 +110,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 						// This flag may be true only in Secure DFU.
 						// In Secure DFU we usually do not get any notification after the object is completed, therefor the lock must be notified here.
 						if (lastObjectPacketTransferred) {
-							mFirmwareUploadStarted = false;
+							mFirmwareUploadInProgress = false;
 							notifyLock();
 							return;
 						}
@@ -170,7 +170,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		protected void handlePacketReceiptNotification(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) {
 			// Secure DFU:
 			// When PRN is set to be received after the object is complete we don't want to send anything. First the object needs to be executed.
-			if (!mFirmwareUploadStarted)
+			if (!mFirmwareUploadInProgress)
 				return;
 
 			final BluetoothGattCharacteristic packetCharacteristic = gatt.getService(getDfuServiceUUID()).getCharacteristic(getPacketCharacteristicUUID());
@@ -200,13 +200,28 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		protected void handleNotification(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) {
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Notification received from " + characteristic.getUuid() + ", value (0x): " + parse(characteristic));
 			mReceivedData = characteristic.getValue();
-			mFirmwareUploadStarted = false;
+			mFirmwareUploadInProgress = false;
 		}
 	}
 
-	BaseCustomDfuImpl(final DfuBaseService service, final InputStream firmwareStream, final InputStream initPacketStream, final int packetsBeforeNotification) {
-		super(service, firmwareStream, initPacketStream);
-		mPacketsBeforeNotification = packetsBeforeNotification;
+	BaseCustomDfuImpl(final DfuBaseService service) {
+		super(service);
+
+		// Read preferences
+		final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(service);
+		final boolean packetReceiptNotificationEnabled = preferences.getBoolean(DfuSettingsConstants.SETTINGS_PACKET_RECEIPT_NOTIFICATION_ENABLED, true);
+		String value = preferences.getString(DfuSettingsConstants.SETTINGS_NUMBER_OF_PACKETS, String.valueOf(DfuSettingsConstants.SETTINGS_NUMBER_OF_PACKETS_DEFAULT));
+		int numberOfPackets;
+		try {
+			numberOfPackets = Integer.parseInt(value);
+			if (numberOfPackets < 0 || numberOfPackets > 0xFFFF)
+				numberOfPackets = DfuSettingsConstants.SETTINGS_NUMBER_OF_PACKETS_DEFAULT;
+		} catch (final NumberFormatException e) {
+			numberOfPackets = DfuSettingsConstants.SETTINGS_NUMBER_OF_PACKETS_DEFAULT;
+		}
+		if (!packetReceiptNotificationEnabled)
+			numberOfPackets = 0;
+		mPacketsBeforeNotification = numberOfPackets;
 	}
 
 	protected abstract UUID getControlPointCharacteristicUUID();
@@ -217,9 +232,8 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 
 	/**
 	 * Writes the Init packet to the characteristic. This method is SYNCHRONOUS and wait until the {@link android.bluetooth.BluetoothGattCallback#onCharacteristicWrite(android.bluetooth.BluetoothGatt, android.bluetooth.BluetoothGattCharacteristic, int)}
-	 * will be called or the connection state will change from {@link #STATE_CONNECTED_AND_READY}. If connection state will change, or an error will occur, an exception will be thrown.
+	 * will be called or the device gets disconnected. If connection state will change, or an error will occur, an exception will be thrown.
 	 *
-	 * @param gatt           the GATT device
 	 * @param characteristic the characteristic to write to. Should be the DFU PACKET
 	 * @param buffer         the init packet as a byte array. This must be shorter or equal to 20 bytes (TODO check this restriction).
 	 * @param size           the init packet size
@@ -227,7 +241,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	 * @throws DfuException
 	 * @throws UploadAbortedException
 	 */
-	protected void writeInitPacket(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final byte[] buffer, final int size) throws DeviceDisconnectedException, DfuException,
+	protected void writeInitPacket(final BluetoothGattCharacteristic characteristic, final byte[] buffer, final int size) throws DeviceDisconnectedException, DfuException,
 			UploadAbortedException {
 		byte[] locBuffer = buffer;
 		if (buffer.length != size) {
@@ -236,19 +250,19 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		}
 		mReceivedData = null;
 		mError = 0;
-		mInitPacketSent = true;
+		mInitPacketInProgress = true;
 
 		characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
 		characteristic.setValue(locBuffer);
 		logi("Sending init packet (Value = " + parse(locBuffer) + ")");
 		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Writing to characteristic " + characteristic.getUuid());
 		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG, "gatt.writeCharacteristic(" + characteristic.getUuid() + ")");
-		gatt.writeCharacteristic(characteristic);
+		mGatt.writeCharacteristic(characteristic);
 
 		// We have to wait for confirmation
 		try {
 			synchronized (mLock) {
-				while ((mInitPacketSent && mConnectionState == STATE_CONNECTED_AND_READY && mError == 0 && !mAborted) || mPaused)
+				while ((mInitPacketInProgress && mConnected && mError == 0 && !mAborted) || mPaused)
 					mLock.wait();
 			}
 		} catch (final InterruptedException e) {
@@ -258,32 +272,31 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 			throw new UploadAbortedException();
 		if (mError != 0)
 			throw new DfuException("Unable to write Init DFU Parameters", mError);
-		if (mConnectionState != STATE_CONNECTED_AND_READY)
-			throw new DeviceDisconnectedException("Unable to write Init DFU Parameters", mConnectionState);
+		if (!mConnected)
+			throw new DeviceDisconnectedException("Unable to write Init DFU Parameters: device disconnected");
 	}
 
 	/**
-	 * Starts sending the data. This method is SYNCHRONOUS and terminates when the whole file will be uploaded or the connection status will change from {@link #STATE_CONNECTED_AND_READY}. If
-	 * connection state will change, or an error will occur, an exception will be thrown.
+	 * Starts sending the data. This method is SYNCHRONOUS and terminates when the whole file will be uploaded or the device get disconnected.
+	 * If connection state will change, or an error will occur, an exception will be thrown.
 	 *
-	 * @param gatt                 the GATT device (DFU target)
 	 * @param packetCharacteristic the characteristic to write file content to. Must be the DFU PACKET
 	 * @return The response value received from notification with Op Code = 3 when all bytes will be uploaded successfully.
-	 * @throws DeviceDisconnectedException Thrown when the device will disconnect in the middle of the transmission. The error core will be saved in {@link #mConnectionState}.
+	 * @throws DeviceDisconnectedException Thrown when the device will disconnect in the middle of the transmission.
 	 * @throws DfuException                Thrown if DFU error occur
 	 * @throws UploadAbortedException
 	 */
-	protected byte[] uploadFirmwareImage(final BluetoothGatt gatt, final BluetoothGattCharacteristic packetCharacteristic) throws DeviceDisconnectedException,
+	protected byte[] uploadFirmwareImage(final BluetoothGattCharacteristic packetCharacteristic) throws DeviceDisconnectedException,
 			DfuException, UploadAbortedException {
 		mReceivedData = null;
 		mError = 0;
-		mFirmwareUploadStarted = true;
+		mFirmwareUploadInProgress = true;
 
 		final byte[] buffer = mBuffer;
 		try {
 			final int size = mFirmwareStream.read(buffer);
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Sending firmware to characteristic " + packetCharacteristic.getUuid() + "...");
-			writePacket(gatt, packetCharacteristic, buffer, size);
+			writePacket(mGatt, packetCharacteristic, buffer, size);
 		} catch (final HexFileValidationException e) {
 			throw new DfuException("HEX file not valid", DfuBaseService.ERROR_FILE_INVALID);
 		} catch (final IOException e) {
@@ -292,7 +305,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 
 		try {
 			synchronized (mLock) {
-				while ((mFirmwareUploadStarted && mReceivedData == null && mConnectionState == STATE_CONNECTED_AND_READY && mError == 0 && !mAborted) || mPaused)
+				while ((mFirmwareUploadInProgress && mReceivedData == null && mConnected && mError == 0 && !mAborted) || mPaused)
 					mLock.wait();
 			}
 		} catch (final InterruptedException e) {
@@ -303,8 +316,8 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 			throw new UploadAbortedException();
 		if (mError != 0)
 			throw new DfuException("Uploading Firmware Image failed", mError);
-		if (mConnectionState != STATE_CONNECTED_AND_READY)
-			throw new DeviceDisconnectedException("Uploading Firmware Image failed: device disconnected", mConnectionState);
+		if (!mConnected)
+			throw new DeviceDisconnectedException("Uploading Firmware Image failed: device disconnected");
 
 		return mReceivedData;
 	}
@@ -312,7 +325,6 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	/**
 	 * Writes the buffer to the characteristic. The maximum size of the buffer is 20 bytes. This method is ASYNCHRONOUS and returns immediately after adding the data to TX queue.
 	 *
-	 * @param gatt           the GATT device
 	 * @param characteristic the characteristic to write to. Should be the DFU PACKET
 	 * @param buffer         the buffer with 1-20 bytes
 	 * @param size           the number of bytes from the buffer to send

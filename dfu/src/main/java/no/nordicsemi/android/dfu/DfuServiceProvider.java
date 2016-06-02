@@ -23,54 +23,15 @@
 package no.nordicsemi.android.dfu;
 
 import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothGattCallback;
-import android.content.Intent;
+import android.bluetooth.BluetoothGattService;
 
-import java.io.InputStream;
-import java.util.UUID;
+/* package */ class DfuServiceProvider {
 
-import no.nordicsemi.android.dfu.internal.exception.DeviceDisconnectedException;
-import no.nordicsemi.android.dfu.internal.exception.DfuException;
-import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
-
-/* package */ class SecureDfuImpl extends BaseCustomDfuImpl {
-
-	SecureDfuImpl(final DfuBaseService service) {
-		super(service);
-	}
-
-	@Override
-	protected BaseBluetoothGattCallback getGattCallback() {
+	/* package */ static BaseDfuImpl getDfuImpl(final DfuBaseService service, final BluetoothGatt gatt) {
+		final BluetoothGattService legacyService = gatt.getService(LegacyDfuImpl.DFU_SERVICE_UUID);
+		if (legacyService != null) {
+			return new LegacyDfuImpl(service);
+		}
 		return null;
-	}
-
-	@Override
-	protected UUID getControlPointCharacteristicUUID() {
-		return null;
-	}
-
-	@Override
-	protected UUID getPacketCharacteristicUUID() {
-		return null;
-	}
-
-	@Override
-	protected UUID getDfuServiceUUID() {
-		return null;
-	}
-
-	@Override
-	public boolean hasRequiredService(BluetoothGatt gatt) {
-		return false;
-	}
-
-	@Override
-	public boolean hasRequiredCharacteristics(BluetoothGatt gatt) {
-		return false;
-	}
-
-	@Override
-	public void performDfu(Intent intent) throws DfuException, DeviceDisconnectedException, UploadAbortedException {
-
 	}
 }

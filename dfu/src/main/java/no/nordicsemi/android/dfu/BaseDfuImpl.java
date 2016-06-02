@@ -44,44 +44,38 @@ import java.util.UUID;
 
 import no.nordicsemi.android.dfu.internal.exception.DeviceDisconnectedException;
 import no.nordicsemi.android.dfu.internal.exception.DfuException;
-import no.nordicsemi.android.dfu.internal.exception.HexFileValidationException;
 import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 
-/* package */ abstract class BaseDfuImpl {
+/* package */ abstract class BaseDfuImpl implements DfuService {
 	public static final String TAG = "DfuImpl";
 
 	protected static final UUID GENERIC_ATTRIBUTE_SERVICE_UUID = new UUID(0x0000180100001000L, 0x800000805F9B34FBL);
 	protected static final UUID SERVICE_CHANGED_UUID = new UUID(0x00002A0500001000L, 0x800000805F9B34FBL);
 	protected static final UUID CLIENT_CHARACTERISTIC_CONFIG = new UUID(0x0000290200001000L, 0x800000805f9b34fbL);
+	protected static final int NOTIFICATIONS = 1;
+	protected static final int INDICATIONS = 2;
 
-	private static final int NOTIFICATIONS = 1;
-	private static final int INDICATIONS = 2;
 	protected static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
 	protected static final int MAX_PACKET_SIZE = 20; // the maximum number of bytes in one packet is 20. May be less.
-
-	/**
-	 * The current connection state. If its value is > 0 than an error has occurred. Error number is a negative value of mConnectionState
-	 */
-	protected int mConnectionState;
-	protected final static int STATE_DISCONNECTED = 0;
-	protected final static int STATE_CONNECTING = -1;
-	protected final static int STATE_CONNECTED = -2;
-	protected final static int STATE_CONNECTED_AND_READY = -3; // indicates that services were discovered
-	protected final static int STATE_DISCONNECTING = -4;
-	protected final static int STATE_CLOSED = -5;
 
 	/**
 	 * Lock used in synchronization purposes
 	 */
 	protected final Object mLock = new Object();
 
-	protected final InputStream mFirmwareStream;
-	protected final InputStream mInitPacketStream;
+	protected InputStream mFirmwareStream;
+	protected InputStream mInitPacketStream;
 
+	/** The target GATT device. */
+	protected BluetoothGatt mGatt;
+	/** The firmware type. See TYPE_* constants. */
+	protected int mFileType;
 	/** Flag set to true if sending was paused. */
 	protected boolean mPaused;
 	/** Flag set to true if sending was aborted. */
 	protected boolean mAborted;
+	/** Flag indicating whether the device is still connected. */
+	protected boolean mConnected;
 	/**
 	 * Flag indicating whether the request was completed or not
 	 */
@@ -100,36 +94,16 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	 */
 	protected byte[] mReceivedData = null;
 	protected final byte[] mBuffer = new byte[MAX_PACKET_SIZE];
-	/**
-	 * The target device address
-	 */
-	private String mDeviceAddress;
-	private BluetoothAdapter mBluetoothAdapter;
 	protected DfuBaseService mService;
-	protected final DfuProgressInfo mProgressInfo;
-
-	private final BroadcastReceiver mConnectionStateBroadcastReceiver = new BroadcastReceiver() {
-		@Override
-		public void onReceive(final Context context, final Intent intent) {
-			// Obtain the device and check it this is the one that we are connected to
-			final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-			if (!device.getAddress().equals(mDeviceAddress))
-				return;
-
-			final String action = intent.getAction();
-
-			logi("Action received: " + action);
-			mConnectionState = STATE_DISCONNECTED;
-			notifyLock();
-		}
-	};
+	protected DfuProgressInfo mProgressInfo;
+	protected int mImageSizeInBytes;
 
 	private final BroadcastReceiver mBondStateBroadcastReceiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(final Context context, final Intent intent) {
 			// Obtain the device and check it this is the one that we are connected to
 			final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-			if (!device.getAddress().equals(mDeviceAddress))
+			if (!device.equals(mGatt.getDevice()))
 				return;
 
 			// Read bond state
@@ -143,80 +117,11 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	};
 
 	protected class BaseBluetoothGattCallback extends BluetoothGattCallback {
-		@Override
-		public void onConnectionStateChange(final BluetoothGatt gatt, final int status, final int newState) {
-			// Check whether an error occurred
-			if (status == BluetoothGatt.GATT_SUCCESS) {
-				if (newState == BluetoothGatt.STATE_CONNECTED) {
-					logi("Connected to GATT server");
-					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Connected to " + mDeviceAddress);
-					mConnectionState = STATE_CONNECTED;
+		// The Implementation object is created depending on device services, so after the device is connected and services were scanned.
+		// public void onConnected() { }
 
-					/*
-					 *  The onConnectionStateChange callback is called just after establishing connection and before sending Encryption Request BLE event in case of a paired device.
-					 *  In that case and when the Service Changed CCCD is enabled we will get the indication after initializing the encryption, about 1600 milliseconds later.
-					 *  If we discover services right after connecting, the onServicesDiscovered callback will be called immediately, before receiving the indication and the following
-					 *  service discovery and we may end up with old, application's services instead.
-					 *
-					 *  This is to support the buttonless switch from application to bootloader mode where the DFU bootloader notifies the master about service change.
-					 *  Tested on Nexus 4 (Android 4.4.4 and 5), Nexus 5 (Android 5), Samsung Note 2 (Android 4.4.2). The time after connection to end of service discovery is about 1.6s
-					 *  on Samsung Note 2.
-					 *
-					 *  NOTE: We are doing this to avoid the hack with calling the hidden gatt.refresh() method, at least for bonded devices.
-					 */
-					if (gatt.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
-						try {
-							synchronized (this) {
-								logd("Waiting 1600 ms for a possible Service Changed indication...");
-								mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG, "wait(1600)");
-								wait(1600);
-
-								// After 1.6s the services are already discovered so the following gatt.discoverServices() finishes almost immediately.
-
-								// NOTE: This also works with shorted waiting time. The gatt.discoverServices() must be called after the indication is received which is
-								// about 600ms after establishing connection. Values 600 - 1600ms should be OK.
-							}
-						} catch (final InterruptedException e) {
-							// Do nothing
-						}
-					}
-
-					// Attempts to discover services after successful connection.
-					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Discovering services...");
-					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG, "gatt.discoverServices()");
-					final boolean success = gatt.discoverServices();
-					logi("Attempting to start service discovery... " + (success ? "succeed" : "failed"));
-
-					if (!success) {
-						mError = DfuBaseService.ERROR_SERVICE_DISCOVERY_NOT_STARTED;
-					} else {
-						// Just return here, lock will be notified when service discovery finishes
-						return;
-					}
-				} else if (newState == BluetoothGatt.STATE_DISCONNECTED) {
-					logi("Disconnected from GATT server");
-					mPaused = false;
-					mConnectionState = STATE_DISCONNECTED;
-				}
-			} else {
-				loge("Connection state change error: " + status + " newState: " + newState);
-				if (newState == BluetoothGatt.STATE_DISCONNECTED)
-					mConnectionState = STATE_DISCONNECTED;
-				mPaused = false;
-				mError = DfuBaseService.ERROR_CONNECTION_STATE_MASK | status;
-			}
-			notifyLock();
-		}
-
-		@Override
-		public void onServicesDiscovered(final BluetoothGatt gatt, final int status) {
-			if (status == BluetoothGatt.GATT_SUCCESS) {
-				logi("Services discovered");
-				mConnectionState = STATE_CONNECTED_AND_READY;
-			} else {
-				loge("Service discovery error: " + status);
-				mError = DfuBaseService.ERROR_CONNECTION_MASK | status;
-			}
+		public void onDisconnected() {
+			mConnected = false;
 			notifyLock();
 		}
 
@@ -240,6 +145,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		public void onDescriptorRead(final BluetoothGatt gatt, final BluetoothGattDescriptor descriptor, final int status) {
 			if (status == BluetoothGatt.GATT_SUCCESS) {
 				if (CLIENT_CHARACTERISTIC_CONFIG.equals(descriptor.getUuid())) {
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Read Response received from descr." + descriptor.getCharacteristic().getUuid() + ", value (0x): " + parse(descriptor));
 					if (SERVICE_CHANGED_UUID.equals(descriptor.getCharacteristic().getUuid())) {
 						// We have enabled indications for the Service Changed characteristic
 						mRequestCompleted = true;
@@ -259,6 +165,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		public void onDescriptorWrite(final BluetoothGatt gatt, final BluetoothGattDescriptor descriptor, final int status) {
 			if (status == BluetoothGatt.GATT_SUCCESS) {
 				if (CLIENT_CHARACTERISTIC_CONFIG.equals(descriptor.getUuid())) {
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Data written to descr." + descriptor.getCharacteristic().getUuid() + ", value (0x): " + parse(descriptor));
 					if (SERVICE_CHANGED_UUID.equals(descriptor.getCharacteristic().getUuid())) {
 						// We have enabled indications for the Service Changed characteristic
 						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Indications enabled for " + descriptor.getCharacteristic().getUuid());
@@ -274,9 +181,16 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 			notifyLock();
 		}
 
-		// This method is repeated here and in the service class for performance matters.
+
 		protected String parse(final BluetoothGattCharacteristic characteristic) {
-			final byte[] data = characteristic.getValue();
+			return parse(characteristic.getValue());
+		}
+
+		protected String parse(final BluetoothGattDescriptor descriptor) {
+			return parse(descriptor.getValue());
+		}
+
+		private String parse(final byte[] data) {
 			if (data == null)
 				return "";
 			final int length = data.length;
@@ -295,8 +209,41 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		}
 	};
 
-	/* package */ BaseDfuImpl(final DfuBaseService service, final InputStream firmwareStream, final InputStream initPacketStream) {
+	/* package */ BaseDfuImpl(final DfuBaseService service) {
 		mService = service;
+		mConnected = true; // the device is connected when impl object it created
+
+		final IntentFilter bondFilter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
+		service.registerReceiver(mBondStateBroadcastReceiver, bondFilter);
+	}
+
+	/* package */ void onDestroy() {
+		mService.unregisterReceiver(mBondStateBroadcastReceiver);
+		mService = null;
+	}
+
+	@Override
+	public void pause() {
+		mPaused = true;
+	}
+
+	@Override
+	public void resume() {
+		mPaused = false;
+		notifyLock();
+	}
+
+	@Override
+	public void abort() {
+		mPaused = false;
+		mAborted = true;
+		notifyLock();
+	}
+
+	@Override
+	public boolean initialize(final Intent intent, final BluetoothGatt gatt, final int fileType, final InputStream firmwareStream, final InputStream initPacketStream) throws DfuException, DeviceDisconnectedException, UploadAbortedException {
+		mGatt = gatt;
+		mFileType = fileType;
 		mFirmwareStream = firmwareStream;
 		mInitPacketStream = initPacketStream;
 		int size;
@@ -306,34 +253,75 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 			size = 0;
 			// not possible
 		}
-		mProgressInfo = new DfuProgressInfo(size);
+		mImageSizeInBytes = size;
 
-		final IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECTED);
-		service.registerReceiver(mConnectionStateBroadcastReceiver, filter);
+		final int currentPart = intent.getIntExtra(DfuBaseService.EXTRA_PART_CURRENT, 1);
+		final int totalParts = intent.getIntExtra(DfuBaseService.EXTRA_PARTS_TOTAL, 1);
+		mProgressInfo = mService.mProgressInfo.init(size, currentPart, totalParts);
 
-		final IntentFilter bondFilter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
-		service.registerReceiver(mBondStateBroadcastReceiver, bondFilter);
-	}
+		// If we are bonded we may want to enable Service Changed characteristic indications.
+		// Note: This feature will be introduced in the SDK 8.0 as this is the proper way to refresh attribute list on the phone.
 
-	/* package */ void unregister() {
-		mService.unregisterReceiver(mConnectionStateBroadcastReceiver);
-		mService.unregisterReceiver(mBondStateBroadcastReceiver);
-		mService = null;
-	}
+		// This has been fixed on Android 6 (?). Now the Android enables Service Changed indications automatically during bonding.
+		if (gatt.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
+			final BluetoothGattService genericAttributeService = gatt.getService(GENERIC_ATTRIBUTE_SERVICE_UUID);
+			if (genericAttributeService != null) {
+				final BluetoothGattCharacteristic serviceChangedCharacteristic = genericAttributeService.getCharacteristic(SERVICE_CHANGED_UUID);
+				if (serviceChangedCharacteristic != null) {
+					// Let's read the current value of the Service Changed CCCD
+					final boolean serviceChangedIndicationsEnabled = isServiceChangedCCCDEnabled();
 
-	/* package */ void pause() {
-		mPaused = true;
-	}
+					if (!serviceChangedIndicationsEnabled) {
+						enableCCCD(serviceChangedCharacteristic, INDICATIONS);
+						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Service Changed indications enabled");
 
-	/* package */ void resume() {
-		mPaused = false;
-		notifyLock();
-	}
+						/*
+						 * NOTE: The DFU Bootloader from SDK 8.0 (v0.6 and 0.5) has the following issue:
+						 *
+						 * When the central device (phone) connects to a bonded device (or connects and bonds) which supports the Service Changed characteristic,
+						 * but does not have the Service Changed indications enabled, the phone must enable them, disconnect and reconnect before starting the
+						 * DFU operation. This is because the current version of the Soft Device saves the ATT table on the DISCONNECTED event.
+						 * Sending the "jump to Bootloader" command (0x01-04) will cause the disconnect followed be a reset. The Soft Device does not
+						 * have time to store the ATT table on Flash memory before the reset.
+						 *
+						 * This applies only if:
+						 * - the device was bonded before an upgrade,
+						 * - the Application or the Bootloader is upgraded (upgrade of the Soft Device will erase the bond information anyway),
+						 *     - Application:
+						  *        if the DFU Bootloader has been modified and compiled to preserve the LTK and the ATT table after application upgrade (at least 2 pages)
+						 *         See: \Nordic\nrf51\components\libraries\bootloader_dfu\dfu_types.h, line 56(?):
+						 *          #define DFU_APP_DATA_RESERVED           0x0000  ->  0x0800+   //< Size of Application Data that must be preserved between application updates...
+						 *     - Bootloader:
+						 *         The Application memory should not be removed when the Bootloader is upgraded, so the Bootloader configuration does not matter.
+						 *
+						 * If the bond information is not to be preserved between the old and new applications, we may skip this disconnect/reconnect process.
+						 * The DFU Bootloader will send the SD indication anyway when we will just continue here, as the information whether it should send it or not it is not being
+						 * read from the application's ATT table, but rather passed as an argument of the "reboot to bootloader" method.
+						 */
+						final boolean keepBond = intent.getBooleanExtra(DfuBaseService.EXTRA_KEEP_BOND, false);
+						if (keepBond && (fileType & DfuBaseService.TYPE_SOFT_DEVICE) == 0) {
+							mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Restarting service...");
 
-	/* package */ void abort() {
-		mPaused = false;
-		mAborted = true;
-		notifyLock();
+							// Disconnect
+							mService.disconnect(gatt);
+
+							// Close the device
+							mService.close(gatt);
+
+							logi("Restarting service");
+							mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Restarting service...");
+							final Intent newIntent = new Intent();
+							newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
+							mService.startService(newIntent);
+							return false;
+						}
+					} else {
+						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Service Changed indications enabled");
+					}
+				}
+			}
+		}
+		return true;
 	}
 
 	protected void notifyLock() {
@@ -357,153 +345,23 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	/**
 	 * Returns the final BluetoothGattCallback instance, depending on the implementation.
 	 */
-	protected abstract BluetoothGattCallback getGattCallback();
-
-	/**
-	 * Connects to the BLE device with given address. This method is SYNCHRONOUS, it wait until the connection status change from {@link #STATE_CONNECTING} to {@link #STATE_CONNECTED_AND_READY} or an
-	 * error occurs. This method returns <code>null</code> if Bluetooth adapter is disabled.
-	 *
-	 * @param address the device address
-	 * @return the GATT device or <code>null</code> if Bluetooth adapter is disabled.
-	 */
-	protected BluetoothGatt connect(final String address) {
-		if (!mBluetoothAdapter.isEnabled())
-			return null;
-
-		mConnectionState = STATE_CONNECTING;
-
-		logi("Connecting to the device...");
-		final BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
-		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG, "gatt = device.connectGatt(autoConnect = false)");
-		final BluetoothGatt gatt = device.connectGatt(mService, false, getGattCallback());
-
-		// We have to wait until the device is connected and services are discovered
-		// Connection error may occur as well.
-		try {
-			synchronized (mLock) {
-				while (((mConnectionState == STATE_CONNECTING || mConnectionState == STATE_CONNECTED) && mError == 0 && !mAborted) || mPaused)
-					mLock.wait();
-			}
-		} catch (final InterruptedException e) {
-			loge("Sleeping interrupted", e);
-		}
-		return gatt;
-	}
-
-	/**
-	 * Disconnects from the device and cleans local variables in case of error. This method is SYNCHRONOUS and wait until the disconnecting process will be completed.
-	 *
-	 * @param gatt  the GATT device to be disconnected
-	 * @param error error number
-	 */
-	protected void terminateConnection(final BluetoothGatt gatt, final int error) {
-		if (mConnectionState != STATE_DISCONNECTED) {
-			// Disconnect from the device
-			disconnect(gatt);
-		}
-
-		// Close the device
-		refreshDeviceCache(gatt, false); // This should be set to true when DFU Version is 0.5 or lower
-		close(gatt);
-		mService.updateProgressNotification(error);
-	}
-
-	/**
-	 * Disconnects from the device. This is SYNCHRONOUS method and waits until the callback returns new state. Terminates immediately if device is already disconnected. Do not call this method
-	 * directly, use {@link #terminateConnection(android.bluetooth.BluetoothGatt, int)} instead.
-	 *
-	 * @param gatt the GATT device that has to be disconnected
-	 */
-	protected void disconnect(final BluetoothGatt gatt) {
-		if (mConnectionState == STATE_DISCONNECTED)
-			return;
-
-		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Disconnecting...");
-		mService.updateProgressNotification(mProgressInfo.setProgress(DfuBaseService.PROGRESS_DISCONNECTING));
-
-		mConnectionState = STATE_DISCONNECTING;
-
-		logi("Disconnecting from the device...");
-		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG, "gatt.disconnect()");
-		gatt.disconnect();
-
-		// We have to wait until device gets disconnected or an error occur
-		waitUntilDisconnected();
-		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Disconnected");
-	}
-
-	/**
-	 * Wait until the connection state will change to {@link #STATE_DISCONNECTED} or until an error occurs.
-	 */
-	protected void waitUntilDisconnected() {
-		try {
-			synchronized (mLock) {
-				while (mConnectionState != STATE_DISCONNECTED && mError == 0)
-					mLock.wait();
-			}
-		} catch (final InterruptedException e) {
-			loge("Sleeping interrupted", e);
-		}
-	}
-
-	/**
-	 * Closes the GATT device and cleans up.
-	 *
-	 * @param gatt the GATT device to be closed
-	 */
-	protected void close(final BluetoothGatt gatt) {
-		logi("Cleaning up...");
-		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG, "gatt.close()");
-		gatt.close();
-		mConnectionState = STATE_CLOSED;
-	}
-
-	/**
-	 * Clears the device cache. After uploading new firmware the DFU target will have other services than before.
-	 *
-	 * @param gatt  the GATT device to be refreshed
-	 * @param force <code>true</code> to force the refresh
-	 */
-	protected void refreshDeviceCache(final BluetoothGatt gatt, final boolean force) {
-		/*
-		 * If the device is bonded this is up to the Service Changed characteristic to notify Android that the services has changed.
-		 * There is no need for this trick in that case.
-		 * If not bonded, the Android should not keep the services cached when the Service Changed characteristic is present in the target device database.
-		 * However, due to the Android bug (still exists in Android 5.0.1), it is keeping them anyway and the only way to clear services is by using this hidden refresh method.
-		 */
-		if (force || gatt.getDevice().getBondState() == BluetoothDevice.BOND_NONE) {
-			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG, "gatt.refresh() (hidden)");
-			/*
-			 * There is a refresh() method in BluetoothGatt class but for now it's hidden. We will call it using reflections.
-			 */
-			try {
-				final Method refresh = gatt.getClass().getMethod("refresh");
-				if (refresh != null) {
-					final boolean success = (Boolean) refresh.invoke(gatt);
-					logi("Refreshing result: " + success);
-				}
-			} catch (Exception e) {
-				loge("An exception occurred while refreshing device", e);
-				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, "Refreshing failed");
-			}
-		}
-	}
+	protected abstract BaseBluetoothGattCallback getGattCallback();
 
 	/**
 	 * Enables or disables the notifications for given characteristic. This method is SYNCHRONOUS and wait until the
-	 * {@link android.bluetooth.BluetoothGattCallback#onDescriptorWrite(android.bluetooth.BluetoothGatt, android.bluetooth.BluetoothGattDescriptor, int)} will be called or the connection state will change from {@link #STATE_CONNECTED_AND_READY}. If
-	 * connection state will change, or an error will occur, an exception will be thrown.
+	 * {@link android.bluetooth.BluetoothGattCallback#onDescriptorWrite(android.bluetooth.BluetoothGatt, android.bluetooth.BluetoothGattDescriptor, int)} will be called or the device gets disconnected.
+	 * If connection state will change, or an error will occur, an exception will be thrown.
 	 *
-	 * @param gatt           the GATT device
 	 * @param characteristic the characteristic to enable or disable notifications for
 	 * @param type           {@link #NOTIFICATIONS} or {@link #INDICATIONS}
 	 * @throws DfuException
 	 * @throws UploadAbortedException
 	 */
-	protected void enableCCCD(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final int type) throws DeviceDisconnectedException, DfuException, UploadAbortedException {
+	protected void enableCCCD(final BluetoothGattCharacteristic characteristic, final int type) throws DeviceDisconnectedException, DfuException, UploadAbortedException {
+		final BluetoothGatt gatt = mGatt;
 		final String debugString = type == NOTIFICATIONS ? "notifications" : "indications";
-		if (mConnectionState != STATE_CONNECTED_AND_READY)
-			throw new DeviceDisconnectedException("Unable to set " + debugString + " state", mConnectionState);
+		if (!mConnected)
+			throw new DeviceDisconnectedException("Unable to set " + debugString + " state: device disconnected");
 
 		mReceivedData = null;
 		mError = 0;
@@ -527,7 +385,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		// We have to wait until device receives a response or an error occur
 		try {
 			synchronized (mLock) {
-				while ((!cccdEnabled && mConnectionState == STATE_CONNECTED_AND_READY && mError == 0 && !mAborted) || mPaused) {
+				while ((!cccdEnabled && mConnected && mError == 0 && !mAborted) || mPaused) {
 					mLock.wait();
 					// Check the value of the CCCD
 					cccdEnabled = descriptor.getValue() != null && descriptor.getValue().length == 2 && descriptor.getValue()[0] > 0 && descriptor.getValue()[1] == 0;
@@ -540,23 +398,24 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 			throw new UploadAbortedException();
 		if (mError != 0)
 			throw new DfuException("Unable to set " + debugString + " state", mError);
-		if (mConnectionState != STATE_CONNECTED_AND_READY)
-			throw new DeviceDisconnectedException("Unable to set " + debugString + " state", mConnectionState);
+		if (!mConnected)
+			throw new DeviceDisconnectedException("Unable to set " + debugString + " state: device disconnected");
 	}
 
 	/**
 	 * Reads the value of the Service Changed Client Characteristic Configuration descriptor (CCCD).
 	 *
-	 * @param gatt           the GATT device
 	 * @return <code>true</code> if Service Changed CCCD is enabled and set to INDICATE
 	 * @throws DeviceDisconnectedException
 	 * @throws DfuException
 	 * @throws UploadAbortedException
 	 */
-	private boolean isServiceChangedCCCDEnabled(final BluetoothGatt gatt) throws DeviceDisconnectedException, DfuException, UploadAbortedException {
-		if (mConnectionState != STATE_CONNECTED_AND_READY)
-			throw new DeviceDisconnectedException("Unable to read Service Changed CCCD", mConnectionState);
+	private boolean isServiceChangedCCCDEnabled() throws DeviceDisconnectedException, DfuException, UploadAbortedException {
+		if (!mConnected)
+			throw new DeviceDisconnectedException("Unable to read Service Changed CCCD: device disconnected");
+
 		// If the Service Changed characteristic or the CCCD is not available we return false.
+		final BluetoothGatt gatt = mGatt;
 		final BluetoothGattService genericAttributeService = gatt.getService(GENERIC_ATTRIBUTE_SERVICE_UUID);
 		if (genericAttributeService == null)
 			return false;
@@ -574,13 +433,13 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 
 		logi("Reading Service Changed CCCD value...");
 		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Reading Service Changed CCCD value...");
-
+		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG, "gatt.readDescriptor(" + descriptor.getUuid() + ")");
 		gatt.readDescriptor(descriptor);
 
 		// We have to wait until device receives a response or an error occur
 		try {
 			synchronized (mLock) {
-				while ((!mRequestCompleted && mConnectionState == STATE_CONNECTED_AND_READY && mError == 0 && !mAborted) || mPaused)
+				while ((!mRequestCompleted && mConnected && mError == 0 && !mAborted) || mPaused)
 					mLock.wait();
 			}
 		} catch (final InterruptedException e) {
@@ -590,8 +449,8 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 			throw new UploadAbortedException();
 		if (mError != 0)
 			throw new DfuException("Unable to read Service Changed CCCD", mError);
-		if (mConnectionState != STATE_CONNECTED_AND_READY)
-			throw new DeviceDisconnectedException("Unable to read Service Changed CCCD", mConnectionState);
+		if (!mConnected)
+			throw new DeviceDisconnectedException("Unable to read Service Changed CCCD: device disconnected");
 
 		// Return true if the CCCD value is
 		return descriptor.getValue() != null && descriptor.getValue().length == 2
@@ -601,10 +460,9 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 
 	/**
 	 * Writes the operation code to the characteristic. This method is SYNCHRONOUS and wait until the
-	 * {@link android.bluetooth.BluetoothGattCallback#onCharacteristicWrite(android.bluetooth.BluetoothGatt, android.bluetooth.BluetoothGattCharacteristic, int)} will be called or the connection state will change from {@link #STATE_CONNECTED_AND_READY}.
-	 * If connection state will change, or an error will occur, an exception will be thrown.
+	 * {@link android.bluetooth.BluetoothGattCallback#onCharacteristicWrite(android.bluetooth.BluetoothGatt, android.bluetooth.BluetoothGattCharacteristic, int)} will be called or
+	 * the device gets disconnected. If connection state will change, or an error will occur, an exception will be thrown.
 	 *
-	 * @param gatt           the GATT device
 	 * @param characteristic the characteristic to write to. Should be the DFU CONTROL POINT
 	 * @param value          the value to write to the characteristic
 	 * @param reset          whether the command trigger restarting the device
@@ -612,7 +470,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	 * @throws DfuException
 	 * @throws UploadAbortedException
 	 */
-	protected void writeOpCode(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final byte[] value, final boolean reset) throws DeviceDisconnectedException, DfuException,
+	protected void writeOpCode(final BluetoothGattCharacteristic characteristic, final byte[] value, final boolean reset) throws DeviceDisconnectedException, DfuException,
 			UploadAbortedException {
 		mReceivedData = null;
 		mError = 0;
@@ -627,12 +485,12 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		characteristic.setValue(value);
 		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Writing to characteristic " + characteristic.getUuid());
 		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG, "gatt.writeCharacteristic(" + characteristic.getUuid() + ")");
-		gatt.writeCharacteristic(characteristic);
+		mGatt.writeCharacteristic(characteristic);
 
 		// We have to wait for confirmation
 		try {
 			synchronized (mLock) {
-				while ((!mRequestCompleted && mConnectionState == STATE_CONNECTED_AND_READY && mError == 0 && !mAborted) || mPaused)
+				while ((!mRequestCompleted && mConnected && mError == 0 && !mAborted) || mPaused)
 					mLock.wait();
 			}
 		} catch (final InterruptedException e) {
@@ -642,12 +500,13 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 			throw new UploadAbortedException();
 		if (!mResetRequestSent && mError != 0)
 			throw new DfuException("Unable to write Op Code " + value[0], mError);
-		if (!mResetRequestSent && mConnectionState != STATE_CONNECTED_AND_READY)
-			throw new DeviceDisconnectedException("Unable to write Op Code " + value[0], mConnectionState);
+		if (!mResetRequestSent && !mConnected)
+			throw new DeviceDisconnectedException("Unable to write Op Code " + value[0] + ": device disconnected");
 	}
 
 	@SuppressLint("NewApi")
-	protected boolean createBond(final BluetoothDevice device) {
+	protected boolean createBond() {
+		final BluetoothDevice device = mGatt.getDevice();
 		if (device.getBondState() == BluetoothDevice.BOND_BONDED)
 			return true;
 
@@ -693,10 +552,10 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	/**
 	 * Removes the bond information for the given device.
 	 *
-	 * @param device the device to unbound
 	 * @return <code>true</code> if operation succeeded, <code>false</code> otherwise
 	 */
-	protected boolean removeBond(final BluetoothDevice device) {
+	protected boolean removeBond() {
+		final BluetoothDevice device = mGatt.getDevice();
 		if (device.getBondState() == BluetoothDevice.BOND_NONE)
 			return true;
 
@@ -730,8 +589,8 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	}
 
 	/**
-	 * Waits until the notification will arrive. Returns the data returned by the notification. This method will block the thread if response is not ready or connection state will change from
-	 * {@link #STATE_CONNECTED_AND_READY}. If connection state will change, or an error will occur, an exception will be thrown.
+	 * Waits until the notification will arrive. Returns the data returned by the notification. This method will block the thread until response is not ready or
+	 * the device gets disconnected. If connection state will change, or an error will occur, an exception will be thrown.
 	 *
 	 * @return the value returned by the Control Point notification
 	 * @throws DeviceDisconnectedException
@@ -743,7 +602,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		mError = 0;
 		try {
 			synchronized (mLock) {
-				while ((mReceivedData == null && mConnectionState == STATE_CONNECTED_AND_READY && mError == 0 && !mAborted) || mPaused)
+				while ((mReceivedData == null && mConnected && mError == 0 && !mAborted) || mPaused)
 					mLock.wait();
 			}
 		} catch (final InterruptedException e) {
@@ -753,8 +612,8 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 			throw new UploadAbortedException();
 		if (mError != 0)
 			throw new DfuException("Unable to write Op Code", mError);
-		if (mConnectionState != STATE_CONNECTED_AND_READY)
-			throw new DeviceDisconnectedException("Unable to write Op Code", mConnectionState);
+		if (!mConnected)
+			throw new DeviceDisconnectedException("Unable to write Op Code: device disconnected");
 		return mReceivedData;
 	}
 
@@ -786,17 +645,17 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	}
 
 	protected void logw(final String message) {
-//		if (BuildConfig.DEBUG)
+//		if (BuildConfig.DEBUG) // TODO
 			Log.w(TAG, message);
 	}
 
 	protected void logi(final String message) {
-//		if (BuildConfig.DEBUG)
+//		if (BuildConfig.DEBUG) // TODO
 			Log.i(TAG, message);
 	}
 
 	protected void logd(final String message) {
-//		if (BuildConfig.DEBUG)
+//		if (BuildConfig.DEBUG) // TODO
 			Log.d(TAG, message);
 	}
 }
