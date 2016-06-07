@@ -27,18 +27,20 @@ public class UnknownResponseException extends Exception {
 	private static final char[] HEX_ARRAY = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 
 	private final byte[] mResponse;
+	private final int mExpectedReturnCode;
 	private final int mExpectedOpCode;
 
-	public UnknownResponseException(final String message, final byte[] response, final int expectedOpCode) {
+	public UnknownResponseException(final String message, final byte[] response, final int expectedReturnCode, final int expectedOpCode) {
 		super(message);
 
 		mResponse = response != null ? response : new byte[0];
+		mExpectedReturnCode = expectedReturnCode;
 		mExpectedOpCode = expectedOpCode;
 	}
 
 	@Override
 	public String getMessage() {
-		return String.format("%s (response: %s, expected: 0x10%02X..)", super.getMessage(), bytesToHex(mResponse, 0, mResponse.length), mExpectedOpCode);
+		return String.format("%s (response: %s, expected: 0x%02X%02X..)", super.getMessage(), bytesToHex(mResponse, 0, mResponse.length), mExpectedReturnCode, mExpectedOpCode);
 	}
 
 	public static String bytesToHex(final byte[] bytes, final int start, final int length) {

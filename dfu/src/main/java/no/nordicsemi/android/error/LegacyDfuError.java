@@ -22,6 +22,8 @@
 
 package no.nordicsemi.android.error;
 
+import no.nordicsemi.android.dfu.DfuBaseService;
+
 public final class LegacyDfuError {
 	// DFU status values
 	public static final int INVALID_STATE = 2;
@@ -29,4 +31,21 @@ public final class LegacyDfuError {
 	public static final int DATA_SIZE_EXCEEDS_LIMIT = 4;
 	public static final int CRC_ERROR = 5;
 	public static final int OPERATION_FAILED = 6;
+
+	public static String parse(final int error) {
+		switch (error & (~DfuBaseService.ERROR_REMOTE_MASK)) {
+			case INVALID_STATE:
+				return "REMOTE DFU INVALID STATE";
+			case NOT_SUPPORTED:
+				return "REMOTE DFU NOT SUPPORTED";
+			case DATA_SIZE_EXCEEDS_LIMIT:
+				return "REMOTE DFU DATA SIZE EXCEEDS LIMIT";
+			case CRC_ERROR:
+				return "REMOTE DFU INVALID CRC ERROR";
+			case OPERATION_FAILED:
+				return "REMOTE DFU OPERATION FAILED";
+			default:
+				return "UNKNOWN (" + error + ")";
+		}
+	}
 }

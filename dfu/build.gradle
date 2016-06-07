@@ -41,11 +41,11 @@ ext {
 
 android {
     compileSdkVersion 23
-    buildToolsVersion '23.0.3'
+        buildToolsVersion '23.0.3'
 
-    defaultConfig {
-        minSdkVersion 18
-        targetSdkVersion 23
+        defaultConfig {
+            minSdkVersion 18
+            targetSdkVersion 23
         versionCode 3
         versionName "0.6.2"
     }
@@ -54,8 +54,6 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
-    }
-    productFlavors {
     }
 }
 

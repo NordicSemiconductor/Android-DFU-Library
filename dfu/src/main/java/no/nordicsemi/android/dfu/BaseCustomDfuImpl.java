@@ -22,8 +22,10 @@
 
 package no.nordicsemi.android.dfu;
 
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
@@ -34,6 +36,7 @@ import no.nordicsemi.android.dfu.internal.exception.DeviceDisconnectedException;
 import no.nordicsemi.android.dfu.internal.exception.DfuException;
 import no.nordicsemi.android.dfu.internal.exception.HexFileValidationException;
 import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
+import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 
 /* package */ abstract class BaseCustomDfuImpl extends BaseDfuImpl {
 	/**
@@ -101,23 +104,22 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 						mProgressInfo.addBytesSent(characteristic.getValue().length);
 						mPacketsSentSinceNotification++;
 
-						// If a packet receipt notification is expected, or the last packet was sent, do nothing. There onCharacteristicChanged listener will catch either
-						// a packet confirmation (if there are more bytes to send) or the image received notification (it upload process was completed)
 						final boolean notificationExpected = mPacketsBeforeNotification > 0 && mPacketsSentSinceNotification == mPacketsBeforeNotification;
 						final boolean lastPacketTransferred = mProgressInfo.isComplete();
 						final boolean lastObjectPacketTransferred = mProgressInfo.isObjectComplete();
 
-						// This flag may be true only in Secure DFU.
-						// In Secure DFU we usually do not get any notification after the object is completed, therefor the lock must be notified here.
-						if (lastObjectPacketTransferred) {
+						// When a Packet Receipt Notification notification is expected
+						// we must not call notifyLock() as the process will resume after notification is received.
+						if (notificationExpected)
+							return;
+
+						// In Secure DFU we (usually, depends on the page size and PRN value) do not get any notification after the object is completed,
+						// therefor the lock must be notified here to resume the main process.
+						if (lastPacketTransferred || lastObjectPacketTransferred) {
 							mFirmwareUploadInProgress = false;
 							notifyLock();
 							return;
 						}
-						// When a notification is expected (either a Packet Receipt Notification or one that's send after the whole image is completed)
-						// we must not call notifyLock as the process will resume after notification is received.
-						if (notificationExpected || lastPacketTransferred)
-							return;
 
 						// When neither of them is true, send the next packet
 						try {
@@ -125,15 +127,15 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 							// The writing might have been aborted (mAborted = true), an error might have occurred.
 							// In that case stop sending.
 							if (mAborted || mError != 0 || mRemoteErrorOccurred || mResetRequestSent) {
-								// notify waiting thread
-								synchronized (mLock) {
-									mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, "Upload terminated");
-									mLock.notifyAll();
-									return;
-								}
+								mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, "Upload terminated");
+								notifyLock();
+								return;
 							}
 
-							final byte[] buffer = mBuffer;
+							final int available = mProgressInfo.getAvailableObjectSizeIsBytes();
+							byte[] buffer = mBuffer;
+							if (available < 20)
+								buffer = new byte[available];
 							final int size = mFirmwareStream.read(buffer);
 							writePacket(gatt, characteristic, buffer, size);
 							return;
@@ -170,8 +172,10 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		protected void handlePacketReceiptNotification(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) {
 			// Secure DFU:
 			// When PRN is set to be received after the object is complete we don't want to send anything. First the object needs to be executed.
-			if (!mFirmwareUploadInProgress)
+			if (!mFirmwareUploadInProgress) {
+				handleNotification(gatt, characteristic);
 				return;
+			}
 
 			final BluetoothGattCharacteristic packetCharacteristic = gatt.getService(getDfuServiceUUID()).getCharacteristic(getPacketCharacteristicUUID());
 			try {
@@ -185,7 +189,19 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 					return;
 				}
 
-				final byte[] buffer = mBuffer;
+				final boolean lastPacketTransferred = mProgressInfo.isComplete();
+				final boolean lastObjectPacketTransferred = mProgressInfo.isObjectComplete();
+
+				if (lastPacketTransferred || lastObjectPacketTransferred) {
+					mFirmwareUploadInProgress = false;
+					notifyLock();
+					return;
+				}
+
+				final int available = mProgressInfo.getAvailableObjectSizeIsBytes();
+				byte[] buffer = mBuffer;
+				if (available < 20)
+					buffer = new byte[available];
 				final int size = mFirmwareStream.read(buffer);
 				writePacket(gatt, packetCharacteristic, buffer, size);
 			} catch (final HexFileValidationException e) {
@@ -231,6 +247,26 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	protected abstract UUID getDfuServiceUUID();
 
 	/**
+	 * Wends the whole init packet stream to the given characteristic.
+	 * @param characteristic the target characteristic
+	 * @throws DfuException
+	 * @throws DeviceDisconnectedException
+	 * @throws UploadAbortedException
+	 */
+	protected void writeInitData(final BluetoothGattCharacteristic characteristic) throws DfuException, DeviceDisconnectedException, UploadAbortedException {
+		try {
+			byte[] data = new byte[20];
+			int size;
+			while ((size = mInitPacketStream.read(data, 0, data.length)) != -1) {
+				writeInitPacket(characteristic, data, size);
+			}
+		} catch (final IOException e) {
+			loge("Error while reading Init packet file", e);
+			throw new DfuException("Error while reading Init packet file", DfuBaseService.ERROR_FILE_ERROR);
+		}
+	}
+
+	/**
 	 * Writes the Init packet to the characteristic. This method is SYNCHRONOUS and wait until the {@link android.bluetooth.BluetoothGattCallback#onCharacteristicWrite(android.bluetooth.BluetoothGatt, android.bluetooth.BluetoothGattCharacteristic, int)}
 	 * will be called or the device gets disconnected. If connection state will change, or an error will occur, an exception will be thrown.
 	 *
@@ -241,7 +277,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	 * @throws DfuException
 	 * @throws UploadAbortedException
 	 */
-	protected void writeInitPacket(final BluetoothGattCharacteristic characteristic, final byte[] buffer, final int size) throws DeviceDisconnectedException, DfuException,
+	private void writeInitPacket(final BluetoothGattCharacteristic characteristic, final byte[] buffer, final int size) throws DeviceDisconnectedException, DfuException,
 			UploadAbortedException {
 		byte[] locBuffer = buffer;
 		if (buffer.length != size) {
@@ -329,7 +365,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	 * @param buffer         the buffer with 1-20 bytes
 	 * @param size           the number of bytes from the buffer to send
 	 */
-	protected void writePacket(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final byte[] buffer, final int size) {
+	private void writePacket(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final byte[] buffer, final int size) {
 		byte[] locBuffer = buffer;
 		if (size <= 0) // This should never happen
 			return;
@@ -339,6 +375,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		}
 		characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
 		characteristic.setValue(locBuffer);
+		logi("Writing packet: " + parse(locBuffer)); // TODO remove
 		gatt.writeCharacteristic(characteristic);
 		// FIXME BLE buffer overflow
 		// after writing to the device with WRITE_NO_RESPONSE property the onCharacteristicWrite callback is received immediately after writing data to a buffer.
@@ -346,5 +383,96 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		//
 		// More info: this works fine on Nexus 5 (Android 4.4) (4.3 seconds) and on Samsung S4 (Android 4.3) (20 seconds) so this is a driver issue.
 		// Nexus 4 and 7 uses Qualcomm chip, Nexus 5 and Samsung uses Broadcom chips.
+	}
+
+	/**
+	 * Closes the BLE connection to the device and removes/restores bonding, if a proper flags were set in the {@link DfuServiceInitiator}.
+	 * This method will also change the DFU state to completed or restart the service to send the second part.
+	 * @param intent the intent used to start the DFU service. It contains all user flags in the bundle.
+	 * @param forceRefresh true, if cache should be cleared even for a bonded device. Usually the Service Changed indication should be used for this purpose.
+	 */
+	protected void finalize(final Intent intent, final boolean forceRefresh) {
+		/*
+		 * We are done with DFU. Now the service may refresh device cache and clear stored services.
+		 * For bonded device this is required only if if doesn't support Service Changed indication.
+		 * Android shouldn't cache services of non-bonded devices having Service Changed characteristic in their database, but it does, so...
+		 */
+		final boolean keepBond = intent.getBooleanExtra(DfuBaseService.EXTRA_KEEP_BOND, false);
+		mService.refreshDeviceCache(mGatt, forceRefresh || !keepBond);
+
+		// Close the device
+		mService.close(mGatt);
+
+		/*
+		 * During the update the bonding information on the target device may have been removed.
+		 * To create bond with the new application set the EXTRA_RESTORE_BOND extra to true.
+		 * In case the bond information is copied to the new application the new bonding is not required.
+		 */
+		boolean alreadyWaited = false;
+		if (mGatt.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
+			final boolean restoreBond = intent.getBooleanExtra(DfuBaseService.EXTRA_RESTORE_BOND, false);
+			if (restoreBond || !keepBond || (mFileType & DfuBaseService.TYPE_SOFT_DEVICE) > 0) {
+				// The bond information was lost.
+				removeBond();
+
+				// Give some time for removing the bond information. 300ms was to short, let's set it to 2 seconds just to be sure.
+				mService.waitFor(2000);
+				alreadyWaited = true;
+			}
+
+			if (restoreBond && (mFileType & DfuBaseService.TYPE_APPLICATION) > 0) {
+				// Restore pairing when application was updated.
+				createBond();
+				alreadyWaited = false;
+			}
+		}
+
+		/*
+		 * We need to send PROGRESS_COMPLETED message only when all files has been transmitted.
+		 * In case you want to send the Soft Device and/or Bootloader and the Application, the service will be started twice: one to send SD+BL, and the
+		 * second time to send the Application only (using the new Bootloader). In the first case we do not send PROGRESS_COMPLETED notification.
+		 */
+		if (mProgressInfo.isLastPart()) {
+			// Delay this event a little bit. Android needs some time to prepare for reconnection.
+			if (!alreadyWaited)
+				mService.waitFor(1400);
+			mProgressInfo.setProgress(DfuBaseService.PROGRESS_COMPLETED);
+		} else {
+			/*
+			 * In case when the Soft Device has been upgraded, and the application should be send in the following connection, we have to
+			 * make sure that we know the address the device is advertising with. Depending on the method used to start the DFU bootloader the first time
+			 * the new Bootloader may advertise with the same address or one incremented by 1.
+			 * When the buttonless update was used, the bootloader will use the same address as the application. The cached list of services on the Android device
+			 * should be cleared thanks to the Service Changed characteristic (the fact that it exists if not bonded, or the Service Changed indication on bonded one).
+			 * In case of forced DFU mode (using a button), the Bootloader does not know whether there was the Service Changed characteristic present in the list of
+			 * application's services so it must advertise with a different address. The same situation applies when the new Soft Device was uploaded and the old
+			 * application has been removed in this process.
+			 *
+			 * We could have save the fact of jumping as a parameter of the service but it ma be that some Android devices must first scan a device before connecting to it.
+			 * It a device with the address+1 has never been detected before the service could have failed on connection.
+			 */
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Scanning for the DFU Bootloader...");
+			final String newAddress = BootloaderScannerFactory.getScanner().searchFor(mGatt.getDevice().getAddress());
+			if (newAddress != null)
+				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "DFU Bootloader found with address " + newAddress);
+			else {
+				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "DFU Bootloader not found. Trying the same address...");
+			}
+
+			/*
+			 * The current service instance has uploaded the Soft Device and/or Bootloader.
+			 * We need to start another instance that will try to send application only.
+			 */
+			logi("Starting service that will upload application");
+			final Intent newIntent = new Intent();
+			newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
+			newIntent.putExtra(DfuBaseService.EXTRA_FILE_MIME_TYPE, DfuBaseService.MIME_TYPE_ZIP); // ensure this is set (e.g. for scripts)
+			newIntent.putExtra(DfuBaseService.EXTRA_FILE_TYPE, DfuBaseService.TYPE_APPLICATION); // set the type to application only
+			if (newAddress != null)
+				newIntent.putExtra(DfuBaseService.EXTRA_DEVICE_ADDRESS, newAddress);
+			newIntent.putExtra(DfuBaseService.EXTRA_PART_CURRENT, mProgressInfo.getCurrentPart() + 1);
+			newIntent.putExtra(DfuBaseService.EXTRA_PARTS_TOTAL, mProgressInfo.getTotalParts());
+			mService.startService(newIntent);
+		}
 	}
 }

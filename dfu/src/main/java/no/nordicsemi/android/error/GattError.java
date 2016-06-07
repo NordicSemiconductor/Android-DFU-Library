@@ -169,21 +169,11 @@ public class GattError {
 			case DfuBaseService.ERROR_INIT_PACKET_REQUIRED:
 				return "INIT PACKET REQUIRED";
 			default:
+				// Deprecated: use Legacy or SecureDfuError parser
 				if ((DfuBaseService.ERROR_REMOTE_MASK & error) > 0) {
-					switch (error & (~DfuBaseService.ERROR_REMOTE_MASK)) {
-						case LegacyDfuError.INVALID_STATE:
-							return "REMOTE DFU INVALID STATE";
-						case LegacyDfuError.NOT_SUPPORTED:
-							return "REMOTE DFU NOT SUPPORTED";
-						case LegacyDfuError.DATA_SIZE_EXCEEDS_LIMIT:
-							return "REMOTE DFU DATA SIZE EXCEEDS LIMIT";
-						case LegacyDfuError.CRC_ERROR:
-							return "REMOTE DFU INVALID CRC ERROR";
-						case LegacyDfuError.OPERATION_FAILED:
-							return "REMOTE DFU OPERATION FAILED";
-					}
+					return LegacyDfuError.parse(error);
 				}
-				return "UNKNOWN (" + error + ")";
 		}
+		return "UNKNOWN (" + error + ")";
 	}
 }

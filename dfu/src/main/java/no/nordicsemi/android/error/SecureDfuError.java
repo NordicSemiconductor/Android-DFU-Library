@@ -20,22 +20,41 @@
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ************************************************************************************************************************************************/
 
-package no.nordicsemi.android.dfu;
+package no.nordicsemi.android.error;
 
-import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothGattService;
+import no.nordicsemi.android.dfu.DfuBaseService;
 
-/* package */ class DfuServiceProvider {
+public final class SecureDfuError {
+	// DFU status values
+	public static final int INVALID_CODE = 0;
+	public static final int OP_CODE_NOT_SUPPORTED = 2;
+	public static final int INVALID_PARAM = 3;
+	public static final int INSUFFICIENT_RESOURCES = 4;
+	public static final int INVALID_OBJECT = 5;
+	public static final int SIGNATURE_DOES_NOT_MATCH = 6;
+	public static final int UNSUPPORTED_TYPE = 7;
+	public static final int OPERATION_FAILED = 10; // 0xA
 
-	/* package */ static BaseDfuImpl getDfuImpl(final DfuBaseService service, final BluetoothGatt gatt) {
-		final BluetoothGattService secureService = gatt.getService(SecureDfuImpl.DFU_SERVICE_UUID);
-		if (secureService != null) {
-			return new SecureDfuImpl(service);
+	public static String parse(final int error) {
+		switch (error & (~DfuBaseService.ERROR_REMOTE_MASK)) {
+			case INVALID_CODE:
+				return "REMOTE DFU INVALID CODE";
+			case OP_CODE_NOT_SUPPORTED:
+				return "REMOTE DFU OP CODE NOT SUPPORTED";
+			case INVALID_PARAM:
+				return "REMOTE DFU INVALID PARAM";
+			case INSUFFICIENT_RESOURCES:
+				return "REMOTE DFU INSUFFICIENT RESOURCES";
+			case INVALID_OBJECT:
+				return "REMOTE DFU INVALID OBJECT";
+			case SIGNATURE_DOES_NOT_MATCH:
+				return "REMOTE DFU SIGNATURE DOES NOT MATCH";
+			case UNSUPPORTED_TYPE:
+				return "REMOTE DFU UNSUPPORTED TYPE";
+			case OPERATION_FAILED:
+				return "REMOTE DFU OPERATION FAILED";
+			default:
+				return "UNKNOWN (" + error + ")";
 		}
-		final BluetoothGattService legacyService = gatt.getService(LegacyDfuImpl.DFU_SERVICE_UUID);
-		if (legacyService != null) {
-			return new LegacyDfuImpl(service);
-		}
-		return null;
 	}
 }

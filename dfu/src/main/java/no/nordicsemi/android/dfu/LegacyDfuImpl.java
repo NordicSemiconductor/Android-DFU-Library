@@ -46,7 +46,13 @@ import no.nordicsemi.android.error.GattError;
 import no.nordicsemi.android.error.LegacyDfuError;
 
 /* package */ class LegacyDfuImpl extends BaseCustomDfuImpl {
-	public static final int DFU_STATUS_SUCCESS = 1;
+	// UUIDs used by the DFU
+	protected static final UUID DFU_SERVICE_UUID = new UUID(0x000015301212EFDEL, 0x1523785FEABCD123L);
+	protected static final UUID DFU_CONTROL_POINT_UUID = new UUID(0x000015311212EFDEL, 0x1523785FEABCD123L);
+	protected static final UUID DFU_PACKET_UUID = new UUID(0x000015321212EFDEL, 0x1523785FEABCD123L);
+	protected static final UUID DFU_VERSION = new UUID(0x000015341212EFDEL, 0x1523785FEABCD123L);
+
+	private static final int DFU_STATUS_SUCCESS = 1;
 	// Operation codes and packets
 	private static final int OP_CODE_START_DFU_KEY = 0x01; // 1
 	private static final int OP_CODE_INIT_DFU_PARAMS_KEY = 0x02; // 2
@@ -68,12 +74,6 @@ import no.nordicsemi.android.error.LegacyDfuError;
 	//private static final byte[] OP_CODE_REPORT_RECEIVED_IMAGE_SIZE = new byte[] { OP_CODE_PACKET_REPORT_RECEIVED_IMAGE_SIZE_KEY };
 	private static final byte[] OP_CODE_PACKET_RECEIPT_NOTIF_REQ = new byte[]{OP_CODE_PACKET_RECEIPT_NOTIF_REQ_KEY, 0x00, 0x00};
 
-	// UUIDs used by the DFU
-	protected static final UUID DFU_SERVICE_UUID = new UUID(0x000015301212EFDEL, 0x1523785FEABCD123L);
-	protected static final UUID DFU_CONTROL_POINT_UUID = new UUID(0x000015311212EFDEL, 0x1523785FEABCD123L);
-	protected static final UUID DFU_PACKET_UUID = new UUID(0x000015321212EFDEL, 0x1523785FEABCD123L);
-	protected static final UUID DFU_VERSION = new UUID(0x000015341212EFDEL, 0x1523785FEABCD123L);
-
 	private BluetoothGattCharacteristic mControlPointCharacteristic;
 	private BluetoothGattCharacteristic mPacketCharacteristic;
 
@@ -81,6 +81,8 @@ import no.nordicsemi.android.error.LegacyDfuError;
 	 * Flag indicating whether the image size has been already transferred or not.
 	 */
 	private boolean mImageSizeInProgress;
+
+	private final LegacyBluetoothCallback mBluetoothCallback = new LegacyBluetoothCallback();
 
 	protected class LegacyBluetoothCallback extends BaseCustomBluetoothCallback {
 		@Override
@@ -141,7 +143,7 @@ import no.nordicsemi.android.error.LegacyDfuError;
 
 	@Override
 	protected BaseCustomBluetoothCallback getGattCallback() {
-		return new LegacyBluetoothCallback();
+		return mBluetoothCallback;
 	}
 
 	@Override
@@ -518,16 +520,9 @@ import no.nordicsemi.android.error.LegacyDfuError;
 				logi("Sending the Initialize DFU Parameters START (Op Code = 2, Value = 0)");
 				writeOpCode(mControlPointCharacteristic, OP_CODE_INIT_DFU_PARAMS_START);
 
-				try {
-					byte[] data = new byte[20];
-					int size;
-					while ((size = mInitPacketStream.read(data, 0, data.length)) != -1) {
-						writeInitPacket(mPacketCharacteristic, data, size);
-					}
-				} catch (final IOException e) {
-					loge("Error while reading Init packet file");
-					throw new DfuException("Error while reading Init packet file", DfuBaseService.ERROR_FILE_ERROR);
-				}
+				logi("Sending " + mImageSizeInBytes + " bytes of init packet");
+				writeInitData(mPacketCharacteristic);
+
 				logi("Sending the Initialize DFU Parameters COMPLETE (Op Code = 2, Value = 1)");
 				writeOpCode(mControlPointCharacteristic, OP_CODE_INIT_DFU_PARAMS_COMPLETE);
 				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Initialize DFU Parameters completed");
@@ -601,86 +596,13 @@ import no.nordicsemi.android.error.LegacyDfuError;
 			mService.waitUntilDisconnected();
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Disconnected by the remote device");
 
+			// We are ready with DFU, the device is disconnected, let's close it and finalize the operation.
+
 			// In the DFU version 0.5, in case the device is bonded, the target device does not send the Service Changed indication after
 			// a jump from bootloader mode to app mode. This issue has been fixed in DFU version 0.6 (SDK 8.0). If the DFU bootloader has been
 			// configured to preserve the bond information we do not need to enforce refreshing services, as it will notify the phone using the
 			// Service Changed indication.
-			final boolean keepBond = intent.getBooleanExtra(DfuBaseService.EXTRA_KEEP_BOND, false);
-			mService.refreshDeviceCache(gatt, version == 5 || !keepBond);
-
-			// Close the device
-			mService.close(gatt);
-
-			// During the update the bonding information on the target device may have been removed.
-			// To create bond with the new application set the EXTRA_RESTORE_BOND extra to true.
-			// In case the bond information is copied to the new application the new bonding is not required.
-			boolean alreadyWaited = false;
-			if (gatt.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
-				final boolean restoreBond = intent.getBooleanExtra(DfuBaseService.EXTRA_RESTORE_BOND, false);
-
-				if (restoreBond || !keepBond || (fileType & DfuBaseService.TYPE_SOFT_DEVICE) > 0) {
-					// The bond information was lost.
-					removeBond();
-
-					// Give some time for removing the bond information. 300ms was to short, let's set it to 2 seconds just to be sure.
-					mService.waitFor(2000);
-					alreadyWaited = true;
-				}
-
-				if (restoreBond && (fileType & DfuBaseService.TYPE_APPLICATION) > 0) {
-					// Restore pairing when application was updated.
-					createBond();
-					alreadyWaited = false;
-				}
-			}
-
-			/*
-			 * We need to send PROGRESS_COMPLETED message only when all files has been transmitted.
-			 * In case you want to send the Soft Device and/or Bootloader and the Application, the service will be started twice: one to send SD+BL, and the
-			 * second time to send the Application only (using the new Bootloader). In the first case we do not send PROGRESS_COMPLETED notification.
-			 */
-			if (mProgressInfo.isLastPart()) {
-				// Delay this event a little bit. Android needs some time to prepare for reconnection.
-				if (!alreadyWaited)
-					mService.waitFor(1400);
-				mProgressInfo.setProgress(DfuBaseService.PROGRESS_COMPLETED);
-			} else {
-				/*
-				 * In case when the Soft Device has been upgraded, and the application should be send in the following connection, we have to
-				 * make sure that we know the address the device is advertising with. Depending on the method used to start the DFU bootloader the first time
-				 * the new Bootloader may advertise with the same address or one incremented by 1.
-				 * When the buttonless update was used, the bootloader will use the same address as the application. The cached list of services on the Android device
-				 * should be cleared thanks to the Service Changed characteristic (the fact that it exists if not bonded, or the Service Changed indication on bonded one).
-				 * In case of forced DFU mode (using a button), the Bootloader does not know whether there was the Service Changed characteristic present in the list of
-				 * application's services so it must advertise with a different address. The same situation applies when the new Soft Device was uploaded and the old
-				 * application has been removed in this process.
-				 *
-				 * We could have save the fact of jumping as a parameter of the service but it ma be that some Android devices must first scan a device before connecting to it.
-				 * It a device with the address+1 has never been detected before the service could have failed on connection.
-				 */
-				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Scanning for the DFU Bootloader...");
-				final String newAddress = BootloaderScannerFactory.getScanner().searchFor(gatt.getDevice().getAddress());
-				if (newAddress != null)
-					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "DFU Bootloader found with address " + newAddress);
-				else {
-					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "DFU Bootloader not found. Trying the same address...");
-				}
-
-				/*
-				 * The current service instance has uploaded the Soft Device and/or Bootloader.
-				 * We need to start another instance that will try to send application only.
-				 */
-				logi("Starting service that will upload application");
-				final Intent newIntent = new Intent();
-				newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
-				newIntent.putExtra(DfuBaseService.EXTRA_FILE_MIME_TYPE, DfuBaseService.MIME_TYPE_ZIP); // ensure this is set (e.g. for scripts)
-				newIntent.putExtra(DfuBaseService.EXTRA_FILE_TYPE, DfuBaseService.TYPE_APPLICATION); // set the type to application only
-				if (newAddress != null)
-					newIntent.putExtra(DfuBaseService.EXTRA_DEVICE_ADDRESS, newAddress);
-				newIntent.putExtra(DfuBaseService.EXTRA_PART_CURRENT, mProgressInfo.getCurrentPart() + 1);
-				newIntent.putExtra(DfuBaseService.EXTRA_PARTS_TOTAL, mProgressInfo.getTotalParts());
-				mService.startService(newIntent);
-			}
+			finalize(intent, version == 5);
 		} catch (final UnknownResponseException e) {
 			final int error = DfuBaseService.ERROR_INVALID_RESPONSE;
 			loge(e.getMessage());
@@ -693,7 +615,7 @@ import no.nordicsemi.android.error.LegacyDfuError;
 		} catch (final RemoteDfuException e) {
 			final int error = DfuBaseService.ERROR_REMOTE_MASK | e.getErrorNumber();
 			loge(e.getMessage());
-			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, String.format("Remote DFU error: %s", GattError.parse(error)));
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, String.format("Remote DFU error: %s", LegacyDfuError.parse(error)));
 
 			logi("Sending Reset command (Op Code = 6)");
 			writeOpCode(mControlPointCharacteristic, OP_CODE_RESET);
@@ -723,7 +645,7 @@ import no.nordicsemi.android.error.LegacyDfuError;
 	 */
 	private int getStatusCode(final byte[] response, final int request) throws UnknownResponseException {
 		if (response == null || response.length != 3 || response[0] != OP_CODE_RESPONSE_CODE_KEY || response[1] != request || response[2] < 1 || response[2] > 6)
-			throw new UnknownResponseException("Invalid response received", response, request);
+			throw new UnknownResponseException("Invalid response received", response, OP_CODE_RESPONSE_CODE_KEY, request);
 		return response[2];
 	}
 

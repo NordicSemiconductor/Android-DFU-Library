@@ -93,7 +93,9 @@ import android.support.annotation.NonNull;
 	}
 
 	public int getAvailableObjectSizeIsBytes() {
-		return maxObjectSizeInBytes - (bytesSent % maxObjectSizeInBytes);
+		final int remainingBytes = imageSizeInBytes - bytesSent;
+		final int remainingChunk = maxObjectSizeInBytes - (bytesSent % maxObjectSizeInBytes);
+		return Math.min(remainingBytes, remainingChunk);
 	}
 
 	public int getProgress() {

@@ -23,7 +23,6 @@
 package no.nordicsemi.android.dfu;
 
 import android.annotation.SuppressLint;
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
@@ -97,6 +96,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	protected DfuBaseService mService;
 	protected DfuProgressInfo mProgressInfo;
 	protected int mImageSizeInBytes;
+	protected int mInitPacketSizeInBytes;
 
 	private final BroadcastReceiver mBondStateBroadcastReceiver = new BroadcastReceiver() {
 		@Override
@@ -247,6 +247,13 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		mFirmwareStream = firmwareStream;
 		mInitPacketStream = initPacketStream;
 		int size;
+		try {
+			size = initPacketStream.available();
+		} catch (final IOException e) {
+			size = 0;
+			// not possible
+		}
+		mInitPacketSizeInBytes = size;
 		try {
 			size = firmwareStream.available();
 		} catch (final IOException e) {
