@@ -511,6 +511,11 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 			throw new DeviceDisconnectedException("Unable to write Op Code " + value[0] + ": device disconnected");
 	}
 
+	/**
+	 * Creates bond to the device. Works on all APIs since 18th (Android 4.3).
+	 *
+	 * @return true if it's already bonded or the bonding has started
+	 */
 	@SuppressLint("NewApi")
 	protected boolean createBond() {
 		final BluetoothDevice device = mGatt.getDevice();
@@ -540,7 +545,13 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		return result;
 	}
 
-	protected boolean createBondApi18(final BluetoothDevice device) {
+	/**
+	 * A method that creates the bond to given device on API lower than Android 5.
+	 *
+	 * @param device the target device
+	 * @return false if bonding failed (no hidden createBond() method in BluetoothDevice, or this method returned false
+	 */
+	private boolean createBondApi18(final BluetoothDevice device) {
 		/*
 		 * There is a createBond() method in BluetoothDevice class but for now it's hidden. We will call it using reflections. It has been revealed in KitKat (Api19)
 		 */
@@ -559,7 +570,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	/**
 	 * Removes the bond information for the given device.
 	 *
-	 * @return <code>true</code> if operation succeeded, <code>false</code> otherwise
+	 *  @return <code>true</code> if operation succeeded, <code>false</code> otherwise
 	 */
 	protected boolean removeBond() {
 		final BluetoothDevice device = mGatt.getDevice();

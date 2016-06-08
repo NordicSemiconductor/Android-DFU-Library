@@ -72,14 +72,14 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 	 * reset command will log "[DFU] Data written to ..., value (0x): 10-03-02" instead of "...(x0): 06". But this does not matter for the DFU process.
 	 * </p>
 	 * <p>
-	 * N* - Value of Packet Receipt Notification, 10 by default.
+	 * N* - Value of Packet Receipt Notification, 12 by default.
 	 * </p>
 	 */
 	protected boolean mRemoteErrorOccurred;
 
 	protected class BaseCustomBluetoothCallback extends BaseBluetoothGattCallback {
 		protected void onPacketCharacteristicWrite(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final int status) {
-			// this method must be overwritten on the final class
+			// this method can be overwritten on the final class
 		}
 
 		@Override
@@ -137,6 +137,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 							if (available < 20)
 								buffer = new byte[available];
 							final int size = mFirmwareStream.read(buffer);
+							logi("Writing packet from onCharacteristicWrite"); // TODO remove
 							writePacket(gatt, characteristic, buffer, size);
 							return;
 						} catch (final HexFileValidationException e) {
@@ -203,6 +204,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 				if (available < 20)
 					buffer = new byte[available];
 				final int size = mFirmwareStream.read(buffer);
+				logi("Writing packet from handlePacketReceiptNotification"); // TODO remove
 				writePacket(gatt, packetCharacteristic, buffer, size);
 			} catch (final HexFileValidationException e) {
 				loge("Invalid HEX file");
@@ -327,11 +329,13 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 		mReceivedData = null;
 		mError = 0;
 		mFirmwareUploadInProgress = true;
+		mPacketsSentSinceNotification = 0;
 
 		final byte[] buffer = mBuffer;
 		try {
 			final int size = mFirmwareStream.read(buffer);
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Sending firmware to characteristic " + packetCharacteristic.getUuid() + "...");
+			logi("Writing packet from uploadFirmwareImage"); // TODO remove
 			writePacket(mGatt, packetCharacteristic, buffer, size);
 		} catch (final HexFileValidationException e) {
 			throw new DfuException("HEX file not valid", DfuBaseService.ERROR_FILE_INVALID);
@@ -375,7 +379,6 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 		}
 		characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
 		characteristic.setValue(locBuffer);
-		logi("Writing packet: " + parse(locBuffer)); // TODO remove
 		gatt.writeCharacteristic(characteristic);
 		// FIXME BLE buffer overflow
 		// after writing to the device with WRITE_NO_RESPONSE property the onCharacteristicWrite callback is received immediately after writing data to a buffer.

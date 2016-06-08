@@ -1104,6 +1104,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		// Close the device
 		refreshDeviceCache(gatt, false); // This should be set to true when DFU Version is 0.5 or lower
 		close(gatt);
+		waitFor(600);
 		report(error);
 	}
 
