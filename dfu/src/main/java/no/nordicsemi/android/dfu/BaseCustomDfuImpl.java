@@ -31,6 +31,7 @@ import android.preference.PreferenceManager;
 
 import java.io.IOException;
 import java.util.UUID;
+import java.util.zip.CRC32;
 
 import no.nordicsemi.android.dfu.internal.exception.DeviceDisconnectedException;
 import no.nordicsemi.android.dfu.internal.exception.DfuException;
@@ -255,12 +256,14 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 	 * @throws DeviceDisconnectedException
 	 * @throws UploadAbortedException
 	 */
-	protected void writeInitData(final BluetoothGattCharacteristic characteristic) throws DfuException, DeviceDisconnectedException, UploadAbortedException {
+	protected void writeInitData(final BluetoothGattCharacteristic characteristic, final CRC32 crc32) throws DfuException, DeviceDisconnectedException, UploadAbortedException {
 		try {
 			byte[] data = new byte[20];
 			int size;
 			while ((size = mInitPacketStream.read(data, 0, data.length)) != -1) {
 				writeInitPacket(characteristic, data, size);
+				if (crc32 != null)
+					crc32.update(data, 0, size);
 			}
 		} catch (final IOException e) {
 			loge("Error while reading Init packet file", e);

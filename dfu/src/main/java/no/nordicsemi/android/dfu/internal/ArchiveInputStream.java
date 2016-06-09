@@ -22,6 +22,8 @@
 
 package no.nordicsemi.android.dfu.internal;
 
+import android.support.annotation.NonNull;
+
 import com.google.gson.Gson;
 
 import java.io.ByteArrayOutputStream;
@@ -30,6 +32,7 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -61,6 +64,7 @@ public class ArchiveInputStream extends ZipInputStream {
 	/** Contains bytes arrays with BIN files. HEX files are converted to BIN before being added to this map. */
 	private Map<String, byte[]> entries;
 	private Manifest manifest;
+	private CRC32 crc32;
 
 	private byte[] applicationBytes;
 	private byte[] softDeviceBytes;
@@ -74,6 +78,9 @@ public class ArchiveInputStream extends ZipInputStream {
 	private int bootloaderSize;
 	private int applicationSize;
 	private int bytesRead;
+
+	private byte[] markedSource;
+	private int bytesReadFromMarkedSource;
 
 	/**
 	 * <p>
@@ -103,6 +110,7 @@ public class ArchiveInputStream extends ZipInputStream {
 	public ArchiveInputStream(final InputStream stream, final int mbrSize, final int types) throws IOException {
 		super(stream);
 
+		this.crc32 = new CRC32();
 		this.entries = new HashMap<>();
 		this.bytesRead = 0;
 		this.bytesReadFromCurrentSource = 0;
@@ -254,7 +262,7 @@ public class ArchiveInputStream extends ZipInputStream {
 	 * but than it MUST include at least one of the following files: softdevice.bin/hex, bootloader.bin/hex, application.bin/hex.
 	 * To support the init packet such ZIP file should contain also application.dat and/or system.dat (with the CRC16 of a SD, BL or SD+BL together).
 	 */
-	private void parseZip(int mbrSize) throws IOException {
+	private void parseZip(final int mbrSize) throws IOException {
 		final byte[] buffer = new byte[1024];
 		String manifestData = null;
 
@@ -304,7 +312,7 @@ public class ArchiveInputStream extends ZipInputStream {
 	}
 
 	@Override
-	public int read(final byte[] buffer) throws IOException {
+	public int read(@NonNull final byte[] buffer) throws IOException {
 		int maxSize = currentSource.length - bytesReadFromCurrentSource;
 		int size = buffer.length <= maxSize ? buffer.length : maxSize;
 		System.arraycopy(currentSource, bytesReadFromCurrentSource, buffer, 0, size);
@@ -322,7 +330,40 @@ public class ArchiveInputStream extends ZipInputStream {
 			size += nextSize;
 		}
 		bytesRead += size;
+		crc32.update(buffer, 0, size);
 		return size;
+	}
+
+	@Override
+	public boolean markSupported() {
+		return true;
+	}
+
+	/**
+	 * Marks the current position in the stream. The parameter is ignored.
+	 * @param readlimit this parameter is ignored, can be anything
+	 */
+	@Override
+	public void mark(final int readlimit) {
+		markedSource = currentSource;
+		bytesReadFromMarkedSource = bytesReadFromCurrentSource;
+	}
+
+	@Override
+	public void reset() throws IOException {
+		currentSource = markedSource;
+		bytesReadFromCurrentSource = bytesReadFromMarkedSource;
+
+		// Restore the CRC to the value is was on mark.
+		crc32.reset();
+		if (currentSource == bootloaderBytes && softDeviceBytes != null) {
+			crc32.update(softDeviceBytes);
+		}
+		crc32.update(currentSource, 0, bytesReadFromCurrentSource);
+	}
+
+	public int getCrc32() {
+		return (int) (crc32.getValue() & 0xFFFFFFFFL);
 	}
 
 	/**

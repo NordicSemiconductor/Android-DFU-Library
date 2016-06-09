@@ -417,6 +417,10 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
      */
     public static final int ERROR_FILE_SIZE_INVALID = ERROR_MASK | 0x0C;
 	/**
+	 * Thrown when the received CRC does not match with the calculated one. The service will try 3 times to send the data, and if the CRC fails each time this error will be thrown.
+	 */
+	public static final int ERROR_CRC_ERROR = ERROR_MASK | 0x0D;
+	/**
 	 * Flag set when the DFU target returned a DFU error. Look for DFU specification to get error codes.
 	 */
 	public static final int ERROR_REMOTE_MASK = 0x2000;

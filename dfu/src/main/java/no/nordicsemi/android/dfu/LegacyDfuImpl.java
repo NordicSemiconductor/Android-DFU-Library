@@ -521,7 +521,7 @@ import no.nordicsemi.android.error.LegacyDfuError;
 				writeOpCode(mControlPointCharacteristic, OP_CODE_INIT_DFU_PARAMS_START);
 
 				logi("Sending " + mImageSizeInBytes + " bytes of init packet");
-				writeInitData(mPacketCharacteristic);
+				writeInitData(mPacketCharacteristic, null);
 
 				logi("Sending the Initialize DFU Parameters COMPLETE (Op Code = 2, Value = 1)");
 				writeOpCode(mControlPointCharacteristic, OP_CODE_INIT_DFU_PARAMS_COMPLETE);

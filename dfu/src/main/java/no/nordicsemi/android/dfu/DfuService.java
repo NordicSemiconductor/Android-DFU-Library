@@ -47,7 +47,10 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	/** This method must return true if the device is compatible with this DFU implementation, false otherwise. */
 	boolean hasRequiredCharacteristics(final BluetoothGatt gatt);
 
-	/** Initializes the DFU implementation and does some initial setting up. */
+	/**
+	 * Initializes the DFU implementation and does some initial setting up.
+	 * @return true if initialization was successful and the DFU process may begin, false to finish teh DFU service
+	 */
 	boolean initialize(final Intent intent, final BluetoothGatt gatt, final int fileType, final InputStream firmwareStream, final InputStream initPacketStream) throws DfuException, DeviceDisconnectedException, UploadAbortedException;
 
 	/** Performs the DFU process. */

@@ -28,8 +28,11 @@ import android.bluetooth.BluetoothGattService;
 import android.content.Intent;
 import android.os.SystemClock;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.zip.CRC32;
 
 import no.nordicsemi.android.dfu.internal.exception.DeviceDisconnectedException;
 import no.nordicsemi.android.dfu.internal.exception.DfuException;
@@ -140,6 +143,17 @@ import no.nordicsemi.android.error.SecureDfuError;
 	}
 
 	@Override
+	public boolean initialize(final Intent intent, final BluetoothGatt gatt, final int fileType, final InputStream firmwareStream, final InputStream initPacketStream) throws DfuException, DeviceDisconnectedException, UploadAbortedException {
+		if (initPacketStream == null) {
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, "The Init packet is required by this version DFU Bootloader");
+			mService.terminateConnection(gatt, DfuBaseService.ERROR_INIT_PACKET_REQUIRED);
+			return false;
+		}
+
+		return super.initialize(intent, gatt, fileType, firmwareStream, initPacketStream);
+	}
+
+	@Override
 	public boolean hasRequiredCharacteristics(final BluetoothGatt gatt) {
 		final BluetoothGattService dfuService = gatt.getService(DFU_SERVICE_UUID);
 		mControlPointCharacteristic = dfuService.getCharacteristic(DFU_CONTROL_POINT_UUID);
@@ -191,6 +205,7 @@ import no.nordicsemi.android.error.SecureDfuError;
 		// End
 
 		try {
+			final CRC32 crc32 = new CRC32(); // Used to calculate CRC32 of the Init packet
 			ObjectChecksum checksum;
 			ObjectInfo info;
 			byte[] response;
@@ -206,35 +221,108 @@ import no.nordicsemi.android.error.SecureDfuError;
 				// Ignore this. DFU target will send an error if init packet is too large after sending the 'Create object' command
 			}
 
-			// The Init packet is sent different way in this implementation than the firmware, and receiving PRNs is not implemented.
-			// This value might have been stored on the device, so we have to explicitly disable PRNs.
-			logi("Disabling Packet Receipt Notifications (Op Code = 2, Value = 0)");
-			setPacketReceiptNotifications(0);
-			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Packet Receipt Notif disabled (Op Code = 2, Value = 0)");
+			// Can we resume? If the offset obtained from the device is greater then zero we can compare it with the local init packet CRC
+			// and resume sending the init packet, or even skip sending it if the whole file was sent before.
+			boolean skipSendingInitPacket = false;
+			boolean resumeSendingInitPacket = false;
+			if (info.offset > 0) {
+				try {
+					// Read the same number of bytes from the current init packet to calculate local CRC32
+					final byte[] buffer = new byte[info.offset];
+					mInitPacketStream.read(buffer);
+					// Calculate the CRC32
+					crc32.update(buffer);
+					final int crc = (int) (crc32.getValue() & 0xFFFFFFFL);
 
-			// TODO resume uploading
+					if (info.CRC32 == crc) {
+						logi("Init packet CRC is the same");
+						if (info.offset ==  mInitPacketSizeInBytes) {
+							// The whole init packet was sent and it is equal to one we try to send now.
+							// There is no need to send it again. We may try to resume sending data.
+							logi("-> Whole Init packet was sent before");
+							skipSendingInitPacket = true;
+							mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Command object match Init packet");
+						} else {
+							logi("-> " + info.offset + " bytes of Init packet were sent before");
+							resumeSendingInitPacket = true;
+							mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Resuming sending Init packet...");
+						}
+					} else {
+						// A different Init packet was sent before, or the error occurred while sending.
+						// We have to send the while Init packet again.
+						mInitPacketStream.reset();
+						crc32.reset();
+					}
+				} catch (final IOException e) {
+					loge("Error while reading " + info.offset + " bytes from the init packet stream", e);
+					try {
+						// Go back to the beginning of the stream, we will send the whole init packet
+						mInitPacketStream.reset();
+						crc32.reset();
+					} catch (final IOException e1) {
+						loge("Error while resetting the init packet stream", e1);
+						mService.terminateConnection(gatt, DfuBaseService.ERROR_FILE_IO_EXCEPTION);
+						return;
+					}
+				}
+			}
 
-			// Create the Init object
-			logi("Creating Init packet object (Op Code = 1, Type = 1, Size = " + mInitPacketSizeInBytes + ")");
-			writeCreateRequest(OBJECT_COMMAND, mInitPacketSizeInBytes);
-			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Command object created");
+			if (!skipSendingInitPacket) {
+				// The Init packet is sent different way in this implementation than the firmware, and receiving PRNs is not implemented.
+				// This value might have been stored on the device, so we have to explicitly disable PRNs.
+				logi("Disabling Packet Receipt Notifications (Op Code = 2, Value = 0)");
+				setPacketReceiptNotifications(0);
+				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Packet Receipt Notif disabled (Op Code = 2, Value = 0)");
 
-			// Write Init data to the Packet Characteristic
-			logi("Sending " + mInitPacketSizeInBytes + " bytes of init packet...");
-			writeInitData(mPacketCharacteristic);
-			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Command object sent");
+				for (int i = 0; i <= 2; i++) {
+					if (!resumeSendingInitPacket) {
+						// Create the Init object
+						logi("Creating Init packet object (Op Code = 1, Type = 1, Size = " + mInitPacketSizeInBytes + ")");
+						writeCreateRequest(OBJECT_COMMAND, mInitPacketSizeInBytes);
+						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Command object created");
+					}
+					// Write Init data to the Packet Characteristic
+					logi("Sending " + (mInitPacketSizeInBytes - info.offset) + " bytes of init packet...");
+					writeInitData(mPacketCharacteristic, crc32);
+					final int crc = (int) (crc32.getValue() & 0xFFFFFFFL);
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, String.format(Locale.US, "Command object sent (CRC = %08X)", crc));
 
-			// Calculate Checksum
-			logi("Sending Calculate Checksum command (Op Code = 3)");
-			checksum = readChecksum();
-			// TODO validate
-			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, String.format(Locale.US, "Checksum received (Offset = %d, CRC = %08X)", checksum.offset, checksum.CRC32));
-			logi(String.format(Locale.US, "Checksum received (Offset = %d, CRC = %08X)", checksum.offset, checksum.CRC32));
+					// Calculate Checksum
+					logi("Sending Calculate Checksum command (Op Code = 3)");
+					checksum = readChecksum();
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, String.format(Locale.US, "Checksum received (Offset = %d, CRC = %08X)", checksum.offset, checksum.CRC32));
+					logi(String.format(Locale.US, "Checksum received (Offset = %d, CRC = %08X)", checksum.offset, checksum.CRC32));
 
-			// Execute Init packet
-			logi("Executing init packet (Op Code = 4)");
-			writeExecute();
-			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Command object executed");
+					if (crc != checksum.CRC32) {
+						if (i < 2) {
+							mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, "CRC32 does not match! Retrying...(" + (i + 2) + "/3)");
+							logi("CRC32 does not match! Retrying...(" + (i + 2) + "/3)");
+							try {
+								// Go back to the beginning, we will send the whole Init packet again
+								resumeSendingInitPacket = false;
+								mInitPacketStream.reset();
+								crc32.reset();
+							} catch (final IOException e) {
+								loge("Error while resetting the init packet stream", e);
+								mService.terminateConnection(gatt, DfuBaseService.ERROR_FILE_IO_EXCEPTION);
+								return;
+							}
+						} else {
+							loge("CRC32 does not match!");
+							mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, "CRC32 does not match!");
+							mService.terminateConnection(gatt, DfuBaseService.ERROR_CRC_ERROR);
+							return;
+						}
+					} else {
+						break;
+					}
+				}
+
+				// Execute Init packet
+				logi("Executing init packet (Op Code = 4)");
+				writeExecute();
+				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Command object executed");
+			}
 
 			// Send the number of packets of firmware before receiving a receipt notification
 			final int numberOfPacketsBeforeNotification = mPacketsBeforeNotification;

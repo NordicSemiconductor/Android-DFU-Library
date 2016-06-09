@@ -249,14 +249,13 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		int size;
 		try {
 			size = initPacketStream.available();
-		} catch (final IOException e) {
+		} catch (final Exception e) {
 			size = 0;
-			// not possible
 		}
 		mInitPacketSizeInBytes = size;
 		try {
 			size = firmwareStream.available();
-		} catch (final IOException e) {
+		} catch (final Exception e) {
 			size = 0;
 			// not possible
 		}
