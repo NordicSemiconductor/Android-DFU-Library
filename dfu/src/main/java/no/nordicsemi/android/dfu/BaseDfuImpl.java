@@ -265,6 +265,15 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		final int totalParts = intent.getIntExtra(DfuBaseService.EXTRA_PARTS_TOTAL, 1);
 		mProgressInfo = mService.mProgressInfo.init(size, currentPart, totalParts);
 
+		// Sending App together with SD or BL is not supported. It must be spilt into two parts.
+		if (fileType > DfuBaseService.TYPE_APPLICATION) {
+			logw("DFU target does not support (SD/BL)+App update");
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, "DFU target does not support (SD/BL)+App update");
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Sending only SD/BL");
+			mFileType &= ~DfuBaseService.TYPE_APPLICATION; // clear application bit
+			mProgressInfo.setTotalPart(2);
+		}
+
 		// If we are bonded we may want to enable Service Changed characteristic indications.
 		// Note: This feature will be introduced in the SDK 8.0 as this is the proper way to refresh attribute list on the phone.
 
@@ -305,7 +314,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 						 * read from the application's ATT table, but rather passed as an argument of the "reboot to bootloader" method.
 						 */
 						final boolean keepBond = intent.getBooleanExtra(DfuBaseService.EXTRA_KEEP_BOND, false);
-						if (keepBond && (fileType & DfuBaseService.TYPE_SOFT_DEVICE) == 0) {
+						if (keepBond && (mFileType & DfuBaseService.TYPE_SOFT_DEVICE) == 0) {
 							mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Restarting service...");
 
 							// Disconnect
