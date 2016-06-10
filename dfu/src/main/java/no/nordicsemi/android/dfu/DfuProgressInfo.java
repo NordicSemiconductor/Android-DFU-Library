@@ -33,6 +33,7 @@ import android.support.annotation.NonNull;
 	private final ProgressListener mListener;
 	private int progress;
 	private int bytesSent;
+	private int initalBytesSent;
 	private int lastBytesSent;
 	private int bytesReceived;
 	private int imageSizeInBytes;
@@ -64,8 +65,9 @@ import android.support.annotation.NonNull;
 	}
 
 	public void setBytesSent(final int bytesSent) {
-		if (this.bytesSent == 0 && bytesSent == 0) {
+		if (timeStart == 0) {
 			timeStart = SystemClock.elapsedRealtime();
+			initalBytesSent = bytesSent;
 		}
 		this.bytesSent = bytesSent;
 		this.progress = (int) (100.0f * bytesSent / imageSizeInBytes);
@@ -116,7 +118,7 @@ import android.support.annotation.NonNull;
 
 	public float getSpeed() {
 		final long now = SystemClock.elapsedRealtime();
-		final float speed = now - timeStart != 0 ? (float) (bytesSent - lastBytesSent) / (float) (now - lastProgressTime) : 0.0f;
+		final float speed = now - timeStart != 0 ? (float) (bytesSent - lastBytesSent - initalBytesSent) / (float) (now - lastProgressTime) : 0.0f;
 		lastProgressTime = now;
 		lastBytesSent = bytesSent;
 		return speed;
@@ -124,7 +126,7 @@ import android.support.annotation.NonNull;
 
 	public float getAverageSpeed() {
 		final long now = SystemClock.elapsedRealtime();
-		return now - timeStart != 0 ? (float) bytesSent / (float) (now - timeStart) : 0.0f;
+		return now - timeStart != 0 ? (float) (bytesSent - initalBytesSent) / (float) (now - timeStart) : 0.0f;
 	}
 
 	public int getCurrentPart() {

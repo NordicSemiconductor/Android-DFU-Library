@@ -34,6 +34,7 @@ import java.util.Locale;
 import java.util.UUID;
 import java.util.zip.CRC32;
 
+import no.nordicsemi.android.dfu.internal.ArchiveInputStream;
 import no.nordicsemi.android.dfu.internal.exception.DeviceDisconnectedException;
 import no.nordicsemi.android.dfu.internal.exception.DfuException;
 import no.nordicsemi.android.dfu.internal.exception.RemoteDfuException;
@@ -48,6 +49,7 @@ import no.nordicsemi.android.error.SecureDfuError;
 	protected static final UUID DFU_PACKET_UUID = new UUID(0x000015321212EFDEL, 0x1523785FEABCD123L);
 
 	private static final int DFU_STATUS_SUCCESS = 1;
+	private static final int MAX_ATTEMPTS = 3;
 
 	// Object types
 	private static final int OBJECT_COMMAND = 0x01;
@@ -232,7 +234,7 @@ import no.nordicsemi.android.error.SecureDfuError;
 					mInitPacketStream.read(buffer);
 					// Calculate the CRC32
 					crc32.update(buffer);
-					final int crc = (int) (crc32.getValue() & 0xFFFFFFFL);
+					final int crc = (int) (crc32.getValue() & 0xFFFFFFFFL);
 
 					if (info.CRC32 == crc) {
 						logi("Init packet CRC is the same");
@@ -274,7 +276,7 @@ import no.nordicsemi.android.error.SecureDfuError;
 				setPacketReceiptNotifications(0);
 				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Packet Receipt Notif disabled (Op Code = 2, Value = 0)");
 
-				for (int i = 0; i <= 2; i++) {
+				for (int attempt = 1; attempt <= MAX_ATTEMPTS;) {
 					if (!resumeSendingInitPacket) {
 						// Create the Init object
 						logi("Creating Init packet object (Op Code = 1, Type = 1, Size = " + mInitPacketSizeInBytes + ")");
@@ -284,7 +286,7 @@ import no.nordicsemi.android.error.SecureDfuError;
 					// Write Init data to the Packet Characteristic
 					logi("Sending " + (mInitPacketSizeInBytes - info.offset) + " bytes of init packet...");
 					writeInitData(mPacketCharacteristic, crc32);
-					final int crc = (int) (crc32.getValue() & 0xFFFFFFFL);
+					final int crc = (int) (crc32.getValue() & 0xFFFFFFFFL);
 					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, String.format(Locale.US, "Command object sent (CRC = %08X)", crc));
 
 					// Calculate Checksum
@@ -293,13 +295,19 @@ import no.nordicsemi.android.error.SecureDfuError;
 					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, String.format(Locale.US, "Checksum received (Offset = %d, CRC = %08X)", checksum.offset, checksum.CRC32));
 					logi(String.format(Locale.US, "Checksum received (Offset = %d, CRC = %08X)", checksum.offset, checksum.CRC32));
 
-					if (crc != checksum.CRC32) {
-						if (i < 2) {
-							mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, "CRC32 does not match! Retrying...(" + (i + 2) + "/3)");
-							logi("CRC32 does not match! Retrying...(" + (i + 2) + "/3)");
+					if (crc == checksum.CRC32) {
+						// Everything is OK, we can proceed
+						break;
+					} else {
+						if (attempt < MAX_ATTEMPTS) {
+							attempt++;
+							logi("CRC32 does not match! Retrying...(" + attempt + "/" + MAX_ATTEMPTS + ")");
+							mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, "CRC32 does not match! Retrying...(" + attempt + "/" + MAX_ATTEMPTS + ")");
 							try {
 								// Go back to the beginning, we will send the whole Init packet again
 								resumeSendingInitPacket = false;
+								info.offset = 0;
+								info.CRC32 = 0;
 								mInitPacketStream.reset();
 								crc32.reset();
 							} catch (final IOException e) {
@@ -313,8 +321,6 @@ import no.nordicsemi.android.error.SecureDfuError;
 							mService.terminateConnection(gatt, DfuBaseService.ERROR_CRC_ERROR);
 							return;
 						}
-					} else {
-						break;
 					}
 				}
 
@@ -322,6 +328,29 @@ import no.nordicsemi.android.error.SecureDfuError;
 				logi("Executing init packet (Op Code = 4)");
 				writeExecute();
 				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Command object executed");
+			} else {
+				// When the Init file was skipped, we are still not sure whether it was executed.
+				// Perhaps, just after sending it, the device got disconnected? We have to check it.
+				logi("Checking the current object...");
+				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Checking the current object...");
+
+				// Get the calculated CRC of the Init packet
+				final int crc = (int) (crc32.getValue() & 0xFFFFFFFFL);
+
+				// Calculate Checksum
+				logi("Sending Calculate Checksum command (Op Code = 3)");
+				checksum = readChecksum();
+				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, String.format(Locale.US, "Checksum received (Offset = %d, CRC = %08X)", checksum.offset, checksum.CRC32));
+				logi(String.format(Locale.US, "Checksum received (Offset = %d, CRC = %08X)", checksum.offset, checksum.CRC32));
+
+				if (checksum.offset == mInitPacketSizeInBytes && crc == checksum.CRC32) {
+					// Execute Init packet. It's better to execute it twice than not execute at all...
+					logi("Executing init packet (Op Code = 4)");
+					writeExecute();
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Command object executed");
+				} else {
+					// It looks like we have started sending the Data already, let's continue
+				}
 			}
 
 			// Send the number of packets of firmware before receiving a receipt notification
@@ -332,30 +361,79 @@ import no.nordicsemi.android.error.SecureDfuError;
 				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Packet Receipt Notif Req (Op Code = 2) sent (Value = " + numberOfPacketsBeforeNotification + ")");
 			}
 
+			// We are ready to start sending the new firmware.
+			// Before, we have to check the max object size and i
+
 			logi("Sending Read Data Object Info command (Op Code = 6, Type = 2)");
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Reading data object info...");
 			info = readObjectInfo(OBJECT_DATA);
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, String.format(Locale.US, "Data object info received (Max size = %d, Offset = %d, CRC = %08X)", info.maxSize, info.offset, info.CRC32));
 			mProgressInfo.setMaxObjectSizeInBytes(info.maxSize);
-			mProgressInfo.setBytesSent(0);
-
-			// TODO resume?
 
 			// Number of chunks in which the data will be sent
 			final int count = (mImageSizeInBytes + info.maxSize - 1) / info.maxSize;
 			// Chunk iterator
-			int i = 1;
+			int i = 0;
 			final long startTime = SystemClock.elapsedRealtime();
+			boolean resumeSendingData = false;
+
+			// Can we resume? If the offset obtained from the device is greater then zero we can compare it with the local CRC
+			// and resume sending the data.
+			if (info.offset > 0) {
+				try {
+					i = info.offset / info.maxSize;
+					final int bytesSentAndExecuted = info.maxSize * i;
+					final int bytesSentNotExecuted = info.offset - bytesSentAndExecuted;
+
+					// Read the same number of bytes from the current init packet to calculate local CRC32
+					if (bytesSentAndExecuted > 0) {
+						mFirmwareStream.read(new byte[bytesSentAndExecuted]); // Read executed bytes
+						mFirmwareStream.mark(info.maxSize); // Mark here
+					}
+					mFirmwareStream.read(new byte[bytesSentNotExecuted]); // Read the rest
+
+					// Calculate the CRC32
+					final int crc = (int) (((ArchiveInputStream) mFirmwareStream).getCrc32() & 0xFFFFFFFFL);
+
+					if (crc == info.CRC32) {
+						mProgressInfo.setBytesSent(info.offset);
+						mProgressInfo.setBytesReceived(info.offset);
+						resumeSendingData = true;
+					} else {
+						// The CRC of the current object is not correct. If there was another Data object sent before, its CRC must have been correct,
+						// as it has been executed. Either way, we have to create the current object again.
+						mProgressInfo.setBytesSent(bytesSentAndExecuted);
+						mProgressInfo.setBytesReceived(bytesSentAndExecuted);
+						mFirmwareStream.reset();
+					}
+				} catch (final IOException e) {
+					loge("Error while reading firmware stream", e);
+					mService.terminateConnection(gatt, DfuBaseService.ERROR_FILE_IO_EXCEPTION);
+					return;
+				}
+			} else {
+				// Initialize the timer used to calculate the transfer speed
+				mProgressInfo.setBytesSent(0);
+			}
+
+			// Each page will be sent in MAX_ATTEMPTS
+			int attempt = 1;
 			while (mProgressInfo.getAvailableObjectSizeIsBytes() > 0) {
-				// Create the Data object
-				logi("Creating Data object (Op Code = 1, Type = 2, Size = " + mProgressInfo.getAvailableObjectSizeIsBytes() + ") (" + i + "/" + count + ")");
-				writeCreateRequest(OBJECT_DATA, mProgressInfo.getAvailableObjectSizeIsBytes());
-				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Data object (" + i + "/" + count + ") created");
+				if (!resumeSendingData) {
+					// Create the Data object
+					logi("Creating Data object (Op Code = 1, Type = 2, Size = " + mProgressInfo.getAvailableObjectSizeIsBytes() + ") (" + (i + 1) + "/" + count + ")");
+					writeCreateRequest(OBJECT_DATA, mProgressInfo.getAvailableObjectSizeIsBytes());
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Data object (" + (i + 1) + "/" + count + ") created");
+
+					resumeSendingData = false;
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Uploading firmware...");
+				} else {
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Resuming uploading firmware...");
+				}
 
 				// Send the current object part
 				try {
 					logi("Uploading firmware...");
-					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Uploading firmware...");
 					uploadFirmwareImage(mPacketCharacteristic);
 				} catch (final DeviceDisconnectedException e) {
 					loge("Disconnected while sending data");
@@ -365,17 +443,40 @@ import no.nordicsemi.android.error.SecureDfuError;
 				// Calculate Checksum
 				logi("Sending Calculate Checksum command (Op Code = 3)");
 				checksum = readChecksum();
-				// TODO validate
 				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, String.format(Locale.US, "Checksum received (Offset = %d, CRC = %08X)", checksum.offset, checksum.CRC32));
 				logi(String.format(Locale.US, "Checksum received (Offset = %d, CRC = %08X)", checksum.offset, checksum.CRC32));
 
-				// Execute Init packet
-				logi("Executing data object (Op Code = 4)");
-				writeExecute();
-				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Data object executed");
+				// Calculate the CRC32
+				final int crc = (int) (((ArchiveInputStream) mFirmwareStream).getCrc32() & 0xFFFFFFFFL);
+				if (crc == checksum.CRC32) {
+					// Execute Init packet
+					logi("Executing data object (Op Code = 4)");
+					writeExecute();
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Data object executed");
 
-				// Increment iterator
-				i++;
+					// Increment iterator
+					i++;
+					attempt = 1;
+				} else {
+					if (attempt < MAX_ATTEMPTS) {
+						attempt++;
+						logi("CRC32 does not match! Retrying...(" + attempt + "/" + MAX_ATTEMPTS + ")");
+						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, "CRC32 does not match! Retrying...(" + attempt + "/" + MAX_ATTEMPTS + ")");
+						try {
+							mFirmwareStream.reset();
+							mProgressInfo.setBytesSent(checksum.offset - info.maxSize);
+						} catch (final IOException e) {
+							loge("Error while resetting the firmware stream", e);
+							mService.terminateConnection(gatt, DfuBaseService.ERROR_FILE_IO_EXCEPTION);
+							return;
+						}
+					} else {
+						loge("CRC32 does not match!");
+						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, "CRC32 does not match!");
+						mService.terminateConnection(gatt, DfuBaseService.ERROR_CRC_ERROR);
+						return;
+					}
+				}
 			}
 			final long endTime = SystemClock.elapsedRealtime();
 			logi("Transfer of " + mProgressInfo.getBytesSent() + " bytes has taken " + (endTime - startTime) + " ms");

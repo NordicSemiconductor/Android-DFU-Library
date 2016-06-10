@@ -247,6 +247,7 @@ public class ArchiveInputStream extends ZipInputStream {
 					throw new IOException("The ZIP file must contain an Application, a Soft Device and/or a Bootloader.");
 				}
 			}
+			mark(0);
 		} finally {
 			super.close();
 		}
@@ -351,19 +352,27 @@ public class ArchiveInputStream extends ZipInputStream {
 
 	@Override
 	public void reset() throws IOException {
+		if (applicationBytes != null && (softDeviceBytes != null || bootloaderBytes != null || softDeviceAndBootloaderBytes != null))
+			throw new UnsupportedOperationException("Application must be sent in a separate connection.");
+
 		currentSource = markedSource;
-		bytesReadFromCurrentSource = bytesReadFromMarkedSource;
+		bytesRead = bytesReadFromCurrentSource = bytesReadFromMarkedSource;
 
 		// Restore the CRC to the value is was on mark.
 		crc32.reset();
 		if (currentSource == bootloaderBytes && softDeviceBytes != null) {
 			crc32.update(softDeviceBytes);
+			bytesRead += softDeviceSize;
 		}
 		crc32.update(currentSource, 0, bytesReadFromCurrentSource);
 	}
 
-	public int getCrc32() {
-		return (int) (crc32.getValue() & 0xFFFFFFFFL);
+	/**
+	 * Returns the CRC32 of the part of the firmware that was already read.
+	 * @return the CRC
+	 */
+	public long getCrc32() {
+		return crc32.getValue();
 	}
 
 	/**
@@ -424,6 +433,7 @@ public class ArchiveInputStream extends ZipInputStream {
 			applicationBytes = null;
 			applicationSize = 0;
 		}
+		mark(0);
 		return t;
 	}
 
