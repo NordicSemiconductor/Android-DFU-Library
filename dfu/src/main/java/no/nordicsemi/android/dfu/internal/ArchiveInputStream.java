@@ -350,6 +350,19 @@ public class ArchiveInputStream extends ZipInputStream {
 		bytesReadFromMarkedSource = bytesReadFromCurrentSource;
 	}
 
+	public void rewind(final int offset) {
+		if (applicationBytes != null && (softDeviceBytes != null || bootloaderBytes != null || softDeviceAndBootloaderBytes != null))
+			throw new UnsupportedOperationException("Application must be sent in a separate connection.");
+
+		bytesRead = Math.max(bytesRead - offset, 0);
+		if (currentSource == bootloaderBytes && softDeviceBytes != null && bytesReadFromCurrentSource - offset < 0) {
+			currentSource = softDeviceBytes;
+			bytesReadFromCurrentSource = Math.max(softDeviceSize - (offset - bytesReadFromCurrentSource), 0);
+		} else {
+			bytesReadFromCurrentSource -= Math.max(bytesReadFromCurrentSource - offset, 0);
+		}
+	}
+
 	@Override
 	public void reset() throws IOException {
 		if (applicationBytes != null && (softDeviceBytes != null || bootloaderBytes != null || softDeviceAndBootloaderBytes != null))

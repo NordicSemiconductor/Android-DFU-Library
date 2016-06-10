@@ -451,15 +451,18 @@ import no.nordicsemi.android.error.SecureDfuError;
 		if (info.offset > 0) {
 			try {
 				i = info.offset / info.maxSize;
-				final int bytesSentAndExecuted = info.maxSize * i;
-				final int bytesSentNotExecuted = info.offset - bytesSentAndExecuted;
+				int bytesSentAndExecuted = info.maxSize * i;
+				int bytesSentNotExecuted = info.offset - bytesSentAndExecuted;
 
 				// Read the same number of bytes from the current init packet to calculate local CRC32
 				if (bytesSentAndExecuted > 0) {
 					mFirmwareStream.read(new byte[bytesSentAndExecuted]); // Read executed bytes
 					mFirmwareStream.mark(info.maxSize); // Mark here
 				}
-				mFirmwareStream.read(new byte[bytesSentNotExecuted]); // Read the rest
+				if (bytesSentNotExecuted > 0) {
+					// This may be 0 if the whole last chunk was completed before. It may not have been executed and may have CRC error.
+					mFirmwareStream.read(new byte[bytesSentNotExecuted]); // Read the rest
+				}
 
 				// Calculate the CRC32
 				final int crc = (int) (((ArchiveInputStream) mFirmwareStream).getCrc32() & 0xFFFFFFFFL);
@@ -469,10 +472,19 @@ import no.nordicsemi.android.error.SecureDfuError;
 					mProgressInfo.setBytesReceived(info.offset);
 					resumeSendingData = true;
 				} else {
+					if (bytesSentNotExecuted == 0) {
+						// Looks like the whole last chunk was invalid and not executed. We have to rewind last maxSize bytes as we don't have any mark there.
+						bytesSentAndExecuted -= info.maxSize;
+						bytesSentNotExecuted = info.maxSize;
+						((ArchiveInputStream) mFirmwareStream).rewind(info.maxSize);
+						mFirmwareStream.mark(info.maxSize);
+					}
 					// The CRC of the current object is not correct. If there was another Data object sent before, its CRC must have been correct,
 					// as it has been executed. Either way, we have to create the current object again.
 					mProgressInfo.setBytesSent(bytesSentAndExecuted);
 					mProgressInfo.setBytesReceived(bytesSentAndExecuted);
+					info.offset -= bytesSentNotExecuted;
+					info.CRC32 = 0; // invalidate
 					mFirmwareStream.reset();
 				}
 			} catch (final IOException e) {
@@ -486,70 +498,74 @@ import no.nordicsemi.android.error.SecureDfuError;
 		}
 
 		// Each page will be sent in MAX_ATTEMPTS
-		int attempt = 1;
-		while (mProgressInfo.getAvailableObjectSizeIsBytes() > 0) {
-			if (!resumeSendingData) {
-				// Create the Data object
-				logi("Creating Data object (Op Code = 1, Type = 2, Size = " + mProgressInfo.getAvailableObjectSizeIsBytes() + ") (" + (i + 1) + "/" + count + ")");
-				writeCreateRequest(OBJECT_DATA, mProgressInfo.getAvailableObjectSizeIsBytes());
-				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Data object (" + (i + 1) + "/" + count + ") created");
+		if (info.offset < mImageSizeInBytes) {
+			int attempt = 1;
+			while (mProgressInfo.getAvailableObjectSizeIsBytes() > 0) {
+				if (!resumeSendingData) {
+					// Create the Data object
+					logi("Creating Data object (Op Code = 1, Type = 2, Size = " + mProgressInfo.getAvailableObjectSizeIsBytes() + ") (" + (i + 1) + "/" + count + ")");
+					writeCreateRequest(OBJECT_DATA, mProgressInfo.getAvailableObjectSizeIsBytes());
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Data object (" + (i + 1) + "/" + count + ") created");
 
-				resumeSendingData = false;
-				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Uploading firmware...");
-			} else {
-				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Resuming uploading firmware...");
-			}
+					resumeSendingData = false;
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Uploading firmware...");
+				} else {
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Resuming uploading firmware...");
+				}
 
-			// Send the current object part
-			try {
-				logi("Uploading firmware...");
-				uploadFirmwareImage(mPacketCharacteristic);
-			} catch (final DeviceDisconnectedException e) {
-				loge("Disconnected while sending data");
-				throw e;
-			}
+				// Send the current object part
+				try {
+					logi("Uploading firmware...");
+					uploadFirmwareImage(mPacketCharacteristic);
+				} catch (final DeviceDisconnectedException e) {
+					loge("Disconnected while sending data");
+					throw e;
+				}
 
-			// Calculate Checksum
-			logi("Sending Calculate Checksum command (Op Code = 3)");
-			final ObjectChecksum checksum = readChecksum();
-			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, String.format(Locale.US, "Checksum received (Offset = %d, CRC = %08X)", checksum.offset, checksum.CRC32));
-			logi(String.format(Locale.US, "Checksum received (Offset = %d, CRC = %08X)", checksum.offset, checksum.CRC32));
+				// Calculate Checksum
+				logi("Sending Calculate Checksum command (Op Code = 3)");
+				final ObjectChecksum checksum = readChecksum();
+				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, String.format(Locale.US, "Checksum received (Offset = %d, CRC = %08X)", checksum.offset, checksum.CRC32));
+				logi(String.format(Locale.US, "Checksum received (Offset = %d, CRC = %08X)", checksum.offset, checksum.CRC32));
 
-			// Calculate the CRC32
-			final int crc = (int) (((ArchiveInputStream) mFirmwareStream).getCrc32() & 0xFFFFFFFFL);
-			if (crc == checksum.CRC32) {
-				// Execute Init packet
-				logi("Executing data object (Op Code = 4)");
-				writeExecute();
-				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Data object executed");
+				// Calculate the CRC32
+				final int crc = (int) (((ArchiveInputStream) mFirmwareStream).getCrc32() & 0xFFFFFFFFL);
+				if (crc == checksum.CRC32) {
+					// Execute Init packet
+					logi("Executing data object (Op Code = 4)");
+					writeExecute();
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Data object executed");
 
-				// Increment iterator
-				i++;
-				attempt = 1;
-			} else {
-				if (attempt < MAX_ATTEMPTS) {
-					attempt++;
-					logi("CRC32 does not match! Retrying...(" + attempt + "/" + MAX_ATTEMPTS + ")");
-					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, "CRC32 does not match! Retrying...(" + attempt + "/" + MAX_ATTEMPTS + ")");
-					try {
-						mFirmwareStream.reset();
-						mProgressInfo.setBytesSent(checksum.offset - info.maxSize);
-					} catch (final IOException e) {
-						loge("Error while resetting the firmware stream", e);
-						mService.terminateConnection(gatt, DfuBaseService.ERROR_FILE_IO_EXCEPTION);
+					// Increment iterator
+					i++;
+					attempt = 1;
+				} else {
+					if (attempt < MAX_ATTEMPTS) {
+						attempt++;
+						logi("CRC32 does not match! Retrying...(" + attempt + "/" + MAX_ATTEMPTS + ")");
+						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, "CRC32 does not match! Retrying...(" + attempt + "/" + MAX_ATTEMPTS + ")");
+						try {
+							mFirmwareStream.reset();
+							mProgressInfo.setBytesSent(checksum.offset - info.maxSize);
+						} catch (final IOException e) {
+							loge("Error while resetting the firmware stream", e);
+							mService.terminateConnection(gatt, DfuBaseService.ERROR_FILE_IO_EXCEPTION);
+							return;
+						}
+					} else {
+						loge("CRC32 does not match!");
+						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, "CRC32 does not match!");
+						mService.terminateConnection(gatt, DfuBaseService.ERROR_CRC_ERROR);
 						return;
 					}
-				} else {
-					loge("CRC32 does not match!");
-					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, "CRC32 does not match!");
-					mService.terminateConnection(gatt, DfuBaseService.ERROR_CRC_ERROR);
-					return;
 				}
 			}
+			final long endTime = SystemClock.elapsedRealtime();
+			logi("Transfer of " + mProgressInfo.getBytesSent() + " bytes has taken " + (endTime - startTime) + " ms");
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Upload completed in " + (endTime - startTime) + " ms");
+		} else {
+			// Looks as if the whole file was sent correctly but
 		}
-		final long endTime = SystemClock.elapsedRealtime();
-		logi("Transfer of " + mProgressInfo.getBytesSent() + " bytes has taken " + (endTime - startTime) + " ms");
-		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Upload completed in " + (endTime - startTime) + " ms");
 	}
 
 	/**
