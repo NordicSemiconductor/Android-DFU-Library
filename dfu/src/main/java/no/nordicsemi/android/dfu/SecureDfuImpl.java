@@ -44,9 +44,9 @@ import no.nordicsemi.android.error.SecureDfuError;
 
 /* package */ class SecureDfuImpl extends BaseCustomDfuImpl {
 	// UUIDs used by the DFU
-	protected static final UUID DFU_SERVICE_UUID = new UUID(0x000015301212EFDEL, 0x1523785FEABCD123L); // TODO should be changed later to final UUIDs
-	protected static final UUID DFU_CONTROL_POINT_UUID = new UUID(0x000015311212EFDEL, 0x1523785FEABCD123L);
-	protected static final UUID DFU_PACKET_UUID = new UUID(0x000015321212EFDEL, 0x1523785FEABCD123L);
+	protected static final UUID DFU_SERVICE_UUID       = new UUID(0x0000FE5900001000L, 0x800000805F9B34FBL); // 16-bit UUID assigned by Bluetooth SIG
+	protected static final UUID DFU_PACKET_UUID        = new UUID(0x000015351212EFDEL, 0x1523785FEABCD123L);
+	protected static final UUID DFU_CONTROL_POINT_UUID = new UUID(0x000015361212EFDEL, 0x1523785FEABCD123L);
 
 	private static final int DFU_STATUS_SUCCESS = 1;
 	private static final int MAX_ATTEMPTS = 3;
@@ -59,17 +59,16 @@ import no.nordicsemi.android.error.SecureDfuError;
 	private static final int OP_CODE_PACKET_RECEIPT_NOTIF_REQ_KEY = 0x02;
 	private static final int OP_CODE_CALCULATE_CHECKSUM_KEY = 0x03;
 	private static final int OP_CODE_EXECUTE_KEY = 0x04;
-	private static final int OP_CODE_READ_OBJECT_KEY = 0x05;
-	private static final int OP_CODE_READ_OBJECT_INFO_KEY = 0x06;
+	private static final int OP_CODE_READ_ERROR_KEY = 0x05;
+	private static final int OP_CODE_SELECT_OBJECT_KEY = 0x06;
 	private static final int OP_CODE_RESPONSE_CODE_KEY = 0x60;
 	private static final byte[] OP_CODE_CREATE_COMMAND = new byte[]{OP_CODE_CREATE_KEY, OBJECT_COMMAND, 0x00, 0x00, 0x00, 0x00 };
 	private static final byte[] OP_CODE_CREATE_DATA = new byte[]{OP_CODE_CREATE_KEY, OBJECT_DATA, 0x00, 0x00, 0x00, 0x00};
 	private static final byte[] OP_CODE_PACKET_RECEIPT_NOTIF_REQ = new byte[]{OP_CODE_PACKET_RECEIPT_NOTIF_REQ_KEY, 0x00, 0x00 /* param PRN uint16 in Little Endian */};
 	private static final byte[] OP_CODE_CALCULATE_CHECKSUM = new byte[]{OP_CODE_CALCULATE_CHECKSUM_KEY};
 	private static final byte[] OP_CODE_EXECUTE = new byte[]{OP_CODE_EXECUTE_KEY};
-	private static final byte[] OP_CODE_READ_COMMAND_OBJECT = new byte[]{OP_CODE_READ_OBJECT_KEY, OBJECT_COMMAND};
-	private static final byte[] OP_CODE_READ_DATA_OBJECT = new byte[]{OP_CODE_READ_OBJECT_KEY, OBJECT_DATA}; // Reads last error message
-	private static final byte[] OP_CODE_READ_INFO = new byte[]{OP_CODE_READ_OBJECT_INFO_KEY, 0x00 /* type */};
+	private static final byte[] OP_CODE_READ_ERROR = new byte[]{OP_CODE_READ_ERROR_KEY};
+	private static final byte[] OP_CODE_SELECT_OBJECT = new byte[]{OP_CODE_SELECT_OBJECT_KEY, 0x00 /* type */};
 
 	private BluetoothGattCharacteristic mControlPointCharacteristic;
 	private BluetoothGattCharacteristic mPacketCharacteristic;
@@ -227,13 +226,21 @@ import no.nordicsemi.android.error.SecureDfuError;
 			loge(e.getMessage());
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, String.format("Remote DFU error: %s", SecureDfuError.parse(error)));
 
-			try {
-				final ErrorMessage details = readLastError();
-				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, "Details: " + details.message + " (Code = " + details.code + ")");
-				logi("Error details: " + details.message + " (Code = " + details.code + ")");
-			} catch (final Exception e1) {
-				loge("Reading error details failed", e1);
-				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, "Reading error details failed");
+			// For the Extended Error more details can be obtained on some devices.
+			if (e.getErrorNumber() == SecureDfuError.EXTENDED_ERROR) {
+				try {
+					final ErrorMessage details = readLastError();
+					if (details != null) {
+						logi("Error details: " + details.message + " (Code = " + details.code + ")");
+						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, "Details: " + details.message + " (Code = " + details.code + ")");
+					} else {
+						logi("Reading error details not supported");
+						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, "Reading error details not supported");
+					}
+				} catch (final Exception e1) {
+					loge("Reading error details failed", e1);
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, "Reading error details failed");
+				}
 			}
 			mService.terminateConnection(gatt, error);
 		}
@@ -242,22 +249,17 @@ import no.nordicsemi.android.error.SecureDfuError;
 	/**
 	 * This method does the following:
 	 * <ol>
-	 *     <li>Reads Command Object Info - this returns the maximum acceptable size of a command object, and the offset and CRC32 of the command
+	 *     <li>Selects the Command object - this Op Code returns the maximum acceptable size of a command object, and the offset and CRC32 of the command
 	 *     that is already stored in the device (in case the DFU was started in a previous connection and disconnected before it has finished).</li>
 	 *     <li>If the offset received is greater than 0 and less or equal to the size of the Init file that is to be sent, it will compare the
 	 *     received CRC with the local one and, if they match:
 	 *     	<ul>
 	 *     	    <li>If offset < init file size - it will continue sending the Init file from the point it stopped before,</li>
-	 *     	    <li>If offset == init file size - it will send the Calculate Checksum request to obtain a CRC of a current object.
-	 *     	    <ul>
-	 *     	    	<li>If the received CRC is the same as above ones, it will send Execute command to execute the Init file, as it may have not been executed before.</li>
-	 *     	    	<li>If the received CRC is different, that means that the Data Object has already been created in the previous connection and this method will return.</li>
-	 *     	    </ul>
-	 *     	    </li>
+	 *     	    <li>If offset == init file size - it will send Execute command to execute the Init file, as it may have not been executed before.</li>
 	 *     	</ul>
 	 *     </li>
-	 *     <li>If the CRCs don't match, or the received offset is > init file size, it create the Command Object and send the whole Init file as the previous one
-	 *     was different.</li>
+	 *     <li>If the CRCs don't match, or the received offset is greater then init file size, it creates the Command Object and sends the whole
+	 *     Init file as the previous one was different.</li>
 	 * </ol>
 	 * Sending of the Init packet is done without using PRNs (Packet Receipt Notifications), so they are disabled prior to sending the data.
 	 * @param gatt the target GATT device
@@ -271,11 +273,10 @@ import no.nordicsemi.android.error.SecureDfuError;
 		final CRC32 crc32 = new CRC32(); // Used to calculate CRC32 of the Init packet
 		ObjectChecksum checksum;
 
-		// First, read the Command Object Info. This give information about the maximum command size and whether there is already
-		// one saved from a previous connection. It offset and CRC returned are not equal zero, we can compare it with the current init file
-		// and skip sending it for the second time.
-		logi("Sending Read Command Object Info command (Op Code = 6, Type = 1)");
-		final ObjectInfo info = readObjectInfo(OBJECT_COMMAND);
+		// First, select the Command Object. As a response the maximum command size and information whether there is already
+		// a command saved from a previous connection is returned.
+		logi("Setting object to Command (Op Code = 6, Type = 1)");
+		final ObjectInfo info = selectObject(OBJECT_COMMAND);
 		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, String.format(Locale.US, "Command object info received (Max size = %d, Offset = %d, CRC = %08X)", info.maxSize, info.offset, info.CRC32));
 		if (mInitPacketSizeInBytes > info.maxSize) {
 			// Ignore this. DFU target will send an error if init packet is too large after sending the 'Create object' command
@@ -381,39 +382,20 @@ import no.nordicsemi.android.error.SecureDfuError;
 					}
 				}
 			}
-
-			// Execute Init packet
-			logi("Executing init packet (Op Code = 4)");
-			writeExecute();
-			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Command object executed");
-		} else {
-			// When the Init file was skipped, we are still not sure whether it was executed.
-			// Perhaps, just after sending it, the device got disconnected? We have to check it.
-			logi("Checking the current object...");
-			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Checking the current object...");
-
-			// Get the calculated CRC of the Init packet
-			final int crc = (int) (crc32.getValue() & 0xFFFFFFFFL);
-
-			// Calculate Checksum
-			logi("Sending Calculate Checksum command (Op Code = 3)");
-			checksum = readChecksum();
-			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, String.format(Locale.US, "Checksum received (Offset = %d, CRC = %08X)", checksum.offset, checksum.CRC32));
-			logi(String.format(Locale.US, "Checksum received (Offset = %d, CRC = %08X)", checksum.offset, checksum.CRC32));
-
-			if (checksum.offset == mInitPacketSizeInBytes && crc == checksum.CRC32) {
-				// Execute Init packet. It's better to execute it twice than not execute at all...
-				logi("Executing init packet (Op Code = 4)");
-				writeExecute();
-				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Command object executed");
-			} else {
-				// It looks like we have started sending the Data already, let's continue
-			}
 		}
+
+		// Execute Init packet. It's better to execute it twice than not execute at all...
+		logi("Executing init packet (Op Code = 4)");
+		writeExecute();
+		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Command object executed");
 	}
 
 	/**
-	 * This method enables
+	 * This method does the following:
+	 * <ol>
+	 *     <li>Sets the Packet Receipt Notification to a value specified in the settings.</li>
+	 *     <li></li>
+	 * </ol>
 	 * @param gatt the target GATT device
 	 * @throws RemoteDfuException
 	 * @throws DeviceDisconnectedException
@@ -431,27 +413,23 @@ import no.nordicsemi.android.error.SecureDfuError;
 		}
 
 		// We are ready to start sending the new firmware.
-		// Before, we have to check the max object size and i
 
-		logi("Sending Read Data Object Info command (Op Code = 6, Type = 2)");
-		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Reading data object info...");
-		final ObjectInfo info = readObjectInfo(OBJECT_DATA);
+		logi("Setting object to Data (Op Code = 6, Type = 1)");
+		final ObjectInfo info = selectObject(OBJECT_DATA);
 		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, String.format(Locale.US, "Data object info received (Max size = %d, Offset = %d, CRC = %08X)", info.maxSize, info.offset, info.CRC32));
 		mProgressInfo.setMaxObjectSizeInBytes(info.maxSize);
 
 		// Number of chunks in which the data will be sent
-		final int count = (mImageSizeInBytes + info.maxSize - 1) / info.maxSize;
-		// Chunk iterator
-		int i = 0;
-		final long startTime = SystemClock.elapsedRealtime();
+		final int chunkCount = (mImageSizeInBytes + info.maxSize - 1) / info.maxSize;
+		int currentChunk = 0;
 		boolean resumeSendingData = false;
 
 		// Can we resume? If the offset obtained from the device is greater then zero we can compare it with the local CRC
 		// and resume sending the data.
 		if (info.offset > 0) {
 			try {
-				i = info.offset / info.maxSize;
-				int bytesSentAndExecuted = info.maxSize * i;
+				currentChunk = info.offset / info.maxSize;
+				int bytesSentAndExecuted = info.maxSize * currentChunk;
 				int bytesSentNotExecuted = info.offset - bytesSentAndExecuted;
 
 				// Read the same number of bytes from the current init packet to calculate local CRC32
@@ -497,20 +475,21 @@ import no.nordicsemi.android.error.SecureDfuError;
 			mProgressInfo.setBytesSent(0);
 		}
 
-		// Each page will be sent in MAX_ATTEMPTS
+		final long startTime = SystemClock.elapsedRealtime();
+
 		if (info.offset < mImageSizeInBytes) {
 			int attempt = 1;
+			// Each page will be sent in MAX_ATTEMPTS
 			while (mProgressInfo.getAvailableObjectSizeIsBytes() > 0) {
 				if (!resumeSendingData) {
 					// Create the Data object
-					logi("Creating Data object (Op Code = 1, Type = 2, Size = " + mProgressInfo.getAvailableObjectSizeIsBytes() + ") (" + (i + 1) + "/" + count + ")");
+					logi("Creating Data object (Op Code = 1, Type = 2, Size = " + mProgressInfo.getAvailableObjectSizeIsBytes() + ") (" + (currentChunk + 1) + "/" + chunkCount + ")");
 					writeCreateRequest(OBJECT_DATA, mProgressInfo.getAvailableObjectSizeIsBytes());
-					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Data object (" + (i + 1) + "/" + count + ") created");
-
-					resumeSendingData = false;
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Data object (" + (currentChunk + 1) + "/" + chunkCount + ") created");
 					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Uploading firmware...");
 				} else {
 					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Resuming uploading firmware...");
+					resumeSendingData = false;
 				}
 
 				// Send the current object part
@@ -537,7 +516,7 @@ import no.nordicsemi.android.error.SecureDfuError;
 					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Data object executed");
 
 					// Increment iterator
-					i++;
+					currentChunk++;
 					attempt = 1;
 				} else {
 					if (attempt < MAX_ATTEMPTS) {
@@ -560,12 +539,16 @@ import no.nordicsemi.android.error.SecureDfuError;
 					}
 				}
 			}
-			final long endTime = SystemClock.elapsedRealtime();
-			logi("Transfer of " + mProgressInfo.getBytesSent() + " bytes has taken " + (endTime - startTime) + " ms");
-			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Upload completed in " + (endTime - startTime) + " ms");
 		} else {
-			// Looks as if the whole file was sent correctly but
+			// Looks as if the whole file was sent correctly but has not been executed
+			logi("Executing data object (Op Code = 4)");
+			writeExecute();
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Data object executed");
 		}
+
+		final long endTime = SystemClock.elapsedRealtime();
+		logi("Transfer of " + (mProgressInfo.getBytesSent() - info.offset) + " bytes has taken " + (endTime - startTime) + " ms");
+		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Upload completed in " + (endTime - startTime) + " ms");
 	}
 
 	/**
@@ -577,7 +560,14 @@ import no.nordicsemi.android.error.SecureDfuError;
 	 * @throws UnknownResponseException if response was not valid
 	 */
 	private int getStatusCode(final byte[] response, final int request) throws UnknownResponseException {
-		if (response == null || response.length < 3 || response[0] != OP_CODE_RESPONSE_CODE_KEY || response[1] != request || response[2] < SecureDfuError.INVALID_CODE || response[2] > 10)
+		if (response == null || response.length < 3 || response[0] != OP_CODE_RESPONSE_CODE_KEY || response[1] != request || response[2] < DFU_STATUS_SUCCESS ||
+				(response[2] != SecureDfuError.OP_CODE_NOT_SUPPORTED &&
+						response[2] != SecureDfuError.INVALID_PARAM &&
+						response[2] != SecureDfuError.INSUFFICIENT_RESOURCES &&
+						response[2] != SecureDfuError.INVALID_OBJECT &&
+						response[2] != SecureDfuError.UNSUPPORTED_TYPE &&
+						response[2] != SecureDfuError.OPERATION_FAILED &&
+						response[2] != SecureDfuError.EXTENDED_ERROR))
 			throw new UnknownResponseException("Invalid response received", response, OP_CODE_RESPONSE_CODE_KEY, request);
 		return response[2];
 	}
@@ -679,7 +669,7 @@ import no.nordicsemi.android.error.SecureDfuError;
 	/**
 	 * Reads the last error message from the device.
 	 *
-	 * @return the error details
+	 * @return the error details or null if this feature is not supported
 	 * @throws DeviceDisconnectedException
 	 * @throws DfuException
 	 * @throws UploadAbortedException
@@ -690,52 +680,56 @@ import no.nordicsemi.android.error.SecureDfuError;
 			throw new DeviceDisconnectedException("Unable to read object info: device disconnected");
 
 		final BluetoothGattCharacteristic characteristic = mControlPointCharacteristic;
-		writeOpCode(characteristic, OP_CODE_READ_DATA_OBJECT);
+		writeOpCode(characteristic, OP_CODE_READ_ERROR);
 
 		mReceivingErrorDetailsInProgress = true;
-		readNotificationResponse(); // ignore the result, the value is in mControlPointCharacteristic
+		final byte[] response = readNotificationResponse();
+		final int status = getStatusCode(response, OP_CODE_READ_ERROR_KEY);
 
-		final int code = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 2);
-		int length = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 4);
-		final StringBuilder builder = new StringBuilder();
-		builder.append(characteristic.getStringValue(6));
-		while (length - builder.length() > 0) {
-			mReceivedData = null;
-			mReceivingErrorDetailsInProgress = true;
-			readNotificationResponse();
-			builder.append(characteristic.getStringValue(0));
+		if (status == DFU_STATUS_SUCCESS) {
+			final int code = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 3);
+			int length = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 5);
+			final StringBuilder builder = new StringBuilder();
+			builder.append(characteristic.getStringValue(7));
+			while (length - builder.length() > 0) {
+				mReceivedData = null;
+				mReceivingErrorDetailsInProgress = true;
+				readNotificationResponse();
+				builder.append(characteristic.getStringValue(0));
 
-			// Finish if byte 0 is received at the end
-			if (characteristic.getValue()[characteristic.getValue().length - 1] == 0)
-				break;
+				// Finish if byte 0 is received at the end
+				if (characteristic.getValue()[characteristic.getValue().length - 1] == 0)
+					break;
+			}
+
+			final ErrorMessage error = new ErrorMessage();
+			error.code = code;
+			error.message = builder.toString();
+			return error;
 		}
-
-		final ErrorMessage error = new ErrorMessage();
-		error.code = code;
-		error.message = builder.toString();
-		return error;
+		return null;
 	}
 
 	/**
-	 * Reads the Object Info for object with given type. The object info contains the max object size, the last offset and CRC32 of the whole object until now.
+	 * Selects the current object and reads its metadata. The object info contains the max object size, and the offset and CRC32 of the whole object until now.
 	 *
-	 * @return requested object info
+	 * @return object info
 	 * @throws DeviceDisconnectedException
 	 * @throws DfuException
 	 * @throws UploadAbortedException
 	 * @throws RemoteDfuException thrown when the returned status code is not equal to {@link #DFU_STATUS_SUCCESS}
 	 */
-	private ObjectInfo readObjectInfo(final int type) throws DeviceDisconnectedException, DfuException, UploadAbortedException, RemoteDfuException, UnknownResponseException {
+	private ObjectInfo selectObject(final int type) throws DeviceDisconnectedException, DfuException, UploadAbortedException, RemoteDfuException, UnknownResponseException {
 		if (!mConnected)
 			throw new DeviceDisconnectedException("Unable to read object info: device disconnected");
 
-		OP_CODE_READ_INFO[1] = (byte) type;
-		writeOpCode(mControlPointCharacteristic, OP_CODE_READ_INFO);
+		OP_CODE_SELECT_OBJECT[1] = (byte) type;
+		writeOpCode(mControlPointCharacteristic, OP_CODE_SELECT_OBJECT);
 
 		final byte[] response = readNotificationResponse();
-		final int status = getStatusCode(response, OP_CODE_READ_OBJECT_INFO_KEY);
+		final int status = getStatusCode(response, OP_CODE_SELECT_OBJECT_KEY);
 		if (status != DFU_STATUS_SUCCESS)
-			throw new RemoteDfuException("Reading Object Info failed", status);
+			throw new RemoteDfuException("Selecting object failed", status);
 
 		final ObjectInfo info = new ObjectInfo();
 		info.maxSize = mControlPointCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 3);
@@ -767,7 +761,6 @@ import no.nordicsemi.android.error.SecureDfuError;
 		final ObjectChecksum checksum = new ObjectChecksum();
 		checksum.offset = mControlPointCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 3);
 		checksum.CRC32 = mControlPointCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 3 + 4);
-//		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, String.format(Locale.US, "Response received (Op Code = %d, Status = %d, Offset = %d, CRC = %08X)", response[1], status, checksum.offset, checksum.CRC32));
 		return checksum;
 	}
 

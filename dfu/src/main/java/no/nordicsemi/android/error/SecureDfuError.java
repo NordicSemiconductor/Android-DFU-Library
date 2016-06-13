@@ -26,19 +26,17 @@ import no.nordicsemi.android.dfu.DfuBaseService;
 
 public final class SecureDfuError {
 	// DFU status values
-	public static final int INVALID_CODE = 0;
+	// public static final int SUCCESS = 1; // that's not an error
 	public static final int OP_CODE_NOT_SUPPORTED = 2;
 	public static final int INVALID_PARAM = 3;
 	public static final int INSUFFICIENT_RESOURCES = 4;
 	public static final int INVALID_OBJECT = 5;
-	public static final int SIGNATURE_DOES_NOT_MATCH = 6;
 	public static final int UNSUPPORTED_TYPE = 7;
 	public static final int OPERATION_FAILED = 10; // 0xA
+	public static final int EXTENDED_ERROR = 11; // 0xB
 
 	public static String parse(final int error) {
 		switch (error & (~DfuBaseService.ERROR_REMOTE_MASK)) {
-			case INVALID_CODE:
-				return "REMOTE DFU INVALID CODE";
 			case OP_CODE_NOT_SUPPORTED:
 				return "REMOTE DFU OP CODE NOT SUPPORTED";
 			case INVALID_PARAM:
@@ -47,12 +45,13 @@ public final class SecureDfuError {
 				return "REMOTE DFU INSUFFICIENT RESOURCES";
 			case INVALID_OBJECT:
 				return "REMOTE DFU INVALID OBJECT";
-			case SIGNATURE_DOES_NOT_MATCH:
-				return "REMOTE DFU SIGNATURE DOES NOT MATCH";
 			case UNSUPPORTED_TYPE:
 				return "REMOTE DFU UNSUPPORTED TYPE";
 			case OPERATION_FAILED:
 				return "REMOTE DFU OPERATION FAILED";
+			case EXTENDED_ERROR:
+				// The error details can be read using Read Error operation
+				return "REMOTE DFU EXTENDED ERROR";
 			default:
 				return "UNKNOWN (" + error + ")";
 		}

@@ -41,6 +41,7 @@ import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.UUID;
 
+import no.nordicsemi.android.dfu.internal.ArchiveInputStream;
 import no.nordicsemi.android.dfu.internal.exception.DeviceDisconnectedException;
 import no.nordicsemi.android.dfu.internal.exception.DfuException;
 import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
@@ -246,6 +247,26 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		mFileType = fileType;
 		mFirmwareStream = firmwareStream;
 		mInitPacketStream = initPacketStream;
+
+		final int currentPart = intent.getIntExtra(DfuBaseService.EXTRA_PART_CURRENT, 1);
+		int totalParts = intent.getIntExtra(DfuBaseService.EXTRA_PARTS_TOTAL, 1);
+
+		// Sending App together with SD or BL is not supported. It must be spilt into two parts.
+		if (fileType > DfuBaseService.TYPE_APPLICATION) {
+			logw("DFU target does not support (SD/BL)+App update, splitting into 2 parts");
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, "Sending system components");
+			mFileType &= ~DfuBaseService.TYPE_APPLICATION; // clear application bit
+			totalParts = 2;
+
+			// Set new content type in the ZIP Input Stream and update sizes of images
+			final ArchiveInputStream zhis = (ArchiveInputStream) mFirmwareStream;
+			zhis.setContentType(mFileType);
+		}
+
+		if (currentPart == 2) {
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, "Sending application");
+		}
+
 		int size;
 		try {
 			size = initPacketStream.available();
@@ -260,19 +281,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 			// not possible
 		}
 		mImageSizeInBytes = size;
-
-		final int currentPart = intent.getIntExtra(DfuBaseService.EXTRA_PART_CURRENT, 1);
-		final int totalParts = intent.getIntExtra(DfuBaseService.EXTRA_PARTS_TOTAL, 1);
 		mProgressInfo = mService.mProgressInfo.init(size, currentPart, totalParts);
-
-		// Sending App together with SD or BL is not supported. It must be spilt into two parts.
-		if (fileType > DfuBaseService.TYPE_APPLICATION) {
-			logw("DFU target does not support (SD/BL)+App update");
-			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, "DFU target does not support (SD/BL)+App update");
-			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Sending only SD/BL");
-			mFileType &= ~DfuBaseService.TYPE_APPLICATION; // clear application bit
-			mProgressInfo.setTotalPart(2);
-		}
 
 		// If we are bonded we may want to enable Service Changed characteristic indications.
 		// Note: This feature will be introduced in the SDK 8.0 as this is the proper way to refresh attribute list on the phone.

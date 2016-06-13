@@ -26,6 +26,7 @@ import no.nordicsemi.android.dfu.DfuBaseService;
 
 public final class LegacyDfuError {
 	// DFU status values
+	// public static final int SUCCESS = 1; // that's not an error
 	public static final int INVALID_STATE = 2;
 	public static final int NOT_SUPPORTED = 3;
 	public static final int DATA_SIZE_EXCEEDS_LIMIT = 4;
