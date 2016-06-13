@@ -555,7 +555,7 @@ import no.nordicsemi.android.error.LegacyDfuError;
 			try {
 				logi("Uploading firmware...");
 				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Uploading firmware...");
-				response = uploadFirmwareImage(mPacketCharacteristic);
+				uploadFirmwareImage(mPacketCharacteristic);
 			} catch (final DeviceDisconnectedException e) {
 				loge("Disconnected while sending data");
 				throw e;
@@ -564,6 +564,7 @@ import no.nordicsemi.android.error.LegacyDfuError;
 			final long endTime = SystemClock.elapsedRealtime();
 
 			// Check the result of the operation
+			response = readNotificationResponse();
 			status = getStatusCode(response, OP_CODE_RECEIVE_FIRMWARE_IMAGE_KEY);
 			logi("Response received. Op Code: " + response[0] + " Req Op Code = " + response[1] + ", Status = " + response[2]);
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Response received (Op Code = " + response[1] + ", Status = " + status + ")");

@@ -394,7 +394,11 @@ import no.nordicsemi.android.error.SecureDfuError;
 	 * This method does the following:
 	 * <ol>
 	 *     <li>Sets the Packet Receipt Notification to a value specified in the settings.</li>
-	 *     <li></li>
+	 *     <li>Selects the Data object - this returns maximum single object size and the offset and CRC of the data already saved.</li>
+	 *     <li>If the offset received is greater than 0 it will calculate the CRC of the same number of bytes of the firmware to be sent.
+	 *     If the CRC match it will continue sending data. Otherwise, it will go back to the beginning of the last chunk, or to the beginning
+	 *     of the previous chunk assuming the last one was not executed before, and continue sending data from there.</li>
+	 *     <li>If the CRC and offset received match and the offset is equal to the firmware size, it will only send the Execute command.</li>
 	 * </ol>
 	 * @param gatt the target GATT device
 	 * @throws RemoteDfuException

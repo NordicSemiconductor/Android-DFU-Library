@@ -138,7 +138,6 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 							if (available < 20)
 								buffer = new byte[available];
 							final int size = mFirmwareStream.read(buffer);
-							logi("Writing packet from onCharacteristicWrite"); // TODO remove
 							writePacket(gatt, characteristic, buffer, size);
 							return;
 						} catch (final HexFileValidationException e) {
@@ -205,7 +204,6 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 				if (available < 20)
 					buffer = new byte[available];
 				final int size = mFirmwareStream.read(buffer);
-				logi("Writing packet from handlePacketReceiptNotification"); // TODO remove
 				writePacket(gatt, packetCharacteristic, buffer, size);
 			} catch (final HexFileValidationException e) {
 				loge("Invalid HEX file");
@@ -322,12 +320,11 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 	 * If connection state will change, or an error will occur, an exception will be thrown.
 	 *
 	 * @param packetCharacteristic the characteristic to write file content to. Must be the DFU PACKET
-	 * @return The response value received from notification with Op Code = 3 when all bytes will be uploaded successfully.
 	 * @throws DeviceDisconnectedException Thrown when the device will disconnect in the middle of the transmission.
 	 * @throws DfuException                Thrown if DFU error occur
 	 * @throws UploadAbortedException
 	 */
-	protected byte[] uploadFirmwareImage(final BluetoothGattCharacteristic packetCharacteristic) throws DeviceDisconnectedException,
+	protected void uploadFirmwareImage(final BluetoothGattCharacteristic packetCharacteristic) throws DeviceDisconnectedException,
 			DfuException, UploadAbortedException {
 		mReceivedData = null;
 		mError = 0;
@@ -338,7 +335,6 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 		try {
 			final int size = mFirmwareStream.read(buffer);
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Sending firmware to characteristic " + packetCharacteristic.getUuid() + "...");
-			logi("Writing packet from uploadFirmwareImage"); // TODO remove
 			writePacket(mGatt, packetCharacteristic, buffer, size);
 		} catch (final HexFileValidationException e) {
 			throw new DfuException("HEX file not valid", DfuBaseService.ERROR_FILE_INVALID);
@@ -361,8 +357,6 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 			throw new DfuException("Uploading Firmware Image failed", mError);
 		if (!mConnected)
 			throw new DeviceDisconnectedException("Uploading Firmware Image failed: device disconnected");
-
-		return mReceivedData;
 	}
 
 	/**
