@@ -564,8 +564,9 @@ import no.nordicsemi.android.error.SecureDfuError;
 	 * @throws UnknownResponseException if response was not valid
 	 */
 	private int getStatusCode(final byte[] response, final int request) throws UnknownResponseException {
-		if (response == null || response.length < 3 || response[0] != OP_CODE_RESPONSE_CODE_KEY || response[1] != request || response[2] < DFU_STATUS_SUCCESS ||
-				(response[2] != SecureDfuError.OP_CODE_NOT_SUPPORTED &&
+		if (response == null || response.length < 3 || response[0] != OP_CODE_RESPONSE_CODE_KEY || response[1] != request ||
+				(response[2] != DFU_STATUS_SUCCESS &&
+						response[2] != SecureDfuError.OP_CODE_NOT_SUPPORTED &&
 						response[2] != SecureDfuError.INVALID_PARAM &&
 						response[2] != SecureDfuError.INSUFFICIENT_RESOURCES &&
 						response[2] != SecureDfuError.INVALID_OBJECT &&

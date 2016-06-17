@@ -634,7 +634,6 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	 */
 	protected byte[] readNotificationResponse() throws DeviceDisconnectedException, DfuException, UploadAbortedException {
 		// do not clear the mReceiveData here. The response might already be obtained. Clear it in write request instead.
-		mError = 0;
 		try {
 			synchronized (mLock) {
 				while ((mReceivedData == null && mConnected && mError == 0 && !mAborted) || mPaused)
