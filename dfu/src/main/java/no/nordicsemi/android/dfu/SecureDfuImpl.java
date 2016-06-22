@@ -258,7 +258,7 @@ import no.nordicsemi.android.error.SecureDfuError;
 	 *     	    <li>If offset == init file size - it will send Execute command to execute the Init file, as it may have not been executed before.</li>
 	 *     	</ul>
 	 *     </li>
-	 *     <li>If the CRCs don't match, or the received offset is greater then init file size, it creates the Command Object and sends the whole
+	 *     <li>If the CRC don't match, or the received offset is greater then init file size, it creates the Command Object and sends the whole
 	 *     Init file as the previous one was different.</li>
 	 * </ol>
 	 * Sending of the Init packet is done without using PRNs (Packet Receipt Notifications), so they are disabled prior to sending the data.
@@ -302,7 +302,7 @@ import no.nordicsemi.android.error.SecureDfuError;
 						// There is no need to send it again. We may try to resume sending data.
 						logi("-> Whole Init packet was sent before");
 						skipSendingInitPacket = true;
-						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Command object match Init packet");
+						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Received CRC match Init packet");
 					} else {
 						logi("-> " + info.offset + " bytes of Init packet were sent before");
 						resumeSendingInitPacket = true;
@@ -360,8 +360,8 @@ import no.nordicsemi.android.error.SecureDfuError;
 				} else {
 					if (attempt < MAX_ATTEMPTS) {
 						attempt++;
-						logi("CRC32 does not match! Retrying...(" + attempt + "/" + MAX_ATTEMPTS + ")");
-						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, "CRC32 does not match! Retrying...(" + attempt + "/" + MAX_ATTEMPTS + ")");
+						logi("CRC does not match! Retrying...(" + attempt + "/" + MAX_ATTEMPTS + ")");
+						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, "CRC does not match! Retrying...(" + attempt + "/" + MAX_ATTEMPTS + ")");
 						try {
 							// Go back to the beginning, we will send the whole Init packet again
 							resumeSendingInitPacket = false;
@@ -375,8 +375,8 @@ import no.nordicsemi.android.error.SecureDfuError;
 							return;
 						}
 					} else {
-						loge("CRC32 does not match!");
-						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, "CRC32 does not match!");
+						loge("CRC does not match!");
+						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, "CRC does not match!");
 						mService.terminateConnection(gatt, DfuBaseService.ERROR_CRC_ERROR);
 						return;
 					}
@@ -436,6 +436,12 @@ import no.nordicsemi.android.error.SecureDfuError;
 				int bytesSentAndExecuted = info.maxSize * currentChunk;
 				int bytesSentNotExecuted = info.offset - bytesSentAndExecuted;
 
+				// If the offset is dividable by maxSize, assume that the last page was not executed
+				if (bytesSentNotExecuted == 0) {
+					bytesSentAndExecuted -= info.maxSize;
+					bytesSentNotExecuted = info.maxSize;
+				}
+
 				// Read the same number of bytes from the current init packet to calculate local CRC32
 				if (bytesSentAndExecuted > 0) {
 					mFirmwareStream.read(new byte[bytesSentAndExecuted]); // Read executed bytes
@@ -452,15 +458,18 @@ import no.nordicsemi.android.error.SecureDfuError;
 				if (crc == info.CRC32) {
 					mProgressInfo.setBytesSent(info.offset);
 					mProgressInfo.setBytesReceived(info.offset);
-					resumeSendingData = true;
-				} else {
-					if (bytesSentNotExecuted == 0) {
-						// Looks like the whole last chunk was invalid and not executed. We have to rewind last maxSize bytes as we don't have any mark there.
-						bytesSentAndExecuted -= info.maxSize;
-						bytesSentNotExecuted = info.maxSize;
-						((ArchiveInputStream) mFirmwareStream).rewind(info.maxSize);
-						mFirmwareStream.mark(info.maxSize);
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, info.offset + " bytes of data sent before, CRC match");
+
+					// If the whole page was sent and CRC match, we have to make sure it was executed
+					if (bytesSentNotExecuted == info.maxSize && info.offset < mImageSizeInBytes) {
+						logi("Executing data object (Op Code = 4)");
+						writeExecute();
+						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Data object executed");
+					} else {
+						resumeSendingData = true;
 					}
+				} else {
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, info.offset + " bytes sent before, CRC does not match");
 					// The CRC of the current object is not correct. If there was another Data object sent before, its CRC must have been correct,
 					// as it has been executed. Either way, we have to create the current object again.
 					mProgressInfo.setBytesSent(bytesSentAndExecuted);
@@ -468,6 +477,7 @@ import no.nordicsemi.android.error.SecureDfuError;
 					info.offset -= bytesSentNotExecuted;
 					info.CRC32 = 0; // invalidate
 					mFirmwareStream.reset();
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Resuming from byte " + info.offset + "...");
 				}
 			} catch (final IOException e) {
 				loge("Error while reading firmware stream", e);
@@ -525,8 +535,8 @@ import no.nordicsemi.android.error.SecureDfuError;
 				} else {
 					if (attempt < MAX_ATTEMPTS) {
 						attempt++;
-						logi("CRC32 does not match! Retrying...(" + attempt + "/" + MAX_ATTEMPTS + ")");
-						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, "CRC32 does not match! Retrying...(" + attempt + "/" + MAX_ATTEMPTS + ")");
+						logi("CRC does not match! Retrying...(" + attempt + "/" + MAX_ATTEMPTS + ")");
+						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, "CRC does not match! Retrying...(" + attempt + "/" + MAX_ATTEMPTS + ")");
 						try {
 							mFirmwareStream.reset();
 							mProgressInfo.setBytesSent(checksum.offset - info.maxSize);
@@ -536,8 +546,8 @@ import no.nordicsemi.android.error.SecureDfuError;
 							return;
 						}
 					} else {
-						loge("CRC32 does not match!");
-						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, "CRC32 does not match!");
+						loge("CRC does not match!");
+						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, "CRC does not match!");
 						mService.terminateConnection(gatt, DfuBaseService.ERROR_CRC_ERROR);
 						return;
 					}

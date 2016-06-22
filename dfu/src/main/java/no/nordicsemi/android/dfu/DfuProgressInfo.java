@@ -118,7 +118,7 @@ import android.support.annotation.NonNull;
 
 	public float getSpeed() {
 		final long now = SystemClock.elapsedRealtime();
-		final float speed = now - timeStart != 0 ? (float) (bytesSent - lastBytesSent - initalBytesSent) / (float) (now - lastProgressTime) : 0.0f;
+		final float speed = now - timeStart != 0 ? (float) (bytesSent - lastBytesSent) / (float) (now - lastProgressTime) : 0.0f;
 		lastProgressTime = now;
 		lastBytesSent = bytesSent;
 		return speed;
