@@ -769,13 +769,13 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		if ((fileType & ~(TYPE_SOFT_DEVICE | TYPE_BOOTLOADER | TYPE_APPLICATION)) > 0 || !(MIME_TYPE_ZIP.equals(mimeType) || MIME_TYPE_OCTET_STREAM.equals(mimeType))) {
 			logw("File type or file mime-type not supported");
 			sendLogBroadcast(LOG_LEVEL_WARNING, "File type or file mime-type not supported");
-			sendErrorBroadcast(ERROR_FILE_TYPE_UNSUPPORTED);
+			report(ERROR_FILE_TYPE_UNSUPPORTED);
 			return;
 		}
 		if (MIME_TYPE_OCTET_STREAM.equals(mimeType) && fileType != TYPE_SOFT_DEVICE && fileType != TYPE_BOOTLOADER && fileType != TYPE_APPLICATION) {
 			logw("Unable to determine file type");
 			sendLogBroadcast(LOG_LEVEL_WARNING, "Unable to determine file type");
-			sendErrorBroadcast(ERROR_FILE_TYPE_UNSUPPORTED);
+			report(ERROR_FILE_TYPE_UNSUPPORTED);
 			return;
 		}
 
@@ -862,22 +862,27 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 				sendLogBroadcast(LOG_LEVEL_INFO, "Image file opened (" + imageSizeInBytes + " bytes in total)");
 			} catch (final SecurityException e) {
 				loge("A security exception occurred while opening file", e);
+				sendLogBroadcast(LOG_LEVEL_ERROR, "Opening file failed: Permission required");
 				report(ERROR_FILE_NOT_FOUND);
 				return;
 			} catch (final FileNotFoundException e) {
 				loge("An exception occurred while opening file", e);
+				sendLogBroadcast(LOG_LEVEL_ERROR, "Opening file failed: File not found");
 				report(ERROR_FILE_NOT_FOUND);
 				return;
             } catch (final SizeValidationException e) {
                 loge("Firmware not word-aligned", e);
+				sendLogBroadcast(LOG_LEVEL_ERROR, "Opening file failed: Firmware size must be word-aligned");
                 report(ERROR_FILE_SIZE_INVALID);
                 return;
 			} catch (final IOException e) {
 				loge("An exception occurred while calculating file size", e);
+				sendLogBroadcast(LOG_LEVEL_ERROR, "Opening file failed: " + e.getLocalizedMessage());
 				report(ERROR_FILE_ERROR);
 				return;
 			} catch (final Exception e) {
 				loge("An exception occurred while opening files. Did you set the firmware file?", e);
+				sendLogBroadcast(LOG_LEVEL_ERROR, "Opening file failed: " + e.getLocalizedMessage());
 				report(ERROR_FILE_ERROR);
 				return;
 			}

@@ -72,8 +72,6 @@ import no.nordicsemi.android.error.SecureDfuError;
 
 	private BluetoothGattCharacteristic mControlPointCharacteristic;
 	private BluetoothGattCharacteristic mPacketCharacteristic;
-	/** The error details may come in more than one packet. Only the first one has the Response Op Code and status. Others contain just UTF-8 text. */
-	private boolean mReceivingErrorDetailsInProgress = false;
 
 	private final SecureBluetoothCallback mBluetoothCallback = new SecureBluetoothCallback();
 
@@ -81,13 +79,6 @@ import no.nordicsemi.android.error.SecureDfuError;
 
 		@Override
 		public void onCharacteristicChanged(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) {
-			if (mReceivingErrorDetailsInProgress) {
-				mReceivingErrorDetailsInProgress = false;
-				handleNotification(gatt, characteristic);
-				notifyLock();
-				return;
-			}
-
 			if (characteristic.getValue() == null || characteristic.getValue().length < 3) {
 				loge("Empty response: " + parse(characteristic));
 				mError = DfuBaseService.ERROR_INVALID_RESPONSE;
@@ -229,7 +220,7 @@ import no.nordicsemi.android.error.SecureDfuError;
 			// For the Extended Error more details can be obtained on some devices.
 			if (e.getErrorNumber() == SecureDfuError.EXTENDED_ERROR) {
 				try {
-					final ErrorMessage details = readLastError();
+					final ErrorMessage details = readExtendedError();
 					if (details != null) {
 						logi("Error details: " + details.message + " (Code = " + details.code + ")");
 						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, "Details: " + details.message + " (Code = " + details.code + ")");
@@ -682,7 +673,8 @@ import no.nordicsemi.android.error.SecureDfuError;
 	}
 
 	/**
-	 * Reads the last error message from the device.
+	 * Reads the last error message from the device. This can be executed after a {@link SecureDfuError#EXTENDED_ERROR} status is received
+	 * from any Execute operation.
 	 *
 	 * @return the error details or null if this feature is not supported
 	 * @throws DeviceDisconnectedException
@@ -690,27 +682,30 @@ import no.nordicsemi.android.error.SecureDfuError;
 	 * @throws UploadAbortedException
 	 * @throws RemoteDfuException thrown when the returned status code is not equal to {@link #DFU_STATUS_SUCCESS}
 	 */
-	private ErrorMessage readLastError() throws DeviceDisconnectedException, DfuException, UploadAbortedException, RemoteDfuException, UnknownResponseException {
+	private ErrorMessage readExtendedError() throws DeviceDisconnectedException, DfuException, UploadAbortedException, RemoteDfuException, UnknownResponseException {
 		if (!mConnected)
 			throw new DeviceDisconnectedException("Unable to read object info: device disconnected");
 
+		mRemoteErrorOccurred = false;
 		final BluetoothGattCharacteristic characteristic = mControlPointCharacteristic;
 		writeOpCode(characteristic, OP_CODE_READ_ERROR);
 
-		mReceivingErrorDetailsInProgress = true;
 		final byte[] response = readNotificationResponse();
 		final int status = getStatusCode(response, OP_CODE_READ_ERROR_KEY);
 
 		if (status == DFU_STATUS_SUCCESS) {
 			final int code = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 3);
 			int length = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 5);
+			if (code == 0 && length == 0)
+				return null;
+
 			final StringBuilder builder = new StringBuilder();
 			builder.append(characteristic.getStringValue(7));
+
 			while (length - builder.length() > 0) {
-				mReceivedData = null;
-				mReceivingErrorDetailsInProgress = true;
+				writeOpCode(characteristic, OP_CODE_READ_ERROR);
 				readNotificationResponse();
-				builder.append(characteristic.getStringValue(0));
+				builder.append(characteristic.getStringValue(3));
 
 				// Finish if byte 0 is received at the end
 				if (characteristic.getValue()[characteristic.getValue().length - 1] == 0)
