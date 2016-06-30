@@ -15,7 +15,7 @@ apply plugin: 'com.jfrog.bintray'
 ext {
     PUBLISH_GROUP_ID = 'no.nordicsemi.android'
     PUBLISH_ARTIFACT_ID = 'dfu'
-    PUBLISH_VERSION = '0.6.2'
+    PUBLISH_VERSION = '0.6.3'
 
     bintrayRepo = 'android'
     bintrayName = 'dfu-library'
@@ -103,6 +103,14 @@ bintray {
                 passphrase = properties.getProperty("bintray.gpg.password")
                 //Optional. The passphrase for GPG signing'
             }
+        }
+    }
+}
+
+if (JavaVersion.current().isJava8Compatible()) {
+    allprojects {
+        tasks.withType(Javadoc) {
+            options.addStringOption('Xdoclint:none', '-quiet')
         }
     }
 }*/
