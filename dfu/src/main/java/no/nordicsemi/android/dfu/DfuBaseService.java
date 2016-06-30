@@ -111,6 +111,8 @@ public abstract class DfuBaseService extends IntentService {
 	 * A boolean indicating whether to disable the progress notification in the status bar. Defaults to false.
 	 */
 	public static final String EXTRA_DISABLE_NOTIFICATION = "no.nordicsemi.android.dfu.extra.EXTRA_DISABLE_NOTIFICATION";
+	/** An extra private field indicating which attempt is being performed. In case of error 133 the service will retry to connect one more time. */
+	private static final String EXTRA_ATTEMPT = "no.nordicsemi.android.dfu.extra.EXTRA_ATTEMPT";
 	/**
 	 * <p>
 	 * If the new firmware (application) does not share the bond information with the old one, the bond information is lost. Set this flag to <code>true</code>
@@ -1293,6 +1295,26 @@ public abstract class DfuBaseService extends IntentService {
 				final int error = mError & ~ERROR_CONNECTION_STATE_MASK;
 				loge("An error occurred while connecting to the device:" + error);
 				sendLogBroadcast(LOG_LEVEL_ERROR, String.format("Connection failed (0x%02X): %s", error, GattError.parseConnectionError(error)));
+				// Connection usually fails due to a 133 error (device unreachable, or.. something else went wrong).
+				// Usually trying the same for the second time works.
+				if (intent.getIntExtra(EXTRA_ATTEMPT, 0) == 0) {
+					sendLogBroadcast(LOG_LEVEL_WARNING, "Retrying...");
+
+					if (mConnectionState != STATE_DISCONNECTED) {
+						// Disconnect from the device
+						disconnect(gatt);
+					}
+					// Close the device
+					refreshDeviceCache(gatt, true);
+					close(gatt);
+
+					logi("Restarting the service");
+					final Intent newIntent = new Intent();
+					newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
+					newIntent.putExtra(EXTRA_ATTEMPT, 1);
+					startService(newIntent);
+					return;
+				}
 				terminateConnection(gatt, mError);
 				return;
 			}
@@ -1302,6 +1324,8 @@ public abstract class DfuBaseService extends IntentService {
 				terminateConnection(gatt, PROGRESS_ABORTED);
 				return;
 			}
+			// Reset the attempt counter
+			intent.putExtra(EXTRA_ATTEMPT, 0);
 
 			// We have connected to DFU device and services are discoverer
 			final BluetoothGattService dfuService = gatt.getService(DFU_SERVICE_UUID); // there was a case when the service was null. I don't know why
@@ -1629,6 +1653,31 @@ public abstract class DfuBaseService extends IntentService {
 						 */
 						status = getStatusCode(response, OP_CODE_START_DFU_KEY);
 						sendLogBroadcast(LOG_LEVEL_APPLICATION, "Response received (Op Code = " + response[1] + " Status = " + status + ")");
+						// If upload was not completed in the previous connection the DFU_STATUS_INVALID_STATE status will be reported.
+						// Theoretically, the connection could be resumed from that point, but there is no guarantee, that the same firmware
+						// is to be uploaded now. It's safer to reset the device and start DFU again.
+						if (status == DFU_STATUS_INVALID_STATE) {
+							sendLogBroadcast(LOG_LEVEL_WARNING, "Last upload interrupted. Restarting device...");
+							// Send 'jump to bootloader command' (Start DFU)
+							updateProgressNotification(PROGRESS_DISCONNECTING);
+							logi("Sending Reset command (Op Code = 6)");
+							writeOpCode(gatt, controlPointCharacteristic, OP_CODE_RESET);
+							sendLogBroadcast(LOG_LEVEL_APPLICATION, "Reset request sent");
+
+							// The device will reset so we don't have to send Disconnect signal.
+							waitUntilDisconnected();
+							sendLogBroadcast(LOG_LEVEL_INFO, "Disconnected by the remote device");
+
+							refreshDeviceCache(gatt, true); // not sure if bonded device will send Service Changed indication in this case
+							// Close the device
+							close(gatt);
+
+							logi("Restarting the service");
+							final Intent newIntent = new Intent();
+							newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
+							startService(newIntent);
+							return;
+						}
 						if (status != DFU_STATUS_SUCCESS)
 							throw new RemoteDfuException("Starting DFU failed", status);
 					} catch (final RemoteDfuException e) {
