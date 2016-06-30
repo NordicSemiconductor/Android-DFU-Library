@@ -80,7 +80,7 @@ import no.nordicsemi.android.error.GattError;
  * </p>
  * <p>
  * The {@link DfuServiceInitiator} object should be used to start the DFU Service.
- * <p/>
+ * </p>
  * <pre>
  * final DfuServiceInitiator starter = new DfuServiceInitiator(mSelectedDevice.getAddress())
  * 		.setDeviceName(mSelectedDevice.getName())
@@ -278,7 +278,7 @@ public abstract class DfuBaseService extends IntentService {
 	 * <li>An error code with {@link #ERROR_REMOTE_MASK} if remote DFU target returned an error</li>
 	 * <li>An error code with {@link #ERROR_CONNECTION_MASK} if connection error occurred (f.e. GATT error (133) or Internal GATT Error (129))</li>
 	 * </ul>
-	 * To check if error occurred use:<br />
+	 * To check if error occurred use:<br>
 	 * {@code boolean error = progressValue >= DfuBaseService.ERROR_MASK;}
 	 */
 	public static final String EXTRA_PROGRESS = "no.nordicsemi.android.dfu.extra.EXTRA_PROGRESS";
@@ -442,7 +442,7 @@ public abstract class DfuBaseService extends IntentService {
 	 * <ul>
 	 * <li>{@link #EXTRA_LOG_LEVEL} - The log level, one of following: {@link #LOG_LEVEL_DEBUG}, {@link #LOG_LEVEL_VERBOSE}, {@link #LOG_LEVEL_INFO},
 	 * {@link #LOG_LEVEL_APPLICATION}, {@link #LOG_LEVEL_WARNING}, {@link #LOG_LEVEL_ERROR}</li>
-	 * <li>{@link #EXTRA_LOG_MESSAGE}</li> - The log message
+	 * <li>{@link #EXTRA_LOG_MESSAGE} - The log message</li>
 	 * </ul>
 	 */
 	public static final String BROADCAST_LOG = "no.nordicsemi.android.dfu.broadcast.BROADCAST_LOG";
@@ -2920,10 +2920,9 @@ public abstract class DfuBaseService extends IntentService {
 	 * <ul>
 	 * <li>{@link #EXTRA_DEVICE_ADDRESS} - target device address</li>
 	 * <li>{@link #EXTRA_DEVICE_NAME} - target device name</li>
-	 * <li>{@link #EXTRA_PROGRESS} - the connection state (values < 0)*, current progress (0-100) or error number if {@link #ERROR_MASK} bit set.</li>
+	 * <li>{@link #EXTRA_PROGRESS} - the connection state (values &lt; 0)*, current progress (0-100) or error number if {@link #ERROR_MASK} bit set.</li>
 	 * </ul>
-	 * <p>
-	 * __________<br />
+	 * _______________________________<br>
 	 * * - connection state constants:
 	 * <ul>
 	 * <li>{@link #PROGRESS_CONNECTING}</li>
@@ -2934,7 +2933,6 @@ public abstract class DfuBaseService extends IntentService {
 	 * <li>{@link #PROGRESS_ENABLING_DFU_MODE}</li>
 	 * <li>{@link #PROGRESS_VALIDATING}</li>
 	 * </ul>
-	 * </p>
 	 *
 	 * @return the target activity class
 	 */

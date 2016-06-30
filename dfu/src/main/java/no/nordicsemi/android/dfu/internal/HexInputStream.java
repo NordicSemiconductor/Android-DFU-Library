@@ -156,7 +156,8 @@ public class HexInputStream extends FilterInputStream {
 
 	/**
 	 * Fills the buffer with next bytes from the stream.
-	 * 
+	 *
+	 * @param buffer buffer to be filled
 	 * @return the size of the buffer
 	 * @throws java.io.IOException
 	 */
