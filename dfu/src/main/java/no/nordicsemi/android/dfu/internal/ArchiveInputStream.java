@@ -397,6 +397,8 @@ public class ArchiveInputStream extends ZipInputStream {
 			b |= DfuBaseService.TYPE_BOOTLOADER;
 		if (applicationSize > 0)
 			b |= DfuBaseService.TYPE_APPLICATION;
+		if (applicationSize == 0 && softDeviceSize == 0 && bootloaderSize == 0 && softDeviceAndBootloaderBytes != null)
+			b = DfuBaseService.TYPE_SOFT_DEVICE | DfuBaseService.TYPE_BOOTLOADER;
 		return b;
 	}
 
@@ -455,11 +457,20 @@ public class ArchiveInputStream extends ZipInputStream {
 		return ret;
 	}
 
-	@Override
 	/**
 	 * Returns the number of bytes that has not been read yet. This value includes only firmwares matching the content type set by the construcotor or the {@link #setContentType(int)} method.
 	 */
+	@Override
 	public int available() {
+		// In Secure DFU softdevice and bootloader sizes are not provided in the Init file (they are encoded inside the Init file instead).
+		// The service doesn't send those sizes, not the whole size of the firmware separately, like it was done in the Legacy DFU.
+		// This method then is just used to log file size.
+
+		// In case of SD+BL in Secure DFU:
+		if (softDeviceAndBootloaderBytes != null && softDeviceSize == 0 && bootloaderSize == 0)
+			return softDeviceAndBootloaderBytes.length + applicationSize - bytesRead;
+
+		// Otherwise:
 		return softDeviceSize + bootloaderSize + applicationSize - bytesRead;
 	}
 
