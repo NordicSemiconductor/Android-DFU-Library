@@ -37,9 +37,9 @@ public interface BootloaderScanner {
 	/**
 	 * After the buttonless jump from the application mode to the bootloader mode the service will wait this long for the advertising bootloader (in milliseconds).
 	 */
-	public final static long TIMEOUT = 5000l; // ms
-	/** The bootloader may advertise with the same address or one with the last byte incremented by this value. F.e. 00:11:22:33:44:55 -> 00:11:22:33:44:56. FF changes to 00. */
-	public final static int ADDRESS_DIFF = 1;
+	long TIMEOUT = 5000l; // ms
+	/** The bootloader may advertise with the same address or one with the last byte incremented by this value. F.e. 00:11:22:33:44:55 -&gt; 00:11:22:33:44:56. FF changes to 00. */
+	int ADDRESS_DIFF = 1;
 
 	/**
 	 * Searches for the advertising bootloader. The bootloader may advertise with the same device address or one with the last byte incremented by 1.
@@ -48,7 +48,7 @@ public interface BootloaderScanner {
 	 *
 	 * @param deviceAddress
 	 *            the application device address
-	 * @return the address of the advertising DFU bootloader. If may be the same as the application address or one with the last byte incremented by 1 (AA:BB:CC:DD:EE:45/FF -> AA:BB:CC:DD:EE:46/00).
+	 * @return the address of the advertising DFU bootloader. If may be the same as the application address or one with the last byte incremented by 1 (AA:BB:CC:DD:EE:45/FF -&gt; AA:BB:CC:DD:EE:46/00).
 	 */
-	public String searchFor(final String deviceAddress);
+	String searchFor(final String deviceAddress);
 }

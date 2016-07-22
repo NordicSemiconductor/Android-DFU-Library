@@ -89,16 +89,14 @@ public class ArchiveInputStream extends ZipInputStream {
 	 * the ZIP file contains all 3 HEX/BIN files.
 	 * When types is equal to {@link DfuBaseService#TYPE_AUTO} all present files are read.
 	 * </p>
-	 * <p>
-	 * Use bit combination of the following types:
+	 * <p>Use bit combination of the following types:</p>
 	 * <ul>
 	 * <li>{@link DfuBaseService#TYPE_SOFT_DEVICE}</li>
 	 * <li>{@link DfuBaseService#TYPE_BOOTLOADER}</li>
 	 * <li>{@link DfuBaseService#TYPE_APPLICATION}</li>
 	 * <li>{@link DfuBaseService#TYPE_AUTO}</li>
 	 * </ul>
-	 * </p>
-	 * 
+	 *
 	 * @param stream
 	 *            the Zip Input Stream
 	 * @param mbrSize

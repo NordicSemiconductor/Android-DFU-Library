@@ -72,7 +72,7 @@ import no.nordicsemi.android.error.GattError;
  * </p>
  * <p>
  * The {@link DfuServiceInitiator} object should be used to start the DFU Service.
- * <p/>
+ * </p>
  * <pre>
  * final DfuServiceInitiator starter = new DfuServiceInitiator(mSelectedDevice.getAddress())
  * 		.setDeviceName(mSelectedDevice.getName())
@@ -105,6 +105,8 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 * A boolean indicating whether to disable the progress notification in the status bar. Defaults to false.
 	 */
 	public static final String EXTRA_DISABLE_NOTIFICATION = "no.nordicsemi.android.dfu.extra.EXTRA_DISABLE_NOTIFICATION";
+	/** An extra private field indicating which attempt is being performed. In case of error 133 the service will retry to connect one more time. */
+	private static final String EXTRA_ATTEMPT = "no.nordicsemi.android.dfu.extra.EXTRA_ATTEMPT";
 	/**
 	 * <p>
 	 * If the new firmware (application) does not share the bond information with the old one, the bond information is lost. Set this flag to <code>true</code>
@@ -270,7 +272,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 * <li>An error code with {@link #ERROR_REMOTE_MASK} if remote DFU target returned an error</li>
 	 * <li>An error code with {@link #ERROR_CONNECTION_MASK} if connection error occurred (f.e. GATT error (133) or Internal GATT Error (129))</li>
 	 * </ul>
-	 * To check if error occurred use:<br />
+	 * To check if error occurred use:<br>
 	 * {@code boolean error = progressValue >= DfuBaseService.ERROR_MASK;}
 	 */
 	public static final String EXTRA_PROGRESS = "no.nordicsemi.android.dfu.extra.EXTRA_PROGRESS";
@@ -438,7 +440,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 * <ul>
 	 * <li>{@link #EXTRA_LOG_LEVEL} - The log level, one of following: {@link #LOG_LEVEL_DEBUG}, {@link #LOG_LEVEL_VERBOSE}, {@link #LOG_LEVEL_INFO},
 	 * {@link #LOG_LEVEL_APPLICATION}, {@link #LOG_LEVEL_WARNING}, {@link #LOG_LEVEL_ERROR}</li>
-	 * <li>{@link #EXTRA_LOG_MESSAGE}</li> - The log message
+	 * <li>{@link #EXTRA_LOG_MESSAGE} - The log message</li>
 	 * </ul>
 	 */
 	public static final String BROADCAST_LOG = "no.nordicsemi.android.dfu.broadcast.BROADCAST_LOG";
@@ -916,6 +918,26 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 					loge("An error occurred during discovering services:" + error);
 					sendLogBroadcast(LOG_LEVEL_ERROR, String.format("Connection failed (0x%02X): %s", error, GattError.parse(error)));
 				}
+				// Connection usually fails due to a 133 error (device unreachable, or.. something else went wrong).
+				// Usually trying the same for the second time works.
+				if (intent.getIntExtra(EXTRA_ATTEMPT, 0) == 0) {
+					sendLogBroadcast(LOG_LEVEL_WARNING, "Retrying...");
+
+					if (mConnectionState != STATE_DISCONNECTED) {
+						// Disconnect from the device
+						disconnect(gatt);
+					}
+					// Close the device
+					refreshDeviceCache(gatt, true);
+					close(gatt);
+
+					logi("Restarting the service");
+					final Intent newIntent = new Intent();
+					newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
+					newIntent.putExtra(EXTRA_ATTEMPT, 1);
+					startService(newIntent);
+					return;
+				}
 				terminateConnection(gatt, mError);
 				return;
 			}
@@ -925,6 +947,8 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 				terminateConnection(gatt, PROGRESS_ABORTED);
 				return;
 			}
+			// Reset the attempt counter
+			intent.putExtra(EXTRA_ATTEMPT, 0);
 
 			try {
 				/*
@@ -1342,10 +1366,9 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 * <ul>
 	 * <li>{@link #EXTRA_DEVICE_ADDRESS} - target device address</li>
 	 * <li>{@link #EXTRA_DEVICE_NAME} - target device name</li>
-	 * <li>{@link #EXTRA_PROGRESS} - the connection state (values < 0)*, current progress (0-100) or error number if {@link #ERROR_MASK} bit set.</li>
+	 * <li>{@link #EXTRA_PROGRESS} - the connection state (values &lt; 0)*, current progress (0-100) or error number if {@link #ERROR_MASK} bit set.</li>
 	 * </ul>
-	 * <p>
-	 * __________<br />
+	 * _______________________________<br>
 	 * * - connection state constants:
 	 * <ul>
 	 * <li>{@link #PROGRESS_CONNECTING}</li>
@@ -1356,7 +1379,6 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 * <li>{@link #PROGRESS_ENABLING_DFU_MODE}</li>
 	 * <li>{@link #PROGRESS_VALIDATING}</li>
 	 * </ul>
-	 * </p>
 	 *
 	 * @return the target activity class
 	 */

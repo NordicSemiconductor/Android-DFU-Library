@@ -238,6 +238,7 @@ public class DfuServiceInitiator {
 	 * Sets the URI or path to the Init file. The init file for DFU Bootloader version pre-0.5 (SDK 4.3, 6.0, 6.1) contains only the CRC-16 of the firmware.
 	 * Bootloader version 0.5 or newer requires the Extended Init Packet. If the URI and path are not null the URI will be used.
 	 * @param initFileUri the URI of the init file
+	 * @param initFilePath the path of the init file
 	 * @return the builder
 	 */
 	@Deprecated
