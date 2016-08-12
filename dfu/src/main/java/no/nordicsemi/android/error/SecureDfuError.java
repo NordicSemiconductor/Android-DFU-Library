@@ -32,6 +32,7 @@ public final class SecureDfuError {
 	public static final int INSUFFICIENT_RESOURCES = 4;
 	public static final int INVALID_OBJECT = 5;
 	public static final int UNSUPPORTED_TYPE = 7;
+	public static final int OPERATION_NOT_PERMITTED = 8;
 	public static final int OPERATION_FAILED = 10; // 0xA
 	public static final int EXTENDED_ERROR = 11; // 0xB
 
@@ -47,6 +48,8 @@ public final class SecureDfuError {
 				return "REMOTE DFU INVALID OBJECT";
 			case UNSUPPORTED_TYPE:
 				return "REMOTE DFU UNSUPPORTED TYPE";
+			case OPERATION_NOT_PERMITTED:
+				return "REMOTE DFU OPERATION NOT PERMITTED";
 			case OPERATION_FAILED:
 				return "REMOTE DFU OPERATION FAILED";
 			case EXTENDED_ERROR:
