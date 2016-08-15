@@ -178,7 +178,7 @@ The service will send local broadcast events using **LocalBroadcastManager**.
 
 ### Example
 
-Check the Android projects: nRF Toolbox ([here](https://github.com/NordicSemiconductor/Android-nRF-Toolbox "nRF Toolbox")) or nRF Beacon ([here](https://github.com/NordicSemiconductor/Android-nRF-Toolbox "nRF Toolbox")) for usage examples.
+Check the Android projects: nRF Toolbox ([here](https://github.com/NordicSemiconductor/Android-nRF-Toolbox "nRF Toolbox")) or nRF Beacon ([here](https://github.com/NordicSemiconductor/Android-nRF-Beacon "nRF Beacon")) for usage examples.
 
 ### Issues
 
