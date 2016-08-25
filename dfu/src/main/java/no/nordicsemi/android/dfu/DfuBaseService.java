@@ -908,6 +908,12 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 				report(ERROR_BLUETOOTH_DISABLED);
 				return;
 			}
+			if (mConnectionState == STATE_DISCONNECTED) {
+				loge("Device got disconnected before service discovery finished");
+				sendLogBroadcast(LOG_LEVEL_INFO, "Disconnected");
+				terminateConnection(gatt, ERROR_DEVICE_DISCONNECTED);
+				return;
+			}
 			if (mError > 0) { // error occurred
 				if ((mError & ERROR_CONNECTION_STATE_MASK) > 0) {
 					final int error = mError & ~ERROR_CONNECTION_STATE_MASK;
