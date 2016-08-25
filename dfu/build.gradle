@@ -41,7 +41,7 @@ ext {
 
 android {
     compileSdkVersion 24
-    buildToolsVersion '24.0.0'
+    buildToolsVersion '24.0.2'
 
     defaultConfig {
         minSdkVersion 18
@@ -59,7 +59,7 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:support-v4:24.0.0'
+    compile 'com.android.support:support-v4:24.2.0'
     compile 'com.google.code.gson:gson:2.5'
 }
 /*
