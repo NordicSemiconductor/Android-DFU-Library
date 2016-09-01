@@ -4,7 +4,8 @@ The DFU Library for Android 4.3+ adds the DFU feature to the Android project.
 
 ### Features:
 
-* Allows to program Application, Soft Device and Bootloader Over-the-Air on the nRF51 Series SoC over Bluetooth Smart.
+* DFU Library version 1.0.0+ supports **Secure DFU** introduced in SDK 12.0.0 and is fully backwards compatible with all versions of Legacy DFU.
+* Allows to program Application, Soft Device and Bootloader Over-the-Air on the nRF5 Series SoC over Bluetooth Smart.
 * Supports HEX or BIN files.
 * Supports zip files with Soft Device, Bootloader and Application together.
 * Supports the Init packet (which has been required since Bootloader/DFU from SDK 7.0+).
@@ -27,13 +28,13 @@ In case of any communication error the peripheral device will never be bricked. 
 * **Android Studio IDE** or **Eclipse ADT**
 
     Projects are compatible with Android Studio and the Gradle build engine. It is possible to convert them to Eclipse ADT projects. See Integration for more details.
-* **nRF51 device for testing.**
+* **nRF5 device for testing.**
 
-   A nRF51 Series device is required to test the working solution. If your final product is not available, use the nRF51 DK, which you can find [here](http://www.nordicsemi.com/eng/Products/nRF51-DK "nRF51 DK").
+   A nRF5 Series device is required to test the working solution. If your final product is not available, use the nRF51 DK, which you can find [here](http://www.nordicsemi.com/eng/Products/Bluetooth-low-energy/nRF52-DK "nRF52 DK").
 
 ### Integration
 
-The DFULibrary is compatible as such with Android Studio 1.0.2 IDE. If you are using Eclipse ADT, you will have to convert the project to match the Eclipse project structure.
+The DFULibrary is compatible as such with Android Studio IDE. If you are using Eclipse ADT, you will have to convert the project to match the Eclipse project structure.
 
 #### Android Studio
 
@@ -103,19 +104,19 @@ import android.os.Bundle;
 public class NotificationActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-    	super.onCreate(savedInstanceState);
+        super.onCreate(savedInstanceState);
 
-    	// If this activity is the root activity of the task, the app is not running
-    	if (isTaskRoot()) {
-    		// Start the app before finishing
-    		final Intent intent = new Intent(this, MyActivity.class);
-    		intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-    		intent.putExtras(getIntent().getExtras()); // copy all extras
-    		startActivity(intent);
-    	}
+        // If this activity is the root activity of the task, the app is not running
+        if (isTaskRoot()) {
+            // Start the app before finishing
+            final Intent intent = new Intent(this, MyActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.putExtras(getIntent().getExtras()); // copy all extras
+            startActivity(intent);
+        }
 
-    	// Now finish, which will drop you to the activity at which you were at the top of the task stack
-    	finish();
+        // Now finish, which will drop you to the activity at which you were at the top of the task stack
+        finish();
     }
 }
 ```
@@ -125,55 +126,53 @@ Remember to add your service to the *AndroidManifest.xml*.
 Start the DFU service with the following code:
 
 ```java
-final Intent service = new Intent(this, MyDfuService.class);
-
-service.putExtra(DfuService.EXTRA_DEVICE_ADDRESS, mSelectedDevice.getAddress());
-service.putExtra(DfuService.EXTRA_DEVICE_NAME, mSelectedDevice.getName());
-service.putExtra(DfuService.EXTRA_FILE_MIME_TYPE, 
-    mFileType == DfuService.TYPE_AUTO ? DfuService.MIME_TYPE_ZIP : DfuService.MIME_TYPE_OCTET_STREAM);
-service.putExtra(DfuService.EXTRA_FILE_TYPE, mFileType);
-service.putExtra(DfuService.EXTRA_FILE_PATH, mFilePath); // a path or URI must be provided.
-service.putExtra(DfuService.EXTRA_FILE_URI, mFileStreamUri);
+final DfuServiceInitiator starter = new DfuServiceInitiator(mSelectedDevice.getAddress())
+        .setDeviceName(mSelectedDevice.getName())
+        .setKeepBond(keepBond);
 // Init packet is required by Bootloader/DFU from SDK 7.0+ if HEX or BIN file is given above.
 // In case of a ZIP file, the init packet (a DAT file) must be included inside the ZIP file.
-service.putExtra(DfuService.EXTRA_INIT_FILE_PATH, mInitFilePath); 
-service.putExtra(DfuService.EXTRA_INIT_FILE_URI, mInitFileStreamUri);
-service.putExtra(DfuService.EXTRA_KEEP_BOND, mKeepBond);
-
-startService(service);
+if (mFileType == DfuService.TYPE_AUTO)
+    starter.setZip(mFileStreamUri, mFilePath);
+else {
+    starter.setBinOrHex(mFileType, mFileStreamUri, mFilePath).setInitFile(mInitFileStreamUri, mInitFilePath);
+}
+starter.start(this, DfuService.class);
 ```
 
-Please, see [How to create init packet](https://github.com/NordicSemiconductor/nRF-Master-Control-Panel/tree/master/init%20packet%20handling "Init packet handling") document for more information about the init packet.
+Please, see [How to create init packet](https://github.com/NordicSemiconductor/Android-nRF-Connect/tree/master/init%20packet%20handling "Init packet handling") document for more information about the init packet.
 
 The service will send local broadcast events using **LocalBroadcastManager**.
 
 
 ```java
+private final DfuProgressListener mDfuProgressListener = new DfuProgressListenerAdapter() {
     @Override
-    protected void onResume() {
-        super.onResume();
-
-        // We are using LocalBroadcastReceiver instead of a normal BroadcastReceiver for 
-        // optimization purposes
-        final LocalBroadcastManager broadcastManager = LocalBroadcastManager.getInstance(this);
-        broadcastManager.registerReceiver(mDfuUpdateReceiver, makeDfuUpdateIntentFilter());
+    public void onDeviceConnecting(final String deviceAddress) {
+        mProgressBar.setIndeterminate(true);
+        mTextPercentage.setText(R.string.dfu_status_connecting);
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
-
-        final LocalBroadcastManager broadcastManager = LocalBroadcastManager.getInstance(this);
-        broadcastManager.unregisterReceiver(mDfuUpdateReceiver);
+    public void onDfuProcessStarting(final String deviceAddress) {
+        mProgressBar.setIndeterminate(true);
+        mTextPercentage.setText(R.string.dfu_status_starting);
     }
+    ///...
+}
 
-    private static IntentFilter makeDfuUpdateIntentFilter() {
-        final IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(DfuService.BROADCAST_PROGRESS);
-        intentFilter.addAction(DfuService.BROADCAST_ERROR);
-        intentFilter.addAction(DfuService.BROADCAST_LOG);
-        return intentFilter;
-    }
+@Override
+protected void onResume() {
+    super.onResume();
+
+    DfuServiceListenerHelper.registerProgressListener(this, mDfuProgressListener);
+}
+
+@Override
+protected void onPause() {
+    super.onPause();
+
+    DfuServiceListenerHelper.unregisterProgressListener(this, mDfuProgressListener);
+}
 ```
 
 ### Example

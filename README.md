@@ -7,7 +7,7 @@
 The compat library may be found on jcenter and Maven Central repository. Add it to your project by adding the following dependency:
 
 ```Groovy
-compile 'no.nordicsemi.android:dfu:0.6.3'
+compile 'no.nordicsemi.android:dfu:1.0.0'
 ```
 
 If you use proguard, add the following line to your proguard rules:
@@ -44,12 +44,13 @@ The library is compatible with nRF51 and nRF52 devices with S-Series Soft Device
 * **SDK 7.0.0** - The extended init packet is required. The init packet contains additional validation information: device type and revision, application version, compatible Soft Devices and the firmware CRC.
 * **SDK 8.0.0** - The bond information may be preserved after an application update. The new application, when first started, will send the Service Change indication to the phone to refresh the services.
     - Buttonless update support for bonded devices - sharing the LTK between an app and the bootloader.
+* **SDK 12.0.0** - New Secure DFU has been released. This library is fully backwards compatible so supports both the new and legacy DFU.
 
 Check platform folders for mode details about compatibility for each library.
 
 ### Resources
 
-- [DFU Introduction](http://developer.nordicsemi.com/nRF51_SDK/doc/7.2.0/s110/html/a00062.html "BLE Bootloader/DFU")
-- [How to create init packet](https://github.com/NordicSemiconductor/nRF-Master-Control-Panel/tree/master/init%20packet%20handling "Init packet handling")
+- [DFU Introduction](http://infocenter.nordicsemi.com/topic/com.nordic.infocenter.sdk5.v11.0.0/examples_ble_dfu.html?cp=6_0_0_4_3_1 "BLE Bootloader/DFU")
+- [How to create init packet](https://github.com/NordicSemiconductor/Android-nRF-Connect/tree/master/init%20packet%20handling "Init packet handling")
 - [nRF51 Development Kit (DK)](http://www.nordicsemi.com/eng/Products/nRF51-DK "nRF51 DK") (compatible with Arduino Uno Revision 3)
 - [nRF52 Development Kit (DK)](http://www.nordicsemi.com/eng/Products/Bluetooth-Smart-Bluetooth-low-energy/nRF52-DK "nRF52 DK") (compatible with Arduino Uno Revision 3)
