@@ -32,32 +32,32 @@ public interface DfuProgressListener {
 	 * Method called when the DFU service started connecting with the DFU target.
 	 * @param deviceAddress the target device address
 	 */
-	public void onDeviceConnecting(final String deviceAddress);
+	void onDeviceConnecting(final String deviceAddress);
 
 	/**
 	 * Method called when the service has successfully connected, discovered services and found DFU service on the DFU target.
 	 * @param deviceAddress the target device address
 	 */
-	public void onDeviceConnected(final String deviceAddress);
+	void onDeviceConnected(final String deviceAddress);
 
 	/**
 	 * Method called when the DFU process is starting. This includes reading the DFU Version characteristic, sending DFU_START command as well as the Init packet, if set.
 	 * @param deviceAddress the target device address
 	 */
-	public void onDfuProcessStarting(final String deviceAddress);
+	void onDfuProcessStarting(final String deviceAddress);
 
 	/**
 	 * Method called when the DFU process was started and bytes about to be sent.
 	 * @param deviceAddress the target device address
 	 */
-	public void onDfuProcessStarted(final String deviceAddress);
+	void onDfuProcessStarted(final String deviceAddress);
 
 	/**
 	 * Method called when the service discovered that the DFU target is in the application mode and must be switched to DFU mode.
 	 * The switch command will be sent and the DFU process should start again. There will be no {@link #onDeviceDisconnected(String)} event following this call.
 	 * @param deviceAddress the target device address
 	 */
-	public void onEnablingDfuMode(final String deviceAddress);
+	void onEnablingDfuMode(final String deviceAddress);
 
 	/**
 	 * Method called during uploading the firmware. It will not be called twice with the same value of percent, however, in case of small firmware files, some values may be omitted.
@@ -69,37 +69,37 @@ public interface DfuProgressListener {
 	 *                    then the service starts again and send the application as part 2
 	 * @param partsTotal total number of parts
 	 */
-	public void onProgressChanged(final String deviceAddress, final int percent, final float speed, final float avgSpeed, final int currentPart, final int partsTotal);
+	void onProgressChanged(final String deviceAddress, final int percent, final float speed, final float avgSpeed, final int currentPart, final int partsTotal);
 
 	/**
 	 * Method called when the new firmware is being validated on the target device.
 	 * @param deviceAddress the target device address
 	 */
-	public void onFirmwareValidating(final String deviceAddress);
+	void onFirmwareValidating(final String deviceAddress);
 
 	/**
 	 * Method called when the service started to disconnect from the target device.
 	 * @param deviceAddress the target device address
 	 */
-	public void onDeviceDisconnecting(final String deviceAddress);
+	void onDeviceDisconnecting(final String deviceAddress);
 
 	/**
 	 * Method called when the service disconnected from the device. The device has been reset.
 	 * @param deviceAddress the target device address
 	 */
-	public void onDeviceDisconnected(final String deviceAddress);
+	void onDeviceDisconnected(final String deviceAddress);
 
 	/**
 	 * Method called when the DFU process succeeded.
 	 * @param deviceAddress the target device address
 	 */
-	public void onDfuCompleted(final String deviceAddress);
+	void onDfuCompleted(final String deviceAddress);
 
 	/**
 	 * Method called when the DFU process has been aborted.
 	 * @param deviceAddress the target device address
 	 */
-	public void onDfuAborted(final String deviceAddress);
+	void onDfuAborted(final String deviceAddress);
 
 	/**
 	 * Method called when an error occur.
@@ -109,5 +109,5 @@ public interface DfuProgressListener {
 	 * 			{@link DfuBaseService#ERROR_TYPE_DFU_REMOTE}, {@link DfuBaseService#ERROR_TYPE_OTHER}.
 	 * @param message the error message
 	 */
-	public void onError(final String deviceAddress, final int error, final int errorType, final String message);
+	void onError(final String deviceAddress, final int error, final int errorType, final String message);
 }

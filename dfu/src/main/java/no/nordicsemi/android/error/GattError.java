@@ -31,7 +31,6 @@ import no.nordicsemi.android.dfu.DfuBaseService;
  * See: https://android.googlesource.com/platform/external/bluetooth/bluedroid/+/android-5.1.0_r1/stack/include/gatt_api.h (and other versions) for details.
  */
 public class GattError {
-
 	// Starts at line 106 of gatt_api.h file
 	/**
 	 * Converts the connection status given by the {@link android.bluetooth.BluetoothGattCallback#onConnectionStateChange(android.bluetooth.BluetoothGatt, int, int)} to error name.
@@ -170,21 +169,11 @@ public class GattError {
 			case DfuBaseService.ERROR_INIT_PACKET_REQUIRED:
 				return "INIT PACKET REQUIRED";
 			default:
+				// Deprecated: use Legacy or SecureDfuError parser
 				if ((DfuBaseService.ERROR_REMOTE_MASK & error) > 0) {
-					switch (error & (~DfuBaseService.ERROR_REMOTE_MASK)) {
-						case DfuBaseService.DFU_STATUS_INVALID_STATE:
-							return "REMOTE DFU INVALID STATE";
-						case DfuBaseService.DFU_STATUS_NOT_SUPPORTED:
-							return "REMOTE DFU NOT SUPPORTED";
-						case DfuBaseService.DFU_STATUS_DATA_SIZE_EXCEEDS_LIMIT:
-							return "REMOTE DFU DATA SIZE EXCEEDS LIMIT";
-						case DfuBaseService.DFU_STATUS_CRC_ERROR:
-							return "REMOTE DFU INVALID CRC ERROR";
-						case DfuBaseService.DFU_STATUS_OPERATION_FAILED:
-							return "REMOTE DFU OPERATION FAILED";
-					}
+					return LegacyDfuError.parse(error);
 				}
-				return "UNKNOWN (" + error + ")";
 		}
+		return "UNKNOWN (" + error + ")";
 	}
 }

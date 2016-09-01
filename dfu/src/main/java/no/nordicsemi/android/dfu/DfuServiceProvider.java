@@ -1,5 +1,5 @@
 /*************************************************************************************************************************************************
- * Copyright (c) 2015, Nordic Semiconductor
+ * Copyright (c) 2016, Nordic Semiconductor
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -22,24 +22,20 @@
 
 package no.nordicsemi.android.dfu;
 
-/**
- * Listener for log events. This listener should be used instead of creating the BroadcastReceiver on your own.
- * @see DfuServiceListenerHelper
- */
-public interface DfuLogListener {
-	/**
-	 * Method called when a log event was sent from the DFU service.
-	 * @param deviceAddress the target device address
-	 * @param level the log level, one of:
-	 * 		<ul>
-	 * 		    <li>{@link DfuBaseService#LOG_LEVEL_DEBUG}</li>
-	 * 		    <li>{@link DfuBaseService#LOG_LEVEL_VERBOSE}</li>
-	 * 		    <li>{@link DfuBaseService#LOG_LEVEL_INFO}</li>
-	 * 		    <li>{@link DfuBaseService#LOG_LEVEL_APPLICATION}</li>
-	 * 		    <li>{@link DfuBaseService#LOG_LEVEL_WARNING}</li>
-	 * 		    <li>{@link DfuBaseService#LOG_LEVEL_ERROR}</li>
-	 * 		</ul>
-	 * @param message the log message
-	 */
-	void onLogEvent(final String deviceAddress, final int level, final String message);
+import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattService;
+
+/* package */ class DfuServiceProvider {
+
+	/* package */ static BaseDfuImpl getDfuImpl(final DfuBaseService service, final BluetoothGatt gatt) {
+		final BluetoothGattService secureService = gatt.getService(SecureDfuImpl.DFU_SERVICE_UUID);
+		if (secureService != null) {
+			return new SecureDfuImpl(service);
+		}
+		final BluetoothGattService legacyService = gatt.getService(LegacyDfuImpl.DFU_SERVICE_UUID);
+		if (legacyService != null) {
+			return new LegacyDfuImpl(service);
+		}
+		return null;
+	}
 }

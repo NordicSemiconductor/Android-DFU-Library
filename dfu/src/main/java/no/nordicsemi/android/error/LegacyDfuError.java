@@ -1,5 +1,5 @@
 /*************************************************************************************************************************************************
- * Copyright (c) 2015, Nordic Semiconductor
+ * Copyright (c) 2016, Nordic Semiconductor
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -20,26 +20,33 @@
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ************************************************************************************************************************************************/
 
-package no.nordicsemi.android.dfu;
+package no.nordicsemi.android.error;
 
-/**
- * Listener for log events. This listener should be used instead of creating the BroadcastReceiver on your own.
- * @see DfuServiceListenerHelper
- */
-public interface DfuLogListener {
-	/**
-	 * Method called when a log event was sent from the DFU service.
-	 * @param deviceAddress the target device address
-	 * @param level the log level, one of:
-	 * 		<ul>
-	 * 		    <li>{@link DfuBaseService#LOG_LEVEL_DEBUG}</li>
-	 * 		    <li>{@link DfuBaseService#LOG_LEVEL_VERBOSE}</li>
-	 * 		    <li>{@link DfuBaseService#LOG_LEVEL_INFO}</li>
-	 * 		    <li>{@link DfuBaseService#LOG_LEVEL_APPLICATION}</li>
-	 * 		    <li>{@link DfuBaseService#LOG_LEVEL_WARNING}</li>
-	 * 		    <li>{@link DfuBaseService#LOG_LEVEL_ERROR}</li>
-	 * 		</ul>
-	 * @param message the log message
-	 */
-	void onLogEvent(final String deviceAddress, final int level, final String message);
+import no.nordicsemi.android.dfu.DfuBaseService;
+
+public final class LegacyDfuError {
+	// DFU status values
+	// public static final int SUCCESS = 1; // that's not an error
+	public static final int INVALID_STATE = 2;
+	public static final int NOT_SUPPORTED = 3;
+	public static final int DATA_SIZE_EXCEEDS_LIMIT = 4;
+	public static final int CRC_ERROR = 5;
+	public static final int OPERATION_FAILED = 6;
+
+	public static String parse(final int error) {
+		switch (error & (~DfuBaseService.ERROR_REMOTE_MASK)) {
+			case INVALID_STATE:
+				return "REMOTE DFU INVALID STATE";
+			case NOT_SUPPORTED:
+				return "REMOTE DFU NOT SUPPORTED";
+			case DATA_SIZE_EXCEEDS_LIMIT:
+				return "REMOTE DFU DATA SIZE EXCEEDS LIMIT";
+			case CRC_ERROR:
+				return "REMOTE DFU INVALID CRC ERROR";
+			case OPERATION_FAILED:
+				return "REMOTE DFU OPERATION FAILED";
+			default:
+				return "UNKNOWN (" + error + ")";
+		}
+	}
 }

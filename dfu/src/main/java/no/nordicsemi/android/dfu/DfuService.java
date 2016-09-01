@@ -1,5 +1,5 @@
 /*************************************************************************************************************************************************
- * Copyright (c) 2015, Nordic Semiconductor
+ * Copyright (c) 2016, Nordic Semiconductor
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -22,24 +22,37 @@
 
 package no.nordicsemi.android.dfu;
 
-/**
- * Listener for log events. This listener should be used instead of creating the BroadcastReceiver on your own.
- * @see DfuServiceListenerHelper
- */
-public interface DfuLogListener {
+import android.bluetooth.BluetoothGatt;
+import android.content.Intent;
+
+import java.io.InputStream;
+
+import no.nordicsemi.android.dfu.internal.exception.DeviceDisconnectedException;
+import no.nordicsemi.android.dfu.internal.exception.DfuException;
+import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
+
+/* package */ interface DfuService {
+	/** Pauses the DFU process. */
+	void pause();
+
+	/** Resumes the paused DFU process. */
+	void resume();
+
+	/** Terminates the DFU process. The device will disconnect and restore old application or bootloader. */
+	void abort();
+
+	/** This method must return true if the device is compatible with this DFU implementation, false otherwise. */
+	boolean hasRequiredService(final BluetoothGatt gatt);
+
+	/** This method must return true if the device is compatible with this DFU implementation, false otherwise. */
+	boolean hasRequiredCharacteristics(final BluetoothGatt gatt);
+
 	/**
-	 * Method called when a log event was sent from the DFU service.
-	 * @param deviceAddress the target device address
-	 * @param level the log level, one of:
-	 * 		<ul>
-	 * 		    <li>{@link DfuBaseService#LOG_LEVEL_DEBUG}</li>
-	 * 		    <li>{@link DfuBaseService#LOG_LEVEL_VERBOSE}</li>
-	 * 		    <li>{@link DfuBaseService#LOG_LEVEL_INFO}</li>
-	 * 		    <li>{@link DfuBaseService#LOG_LEVEL_APPLICATION}</li>
-	 * 		    <li>{@link DfuBaseService#LOG_LEVEL_WARNING}</li>
-	 * 		    <li>{@link DfuBaseService#LOG_LEVEL_ERROR}</li>
-	 * 		</ul>
-	 * @param message the log message
+	 * Initializes the DFU implementation and does some initial setting up.
+	 * @return true if initialization was successful and the DFU process may begin, false to finish teh DFU service
 	 */
-	void onLogEvent(final String deviceAddress, final int level, final String message);
+	boolean initialize(final Intent intent, final BluetoothGatt gatt, final int fileType, final InputStream firmwareStream, final InputStream initPacketStream) throws DfuException, DeviceDisconnectedException, UploadAbortedException;
+
+	/** Performs the DFU process. */
+	void performDfu(final Intent intent) throws DfuException, DeviceDisconnectedException, UploadAbortedException;
 }
