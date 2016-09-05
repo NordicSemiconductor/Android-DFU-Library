@@ -95,7 +95,6 @@ import no.nordicsemi.android.error.SecureDfuError;
 				switch (requestType) {
 					case OP_CODE_CALCULATE_CHECKSUM_KEY: {
 						mProgressInfo.setBytesReceived(characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 3));
-						logi("PRN, bytes received: " + mProgressInfo.getBytesReceived()); // TODO remove
 						// TODO check CRC?
 						handlePacketReceiptNotification(gatt, characteristic);
 						break;

@@ -679,17 +679,17 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	}
 
 	protected void logw(final String message) {
-//		if (BuildConfig.DEBUG) // TODO
+		if (BuildConfig.DEBUG)
 			Log.w(TAG, message);
 	}
 
 	protected void logi(final String message) {
-//		if (BuildConfig.DEBUG) // TODO
+		if (BuildConfig.DEBUG)
 			Log.i(TAG, message);
 	}
 
 	protected void logd(final String message) {
-//		if (BuildConfig.DEBUG) // TODO
+		if (BuildConfig.DEBUG)
 			Log.d(TAG, message);
 	}
 }
