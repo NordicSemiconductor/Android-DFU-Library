@@ -23,6 +23,7 @@
 package no.nordicsemi.android.dfu;
 
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.os.Build;
 
 public interface DfuSettingsConstants {
 	/**
@@ -40,6 +41,8 @@ public interface DfuSettingsConstants {
 	 * will simply add the packet to outgoing queue before returning the callback. Adding the next packet in the callback is much faster than the real transmission (also the speed depends on
 	 * the device chip manufacturer) and the queue may reach its limit. When does, the transmission stops and Android Bluetooth hangs. Using PRN procedure eliminates this problem as
 	 * the notification is send when all packets were delivered the queue is empty.
+	 * <p>Note: this bug has been fixed on Android 6.0 Marshmallow and now no notifications are required. The onCharacteristicWrite callback will be
+	 * postponed until half of the queue is empty.
 	 */
 	String SETTINGS_NUMBER_OF_PACKETS = "settings_number_of_packets";
 
@@ -50,9 +53,10 @@ public interface DfuSettingsConstants {
 	 *     <li>4 packets - Nexus 5 and Nexus 6 and others</li>
 	 *     <li>6 packets - LG F60 and others</li>
 	 * </ul>
-	 * The least common multiplier is 12 which is reasonably small. You may try other values, like 24 etc. Values higher than ~300 may cause the Bluetooth outgoing queue overflow error.
+	 * The least common multiplier is 12 which is reasonably small. You may try other values, like 24 etc.
+	 * Values higher than ~300 may cause the Bluetooth outgoing queue overflow error on Android versions before Marshmallow.
 	 */
-	int SETTINGS_NUMBER_OF_PACKETS_DEFAULT = 12;
+	int SETTINGS_NUMBER_OF_PACKETS_DEFAULT = Build.VERSION.SDK_INT < Build.VERSION_CODES.M ? 12 : 0;
 
 	/**
 	 * This property must contain an integer value.
