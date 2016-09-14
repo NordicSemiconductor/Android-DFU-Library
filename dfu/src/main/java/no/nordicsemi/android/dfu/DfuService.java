@@ -55,4 +55,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 
 	/** Performs the DFU process. */
 	void performDfu(final Intent intent) throws DfuException, DeviceDisconnectedException, UploadAbortedException;
+
+	/** Releases the service. */
+	void release();
 }

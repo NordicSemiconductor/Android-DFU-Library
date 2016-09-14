@@ -743,10 +743,6 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 
 		unregisterReceiver(mDfuActionReceiver);
 		unregisterReceiver(mConnectionStateBroadcastReceiver);
-		if (mDfuServiceImpl != null) {
-			mDfuServiceImpl.onDestroy();
-			mDfuServiceImpl = null;
-		}
 	}
 
 	@Override
@@ -891,6 +887,8 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 
 			// Wait a second... If we were connected before it's good to give some time before we start reconnecting.
 			waitFor(1000);
+			// Looks like a second is not enough. The ACL_DISCONNECTED broadcast sometimes comes later (on Android 7.0)
+			waitFor(1000);
 
 			/*
 			 * Now let's connect to the device.
@@ -956,11 +954,12 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 			// Reset the attempt counter
 			intent.putExtra(EXTRA_ATTEMPT, 0);
 
+			DfuService dfuService = null;
 			try {
 				/*
 				 * Device services were discovered. Based on them we may now choose the implementation.
 				 */
-				final DfuService dfuService = mDfuServiceImpl = DfuServiceProvider.getDfuImpl(this, gatt);
+				dfuService = mDfuServiceImpl = DfuServiceProvider.getDfuImpl(this, gatt);
 				if (dfuService == null || !dfuService.hasRequiredService(gatt)) {
 					sendLogBroadcast(LOG_LEVEL_WARNING, "Connected. DFU Service not found");
 					terminateConnection(gatt, ERROR_SERVICE_NOT_FOUND);
@@ -981,15 +980,6 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 			} catch (final UploadAbortedException e) {
 				logi("Upload aborted");
 				sendLogBroadcast(LOG_LEVEL_WARNING, "Upload aborted");
-//				if (mConnectionState == STATE_CONNECTED_AND_READY)
-//					try {
-//						mAborted = false;
-//						logi("Sending Reset command (Op Code = 6)");
-//						writeOpCode(gatt, controlPointCharacteristic, OP_CODE_RESET);
-//						sendLogBroadcast(LOG_LEVEL_APPLICATION, "Reset request sent");
-//					} catch (final Exception e1) {
-//						// do nothing
-//					}
 				terminateConnection(gatt, PROGRESS_ABORTED);
 			} catch (final DeviceDisconnectedException e) {
 				sendLogBroadcast(LOG_LEVEL_ERROR, "Device has disconnected");
@@ -1008,15 +998,11 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 					sendLogBroadcast(LOG_LEVEL_ERROR, String.format("Error (0x%02X): %s", error, GattError.parse(error)));
 				}
 				loge(e.getMessage());
-//				if (mConnectionState == STATE_CONNECTED_AND_READY)
-//					try {
-//						logi("Sending Reset command (Op Code = 6)");
-//						writeOpCode(gatt, controlPointCharacteristic, OP_CODE_RESET);
-//						sendLogBroadcast(LOG_LEVEL_APPLICATION, "Reset request sent");
-//					} catch (final Exception e1) {
-//						// do nothing
-//					}
 				terminateConnection(gatt, e.getErrorNumber() /* we return the whole error number, including the error type mask */);
+			} finally {
+				if (dfuService != null) {
+					dfuService.release();
+				}
 			}
 		} finally {
 			try {
