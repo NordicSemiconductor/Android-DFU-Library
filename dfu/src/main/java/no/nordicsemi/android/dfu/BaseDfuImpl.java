@@ -29,10 +29,7 @@ import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Build;
 import android.util.Log;
 
@@ -46,7 +43,7 @@ import no.nordicsemi.android.dfu.internal.exception.DfuException;
 import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 
 /* package */ abstract class BaseDfuImpl implements DfuService {
-	public static final String TAG = "DfuImpl";
+	private static final String TAG = "DfuImpl";
 
 	protected static final UUID GENERIC_ATTRIBUTE_SERVICE_UUID = new UUID(0x0000180100001000L, 0x800000805F9B34FBL);
 	protected static final UUID SERVICE_CHANGED_UUID = new UUID(0x00002A0500001000L, 0x800000805F9B34FBL);
@@ -97,24 +94,6 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	protected DfuProgressInfo mProgressInfo;
 	protected int mImageSizeInBytes;
 	protected int mInitPacketSizeInBytes;
-
-	private final BroadcastReceiver mBondStateBroadcastReceiver = new BroadcastReceiver() {
-		@Override
-		public void onReceive(final Context context, final Intent intent) {
-			// Obtain the device and check it this is the one that we are connected to
-			final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-			if (!device.equals(mGatt.getDevice()))
-				return;
-
-			// Read bond state
-			final int bondState = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, -1);
-			if (bondState == BluetoothDevice.BOND_BONDING)
-				return;
-
-			mRequestCompleted = true;
-			notifyLock();
-		}
-	};
 
 	protected class BaseBluetoothGattCallback extends BluetoothGattCallback {
 		// The Implementation object is created depending on device services, so after the device is connected and services were scanned.
@@ -212,14 +191,10 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	/* package */ BaseDfuImpl(final DfuBaseService service) {
 		mService = service;
 		mConnected = true; // the device is connected when impl object it created
-
-		final IntentFilter bondFilter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
-		service.registerReceiver(mBondStateBroadcastReceiver, bondFilter);
 	}
 
 	@Override
 	public void release() {
-		mService.unregisterReceiver(mBondStateBroadcastReceiver);
 		mService = null;
 	}
 
@@ -238,6 +213,12 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	public void abort() {
 		mPaused = false;
 		mAborted = true;
+		notifyLock();
+	}
+
+	@Override
+	public void onBondStateChanged(final int state) {
+		mRequestCompleted = true;
 		notifyLock();
 	}
 

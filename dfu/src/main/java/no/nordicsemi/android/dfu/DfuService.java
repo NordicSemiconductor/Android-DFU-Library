@@ -47,6 +47,9 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	/** This method must return true if the device is compatible with this DFU implementation, false otherwise. */
 	boolean hasRequiredCharacteristics(final BluetoothGatt gatt);
 
+	/** Callback invoked when bond state changes to {@link android.bluetooth.BluetoothDevice#BOND_BONDED BOND_BONDED} or {@link android.bluetooth.BluetoothDevice#BOND_NONE BOND_NONE}. */
+	void onBondStateChanged(final int state);
+
 	/**
 	 * Initializes the DFU implementation and does some initial setting up.
 	 * @return true if initialization was successful and the DFU process may begin, false to finish teh DFU service

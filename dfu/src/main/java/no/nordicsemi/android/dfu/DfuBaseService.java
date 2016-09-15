@@ -575,6 +575,24 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		}
 	};
 
+	private final BroadcastReceiver mBondStateBroadcastReceiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(final Context context, final Intent intent) {
+			// Obtain the device and check if this is the one that we are connected to
+			final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+			if (!device.getAddress().equals(mDeviceAddress))
+				return;
+
+			// Read bond state
+			final int bondState = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, -1);
+			if (bondState == BluetoothDevice.BOND_BONDING)
+				return;
+
+			if (mDfuServiceImpl != null)
+				mDfuServiceImpl.onBondStateChanged(bondState);
+		}
+	};
+
 	private final BroadcastReceiver mConnectionStateBroadcastReceiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(final Context context, final Intent intent) {
@@ -734,6 +752,9 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 
 		final IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECTED);
 		registerReceiver(mConnectionStateBroadcastReceiver, filter);
+
+		final IntentFilter bondFilter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
+		registerReceiver(mBondStateBroadcastReceiver, bondFilter);
 	}
 
 	@Override
@@ -745,6 +766,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 
 		unregisterReceiver(mDfuActionReceiver);
 		unregisterReceiver(mConnectionStateBroadcastReceiver);
+		unregisterReceiver(mBondStateBroadcastReceiver);
 	}
 
 	@Override
