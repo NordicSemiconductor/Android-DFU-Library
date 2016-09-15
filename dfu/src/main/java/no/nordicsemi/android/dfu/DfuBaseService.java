@@ -91,7 +91,7 @@ import no.nordicsemi.android.error.GattError;
 public abstract class DfuBaseService extends IntentService implements DfuProgressInfo.ProgressListener {
 	private static final String TAG = "DfuBaseService";
 
-	public static final boolean DEBUG = true; // TODO change me to false!
+	/* package */ static final boolean DEBUG = true; // TODO change me to false!
 
 	public static final int NOTIFICATION_ID = 283; // a random number
 
