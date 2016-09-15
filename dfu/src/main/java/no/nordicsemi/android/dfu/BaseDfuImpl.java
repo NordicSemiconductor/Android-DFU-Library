@@ -48,8 +48,6 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 /* package */ abstract class BaseDfuImpl implements DfuService {
 	public static final String TAG = "DfuImpl";
 
-	public static final boolean DEBUG = true; // TODO change me to false!
-
 	protected static final UUID GENERIC_ATTRIBUTE_SERVICE_UUID = new UUID(0x0000180100001000L, 0x800000805F9B34FBL);
 	protected static final UUID SERVICE_CHANGED_UUID = new UUID(0x00002A0500001000L, 0x800000805F9B34FBL);
 	protected static final UUID CLIENT_CHARACTERISTIC_CONFIG = new UUID(0x0000290200001000L, 0x800000805f9b34fbL);
@@ -681,17 +679,17 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	}
 
 	protected void logw(final String message) {
-		if (DEBUG)
+		if (DfuBaseService.DEBUG)
 			Log.w(TAG, message);
 	}
 
 	protected void logi(final String message) {
-		if (DEBUG)
+		if (DfuBaseService.DEBUG)
 			Log.i(TAG, message);
 	}
 
 	protected void logd(final String message) {
-		if (DEBUG)
+		if (DfuBaseService.DEBUG)
 			Log.d(TAG, message);
 	}
 }
