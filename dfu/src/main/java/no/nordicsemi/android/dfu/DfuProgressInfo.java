@@ -33,7 +33,7 @@ import android.support.annotation.NonNull;
 	private final ProgressListener mListener;
 	private int progress;
 	private int bytesSent;
-	private int initalBytesSent;
+	private int initialBytesSent;
 	private int lastBytesSent;
 	private int bytesReceived;
 	private int imageSizeInBytes;
@@ -42,11 +42,11 @@ import android.support.annotation.NonNull;
 	private int totalParts;
 	private long timeStart, lastProgressTime;
 
-	public DfuProgressInfo(final @NonNull ProgressListener listener) {
+	DfuProgressInfo(final @NonNull ProgressListener listener) {
 		mListener = listener;
 	}
 
-	public DfuProgressInfo init(final int imageSizeInBytes, final int currentPart, final int totalParts) {
+	DfuProgressInfo init(final int imageSizeInBytes, final int currentPart, final int totalParts) {
 		this.imageSizeInBytes = imageSizeInBytes;
 		this.maxObjectSizeInBytes = Integer.MAX_VALUE; // by default the whole firmware will be sent as a single object
 		this.currentPart = currentPart;
@@ -54,7 +54,7 @@ import android.support.annotation.NonNull;
 		return this;
 	}
 
-	public DfuProgressInfo setTotalPart(final int totalParts) {
+	DfuProgressInfo setTotalPart(final int totalParts) {
 		this.totalParts = totalParts;
 		return this;
 	}
@@ -64,59 +64,59 @@ import android.support.annotation.NonNull;
 		mListener.updateProgressNotification();
 	}
 
-	public void setBytesSent(final int bytesSent) {
+	void setBytesSent(final int bytesSent) {
 		if (timeStart == 0) {
 			timeStart = SystemClock.elapsedRealtime();
-			initalBytesSent = bytesSent;
+			initialBytesSent = bytesSent;
 		}
 		this.bytesSent = bytesSent;
 		this.progress = (int) (100.0f * bytesSent / imageSizeInBytes);
 		mListener.updateProgressNotification();
 	}
 
-	public void addBytesSent(final int increment) {
+	void addBytesSent(final int increment) {
 		setBytesSent(bytesSent + increment);
 	}
 
-	public void setBytesReceived(final int bytesReceived) {
+	void setBytesReceived(final int bytesReceived) {
 		this.bytesReceived = bytesReceived;
 	}
 
-	public void setMaxObjectSizeInBytes(final int bytes) {
+	void setMaxObjectSizeInBytes(final int bytes) {
 		this.maxObjectSizeInBytes = bytes;
 	}
 
-	public boolean isComplete() {
+	boolean isComplete() {
 		return bytesSent == imageSizeInBytes;
 	}
 
-	public boolean isObjectComplete() {
+	boolean isObjectComplete() {
 		return (bytesSent % maxObjectSizeInBytes) == 0;
 	}
 
-	public int getAvailableObjectSizeIsBytes() {
+	int getAvailableObjectSizeIsBytes() {
 		final int remainingBytes = imageSizeInBytes - bytesSent;
 		final int remainingChunk = maxObjectSizeInBytes - (bytesSent % maxObjectSizeInBytes);
 		return Math.min(remainingBytes, remainingChunk);
 	}
 
-	public int getProgress() {
+	int getProgress() {
 		return progress;
 	}
 
-	public int getBytesSent() {
+	int getBytesSent() {
 		return bytesSent;
 	}
 
-	public int getBytesReceived() {
+	int getBytesReceived() {
 		return bytesReceived;
 	}
 
-	public int getImageSizeInBytes() {
+	int getImageSizeInBytes() {
 		return imageSizeInBytes;
 	}
 
-	public float getSpeed() {
+	float getSpeed() {
 		final long now = SystemClock.elapsedRealtime();
 		final float speed = now - timeStart != 0 ? (float) (bytesSent - lastBytesSent) / (float) (now - lastProgressTime) : 0.0f;
 		lastProgressTime = now;
@@ -124,20 +124,20 @@ import android.support.annotation.NonNull;
 		return speed;
 	}
 
-	public float getAverageSpeed() {
+	float getAverageSpeed() {
 		final long now = SystemClock.elapsedRealtime();
-		return now - timeStart != 0 ? (float) (bytesSent - initalBytesSent) / (float) (now - timeStart) : 0.0f;
+		return now - timeStart != 0 ? (float) (bytesSent - initialBytesSent) / (float) (now - timeStart) : 0.0f;
 	}
 
-	public int getCurrentPart() {
+	int getCurrentPart() {
 		return currentPart;
 	}
 
-	public int getTotalParts() {
+	int getTotalParts() {
 		return totalParts;
 	}
 
-	public boolean isLastPart() {
+	boolean isLastPart() {
 		return currentPart == totalParts;
 	}
 }
