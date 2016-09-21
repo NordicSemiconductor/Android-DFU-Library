@@ -972,7 +972,8 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 			if (mAborted) {
 				logi("Upload aborted");
 				sendLogBroadcast(LOG_LEVEL_WARNING, "Upload aborted");
-				terminateConnection(gatt, PROGRESS_ABORTED);
+				terminateConnection(gatt, 0);
+				mProgressInfo.setProgress(PROGRESS_ABORTED);
 				return;
 			}
 			// Reset the attempt counter
@@ -1004,7 +1005,8 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 			} catch (final UploadAbortedException e) {
 				logi("Upload aborted");
 				sendLogBroadcast(LOG_LEVEL_WARNING, "Upload aborted");
-				terminateConnection(gatt, PROGRESS_ABORTED);
+				terminateConnection(gatt, 0);
+				mProgressInfo.setProgress(PROGRESS_ABORTED);
 			} catch (final DeviceDisconnectedException e) {
 				sendLogBroadcast(LOG_LEVEL_ERROR, "Device has disconnected");
 				// TODO reconnect n times?
@@ -1154,7 +1156,8 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		refreshDeviceCache(gatt, false); // This should be set to true when DFU Version is 0.5 or lower
 		close(gatt);
 		waitFor(600);
-		report(error);
+		if (error != 0)
+			report(error);
 	}
 
 	/**
