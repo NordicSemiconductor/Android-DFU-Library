@@ -251,7 +251,7 @@ public class DfuServiceInitiator {
 	 * @param context the application context
 	 * @param service the class derived from the BaseDfuService
 	 */
-	public void start(final Context context, final Class<? extends DfuBaseService> service) {
+	public DfuServiceController start(final Context context, final Class<? extends DfuBaseService> service) {
 		if (fileType == -1)
 			throw new UnsupportedOperationException("You must specify the firmware file before starting the service");
 
@@ -271,6 +271,7 @@ public class DfuServiceInitiator {
 		intent.putExtra(DfuBaseService.EXTRA_KEEP_BOND, keepBond);
 
 		context.startService(intent);
+		return new DfuServiceController(context);
 	}
 
 	private DfuServiceInitiator init(final Uri initFileUri, final String initFilePath, final int initFileResId) {
