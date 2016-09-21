@@ -136,7 +136,8 @@ if (mFileType == DfuService.TYPE_AUTO)
 else {
     starter.setBinOrHex(mFileType, mFileStreamUri, mFilePath).setInitFile(mInitFileStreamUri, mInitFilePath);
 }
-starter.start(this, DfuService.class);
+final DfuServiceController controller = starter.start(this, DfuService.class);
+// You may use the controller to pause, resume or abort the DFU process.
 ```
 
 Please, see [How to create init packet](https://github.com/NordicSemiconductor/Android-nRF-Connect/tree/master/init%20packet%20handling "Init packet handling") document for more information about the init packet.
