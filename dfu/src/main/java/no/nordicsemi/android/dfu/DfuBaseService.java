@@ -91,7 +91,7 @@ import no.nordicsemi.android.error.GattError;
 public abstract class DfuBaseService extends IntentService implements DfuProgressInfo.ProgressListener {
 	private static final String TAG = "DfuBaseService";
 
-	/* package */ static final boolean DEBUG = true; // TODO change me to false!
+	/* package */ static boolean DEBUG = false;
 
 	public static final int NOTIFICATION_ID = 283; // a random number
 
@@ -642,7 +642,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 					 *  NOTE: We are doing this to avoid the hack with calling the hidden gatt.refresh() method, at least for bonded devices.
 					 */
 					if (gatt.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
-						logd("Waiting 1600 ms for a possible Service Changed indication...");
+						logi("Waiting 1600 ms for a possible Service Changed indication...");
 						waitFor(1600);
 						// After 1.6s the services are already discovered so the following gatt.discoverServices() finishes almost immediately.
 
@@ -746,6 +746,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	public void onCreate() {
 		super.onCreate();
 
+		DEBUG = isDebug();
 		initialize();
 
 		final LocalBroadcastManager manager = LocalBroadcastManager.getInstance(this);
@@ -1414,6 +1415,23 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 */
 	protected abstract Class<? extends Activity> getNotificationTarget();
 
+	/**
+	 * Using this method you may enable detail debug LogCat logs from DFU.
+	 * <p>Recommended use:</p>
+	 * <pre>
+	 * &#64;Override
+	 * protected boolean isDebug() {
+	 *     return BuildConfig.DEBUG;
+	 * }
+	 * </pre>
+	 * @return true to enable LogCat output, false (default) if not
+	 */
+	protected boolean isDebug() {
+		// Override this method and return true if you need more logs in LogCat
+		// Note: BuildConfig.DEBUG always returns false in library projects, so please use your app package BuildConfig
+		return false;
+	}
+
 	private void sendProgressBroadcast(final DfuProgressInfo info) {
 		final Intent broadcast = new Intent(BROADCAST_PROGRESS);
 		broadcast.putExtra(EXTRA_DATA, info.getProgress());
@@ -1492,10 +1510,5 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	private void logi(final String message) {
 		if (DfuBaseService.DEBUG)
 			Log.i(TAG, message);
-	}
-
-	private void logd(final String message) {
-		if (DfuBaseService.DEBUG)
-			Log.d(TAG, message);
 	}
 }

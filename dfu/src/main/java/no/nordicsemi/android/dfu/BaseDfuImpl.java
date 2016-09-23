@@ -668,9 +668,4 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		if (DfuBaseService.DEBUG)
 			Log.i(TAG, message);
 	}
-
-	protected void logd(final String message) {
-		if (DfuBaseService.DEBUG)
-			Log.d(TAG, message);
-	}
 }
