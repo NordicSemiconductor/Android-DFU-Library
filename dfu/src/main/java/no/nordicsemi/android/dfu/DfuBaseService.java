@@ -917,12 +917,20 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 			// Looks like a second is not enough. The ACL_DISCONNECTED broadcast sometimes comes later (on Android 7.0)
 			waitFor(1000);
 
+			mProgressInfo = new DfuProgressInfo(this);
+
+			if (mAborted) {
+				logi("Upload aborted");
+				sendLogBroadcast(LOG_LEVEL_WARNING, "Upload aborted");
+				mProgressInfo.setProgress(PROGRESS_ABORTED);
+				return;
+			}
+
 			/*
 			 * Now let's connect to the device.
 			 * All the methods below are synchronous. The mLock object is used to wait for asynchronous calls.
 			 */
 			sendLogBroadcast(LOG_LEVEL_VERBOSE, "Connecting to DFU target...");
-			mProgressInfo = new DfuProgressInfo(this);
 			mProgressInfo.setProgress(PROGRESS_CONNECTING);
 
 			final BluetoothGatt gatt = connect(deviceAddress);
