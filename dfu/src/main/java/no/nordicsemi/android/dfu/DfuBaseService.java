@@ -1416,7 +1416,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	protected abstract Class<? extends Activity> getNotificationTarget();
 
 	/**
-	 * Using this method you may enable detail debug LogCat logs from DFU.
+	 * Override this method to enable detailed debug LogCat logs with DFU events.
 	 * <p>Recommended use:</p>
 	 * <pre>
 	 * &#64;Override
