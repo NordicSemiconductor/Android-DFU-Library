@@ -559,14 +559,17 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 			logi("User action received: " + action);
 			switch (action) {
 				case ACTION_PAUSE:
+					sendLogBroadcast(LOG_LEVEL_WARNING, "[Broadcast] Pause action received");
 					if (mDfuServiceImpl != null)
 						mDfuServiceImpl.pause();
 					break;
 				case ACTION_RESUME:
+					sendLogBroadcast(LOG_LEVEL_WARNING, "[Broadcast] Resume action received");
 					if (mDfuServiceImpl != null)
 						mDfuServiceImpl.resume();
 					break;
 				case ACTION_ABORT:
+					sendLogBroadcast(LOG_LEVEL_WARNING, "[Broadcast] Abort action received");
 					mAborted = true;
 					if (mDfuServiceImpl != null)
 						mDfuServiceImpl.abort();
