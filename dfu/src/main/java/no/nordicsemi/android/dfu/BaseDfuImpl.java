@@ -367,6 +367,8 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		final String debugString = type == NOTIFICATIONS ? "notifications" : "indications";
 		if (!mConnected)
 			throw new DeviceDisconnectedException("Unable to set " + debugString + " state: device disconnected");
+		if (mAborted)
+			throw new UploadAbortedException();
 
 		mReceivedData = null;
 		mError = 0;
@@ -390,7 +392,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		// We have to wait until device receives a response or an error occur
 		try {
 			synchronized (mLock) {
-				while ((!cccdEnabled && mConnected && mError == 0 && !mAborted) || mPaused) {
+				while ((!cccdEnabled && mConnected && mError == 0) || mPaused) {
 					mLock.wait();
 					// Check the value of the CCCD
 					cccdEnabled = descriptor.getValue() != null && descriptor.getValue().length == 2 && descriptor.getValue()[0] > 0 && descriptor.getValue()[1] == 0;
@@ -399,8 +401,6 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		} catch (final InterruptedException e) {
 			loge("Sleeping interrupted", e);
 		}
-		if (mAborted)
-			throw new UploadAbortedException();
 		if (mError != 0)
 			throw new DfuException("Unable to set " + debugString + " state", mError);
 		if (!mConnected)
@@ -418,6 +418,8 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	private boolean isServiceChangedCCCDEnabled() throws DeviceDisconnectedException, DfuException, UploadAbortedException {
 		if (!mConnected)
 			throw new DeviceDisconnectedException("Unable to read Service Changed CCCD: device disconnected");
+		if (mAborted)
+			throw new UploadAbortedException();
 
 		// If the Service Changed characteristic or the CCCD is not available we return false.
 		final BluetoothGatt gatt = mGatt;
@@ -444,14 +446,12 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		// We have to wait until device receives a response or an error occur
 		try {
 			synchronized (mLock) {
-				while ((!mRequestCompleted && mConnected && mError == 0 && !mAborted) || mPaused)
+				while ((!mRequestCompleted && mConnected && mError == 0) || mPaused)
 					mLock.wait();
 			}
 		} catch (final InterruptedException e) {
 			loge("Sleeping interrupted", e);
 		}
-		if (mAborted)
-			throw new UploadAbortedException();
 		if (mError != 0)
 			throw new DfuException("Unable to read Service Changed CCCD", mError);
 		if (!mConnected)
@@ -477,6 +477,8 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	 */
 	protected void writeOpCode(final BluetoothGattCharacteristic characteristic, final byte[] value, final boolean reset) throws DeviceDisconnectedException, DfuException,
 			UploadAbortedException {
+		if (mAborted)
+			throw new UploadAbortedException();
 		mReceivedData = null;
 		mError = 0;
 		mRequestCompleted = false;
@@ -495,14 +497,12 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		// We have to wait for confirmation
 		try {
 			synchronized (mLock) {
-				while ((!mRequestCompleted && mConnected && mError == 0 && !mAborted) || mPaused)
+				while ((!mRequestCompleted && mConnected && mError == 0) || mPaused)
 					mLock.wait();
 			}
 		} catch (final InterruptedException e) {
 			loge("Sleeping interrupted", e);
 		}
-		if (mAborted)
-			throw new UploadAbortedException();
 		if (!mResetRequestSent && mError != 0)
 			throw new DfuException("Unable to write Op Code " + value[0], mError);
 		if (!mResetRequestSent && !mConnected)

@@ -320,17 +320,17 @@ import no.nordicsemi.android.error.LegacyDfuError;
 			return;
 		}
 
-		// Enable notifications
-		enableCCCD(mControlPointCharacteristic, NOTIFICATIONS);
-		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Notifications enabled");
-
-		// Wait a second here before going further
-		// Related:
-		//   pull request: https://github.com/NordicSemiconductor/Android-DFU-Library/pull/11
-		mService.waitFor(1000);
-		// End
-
 		try {
+			// Enable notifications
+			enableCCCD(mControlPointCharacteristic, NOTIFICATIONS);
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Notifications enabled");
+
+			// Wait a second here before going further
+			// Related:
+			//   pull request: https://github.com/NordicSemiconductor/Android-DFU-Library/pull/11
+			mService.waitFor(1000);
+			// End
+
 			// Set up the temporary variable that will hold the responses
 			byte[] response;
 			int status;
@@ -632,6 +632,13 @@ import no.nordicsemi.android.error.LegacyDfuError;
 			// configured to preserve the bond information we do not need to enforce refreshing services, as it will notify the phone using the
 			// Service Changed indication.
 			finalize(intent, version == 5);
+		} catch (final UploadAbortedException e) {
+			logi("Sending Reset command (Op Code = 6)");
+			mAborted = false; // clear the flag, otherwise the writeOpCode method will not wait until the device disconnects
+			writeOpCode(mControlPointCharacteristic, OP_CODE_RESET);
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Reset request sent");
+			// The connection will be terminated in the DfuBaseService
+			throw e;
 		} catch (final UnknownResponseException e) {
 			final int error = DfuBaseService.ERROR_INVALID_RESPONSE;
 			loge(e.getMessage());
@@ -690,6 +697,8 @@ import no.nordicsemi.android.error.LegacyDfuError;
 	private int readVersion(final BluetoothGattCharacteristic characteristic) throws DeviceDisconnectedException, DfuException, UploadAbortedException {
 		if (!mConnected)
 			throw new DeviceDisconnectedException("Unable to read version number: device disconnected");
+		if (mAborted)
+			throw new UploadAbortedException();
 		// If the DFU Version characteristic is not available we return 0.
 		if (characteristic == null)
 			return 0;
@@ -715,8 +724,6 @@ import no.nordicsemi.android.error.LegacyDfuError;
 		} catch (final InterruptedException e) {
 			loge("Sleeping interrupted", e);
 		}
-		if (mAborted)
-			throw new UploadAbortedException();
 		if (mError != 0)
 			throw new DfuException("Unable to read version number", mError);
 		if (!mConnected)

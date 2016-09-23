@@ -185,17 +185,17 @@ import no.nordicsemi.android.error.SecureDfuError;
 
 		final BluetoothGatt gatt = mGatt;
 
-		// Enable notifications
-		enableCCCD(mControlPointCharacteristic, NOTIFICATIONS);
-		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Notifications enabled");
-
-		// Wait a second here before going further
-		// Related:
-		//   pull request: https://github.com/NordicSemiconductor/Android-DFU-Library/pull/11
-		mService.waitFor(1000);
-		// End
-
 		try {
+			// Enable notifications
+			enableCCCD(mControlPointCharacteristic, NOTIFICATIONS);
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Notifications enabled");
+
+			// Wait a second here before going further
+			// Related:
+			//   pull request: https://github.com/NordicSemiconductor/Android-DFU-Library/pull/11
+			mService.waitFor(1000);
+			// End
+
 			sendInitPacket(gatt);
 			sendFirmware(gatt);
 
@@ -206,6 +206,10 @@ import no.nordicsemi.android.error.SecureDfuError;
 
 			// We are ready with DFU, the device is disconnected, let's close it and finalize the operation.
 			finalize(intent, false);
+		} catch (final UploadAbortedException e) {
+			// In secure DFU there is currently not possible to reset the device to application mode, so... do nothing
+			// The connection will be terminated in the DfuBaseService
+			throw e;
 		} catch (final UnknownResponseException e) {
 			final int error = DfuBaseService.ERROR_INVALID_RESPONSE;
 			loge(e.getMessage());

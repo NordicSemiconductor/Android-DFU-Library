@@ -129,6 +129,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 							// The writing might have been aborted (mAborted = true), an error might have occurred.
 							// In that case stop sending.
 							if (mAborted || mError != 0 || mRemoteErrorOccurred || mResetRequestSent) {
+								mFirmwareUploadInProgress = false;
 								mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, "Upload terminated");
 								notifyLock();
 								return;
@@ -187,6 +188,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 				// The writing might have been aborted (mAborted = true), an error might have occurred.
 				// In that case quit sending.
 				if (mAborted || mError != 0 || mRemoteErrorOccurred || mResetRequestSent) {
+					mFirmwareUploadInProgress = false;
 					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, "Upload terminated");
 					return;
 				}
@@ -283,6 +285,8 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 	 */
 	private void writeInitPacket(final BluetoothGattCharacteristic characteristic, final byte[] buffer, final int size) throws DeviceDisconnectedException, DfuException,
 			UploadAbortedException {
+		if (mAborted)
+			throw new UploadAbortedException();
 		byte[] locBuffer = buffer;
 		if (buffer.length != size) {
 			locBuffer = new byte[size];
@@ -302,14 +306,12 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 		// We have to wait for confirmation
 		try {
 			synchronized (mLock) {
-				while ((mInitPacketInProgress && mConnected && mError == 0 && !mAborted) || mPaused)
+				while ((mInitPacketInProgress && mConnected && mError == 0) || mPaused)
 					mLock.wait();
 			}
 		} catch (final InterruptedException e) {
 			loge("Sleeping interrupted", e);
 		}
-		if (mAborted)
-			throw new UploadAbortedException();
 		if (mError != 0)
 			throw new DfuException("Unable to write Init DFU Parameters", mError);
 		if (!mConnected)
@@ -327,6 +329,8 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 	 */
 	protected void uploadFirmwareImage(final BluetoothGattCharacteristic packetCharacteristic) throws DeviceDisconnectedException,
 			DfuException, UploadAbortedException {
+		if (mAborted)
+			throw new UploadAbortedException();
 		mReceivedData = null;
 		mError = 0;
 		mFirmwareUploadInProgress = true;
@@ -345,15 +349,13 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 
 		try {
 			synchronized (mLock) {
-				while ((mFirmwareUploadInProgress && mReceivedData == null && mConnected && mError == 0 && !mAborted) || mPaused)
+				while ((mFirmwareUploadInProgress && mReceivedData == null && mConnected && mError == 0) || mPaused)
 					mLock.wait();
 			}
 		} catch (final InterruptedException e) {
 			loge("Sleeping interrupted", e);
 		}
 
-		if (mAborted)
-			throw new UploadAbortedException();
 		if (mError != 0)
 			throw new DfuException("Uploading Firmware Image failed", mError);
 		if (!mConnected)
