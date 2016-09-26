@@ -23,14 +23,16 @@
 package no.nordicsemi.android.dfu;
 
 import android.bluetooth.BluetoothGattCharacteristic;
-import android.os.Build;
 
 public interface DfuSettingsConstants {
 	/**
 	 * This property must contain a boolean value.
 	 * <p>If true (default) the Packet Receipt Notification procedure will be enabled. See DFU documentation on http://infocenter.nordicsemi.com for more details.
 	 * The number of packets before receiving a Packet Receipt Notification is set with property {@link #SETTINGS_NUMBER_OF_PACKETS}.
+	 *
+	 * This constant is now deprecated. Please, use {@link DfuServiceInitiator#setPacketsReceiptNotificationsEnabled(boolean)} to set it.
 	 */
+	@Deprecated
 	String SETTINGS_PACKET_RECEIPT_NOTIFICATION_ENABLED = "settings_packet_receipt_notification_enabled";
 
 	/**
@@ -43,7 +45,10 @@ public interface DfuSettingsConstants {
 	 * the notification is send when all packets were delivered the queue is empty.
 	 * <p>Note: this bug has been fixed on Android 6.0 Marshmallow and now no notifications are required. The onCharacteristicWrite callback will be
 	 * postponed until half of the queue is empty.
+	 *
+	 * This constant is now deprecated. Please, use {@link DfuServiceInitiator#setPacketsReceiptNotificationsValue(int)} to set it.
 	 */
+	@Deprecated
 	String SETTINGS_NUMBER_OF_PACKETS = "settings_number_of_packets";
 
 	/**
@@ -55,8 +60,11 @@ public interface DfuSettingsConstants {
 	 * </ul>
 	 * The least common multiplier is 12 which is reasonably small. You may try other values, like 24 etc.
 	 * Values higher than ~300 may cause the Bluetooth outgoing queue overflow error on Android versions before Marshmallow.
+	 *
+	 * This constant is now deprecated. Please, use {@link DfuServiceInitiator#setPacketsReceiptNotificationsValue(int)} to set it.
 	 */
-	int SETTINGS_NUMBER_OF_PACKETS_DEFAULT = Build.VERSION.SDK_INT < Build.VERSION_CODES.M ? 12 : 0;
+	@Deprecated
+	int SETTINGS_NUMBER_OF_PACKETS_DEFAULT = DfuServiceInitiator.DEFAULT_PRN_VALUE;
 
 	/**
 	 * This property must contain an integer value.
@@ -83,5 +91,6 @@ public interface DfuSettingsConstants {
 	 * This guessing may not be always correct. One situation may be when the nRF chip is used to flash update on external MCU using DFU. The DFU procedure may be implemented in the
 	 * application, which may (and usually does) have more services. In such case set the value of this property to true.
 	 */
+	@Deprecated
 	String SETTINGS_ASSUME_DFU_NODE = "settings_assume_dfu_mode";
 }

@@ -188,7 +188,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		}
 	};
 
-	/* package */ BaseDfuImpl(final DfuBaseService service) {
+	/* package */ BaseDfuImpl(final Intent intent, final DfuBaseService service) {
 		mService = service;
 		mConnected = true; // the device is connected when impl object it created
 	}

@@ -24,17 +24,18 @@ package no.nordicsemi.android.dfu;
 
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattService;
+import android.content.Intent;
 
 /* package */ class DfuServiceProvider {
 
-	/* package */ static BaseDfuImpl getDfuImpl(final DfuBaseService service, final BluetoothGatt gatt) {
+	/* package */ static BaseDfuImpl getDfuImpl(final Intent intent, final DfuBaseService service, final BluetoothGatt gatt) {
 		final BluetoothGattService secureService = gatt.getService(SecureDfuImpl.DFU_SERVICE_UUID);
 		if (secureService != null) {
-			return new SecureDfuImpl(service);
+			return new SecureDfuImpl(intent, service);
 		}
 		final BluetoothGattService legacyService = gatt.getService(LegacyDfuImpl.DFU_SERVICE_UUID);
 		if (legacyService != null) {
-			return new LegacyDfuImpl(service);
+			return new LegacyDfuImpl(intent, service);
 		}
 		return null;
 	}

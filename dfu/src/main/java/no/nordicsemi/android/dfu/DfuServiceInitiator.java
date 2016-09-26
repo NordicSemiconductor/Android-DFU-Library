@@ -35,6 +35,8 @@ import java.security.InvalidParameterException;
  * The DfuServiceInitiator class may be used to make this process easier. It provides simple API that covers all low lever operations.
  */
 public class DfuServiceInitiator {
+	public static final int DEFAULT_PRN_VALUE = 12;
+
 	private final String deviceAddress;
 	private String deviceName;
 
@@ -52,6 +54,10 @@ public class DfuServiceInitiator {
 	private int fileType = -1;
 
 	private boolean keepBond;
+	private boolean forceDfu = false;
+
+	private Boolean packetReceiptNotificationsEnabled;
+	private int numberOfPackets = 12;
 
 	/**
 	 * Creates the builder. Use setZip(...), or setBinOrHex(...) methods to specify the file you want to upload.
@@ -92,6 +98,64 @@ public class DfuServiceInitiator {
 	 */
 	public DfuServiceInitiator setKeepBond(final boolean keepBond) {
 		this.keepBond = keepBond;
+		return this;
+	}
+
+	/**
+	 * Enables or disables the Packet Receipt Notification (PRN) procedure.
+	 * <p>By default the PRNs are disabled on devices with Android Marshmallow or newer and enabled on older ones.</p>
+	 * @param enabled true to enabled PRNs, false to disable
+	 * @return the builder
+	 * @see DfuSettingsConstants#SETTINGS_PACKET_RECEIPT_NOTIFICATION_ENABLED
+	 */
+	public DfuServiceInitiator setPacketsReceiptNotificationsEnabled(final boolean enabled) {
+		this.packetReceiptNotificationsEnabled = enabled;
+		return this;
+	}
+
+	/**
+	 * If Packet Receipt Notification procedure is enabled, this method sets number of packets to be sent before
+	 * receiving a PRN. A PRN is used to synchronize the transmitter and receiver.
+	 * @param number number of packets to be sent before receiving a PRN. Defaulted when set to 0.
+	 * @return the builder
+	 * @see #setPacketsReceiptNotificationsEnabled(boolean)
+	 * @see DfuSettingsConstants#SETTINGS_NUMBER_OF_PACKETS
+	 */
+	public DfuServiceInitiator setPacketsReceiptNotificationsValue(final int number) {
+		this.numberOfPackets = number > 0 ? number : DEFAULT_PRN_VALUE;
+		return this;
+	}
+
+	/**
+	 * Setting force DFU to true will prevent from jumping to the DFU Bootloader
+	 * mode in case there is no DFU Version characteristic (Legacy DFU only!). Use it if the DFU operation can be handled by your
+	 * device running in the application mode.
+	 *
+	 * <p>If the DFU Version characteristic exists, the
+	 * information whether to begin DFU operation, or jump to bootloader, is taken from that
+	 * characteristic's value. The value returned equal to 0x0100 (read as: minor=1, major=0, or version 0.1)
+	 * means that the device is in the application mode and buttonless jump to DFU Bootloader is supported.</p>
+	 *
+	 * <p>However, if there is no DFU Version characteristic, a device
+	 * may support only Application update (version from SDK 4.3.0), may support Soft Device, Bootloader
+	 * and Application update but without buttonless jump to bootloader (SDK 6.0.0) or with
+	 * buttonless jump (SDK 6.1.0).</p>
+	 *
+	 * <p>In the last case, the DFU Library determines whether the device is in application mode or in DFU Bootloader mode
+	 * by counting number of services: if no DFU Service found - device is in app mode and does not support
+	 * buttonless jump, if the DFU Service is the only service found (except General Access and General Attribute
+	 * services) - it assumes it is in DFU Bootloader mode and may start DFU immediately, if there is
+	 * at least one service except DFU Service - the device is in application mode and supports buttonless
+	 * jump. In the last case, if you want to perform DFU operation without jumping - call the {@link #setForceDfu(boolean)}
+	 * method with parameter equal to true.</p>
+	 *
+	 * <p>This method is ignored in Secure DFU.</p>
+	 * @param force true to ensure the DFU will start if there is no DFU Version characteristic (Legacy DFU only)
+	 * @return the builder
+	 * @see DfuSettingsConstants#SETTINGS_ASSUME_DFU_NODE
+	 */
+	public DfuServiceInitiator setForceDfu(final boolean force) {
+		this.forceDfu = force;
 		return this;
 	}
 
@@ -269,6 +333,16 @@ public class DfuServiceInitiator {
 		intent.putExtra(DfuBaseService.EXTRA_INIT_FILE_PATH, initFilePath);
 		intent.putExtra(DfuBaseService.EXTRA_INIT_FILE_RES_ID, initFileResId);
 		intent.putExtra(DfuBaseService.EXTRA_KEEP_BOND, keepBond);
+		intent.putExtra(DfuBaseService.EXTRA_FORCE_DFU, forceDfu);
+		if (packetReceiptNotificationsEnabled != null) {
+			intent.putExtra(DfuBaseService.EXTRA_PACKET_RECEIPT_NOTIFICATIONS_ENABLED, packetReceiptNotificationsEnabled);
+			intent.putExtra(DfuBaseService.EXTRA_PACKET_RECEIPT_NOTIFICATIONS_VALUE, numberOfPackets);
+		} else {
+			// For backwards compatibility:
+			// If the setPacketsReceiptNotificationsEnabled(boolean) has not been called, the PRN state and value are taken from
+			// SharedPreferences the way they were read in DFU Library in 1.0.3 and before, or set to default values.
+			// Default values: PRNs enabled on Android 4.3 - 5.1 and disabled starting from Android 6.0. Default PRN value is 12.
+		}
 
 		context.startService(intent);
 		return new DfuServiceController(context);

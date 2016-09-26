@@ -123,8 +123,8 @@ import no.nordicsemi.android.error.LegacyDfuError;
 		}
 	}
 
-	/* package */ LegacyDfuImpl(final DfuBaseService service) {
-		super(service);
+	/* package */ LegacyDfuImpl(final Intent intent, final DfuBaseService service) {
+		super(intent, service);
 	}
 
 	@Override
@@ -244,7 +244,9 @@ import no.nordicsemi.android.error.LegacyDfuError;
 		 * DFU process itself but rather support jump to the bootloader mode.
 		 */
 		final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(mService);
-		final boolean assumeDfuMode = preferences.getBoolean(DfuSettingsConstants.SETTINGS_ASSUME_DFU_NODE, false);
+		boolean assumeDfuMode = preferences.getBoolean(DfuSettingsConstants.SETTINGS_ASSUME_DFU_NODE, false);
+		if (intent.hasExtra(DfuBaseService.EXTRA_FORCE_DFU))
+			assumeDfuMode = intent.getBooleanExtra(DfuBaseService.EXTRA_FORCE_DFU, false);
 
 		/*
 		 *  Check if we are in the DFU Bootloader or in the Application that supports the buttonless update.

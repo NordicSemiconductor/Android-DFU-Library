@@ -224,24 +224,35 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 		}
 	}
 
-	BaseCustomDfuImpl(final DfuBaseService service) {
-		super(service);
+	BaseCustomDfuImpl(final Intent intent, final DfuBaseService service) {
+		super(intent, service);
 
-		// Read preferences
-		final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(service);
-		final boolean packetReceiptNotificationEnabled = preferences.getBoolean(DfuSettingsConstants.SETTINGS_PACKET_RECEIPT_NOTIFICATION_ENABLED, Build.VERSION.SDK_INT < Build.VERSION_CODES.M);
-		String value = preferences.getString(DfuSettingsConstants.SETTINGS_NUMBER_OF_PACKETS, String.valueOf(DfuSettingsConstants.SETTINGS_NUMBER_OF_PACKETS_DEFAULT));
-		int numberOfPackets;
-		try {
-			numberOfPackets = Integer.parseInt(value);
+		if (intent.hasExtra(DfuBaseService.EXTRA_PACKET_RECEIPT_NOTIFICATIONS_ENABLED)) {
+			// Read from intent
+			final boolean packetReceiptNotificationEnabled = intent.getBooleanExtra(DfuBaseService.EXTRA_PACKET_RECEIPT_NOTIFICATIONS_ENABLED, Build.VERSION.SDK_INT < Build.VERSION_CODES.M);
+			int numberOfPackets = intent.getIntExtra(DfuBaseService.EXTRA_PACKET_RECEIPT_NOTIFICATIONS_VALUE, DfuServiceInitiator.DEFAULT_PRN_VALUE);
 			if (numberOfPackets < 0 || numberOfPackets > 0xFFFF)
-				numberOfPackets = DfuSettingsConstants.SETTINGS_NUMBER_OF_PACKETS_DEFAULT;
-		} catch (final NumberFormatException e) {
-			numberOfPackets = DfuSettingsConstants.SETTINGS_NUMBER_OF_PACKETS_DEFAULT;
+				numberOfPackets = DfuServiceInitiator.DEFAULT_PRN_VALUE;
+			if (!packetReceiptNotificationEnabled)
+				numberOfPackets = 0;
+			mPacketsBeforeNotification = numberOfPackets;
+		} else {
+			// Read preferences
+			final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(service);
+			final boolean packetReceiptNotificationEnabled = preferences.getBoolean(DfuSettingsConstants.SETTINGS_PACKET_RECEIPT_NOTIFICATION_ENABLED, Build.VERSION.SDK_INT < Build.VERSION_CODES.M);
+			String value = preferences.getString(DfuSettingsConstants.SETTINGS_NUMBER_OF_PACKETS, String.valueOf(DfuServiceInitiator.DEFAULT_PRN_VALUE));
+			int numberOfPackets;
+			try {
+				numberOfPackets = Integer.parseInt(value);
+				if (numberOfPackets < 0 || numberOfPackets > 0xFFFF)
+					numberOfPackets = DfuServiceInitiator.DEFAULT_PRN_VALUE;
+			} catch (final NumberFormatException e) {
+				numberOfPackets = DfuServiceInitiator.DEFAULT_PRN_VALUE;
+			}
+			if (!packetReceiptNotificationEnabled)
+				numberOfPackets = 0;
+			mPacketsBeforeNotification = numberOfPackets;
 		}
-		if (!packetReceiptNotificationEnabled)
-			numberOfPackets = 0;
-		mPacketsBeforeNotification = numberOfPackets;
 	}
 
 	protected abstract UUID getControlPointCharacteristicUUID();

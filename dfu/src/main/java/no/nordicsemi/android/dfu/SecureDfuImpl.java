@@ -123,8 +123,8 @@ import no.nordicsemi.android.error.SecureDfuError;
 		}
 	}
 
-	SecureDfuImpl(final DfuBaseService service) {
-		super(service);
+	SecureDfuImpl(final Intent intent, final DfuBaseService service) {
+		super(intent, service);
 	}
 
 	@Override

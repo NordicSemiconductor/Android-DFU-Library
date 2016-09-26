@@ -140,6 +140,39 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 */
 	public static final String EXTRA_KEEP_BOND = "no.nordicsemi.android.dfu.extra.EXTRA_KEEP_BOND";
 	/**
+	 * This property must contain a boolean value.
+	 * <p>The {@link DfuBaseService}, when connected to a DFU target will check whether it is in application or in DFU bootloader mode. For DFU implementations from SDK 7.0 or newer
+	 * this is done by reading the value of DFU Version characteristic. If the returned value is equal to 0x0100 (major = 0, minor = 1) it means that we are in the application mode and
+	 * jump to the bootloader mode is required.
+	 * <p>However, for DFU implementations from older SDKs, where there was no DFU Version characteristic, the service must guess. If this option is set to false (default) it will count
+	 * number of device's services. If the count is equal to 3 (Generic Access, Generic Attribute, DFU Service) it will assume that it's in DFU mode. If greater than 3 - in app mode.
+	 * This guessing may not be always correct. One situation may be when the nRF chip is used to flash update on external MCU using DFU. The DFU procedure may be implemented in the
+	 * application, which may (and usually does) have more services. In such case set the value of this property to true.
+	 */
+	public static final String EXTRA_FORCE_DFU = "no.nordicsemi.android.dfu.extra.EXTRA_FORCE_DFU";
+	/**
+	 * This property must contain a boolean value.
+	 * <p>If true the Packet Receipt Notification procedure will be enabled. See DFU documentation on http://infocenter.nordicsemi.com for more details.
+	 * The number of packets before receiving a Packet Receipt Notification is set with property {@link #EXTRA_PACKET_RECEIPT_NOTIFICATIONS_VALUE}.
+	 * The PRNs by default are enabled on devices running Android 4.3, 4.4.x and 5.x and disabled on 6.x and newer.
+	 * @see #EXTRA_PACKET_RECEIPT_NOTIFICATIONS_VALUE
+	 */
+	public static final String EXTRA_PACKET_RECEIPT_NOTIFICATIONS_ENABLED = "no.nordicsemi.android.dfu.extra.EXTRA_PRN_ENABLED";
+	/**
+	 * This property must contain a positive integer value, usually from range 1-200.
+	 * <p>The default value is {@value DfuServiceInitiator#DEFAULT_PRN_VALUE}. Setting it to 0 will disable the Packet Receipt Notification procedure.
+	 * When sending a firmware using the DFU procedure the service will send this number of packets before waiting for a notification.
+	 * Packet Receipt Notifications are used to synchronize the sender with receiver.
+	 * <p>On Android, calling {@link android.bluetooth.BluetoothGatt#writeCharacteristic(BluetoothGattCharacteristic)}
+	 * simply adds the packet to outgoing queue before returning the callback. Adding the next packet in the callback is much faster than the real transmission
+	 * (also the speed depends on the device chip manufacturer) and the queue may reach its limit. When does, the transmission stops and Android Bluetooth hangs (see Note below).
+	 * Using PRN procedure eliminates this problem as the notification is send when all packets were delivered the queue is empty.
+	 * <p>Note: this bug has been fixed on Android 6.0 Marshmallow and now no notifications are required. The onCharacteristicWrite callback will be
+	 * postponed until half of the queue is empty and upload will be resumed automatically. Disabling PRNs speeds up the upload process on those devices.
+	 * @see #EXTRA_PACKET_RECEIPT_NOTIFICATIONS_ENABLED
+	 */
+	public static final String EXTRA_PACKET_RECEIPT_NOTIFICATIONS_VALUE = "no.nordicsemi.android.dfu.extra.EXTRA_PRN_VALUE";
+	/**
 	 * A path to the file with the new firmware. It may point to a HEX, BIN or a ZIP file.
 	 * Some file manager applications return the path as a String while other return a Uri. Use the {@link #EXTRA_FILE_URI} in the later case.
 	 * For files included in /res/raw resource directory please use {@link #EXTRA_FILE_RES_ID} instead.
@@ -996,7 +1029,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 				/*
 				 * Device services were discovered. Based on them we may now choose the implementation.
 				 */
-				dfuService = mDfuServiceImpl = DfuServiceProvider.getDfuImpl(this, gatt);
+				dfuService = mDfuServiceImpl = DfuServiceProvider.getDfuImpl(intent, this, gatt);
 				if (dfuService == null || !dfuService.hasRequiredService(gatt)) {
 					sendLogBroadcast(LOG_LEVEL_WARNING, "Connected. DFU Service not found");
 					terminateConnection(gatt, ERROR_SERVICE_NOT_FOUND);
