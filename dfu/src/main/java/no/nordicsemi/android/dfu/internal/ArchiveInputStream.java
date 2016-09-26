@@ -389,14 +389,16 @@ public class ArchiveInputStream extends ZipInputStream {
 	 */
 	public int getContentType() {
 		byte b = 0;
+		// In Secure DFU the softDeviceSize and bootloaderSize may be 0 if both are in the ZIP file. The size of each part is embedded in the Init packet.
+		if (softDeviceAndBootloaderBytes != null)
+			b |= DfuBaseService.TYPE_SOFT_DEVICE | DfuBaseService.TYPE_BOOTLOADER;
+		// In Legacy DFU the size of each of these parts was given in the manifest file.
 		if (softDeviceSize > 0)
 			b |= DfuBaseService.TYPE_SOFT_DEVICE;
 		if (bootloaderSize > 0)
 			b |= DfuBaseService.TYPE_BOOTLOADER;
 		if (applicationSize > 0)
 			b |= DfuBaseService.TYPE_APPLICATION;
-		if (applicationSize == 0 && softDeviceSize == 0 && bootloaderSize == 0 && softDeviceAndBootloaderBytes != null)
-			b = DfuBaseService.TYPE_SOFT_DEVICE | DfuBaseService.TYPE_BOOTLOADER;
 		return b;
 	}
 
