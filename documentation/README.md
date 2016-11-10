@@ -38,6 +38,14 @@ The DFULibrary is compatible as such with Android Studio IDE. If you are using E
 
 #### Android Studio
 
+The easiest way to include the library to your project is to add the 
+
+```compile 'no.nordicsemi.android:dfu:[Version]'``` 
+
+line to your build.gradle file. And that's it.
+
+However, if you want to modify the code to your needs you have to clone the project and add it as follows:
+
 1. Clone the project, or just the *DFULibrary* folder (using sparse-checkout) to a temporary location. 
 2. Copy the *DFULibrary* folder to your projects root, for example to *AndroidstudioProjects*.
 3. Add the **dfu** module to your project:
