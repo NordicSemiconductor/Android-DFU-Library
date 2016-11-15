@@ -1031,8 +1031,8 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 					logi("Restarting the service");
 					final Intent newIntent = new Intent();
 					newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
-                    int attempts = intent.getIntExtra(EXTRA_ATTEMPT,0);
-                    attempts++;
+					int attempts = intent.getIntExtra(EXTRA_ATTEMPT,0);
+					attempts++;
 					newIntent.putExtra(EXTRA_ATTEMPT, attempts);
 					startService(newIntent);
 					return;
