@@ -978,8 +978,8 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 			if (mConnectionState == STATE_DISCONNECTED) {
 
 				loge("Device got disconnected before service discovery finished");
-                // Connection usually fails due to a 133 error (device unreachable, or.. something else went wrong).
-                // Usually trying the same for the second or third time works.
+				// Connection usually fails due to a 133 error (device unreachable, or.. something else went wrong).
+				// Usually trying the same for the second or third time works.
 				if (intent.getIntExtra(EXTRA_ATTEMPT, 0) < 2) {
 					sendLogBroadcast(LOG_LEVEL_WARNING, "Retrying...");
 
