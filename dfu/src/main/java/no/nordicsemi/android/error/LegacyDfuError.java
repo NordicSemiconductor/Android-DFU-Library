@@ -35,18 +35,12 @@ public final class LegacyDfuError {
 
 	public static String parse(final int error) {
 		switch (error & (~DfuBaseService.ERROR_REMOTE_MASK)) {
-			case INVALID_STATE:
-				return "REMOTE DFU INVALID STATE";
-			case NOT_SUPPORTED:
-				return "REMOTE DFU NOT SUPPORTED";
-			case DATA_SIZE_EXCEEDS_LIMIT:
-				return "REMOTE DFU DATA SIZE EXCEEDS LIMIT";
-			case CRC_ERROR:
-				return "REMOTE DFU INVALID CRC ERROR";
-			case OPERATION_FAILED:
-				return "REMOTE DFU OPERATION FAILED";
-			default:
-				return "UNKNOWN (" + error + ")";
+			case INVALID_STATE:				return "REMOTE DFU INVALID STATE";
+			case NOT_SUPPORTED:				return "REMOTE DFU NOT SUPPORTED";
+			case DATA_SIZE_EXCEEDS_LIMIT:	return "REMOTE DFU DATA SIZE EXCEEDS LIMIT";
+			case CRC_ERROR:					return "REMOTE DFU INVALID CRC ERROR";
+			case OPERATION_FAILED:			return "REMOTE DFU OPERATION FAILED";
+			default:						return "UNKNOWN (" + error + ")";
 		}
 	}
 }

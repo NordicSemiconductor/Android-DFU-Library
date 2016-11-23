@@ -36,27 +36,49 @@ public final class SecureDfuError {
 	public static final int OPERATION_FAILED = 10; // 0xA
 	public static final int EXTENDED_ERROR = 11; // 0xB
 
+	// public static final int EXT_ERROR_NO_ERROR = 0x00; // that's not an error
+	public static final int EXT_ERROR_WRONG_COMMAND_FORMAT = 0x02;
+	public static final int EXT_ERROR_UNKNOWN_COMMAND = 0x03;
+	public static final int EXT_ERROR_INIT_COMMAND_INVALID = 0x04;
+	public static final int EXT_ERROR_FW_VERSION_FAILURE = 0x05;
+	public static final int EXT_ERROR_HW_VERSION_FAILURE = 0x06;
+	public static final int EXT_ERROR_SD_VERSION_FAILURE = 0x07;
+	public static final int EXT_ERROR_SIGNATURE_MISSING = 0x08;
+	public static final int EXT_ERROR_WRONG_HASH_TYPE = 0x09;
+	public static final int EXT_ERROR_HASH_FAILED = 0x0A;
+	public static final int EXT_ERROR_WRONG_SIGNATURE_TYPE = 0x0B;
+	public static final int EXT_ERROR_VERIFICATION_FAILED = 0x0C;
+	public static final int EXT_ERROR_INSUFFICIENT_SPACE = 0x0D;
+
 	public static String parse(final int error) {
 		switch (error & (~DfuBaseService.ERROR_REMOTE_MASK)) {
-			case OP_CODE_NOT_SUPPORTED:
-				return "REMOTE DFU OP CODE NOT SUPPORTED";
-			case INVALID_PARAM:
-				return "REMOTE DFU INVALID PARAM";
-			case INSUFFICIENT_RESOURCES:
-				return "REMOTE DFU INSUFFICIENT RESOURCES";
-			case INVALID_OBJECT:
-				return "REMOTE DFU INVALID OBJECT";
-			case UNSUPPORTED_TYPE:
-				return "REMOTE DFU UNSUPPORTED TYPE";
-			case OPERATION_NOT_PERMITTED:
-				return "REMOTE DFU OPERATION NOT PERMITTED";
-			case OPERATION_FAILED:
-				return "REMOTE DFU OPERATION FAILED";
-			case EXTENDED_ERROR:
-				// The error details can be read using Read Error operation
-				return "REMOTE DFU EXTENDED ERROR";
-			default:
-				return "UNKNOWN (" + error + ")";
+			case OP_CODE_NOT_SUPPORTED:			return "REMOTE DFU OP CODE NOT SUPPORTED";
+			case INVALID_PARAM:					return "REMOTE DFU INVALID PARAM";
+			case INSUFFICIENT_RESOURCES:		return "REMOTE DFU INSUFFICIENT RESOURCES";
+			case INVALID_OBJECT:				return "REMOTE DFU INVALID OBJECT";
+			case UNSUPPORTED_TYPE:				return "REMOTE DFU UNSUPPORTED TYPE";
+			case OPERATION_NOT_PERMITTED:		return "REMOTE DFU OPERATION NOT PERMITTED";
+			case OPERATION_FAILED:				return "REMOTE DFU OPERATION FAILED";
+			case EXTENDED_ERROR:				return "REMOTE DFU EXTENDED ERROR";
+			default:							return "UNKNOWN (" + error + ")";
+		}
+	}
+
+	public static String parseExtendedError(final int error) {
+		switch (error) {
+			case EXT_ERROR_WRONG_COMMAND_FORMAT: return "Wrong command format";
+			case EXT_ERROR_UNKNOWN_COMMAND:		 return "Unknown command";
+			case EXT_ERROR_INIT_COMMAND_INVALID: return "Init command invalid";
+			case EXT_ERROR_FW_VERSION_FAILURE:	 return "FW version failure";
+			case EXT_ERROR_HW_VERSION_FAILURE:	 return "HW version failure";
+			case EXT_ERROR_SD_VERSION_FAILURE:	 return "SD version failure";
+			case EXT_ERROR_SIGNATURE_MISSING :	 return "Signature mismatch";
+			case EXT_ERROR_WRONG_HASH_TYPE:		 return "Wrong hash type";
+			case EXT_ERROR_HASH_FAILED:			 return "Hash failed";
+			case EXT_ERROR_WRONG_SIGNATURE_TYPE: return "Wring signature type";
+			case EXT_ERROR_VERIFICATION_FAILED:	 return "Verification failed";
+			case EXT_ERROR_INSUFFICIENT_SPACE:	 return "Insufficient space";
+			default:							 return "Reserved for future use";
 		}
 	}
 }
