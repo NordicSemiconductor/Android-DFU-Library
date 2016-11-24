@@ -795,6 +795,17 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	}
 
 	@Override
+	public void onTaskRemoved(final Intent rootIntent) {
+		super.onTaskRemoved(rootIntent);
+		// This method is called when user removed the app from Recents.
+		// By default, the service will be killed and recreated immediately after that,
+		// but we don't want it. User removed the task, so let's cancel DFU.
+		final NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+		manager.cancel(NOTIFICATION_ID);
+		stopSelf();
+	}
+
+	@Override
 	public void onDestroy() {
 		super.onDestroy();
 
