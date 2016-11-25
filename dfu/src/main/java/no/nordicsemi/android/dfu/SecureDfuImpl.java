@@ -132,6 +132,14 @@ import no.nordicsemi.android.error.SecureDfuError;
 	}
 
 	@Override
+	public boolean hasRequiredCharacteristics(final BluetoothGatt gatt) {
+		final BluetoothGattService dfuService = gatt.getService(DFU_SERVICE_UUID);
+		mControlPointCharacteristic = dfuService.getCharacteristic(DFU_CONTROL_POINT_UUID);
+		mPacketCharacteristic = dfuService.getCharacteristic(DFU_PACKET_UUID);
+		return mControlPointCharacteristic != null && mPacketCharacteristic != null;
+	}
+
+	@Override
 	public boolean initialize(final Intent intent, final BluetoothGatt gatt, final int fileType, final InputStream firmwareStream, final InputStream initPacketStream) throws DfuException, DeviceDisconnectedException, UploadAbortedException {
 		if (initPacketStream == null) {
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, "The Init packet is required by this version DFU Bootloader");
@@ -140,14 +148,6 @@ import no.nordicsemi.android.error.SecureDfuError;
 		}
 
 		return super.initialize(intent, gatt, fileType, firmwareStream, initPacketStream);
-	}
-
-	@Override
-	public boolean hasRequiredCharacteristics(final BluetoothGatt gatt) {
-		final BluetoothGattService dfuService = gatt.getService(DFU_SERVICE_UUID);
-		mControlPointCharacteristic = dfuService.getCharacteristic(DFU_CONTROL_POINT_UUID);
-		mPacketCharacteristic = dfuService.getCharacteristic(DFU_PACKET_UUID);
-		return mControlPointCharacteristic != null && mPacketCharacteristic != null;
 	}
 
 	@Override

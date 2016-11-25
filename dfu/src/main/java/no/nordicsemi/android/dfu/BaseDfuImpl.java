@@ -160,7 +160,6 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 			notifyLock();
 		}
 
-
 		protected String parse(final BluetoothGattCharacteristic characteristic) {
 			return parse(characteristic.getValue());
 		}
@@ -265,10 +264,16 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		mProgressInfo = mService.mProgressInfo.init(size, currentPart, totalParts);
 
 		// If we are bonded we may want to enable Service Changed characteristic indications.
-		// Note: This feature will be introduced in the SDK 8.0 as this is the proper way to refresh attribute list on the phone.
+		// Note: Sending SC indication on services change was introduced in the SDK 8.0.
+		//       Before, the cache had to be clear manually. This Android lib supports both implementations.
+		// Note: On iOS refreshing services is not available in the API. An app must have Service Change characteristic
+		//       if it intends ever to change its services. In that case on non-bonded devices services will never be cached,
+		//       and on bonded a change is indicated using Service Changed indication. Ergo - Legacy DFU will
+		//       not work by default on iOS with buttonless update on SDKs < 8 on bonded devices. The bootloader must be modified to
+		//       always send the indication when connected.
 
-		// This has been fixed on Android 6 (?). Now the Android enables Service Changed indications automatically during bonding.
-		if (gatt.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
+		// This has been fixed on Android 6. Now the Android enables Service Changed indications automatically after bonding.
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M && gatt.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
 			final BluetoothGattService genericAttributeService = gatt.getService(GENERIC_ATTRIBUTE_SERVICE_UUID);
 			if (genericAttributeService != null) {
 				final BluetoothGattCharacteristic serviceChangedCharacteristic = genericAttributeService.getCharacteristic(SERVICE_CHANGED_UUID);

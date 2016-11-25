@@ -22,9 +22,7 @@
 
 package no.nordicsemi.android.dfu;
 
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.content.Intent;
@@ -32,7 +30,6 @@ import android.content.SharedPreferences;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
 
-import java.io.IOException;
 import java.util.UUID;
 
 import no.nordicsemi.android.dfu.internal.ArchiveInputStream;
@@ -41,8 +38,6 @@ import no.nordicsemi.android.dfu.internal.exception.DfuException;
 import no.nordicsemi.android.dfu.internal.exception.RemoteDfuException;
 import no.nordicsemi.android.dfu.internal.exception.UnknownResponseException;
 import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
-import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
-import no.nordicsemi.android.error.GattError;
 import no.nordicsemi.android.error.LegacyDfuError;
 
 /* package */ class LegacyDfuImpl extends BaseCustomDfuImpl {
@@ -395,16 +390,16 @@ import no.nordicsemi.android.error.LegacyDfuError;
 				// A notification will come with confirmation. Let's wait for it a bit
 				response = readNotificationResponse();
 
-						/*
-						 * The response received from the DFU device contains:
-						 * +---------+--------+----------------------------------------------------+
-						 * | byte no | value  | description                                        |
-						 * +---------+--------+----------------------------------------------------+
-						 * | 0       | 16     | Response code                                      |
-						 * | 1       | 1      | The Op Code of a request that this response is for |
-						 * | 2       | STATUS | See DFU_STATUS_* for status codes                  |
-						 * +---------+--------+----------------------------------------------------+
-						 */
+				/*
+				 * The response received from the DFU device contains:
+				 * +---------+--------+----------------------------------------------------+
+				 * | byte no | value  | description                                        |
+				 * +---------+--------+----------------------------------------------------+
+				 * | 0       | 16     | Response code                                      |
+				 * | 1       | 1      | The Op Code of a request that this response is for |
+				 * | 2       | STATUS | Status code                                        |
+				 * +---------+--------+----------------------------------------------------+
+				 */
 				status = getStatusCode(response, OP_CODE_START_DFU_KEY);
 				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Response received (Op Code = " + response[1] + " Status = " + status + ")");
 				// If upload was not completed in the previous connection the INVALID_STATE status will be reported.
