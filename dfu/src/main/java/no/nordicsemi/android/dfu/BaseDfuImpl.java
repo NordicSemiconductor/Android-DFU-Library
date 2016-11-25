@@ -656,20 +656,20 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		return new String(out);
 	}
 
-	protected void loge(final String message) {
+	void loge(final String message) {
 		Log.e(TAG, message);
 	}
 
-	protected void loge(final String message, final Throwable e) {
+	void loge(final String message, final Throwable e) {
 		Log.e(TAG, message, e);
 	}
 
-	protected void logw(final String message) {
+	void logw(final String message) {
 		if (DfuBaseService.DEBUG)
 			Log.w(TAG, message);
 	}
 
-	protected void logi(final String message) {
+	void logi(final String message) {
 		if (DfuBaseService.DEBUG)
 			Log.i(TAG, message);
 	}
