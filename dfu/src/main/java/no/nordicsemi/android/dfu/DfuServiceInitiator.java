@@ -55,6 +55,7 @@ public class DfuServiceInitiator {
 
 	private boolean keepBond;
 	private boolean forceDfu = false;
+	private boolean enableUnsafeExperimentalButtonlessDfu = false;
 
 	private Boolean packetReceiptNotificationsEnabled;
 	private int numberOfPackets = 12;
@@ -156,6 +157,42 @@ public class DfuServiceInitiator {
 	 */
 	public DfuServiceInitiator setForceDfu(final boolean force) {
 		this.forceDfu = force;
+		return this;
+	}
+
+	/**
+	 * Set this flag to true to enable experimental buttonless feature in Secure DFU. When the
+	 * experimental Buttonless DFU Service is found on a device, the service will use it to
+	 * switch the device to the bootloader mode, connect to it in that mode and proceed with DFU.
+	 * <p>
+	 * <b>Please, read the information below before setting it to true.</b>
+	 * <p>
+	 * In the SDK 12.x the Buttonless DFU feature for Secure DFU was experimental.
+	 * It is NOT recommended to use it: it was not properly tested, had implementation bugs
+	 * (e.g. <a href="https://devzone.nordicsemi.com/question/100609/sdk-12-bootloader-erased-after-programming/">link</a>) and
+	 * does not required encryption and therefore may lead to DOS attack (anyone can use it to switch the device
+	 * to bootloader mode). However, as there is no other way to trigger bootloader mode on devices
+	 * without a button, this DFU Library supports this service, but the feature must be explicitly enabled here.
+	 * Be aware, that setting this flag to false will no protect your devices from this kind of attacks, as
+	 * an attacker may use another app for that purpose. To be sure your device is secure remove this
+	 * experimental service from your device.
+	 * <p>
+	 * <b>Spec:</b><br>
+	 * Buttonless DFU Service UUID: 8E400001-F315-4F60-9FB8-838830DAEA50<br>
+	 * Buttonless DFU characteristic UUID: 8E400001-F315-4F60-9FB8-838830DAEA50 (the same)<br>
+	 * Enter Bootloader Op Code: 0x01<br>
+	 * Correct return value: 0x20-01-01 , where:<br>
+	 * 0x20 - Response Op Code<br>
+	 * 0x01 - Request Code<br>
+	 * 0x01 - Success<br>
+	 * The device should disconnect and restart in DFU mode after sending the notification.
+	 * <p>
+	 * In SDK 13 this issue will be fixed by a proper implementation (bonding required,
+	 * passing bond information to the bootloader, encryption, well tested). It is recommended to use this
+	 * new service when SDK 13 (or later) is out. TODO fix the docs when SDK 13 is out.
+	 */
+	public DfuServiceInitiator setUnsafeExperimentalButtonlessServiceInSecureDfuEnabled(final boolean enable) {
+		this.enableUnsafeExperimentalButtonlessDfu = enable;
 		return this;
 	}
 
@@ -334,6 +371,7 @@ public class DfuServiceInitiator {
 		intent.putExtra(DfuBaseService.EXTRA_INIT_FILE_RES_ID, initFileResId);
 		intent.putExtra(DfuBaseService.EXTRA_KEEP_BOND, keepBond);
 		intent.putExtra(DfuBaseService.EXTRA_FORCE_DFU, forceDfu);
+		intent.putExtra(DfuBaseService.EXTRA_UNSAFE_EXPERIMENTAL_BUTTONLESS_DFU, enableUnsafeExperimentalButtonlessDfu);
 		if (packetReceiptNotificationsEnabled != null) {
 			intent.putExtra(DfuBaseService.EXTRA_PACKET_RECEIPT_NOTIFICATIONS_ENABLED, packetReceiptNotificationsEnabled);
 			intent.putExtra(DfuBaseService.EXTRA_PACKET_RECEIPT_NOTIFICATIONS_VALUE, numberOfPackets);

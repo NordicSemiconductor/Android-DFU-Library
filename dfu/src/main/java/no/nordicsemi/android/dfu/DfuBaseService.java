@@ -151,6 +151,38 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 */
 	public static final String EXTRA_FORCE_DFU = "no.nordicsemi.android.dfu.extra.EXTRA_FORCE_DFU";
 	/**
+	 * Set this flag to true to enable experimental buttonless feature in Secure DFU. When the
+	 * experimental Buttonless DFU Service is found on a device, the service will use it to
+	 * switch the device to the bootloader mode, connect to it in that mode and proceed with DFU.
+	 * <p>
+	 * <b>Please, read the information below before setting it to true.</b>
+	 * <p>
+	 * In the SDK 12.x the Buttonless DFU feature for Secure DFU was experimental.
+	 * It is NOT recommended to use it: it was not properly tested, had implementation bugs
+	 * (e.g. https://devzone.nordicsemi.com/question/100609/sdk-12-bootloader-erased-after-programming/) and
+	 * does not required encryption and therefore may lead to DOS attack (anyone can use it to switch the device
+	 * to bootloader mode). However, as there is no other way to trigger bootloader mode on devices
+	 * without a button, this DFU Library supports this service, but the feature must be explicitly enabled here.
+	 * Be aware, that setting this flag to false will no protect your devices from this kind of attacks, as
+	 * an attacker may use another app for that purpose. To be sure your device is secure remove this
+	 * experimental service from your device.
+	 * <p>
+	 * <b>Spec:</b><br>
+	 * Buttonless DFU Service UUID: 8E400001-F315-4F60-9FB8-838830DAEA50<br>
+	 * Buttonless DFU characteristic UUID: 8E400001-F315-4F60-9FB8-838830DAEA50 (the same)<br>
+	 * Enter Bootloader Op Code: 0x01<br>
+	 * Correct return value: 0x20-01-01 , where:<br>
+	 * 0x20 - Response Op Code<br>
+	 * 0x01 - Request Code<br>
+	 * 0x01 - Success<br>
+	 * The device should disconnect and restart in DFU mode after sending the notification.
+	 * <p>
+	 * In SDK 13 this issue will be fixed by a proper implementation (bonding required,
+	 * passing bond information to the bootloader, encryption, well tested). It is recommended to use this
+	 * new service when SDK 13 (or later) is out. TODO: fix the docs when SDK 13 is out.
+	 */
+	public static final String EXTRA_UNSAFE_EXPERIMENTAL_BUTTONLESS_DFU = "no.nordicsemi.android.dfu.extra.EXTRA_UNSAFE_EXPERIMENTAL_BUTTONLESS_DFU";
+	/**
 	 * This property must contain a boolean value.
 	 * <p>If true the Packet Receipt Notification procedure will be enabled. See DFU documentation on http://infocenter.nordicsemi.com for more details.
 	 * The number of packets before receiving a Packet Receipt Notification is set with property {@link #EXTRA_PACKET_RECEIPT_NOTIFICATIONS_VALUE}.
@@ -965,7 +997,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 			mProgressInfo = new DfuProgressInfo(this);
 
 			if (mAborted) {
-				logi("Upload aborted");
+				logw("Upload aborted");
 				sendLogBroadcast(LOG_LEVEL_WARNING, "Upload aborted");
 				mProgressInfo.setProgress(PROGRESS_ABORTED);
 				return;
@@ -1026,7 +1058,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 				return;
 			}
 			if (mAborted) {
-				logi("Upload aborted");
+				logw("Upload aborted");
 				sendLogBroadcast(LOG_LEVEL_WARNING, "Upload aborted");
 				terminateConnection(gatt, 0);
 				mProgressInfo.setProgress(PROGRESS_ABORTED);
@@ -1042,16 +1074,19 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 				 */
 				dfuService = mDfuServiceImpl = DfuServiceProvider.getDfuImpl(intent, this, gatt);
 				if (dfuService == null || !dfuService.hasRequiredService(gatt)) {
-					sendLogBroadcast(LOG_LEVEL_WARNING, "Connected. DFU Service not found");
+					Log.w(TAG, "Connected. DFU Service not found");
+					sendLogBroadcast(LOG_LEVEL_WARNING, "DFU Service not found");
 					terminateConnection(gatt, ERROR_SERVICE_NOT_FOUND);
 					return;
 				}
 				if (!dfuService.hasRequiredCharacteristics(gatt)) {
-					sendLogBroadcast(LOG_LEVEL_WARNING, "Connected. DFU Characteristics not found");
+					Log.w(TAG, "Connected. DFU Characteristics not found");
+					sendLogBroadcast(LOG_LEVEL_WARNING, "DFU Characteristics not found");
 					terminateConnection(gatt, DfuBaseService.ERROR_CHARACTERISTICS_NOT_FOUND);
 					return;
 				}
 
+				Log.i(TAG, "Services discovered");
 				sendLogBroadcast(LOG_LEVEL_INFO, "Services discovered");
 
 				// Begin the DFU depending on the implementation
@@ -1059,7 +1094,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 					dfuService.performDfu(intent);
 				}
 			} catch (final UploadAbortedException e) {
-				logi("Upload aborted");
+				logw("Upload aborted");
 				sendLogBroadcast(LOG_LEVEL_WARNING, "Upload aborted");
 				terminateConnection(gatt, 0);
 				mProgressInfo.setProgress(PROGRESS_ABORTED);

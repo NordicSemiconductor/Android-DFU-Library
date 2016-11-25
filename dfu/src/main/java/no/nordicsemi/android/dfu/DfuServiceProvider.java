@@ -37,6 +37,14 @@ import android.content.Intent;
 		if (legacyService != null) {
 			return new LegacyDfuImpl(intent, service);
 		}
+		// Support for experimental Buttonless DFU Service from SDK 12. This feature must be explicitly enabled in the initiator.
+		final boolean enableUnsafeExperimentalButtonlessDfuService = intent.getBooleanExtra(DfuBaseService.EXTRA_UNSAFE_EXPERIMENTAL_BUTTONLESS_DFU, false);
+		if (enableUnsafeExperimentalButtonlessDfuService) {
+			final BluetoothGattService experimentalButtonlessDfuService = gatt.getService(ExperimentalButtonlessDfuImpl.EXPERIMENTAL_BUTTONLESS_DFU_SERVICE_UUID);
+			if (experimentalButtonlessDfuService != null) {
+				return new ExperimentalButtonlessDfuImpl(intent, service);
+			}
+		}
 		return null;
 	}
 }
