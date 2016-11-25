@@ -1478,6 +1478,8 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 * <li>{@link #EXTRA_DEVICE_NAME} - target device name</li>
 	 * <li>{@link #EXTRA_PROGRESS} - the connection state (values &lt; 0)*, current progress (0-100) or error number if {@link #ERROR_MASK} bit set.</li>
 	 * </ul>
+	 * If your application disabled DFU notifications by calling {@link DfuServiceInitiator#setDisableNotification(boolean)} with parameter true this method will never be called
+	 * and may return null.<br>
 	 * _______________________________<br>
 	 * * - connection state constants:
 	 * <ul>
