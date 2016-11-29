@@ -141,6 +141,11 @@ Start the DFU service with the following code:
 final DfuServiceInitiator starter = new DfuServiceInitiator(mSelectedDevice.getAddress())
         .setDeviceName(mSelectedDevice.getName())
         .setKeepBond(keepBond);
+// If you want to have experimental buttonless DFU feature supported call additionally:
+starter.setUnsafeExperimentalButtonlessServiceInSecureDfuEnabled(true);
+// but be aware of this: https://devzone.nordicsemi.com/question/100609/sdk-12-bootloader-erased-after-programming/
+// and other issues related to this experimental service.
+
 // Init packet is required by Bootloader/DFU from SDK 7.0+ if HEX or BIN file is given above.
 // In case of a ZIP file, the init packet (a DAT file) must be included inside the ZIP file.
 if (mFileType == DfuService.TYPE_AUTO)
