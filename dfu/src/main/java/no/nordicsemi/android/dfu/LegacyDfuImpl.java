@@ -591,7 +591,7 @@ import no.nordicsemi.android.error.LegacyDfuError;
 			// Check the result of the operation
 			response = readNotificationResponse();
 			status = getStatusCode(response, OP_CODE_RECEIVE_FIRMWARE_IMAGE_KEY);
-			logi("Response received. Op Code: " + response[0] + " Req Op Code = " + response[1] + ", Status = " + response[2]);
+			logi("Response received (Op Code = " + response[0] + ", Req Op Code = " + response[1] + ", Status = " + response[2] + ")");
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Response received (Op Code = " + response[1] + ", Status = " + status + ")");
 			if (status != DFU_STATUS_SUCCESS)
 				throw new RemoteDfuException("Device returned error after sending file", status);
@@ -607,7 +607,7 @@ import no.nordicsemi.android.error.LegacyDfuError;
 			// A notification will come with status code. Let's wait for it a bit.
 			response = readNotificationResponse();
 			status = getStatusCode(response, OP_CODE_VALIDATE_KEY);
-			logi("Response received. Op Code: " + response[0] + " Req Op Code = " + response[1] + ", Status = " + response[2]);
+			logi("Response received (Op Code = " + response[0] + ", Req Op Code = " + response[1] + ", Status = " + response[2] + ")");
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Response received (Op Code = " + response[1] + ", Status = " + status + ")");
 			if (status != DFU_STATUS_SUCCESS)
 				throw new RemoteDfuException("Device returned validation error", status);
