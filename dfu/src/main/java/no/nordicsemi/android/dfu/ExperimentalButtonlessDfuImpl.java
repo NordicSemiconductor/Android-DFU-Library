@@ -39,6 +39,13 @@ public class ExperimentalButtonlessDfuImpl extends BaseDfuImpl {
 			mReceivedData = characteristic.getValue();
 			notifyLock();
 		}
+
+		@Override
+		public void onCharacteristicWrite(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final int status) {
+			// Despite the status code the Enter bootloader request has completed.
+			mRequestCompleted = true;
+			notifyLock();
+		}
 	}
 
 	ExperimentalButtonlessDfuImpl(final Intent intent, final DfuBaseService service) {
@@ -99,25 +106,40 @@ public class ExperimentalButtonlessDfuImpl extends BaseDfuImpl {
 			writeOpCode(mButtonlessDfuCharacteristic, OP_CODE_ENTER_BOOTLOADER, true);
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Enter bootloader sent (Op Code = 1)");
 
-			// At this moment we mey already be disconnected, so the readNotificationResponse does not check mConnected state
-			final byte[] response = readNotificationResponse();
-			/*
-			 * The response received from the DFU device contains:
-			 * +---------+--------+----------------------------------------------------+
-			 * | byte no | value  | description                                        |
-			 * +---------+--------+----------------------------------------------------+
-			 * | 0       | 0x20   | Response code                                      |
-			 * | 1       | 0x01   | The Op Code of a request that this response is for |
-			 * | 2       | STATUS | Status code                                        |
-			 * +---------+--------+----------------------------------------------------+
-			 */
-			final int status = getStatusCode(response, OP_CODE_ENTER_BOOTLOADER_KEY);
-			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Response received (Op Code = " + response[1] + ", Status = " + status + ")");
-			if (status != DFU_STATUS_SUCCESS)
-				throw new RemoteDfuException("Device returned error after sending Enter Bootloader", status);
+			byte[] response;
+			try {
+				// There may be a race condition here. The peripheral should send a notification and disconnect gracefully
+				// immediately after that, but the onConnectionStateChange event may be handled before this method ends.
+				// Also, sometimes the notification is not received at all.
+				response = readNotificationResponse();
+			} catch (final DeviceDisconnectedException e) {
+				// The device disconnect event was handled before the method finished,
+				// or the notification wasn't received. We behave as if we received status success.
+				response = mReceivedData;
+			}
 
-			// The device will reset so we don't have to send Disconnect signal.
-			mService.waitUntilDisconnected();
+			if (response != null) {
+				/*
+				 * The response received from the DFU device contains:
+				 * +---------+--------+----------------------------------------------------+
+				 * | byte no | value  | description                                        |
+				 * +---------+--------+----------------------------------------------------+
+				 * | 0       | 0x20   | Response code                                      |
+				 * | 1       | 0x01   | The Op Code of a request that this response is for |
+				 * | 2       | STATUS | Status code                                        |
+				 * +---------+--------+----------------------------------------------------+
+				 */
+				final int status = getStatusCode(response, OP_CODE_ENTER_BOOTLOADER_KEY);
+				logi("Response received (Op Code = " + response[1] + ", Status = " + status + ")");
+				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Response received (Op Code = " + response[1] + ", Status = " + status + ")");
+				if (status != DFU_STATUS_SUCCESS)
+					throw new RemoteDfuException("Device returned error after sending Enter Bootloader", status);
+				// The device will reset so we don't have to send Disconnect signal.
+				mService.waitUntilDisconnected();
+			} else {
+				logi("Device disconnected before receiving notification");
+			}
+
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Disconnected by the remote device");
 
 			finalize(intent, true);
@@ -132,26 +154,6 @@ public class ExperimentalButtonlessDfuImpl extends BaseDfuImpl {
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, String.format("Remote DFU error: %s", parse(error)));
 			mService.terminateConnection(gatt, error);
 		}
-	}
-
-	@Override
-	protected byte[] readNotificationResponse() throws DeviceDisconnectedException, DfuException, UploadAbortedException {
-		// Do not clear the mReceiveData here. The response might already be obtained. Clear it in write request instead.
-
-		// This method is very similar to one its overrides, but does not check the mConnected flag as the device might have already disconnected
-		try {
-			synchronized (mLock) {
-				while ((mReceivedData == null && mError == 0 && !mAborted) || mPaused)
-					mLock.wait();
-			}
-		} catch (final InterruptedException e) {
-			loge("Sleeping interrupted", e);
-		}
-		if (mAborted)
-			throw new UploadAbortedException();
-		if (mError != 0)
-			throw new DfuException("Unable to write Op Code", mError);
-		return mReceivedData;
 	}
 
 	/**
