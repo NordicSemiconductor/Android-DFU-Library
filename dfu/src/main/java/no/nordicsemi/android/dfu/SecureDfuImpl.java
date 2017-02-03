@@ -514,13 +514,16 @@ import no.nordicsemi.android.error.SecureDfuError;
 					// Increment iterator
 					currentChunk++;
 					attempt = 1;
+					mFirmwareStream.mark(0);
 				} else {
 					if (attempt < MAX_ATTEMPTS) {
 						attempt++;
-						logi("CRC does not match! Retrying...(" + attempt + "/" + MAX_ATTEMPTS + ")");
+						logi(String.format(Locale.US,"CRC does not match! Expected %08X Retrying...(%d/%d)",crc,attempt,MAX_ATTEMPTS));
 						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, "CRC does not match! Retrying...(" + attempt + "/" + MAX_ATTEMPTS + ")");
 						try {
 							mFirmwareStream.reset();
+							final int crcAfterReset = (int) (((ArchiveInputStream) mFirmwareStream).getCrc32() & 0xFFFFFFFFL);
+							logi(String.format(Locale.US,"CRC after reset is %08X",crcAfterReset));
 							mProgressInfo.setBytesSent(checksum.offset - info.maxSize);
 						} catch (final IOException e) {
 							loge("Error while resetting the firmware stream", e);
@@ -528,7 +531,7 @@ import no.nordicsemi.android.error.SecureDfuError;
 							return;
 						}
 					} else {
-						loge("CRC does not match!");
+						loge(String.format("CRC does not match! Expected %08X",crc));
 						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, "CRC does not match!");
 						mService.terminateConnection(gatt, DfuBaseService.ERROR_CRC_ERROR);
 						return;
