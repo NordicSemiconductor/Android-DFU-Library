@@ -514,12 +514,17 @@ import no.nordicsemi.android.error.SecureDfuError;
 					// Increment iterator
 					currentChunk++;
 					attempt = 1;
+					//Mark this location after completion of successful transfer.  In the event of a CRC retry on the next packet we will restart from this point.
+					mFirmwareStream.mark(0);
 				} else {
+					String crcFailMessage = String.format(Locale.US, "CRC does not match! Expected %08X but found %08X.", crc, checksum.CRC32);
 					if (attempt < MAX_ATTEMPTS) {
 						attempt++;
-						logi("CRC does not match! Retrying...(" + attempt + "/" + MAX_ATTEMPTS + ")");
-						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, "CRC does not match! Retrying...(" + attempt + "/" + MAX_ATTEMPTS + ")");
+						crcFailMessage += String.format(Locale.US, " Retrying...(%d/%d)", attempt, MAX_ATTEMPTS);
+						logi(crcFailMessage);
+						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, crcFailMessage);
 						try {
+							// Reset the CRC and file pointer back to the previous mark() point after completion of the last successful packet.
 							mFirmwareStream.reset();
 							mProgressInfo.setBytesSent(checksum.offset - info.maxSize);
 						} catch (final IOException e) {
@@ -528,8 +533,8 @@ import no.nordicsemi.android.error.SecureDfuError;
 							return;
 						}
 					} else {
-						loge("CRC does not match!");
-						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, "CRC does not match!");
+						loge(crcFailMessage);
+						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, crcFailMessage);
 						mService.terminateConnection(gatt, DfuBaseService.ERROR_CRC_ERROR);
 						return;
 					}
