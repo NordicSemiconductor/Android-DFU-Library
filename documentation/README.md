@@ -46,9 +46,8 @@ line to your build.gradle file. And that's it.
 
 However, if you want to modify the code to your needs you have to clone the project and add it as follows:
 
-1. Clone the project, or just the *DFULibrary* folder (using sparse-checkout) to a temporary location. 
-2. Copy the *DFULibrary* folder to your projects root, for example to *AndroidstudioProjects*.
-3. Add the **dfu** module to your project:
+1. Clone the project into DFULibrary folder (by default it will be cloned into Android-DFU-Library folder) to your projects root, for example to *AndroidstudioProjects*.
+2. Add the **dfu** module to your project:
     1. Add **'..:DFULibrary:dfu'** to the *settings.gradle* file: 
     ```
     include ':dfu'
@@ -58,7 +57,7 @@ However, if you want to modify the code to your needs you have to clone the proj
 
 #### Eclipse
 
-1. Clone the project, or just the *DFULibrary* folder (using sparse-checkout) to a temporary location.
+1. Clone the project into DFULibrary folder to a temporary location.
 2. Create an empty *DFULibrary* project in Eclipse. Make it a library.
 3. Copy the content of *java* code folder to the *src*.
 4. Copy the content of the *res* folder to the *res* in your Eclipse project.
@@ -79,29 +78,37 @@ public class DfuService extends DfuBaseService {
 
     @Override
     protected Class<? extends Activity> getNotificationTarget() {
-    /*
-     * As a target activity the NotificationActivity is returned, not the MainActivity. This is because
-     * the notification must create a new task:
-     * 
-     * intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-     * 
-     * when you press it. You can use NotificationActivity to check whether the new activity 
-     * is a root activity (that means no other activity was open earlier) or that some 
-     * other activity is already open. In the latter case the NotificationActivity will just be
-     * closed. The system will restore the previous activity. However, if the application has been 
-     * closed during upload and you click the notification, a NotificationActivity will
-     * be launched as a root activity. It will create and start the main activity and
-     * terminate itself.
-     * 
-     * This method may be used to restore the target activity in case the application
-     * was closed or is open. It may also be used to recreate an activity history using
-     * startActivities(...).
-     */
-    return NotificationActivity.class;
+        /*
+         * As a target activity the NotificationActivity is returned, not the MainActivity. This is because
+         * the notification must create a new task:
+         * 
+         * intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+         * 
+         * when you press it. You can use NotificationActivity to check whether the new activity 
+         * is a root activity (that means no other activity was open earlier) or that some 
+         * other activity is already open. In the latter case the NotificationActivity will just be
+         * closed. The system will restore the previous activity. However, if the application has been 
+         * closed during upload and you click the notification, a NotificationActivity will
+         * be launched as a root activity. It will create and start the main activity and
+         * terminate itself.
+         * 
+         * This method may be used to restore the target activity in case the application
+         * was closed or is open. It may also be used to recreate an activity history using
+         * startActivities(...).
+         */
+        return NotificationActivity.class;
+    }
+    
+    @Override
+    protected boolean isDebug() {
+        // Here return true if you want the service to print more logs in LogCat.
+        // Library's BuildConfig in current version of Android Studio is always set to DEBUG=false, so
+        // make sure you return true or your.app.BuildConfig.DEBUG here.
+        return BuildConfig.DEBUG;
     }
 }
-
 ```
+Remember to add your service to *AndroidManifest.xml*.
 
 You may use the following class in order to prevent starting another instance of your application:
 
