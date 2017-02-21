@@ -319,6 +319,7 @@ public class ArchiveInputStream extends ZipInputStream {
 		if (buffer.length > size) {
 			if (startNextFile() == null) {
 				bytesRead += size;
+				crc32.update(buffer, 0, size);
 				return size;
 			}
 
