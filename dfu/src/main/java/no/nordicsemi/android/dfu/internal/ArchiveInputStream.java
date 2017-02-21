@@ -388,22 +388,22 @@ public class ArchiveInputStream extends ZipInputStream {
 	 *         TYPE_APPLICATION}
 	 */
 	public int getContentType() {
-		byte b = 0;
+		byte type = 0;
 		// In Secure DFU the softDeviceSize and bootloaderSize may be 0 if both are in the ZIP file. The size of each part is embedded in the Init packet.
 		if (softDeviceAndBootloaderBytes != null)
-			b |= DfuBaseService.TYPE_SOFT_DEVICE | DfuBaseService.TYPE_BOOTLOADER;
+			type |= DfuBaseService.TYPE_SOFT_DEVICE | DfuBaseService.TYPE_BOOTLOADER;
 		// In Legacy DFU the size of each of these parts was given in the manifest file.
 		if (softDeviceSize > 0)
-			b |= DfuBaseService.TYPE_SOFT_DEVICE;
+			type |= DfuBaseService.TYPE_SOFT_DEVICE;
 		if (bootloaderSize > 0)
-			b |= DfuBaseService.TYPE_BOOTLOADER;
+			type |= DfuBaseService.TYPE_BOOTLOADER;
 		if (applicationSize > 0)
-			b |= DfuBaseService.TYPE_APPLICATION;
-		return b;
+			type |= DfuBaseService.TYPE_APPLICATION;
+		return type;
 	}
 
 	/**
-	 * Truncates the current content type. May be used to hide some files, f.e. to send Soft Device and Bootloader without Application or only the Application.
+	 * Truncates the current content type. May be used to hide some files, e.g. to send Soft Device and Bootloader without Application or only the Application.
 	 * 
 	 * @param type
 	 *            the new type
@@ -514,5 +514,15 @@ public class ArchiveInputStream extends ZipInputStream {
 	 */
 	public byte[] getApplicationInit() {
 		return applicationInitBytes;
+	}
+
+	/**
+	 * This method returns true if the content of the ZIP file may be sent only using Secure DFU.
+	 * The reason may be that the ZIP contains a single bin file with SD and/or BL together with App, which has to be sent in a single connection.
+	 * Sizes of each component are not given explicitly in the Manifest (even if they are, they are ignored). They are hidden in the Init Packet instead.
+	 * @return true if the content of this ZIP may only be sent using Secure DFU.
+	 */
+	public boolean isSecureDfuRequired() {
+		return manifest != null && manifest.isSecureDfuRequired();
 	}
 }

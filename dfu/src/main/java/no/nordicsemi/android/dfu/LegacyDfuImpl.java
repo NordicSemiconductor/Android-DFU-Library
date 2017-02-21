@@ -369,6 +369,15 @@ import no.nordicsemi.android.error.LegacyDfuError;
 			// The sizes above may be overwritten if a ZIP file was passed
 			if (mFirmwareStream instanceof ArchiveInputStream) {
 				final ArchiveInputStream zhis = (ArchiveInputStream) mFirmwareStream;
+				if (zhis.isSecureDfuRequired()) {
+					loge("Secure DFU is required to upload selected firmware");
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, "The device does not support given firmware.");
+					logi("Sending Reset command (Op Code = 6)");
+					writeOpCode(mControlPointCharacteristic, OP_CODE_RESET);
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Reset request sent");
+					mService.terminateConnection(gatt, DfuBaseService.ERROR_FILE_INVALID);
+					return;
+				}
 				softDeviceImageSize = zhis.softDeviceImageSize();
 				bootloaderImageSize = zhis.bootloaderImageSize();
 				appImageSize = zhis.applicationImageSize();

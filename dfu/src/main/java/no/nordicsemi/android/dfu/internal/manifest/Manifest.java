@@ -28,10 +28,27 @@ public class Manifest {
 	protected FileInfo application;
 	protected FileInfo bootloader;
 	protected FileInfo softdevice;
-	@SerializedName("softdevice_bootloader") protected SoftDeviceBootloaderFileInfo softdeviceBootloader;
+	@SerializedName("softdevice_bootloader")
+	protected SoftDeviceBootloaderFileInfo softdeviceBootloader;
+
+	// The following options are available only in Secure DFU and will be sent as application (in a single connection).
+	// The service is not aware of sizes of each component in the bin file. This information is hidden in the Init Packet.
+	@SerializedName("bootloader_application")
+	protected SoftDeviceBootloaderFileInfo bootloaderApplication;
+	@SerializedName("softdevice_application")
+	protected SoftDeviceBootloaderFileInfo softdeviceApplication;
+	@SerializedName("softdevice_bootloader_application")
+	protected SoftDeviceBootloaderFileInfo softdeviceBootloaderApplication;
 
 	public FileInfo getApplicationInfo() {
-		return application;
+		if (application != null)
+			return application;
+		// The other parts will be sent together with application, so they may be returned here.
+		if (softdeviceApplication != null)
+			return softdeviceApplication;
+		if (bootloaderApplication != null)
+			return bootloaderApplication;
+		return softdeviceBootloaderApplication;
 	}
 
 	public FileInfo getBootloaderInfo() {
@@ -44,5 +61,13 @@ public class Manifest {
 
 	public SoftDeviceBootloaderFileInfo getSoftdeviceBootloaderInfo() {
 		return softdeviceBootloader;
+	}
+
+	public boolean isSecureDfuRequired() {
+		// Legacy DFU requires sending firmware type together with Start DFU command.
+		// The following options were not supported by the legacy bootloader,
+		// but in some implementations they are supported in Secure DFU.
+		// In Secure DFU the fw type is provided in the Init packet.
+		return bootloaderApplication != null || softdeviceApplication != null || softdeviceBootloaderApplication != null;
 	}
 }
