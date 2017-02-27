@@ -38,6 +38,7 @@ import no.nordicsemi.android.dfu.internal.exception.DfuException;
 import no.nordicsemi.android.dfu.internal.exception.RemoteDfuException;
 import no.nordicsemi.android.dfu.internal.exception.UnknownResponseException;
 import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
+import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 import no.nordicsemi.android.error.LegacyDfuError;
 
 /* package */ class LegacyDfuImpl extends BaseCustomDfuImpl {
@@ -298,10 +299,8 @@ import no.nordicsemi.android.error.LegacyDfuError;
 			// Close the device
 			mService.close(gatt);
 
-			logi("Starting service that will connect to the DFU bootloader");
-			final Intent newIntent = new Intent();
-			newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
-			mService.startService(newIntent);
+			startApplicationUpdateService(intent);
+
 			return;
 		}
 
@@ -428,6 +427,7 @@ import no.nordicsemi.android.error.LegacyDfuError;
 
 					final BluetoothGattService gas = gatt.getService(GENERIC_ATTRIBUTE_SERVICE_UUID);
 					final boolean hasServiceChanged = gas != null && gas.getCharacteristic(SERVICE_CHANGED_UUID) != null;
+
 					mService.refreshDeviceCache(gatt, !hasServiceChanged);
 
 					// Close the device
@@ -665,6 +665,33 @@ import no.nordicsemi.android.error.LegacyDfuError;
 			mService.terminateConnection(gatt, error);
 		}
 	}
+
+    /**
+     * Restart the update service to do the actual updating. First scan for the bootloader address in  case the address has been incremented by 1.
+     * It might be that the adapter hasn't seen it yet, therefore a scan is required.
+     *
+     * @param intent the intent delivered to the current service invoking this method
+     */
+    private void startApplicationUpdateService(Intent intent) {
+        mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Scanning for the DFU Bootloader...");
+        final String newAddress = BootloaderScannerFactory.getScanner().searchFor(mGatt.getDevice().getAddress());
+
+        if (newAddress != null) {
+            mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "DFU Bootloader found with address " + newAddress);
+        } else {
+            mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "DFU Bootloader not found. Trying the same address...");
+        }
+
+        logi("Restarting the service");
+        final Intent newIntent = new Intent();
+        newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
+
+        if (newAddress != null) {
+            newIntent.putExtra(DfuBaseService.EXTRA_DEVICE_ADDRESS, newAddress);
+        }
+
+        mService.startService(newIntent);
+    }
 
 	/**
 	 * Sets number of data packets that will be send before the notification will be received.
