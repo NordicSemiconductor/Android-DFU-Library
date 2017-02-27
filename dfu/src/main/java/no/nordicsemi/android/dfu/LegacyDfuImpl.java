@@ -669,16 +669,16 @@ import no.nordicsemi.android.error.LegacyDfuError;
 	/**
 	 * Restart the update service to do the actual updating. First scan for the bootloader address in  case the address has been incremented by 1.
 	 * It might be that the adapter hasn't seen it yet, therefore a scan is required.
-     *
-     * @param intent the intent delivered to the current service invoking this method
+	 *
+	 * @param intent the intent delivered to the current service invoking this method
 	 */
 	private void startApplicationUpdateService(Intent intent) {
 		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Scanning for the DFU Bootloader...");
 		final String newAddress = BootloaderScannerFactory.getScanner().searchFor(mGatt.getDevice().getAddress());
 
 		if (newAddress != null) {
-            mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "DFU Bootloader found with address " + newAddress);
-        } else {
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "DFU Bootloader found with address " + newAddress);
+		} else {
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "DFU Bootloader not found. Trying the same address...");
 		}
 
@@ -686,9 +686,9 @@ import no.nordicsemi.android.error.LegacyDfuError;
 		final Intent newIntent = new Intent();
 		newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
 
-        if (newAddress != null) {
-            newIntent.putExtra(DfuBaseService.EXTRA_DEVICE_ADDRESS, newAddress);
-        }
+		if (newAddress != null) {
+			newIntent.putExtra(DfuBaseService.EXTRA_DEVICE_ADDRESS, newAddress);
+		}
 
 		mService.startService(newIntent);
 	}
