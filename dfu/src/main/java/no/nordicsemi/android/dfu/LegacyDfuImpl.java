@@ -288,7 +288,7 @@ import no.nordicsemi.android.error.LegacyDfuError;
 			 * [Vol. 3, Part G, 2.5.2 - Attribute Caching]
 			 * Note: Clients without a trusted relationship must perform service discovery on each connection if the server supports the Services Changed characteristic.
 			 *
-			 * However, as up to Android 5 the system does NOT respect this requirement and servers are cached for every device, even if Service Changed is enabled -> Android BUG?
+			 * However, as up to Android 7 the system does NOT respect this requirement and servers are cached for every device, even if Service Changed is enabled -> Android BUG?
 			 * For bonded devices Android performs service re-discovery when SC indication is received.
 			 */
 			final BluetoothGattService gas = gatt.getService(GENERIC_ATTRIBUTE_SERVICE_UUID);

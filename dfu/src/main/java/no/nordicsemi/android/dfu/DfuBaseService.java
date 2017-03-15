@@ -129,9 +129,9 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 * If an application is being updated on a bonded device with the DFU Bootloader that has been configured to preserve the bond information for the new application,
 	 * set it to <code>true</code>.</p>
 	 *
-	 * <p>By default the DFU Bootloader clears the whole application's memory. It may be however configured in the \Nordic\nrf51\components\libraries\bootloader_dfu\dfu_types.h
+	 * <p>By default the Legacy DFU Bootloader clears the whole application's memory. It may be however configured in the \Nordic\nrf51\components\libraries\bootloader_dfu\dfu_types.h
 	 * file (sdk 11, line 76: <code>#define DFU_APP_DATA_RESERVED 0x0000</code>) to preserve some pages. The BLE_APP_HRM_DFU sample app stores the LTK and System Attributes in the first
-	 * two pages, so in order to preserve the bond information this value should be changed to 0x0800 or more.
+	 * two pages, so in order to preserve the bond information this value should be changed to 0x0800 or more. For Secure DFU this value is by default set to 3 pages.
 	 * When those data are preserved, the new Application will notify the app with the Service Changed indication when launched for the first time. Otherwise this
 	 * service will remove the bond information from the phone and force to refresh the device cache (see {@link #refreshDeviceCache(android.bluetooth.BluetoothGatt, boolean)}).</p>
 	 *

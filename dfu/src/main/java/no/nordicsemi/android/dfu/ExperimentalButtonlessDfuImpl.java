@@ -142,7 +142,7 @@ public class ExperimentalButtonlessDfuImpl extends BaseDfuImpl {
 
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Disconnected by the remote device");
 
-			finalize(intent, true);
+			finalize(intent, false); // Secure DFU by default preserves 3 pages of App Data, those include Att table and bond information
 		} catch (final UnknownResponseException e) {
 			final int error = DfuBaseService.ERROR_INVALID_RESPONSE;
 			loge(e.getMessage());
@@ -157,7 +157,8 @@ public class ExperimentalButtonlessDfuImpl extends BaseDfuImpl {
 	}
 
 	/**
-	 * Closes the BLE connection to the device and removes bonding, if a proper flags were set in the {@link DfuServiceInitiator}.
+	 * Closes the BLE connection to the device and removes bonding information if a proper flag was NOT set
+	 * in the {@link DfuServiceInitiator#setKeepBond(boolean)}.
 	 * This method will scan for a bootloader advertising with the address equal to the current or incremented by 1 and restart the service.
 	 * @param intent the intent used to start the DFU service. It contains all user flags in the bundle.
 	 * @param forceRefresh true, if cache should be cleared even for a bonded device. Usually the Service Changed indication should be used for this purpose.
@@ -181,7 +182,7 @@ public class ExperimentalButtonlessDfuImpl extends BaseDfuImpl {
 		 */
 		if (mGatt.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
 			final boolean restoreBond = intent.getBooleanExtra(DfuBaseService.EXTRA_RESTORE_BOND, false);
-			if (restoreBond || !keepBond || (mFileType & DfuBaseService.TYPE_SOFT_DEVICE) > 0) {
+			if (restoreBond || !keepBond) {
 				// The bond information was lost.
 				removeBond();
 

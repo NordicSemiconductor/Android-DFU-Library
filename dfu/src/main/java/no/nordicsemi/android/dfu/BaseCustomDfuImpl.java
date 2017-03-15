@@ -425,7 +425,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 		boolean alreadyWaited = false;
 		if (mGatt.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
 			final boolean restoreBond = intent.getBooleanExtra(DfuBaseService.EXTRA_RESTORE_BOND, false);
-			if (restoreBond || !keepBond || (mFileType & DfuBaseService.TYPE_SOFT_DEVICE) > 0) {
+			if (restoreBond || !keepBond) {
 				// The bond information was lost.
 				removeBond();
 
