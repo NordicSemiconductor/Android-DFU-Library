@@ -41,6 +41,7 @@ import no.nordicsemi.android.dfu.internal.ArchiveInputStream;
 import no.nordicsemi.android.dfu.internal.exception.DeviceDisconnectedException;
 import no.nordicsemi.android.dfu.internal.exception.DfuException;
 import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
+import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 
 /* package */ abstract class BaseDfuImpl implements DfuService {
 	private static final String TAG = "DfuImpl";
@@ -331,7 +332,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 							mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Restarting service...");
 							final Intent newIntent = new Intent();
 							newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
-							mService.startService(newIntent);
+							restartService(newIntent, false);
 							return false;
 						}
 					} else {
@@ -644,6 +645,30 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		if (!mConnected)
 			throw new DeviceDisconnectedException("Unable to write Op Code: device disconnected");
 		return mReceivedData;
+	}
+
+	/**
+	 * Restarts the service based on the given intent. If parameter set this method will also scan for
+	 * an advertising bootloader that has address equal or incremented by 1 to the current one.
+	 * @param intent the intent to be started as a service
+ 	 * @param scanForBootloader true to scan for advertising bootloader, false to keep the same address
+	 */
+	protected void restartService(final Intent intent, final boolean scanForBootloader) {
+		String newAddress = null;
+		if (scanForBootloader) {
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Scanning for the DFU Bootloader...");
+			newAddress = BootloaderScannerFactory.getScanner().searchFor(mGatt.getDevice().getAddress());
+			logi("Scanning for new address finished with: " + newAddress);
+			if (newAddress != null)
+				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "DFU Bootloader found with address " + newAddress);
+			else {
+				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "DFU Bootloader not found. Trying the same address...");
+			}
+		}
+
+		if (newAddress != null)
+			intent.putExtra(DfuBaseService.EXTRA_DEVICE_ADDRESS, newAddress);
+		mService.startService(intent);
 	}
 
 	protected String parse(final byte[] data) {

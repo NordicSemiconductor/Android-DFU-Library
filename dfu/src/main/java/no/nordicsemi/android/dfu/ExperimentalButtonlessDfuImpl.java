@@ -13,7 +13,6 @@ import no.nordicsemi.android.dfu.internal.exception.DfuException;
 import no.nordicsemi.android.dfu.internal.exception.RemoteDfuException;
 import no.nordicsemi.android.dfu.internal.exception.UnknownResponseException;
 import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
-import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 import no.nordicsemi.android.error.SecureDfuError;
 
 public class ExperimentalButtonlessDfuImpl extends BaseDfuImpl {
@@ -192,36 +191,14 @@ public class ExperimentalButtonlessDfuImpl extends BaseDfuImpl {
 		}
 
 		/*
-		 * In case when the Soft Device has been upgraded, and the application should be send in the following connection, we have to
-		 * make sure that we know the address the device is advertising with. Depending on the method used to start the DFU bootloader the first time
-		 * the new Bootloader may advertise with the same address or one incremented by 1.
-		 * When the buttonless update was used, the bootloader will use the same address as the application. The cached list of services on the Android device
-		 * should be cleared thanks to the Service Changed characteristic (the fact that it exists if not bonded, or the Service Changed indication on bonded one).
-		 * In case of forced DFU mode (using a button), the Bootloader does not know whether there was the Service Changed characteristic present in the list of
-		 * application's services so it must advertise with a different address. The same situation applies when the new Soft Device was uploaded and the old
-		 * application has been removed in this process.
-		 *
-		 * We could have save the fact of jumping as a parameter of the service but it ma be that some Android devices must first scan a device before connecting to it.
-		 * It a device with the address+1 has never been detected before the service could have failed on connection.
+		 * The experimental buttonless service from SDK 12.x and 13 does not support sharing bond information
+		 * from the app to the bootloader. That means, that the DFU bootloader must advertise with advertise
+		 * with address +1 and must not be paired.
 		 */
-		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Scanning for the DFU Bootloader...");
-		final String newAddress = BootloaderScannerFactory.getScanner().searchFor(mGatt.getDevice().getAddress());
-		if (newAddress != null)
-			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "DFU Bootloader found with address " + newAddress);
-		else {
-			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "DFU Bootloader not found. Trying the same address...");
-		}
-
-		/*
-		 * The current service instance has uploaded the Soft Device and/or Bootloader.
-		 * We need to start another instance that will try to send application only.
-		 */
-		logi("Starting service that will upload application");
+		logi("Restarting to bootloader mode");
 		final Intent newIntent = new Intent();
 		newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
-		if (newAddress != null)
-			newIntent.putExtra(DfuBaseService.EXTRA_DEVICE_ADDRESS, newAddress);
-		mService.startService(newIntent);
+		restartService(newIntent, /* and scan for new bootloader address */ true);
 	}
 
 	/**

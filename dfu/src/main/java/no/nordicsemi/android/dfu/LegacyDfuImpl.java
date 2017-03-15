@@ -301,7 +301,7 @@ import no.nordicsemi.android.error.LegacyDfuError;
 			logi("Starting service that will connect to the DFU bootloader");
 			final Intent newIntent = new Intent();
 			newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
-			mService.startService(newIntent);
+			restartService(newIntent, /* scan only for SDK 6.1, see Pull request #45 */ version == 0);
 			return;
 		}
 
@@ -436,7 +436,7 @@ import no.nordicsemi.android.error.LegacyDfuError;
 					logi("Restarting the service");
 					final Intent newIntent = new Intent();
 					newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
-					mService.startService(newIntent);
+					restartService(newIntent, false);
 					return;
 				}
 				if (status != DFU_STATUS_SUCCESS)
