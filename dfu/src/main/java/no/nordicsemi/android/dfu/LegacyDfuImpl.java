@@ -411,32 +411,12 @@ import no.nordicsemi.android.error.LegacyDfuError;
 				 */
 				status = getStatusCode(response, OP_CODE_START_DFU_KEY);
 				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Response received (Op Code = " + response[1] + " Status = " + status + ")");
+
 				// If upload was not completed in the previous connection the INVALID_STATE status will be reported.
 				// Theoretically, the connection could be resumed from that point, but there is no guarantee, that the same firmware
 				// is to be uploaded now. It's safer to reset the device and start DFU again.
 				if (status == LegacyDfuError.INVALID_STATE) {
-					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, "Last upload interrupted. Restarting device...");
-					// Send 'jump to bootloader command' (Start DFU)
-					mProgressInfo.setProgress(DfuBaseService.PROGRESS_DISCONNECTING);
-					logi("Sending Reset command (Op Code = 6)");
-					writeOpCode(mControlPointCharacteristic, OP_CODE_RESET);
-					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Reset request sent");
-
-					// The device will reset so we don't have to send Disconnect signal.
-					mService.waitUntilDisconnected();
-					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Disconnected by the remote device");
-
-					final BluetoothGattService gas = gatt.getService(GENERIC_ATTRIBUTE_SERVICE_UUID);
-					final boolean hasServiceChanged = gas != null && gas.getCharacteristic(SERVICE_CHANGED_UUID) != null;
-					mService.refreshDeviceCache(gatt, !hasServiceChanged);
-
-					// Close the device
-					mService.close(gatt);
-
-					logi("Restarting the service");
-					final Intent newIntent = new Intent();
-					newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
-					restartService(newIntent, false);
+					resetAndRestart(gatt, intent);
 					return;
 				}
 				if (status != DFU_STATUS_SUCCESS)
@@ -480,6 +460,14 @@ import no.nordicsemi.android.error.LegacyDfuError;
 						response = readNotificationResponse();
 						status = getStatusCode(response, OP_CODE_START_DFU_KEY);
 						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Response received (Op Code = " + response[1] + " Status = " + status + ")");
+
+						// If upload was not completed in the previous connection the INVALID_STATE status will be reported.
+						// Theoretically, the connection could be resumed from that point, but there is no guarantee, that the same firmware
+						// is to be uploaded now. It's safer to reset the device and start DFU again.
+						if (status == LegacyDfuError.INVALID_STATE) {
+							resetAndRestart(gatt, intent);
+							return;
+						}
 						if (status != DFU_STATUS_SUCCESS)
 							throw new RemoteDfuException("Starting DFU failed", status);
 					} else
@@ -512,6 +500,14 @@ import no.nordicsemi.android.error.LegacyDfuError;
 						response = readNotificationResponse();
 						status = getStatusCode(response, OP_CODE_START_DFU_KEY);
 						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Response received (Op Code = " + response[1] + ", Status = " + status + ")");
+
+						// If upload was not completed in the previous connection the INVALID_STATE status will be reported.
+						// Theoretically, the connection could be resumed from that point, but there is no guarantee, that the same firmware
+						// is to be uploaded now. It's safer to reset the device and start DFU again.
+						if (status == LegacyDfuError.INVALID_STATE) {
+							resetAndRestart(gatt, intent);
+							return;
+						}
 						if (status != DFU_STATUS_SUCCESS)
 							throw new RemoteDfuException("Starting DFU failed", status);
 					} else
@@ -844,5 +840,38 @@ import no.nordicsemi.android.error.LegacyDfuError;
 			throw new DfuException("Unable to write Image Sizes", mError);
 		if (!mConnected)
 			throw new DeviceDisconnectedException("Unable to write Image Sizes: device disconnected");
+	}
+
+	/**
+	 * Sends Reset command to the target device to reset its state and restarts the DFU Service that will start again.
+	 * @param gatt the GATT device
+	 * @param intent intent used to start the service
+	 * @throws DfuException
+	 * @throws DeviceDisconnectedException
+	 * @throws UploadAbortedException
+	 */
+	private void resetAndRestart(final BluetoothGatt gatt, final Intent intent) throws DfuException, DeviceDisconnectedException, UploadAbortedException {
+		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, "Last upload interrupted. Restarting device...");
+		// Send 'jump to bootloader command' (Start DFU)
+		mProgressInfo.setProgress(DfuBaseService.PROGRESS_DISCONNECTING);
+		logi("Sending Reset command (Op Code = 6)");
+		writeOpCode(mControlPointCharacteristic, OP_CODE_RESET);
+		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Reset request sent");
+
+		// The device will reset so we don't have to send Disconnect signal.
+		mService.waitUntilDisconnected();
+		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Disconnected by the remote device");
+
+		final BluetoothGattService gas = gatt.getService(GENERIC_ATTRIBUTE_SERVICE_UUID);
+		final boolean hasServiceChanged = gas != null && gas.getCharacteristic(SERVICE_CHANGED_UUID) != null;
+		mService.refreshDeviceCache(gatt, !hasServiceChanged);
+
+		// Close the device
+		mService.close(gatt);
+
+		logi("Restarting the service");
+		final Intent newIntent = new Intent();
+		newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
+		restartService(newIntent, false);
 	}
 }
