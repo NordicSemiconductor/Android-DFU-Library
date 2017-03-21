@@ -42,10 +42,15 @@ import no.nordicsemi.android.error.LegacyDfuError;
 
 /* package */ class LegacyDfuImpl extends BaseCustomDfuImpl {
 	// UUIDs used by the DFU
-	protected static final UUID DFU_SERVICE_UUID = new UUID(0x000015301212EFDEL, 0x1523785FEABCD123L);
-	protected static final UUID DFU_CONTROL_POINT_UUID = new UUID(0x000015311212EFDEL, 0x1523785FEABCD123L);
-	protected static final UUID DFU_PACKET_UUID = new UUID(0x000015321212EFDEL, 0x1523785FEABCD123L);
-	protected static final UUID DFU_VERSION = new UUID(0x000015341212EFDEL, 0x1523785FEABCD123L);
+	protected static final UUID DEFAULT_DFU_SERVICE_UUID       = new UUID(0x000015301212EFDEL, 0x1523785FEABCD123L);
+	protected static final UUID DEFAULT_DFU_CONTROL_POINT_UUID = new UUID(0x000015311212EFDEL, 0x1523785FEABCD123L);
+	protected static final UUID DEFAULT_DFU_PACKET_UUID        = new UUID(0x000015321212EFDEL, 0x1523785FEABCD123L);
+	protected static final UUID DEFAULT_DFU_VERSION_UUID       = new UUID(0x000015341212EFDEL, 0x1523785FEABCD123L);
+
+	protected static UUID DFU_SERVICE_UUID       = DEFAULT_DFU_SERVICE_UUID;
+	protected static UUID DFU_CONTROL_POINT_UUID = DEFAULT_DFU_CONTROL_POINT_UUID;
+	protected static UUID DFU_PACKET_UUID        = DEFAULT_DFU_PACKET_UUID;
+	protected static UUID DFU_VERSION_UUID       = DEFAULT_DFU_VERSION_UUID;
 
 	private static final int DFU_STATUS_SUCCESS = 1;
 	// Operation codes and packets
@@ -187,7 +192,7 @@ import no.nordicsemi.android.error.LegacyDfuError;
 		 *   - 0.6 (0x06-00) - The device is in the OTA-DFU Bootloader mode. The DFU Bootloader is from SDK 8.0 and has the same features as version 0.5. It also
 		 *                     supports also sending Service Changed notification in application mode after successful or aborted upload so no refreshing services is required.
 		 */
-		final BluetoothGattCharacteristic versionCharacteristic = gatt.getService(DFU_SERVICE_UUID).getCharacteristic(DFU_VERSION); // this may be null for older versions of the Bootloader
+		final BluetoothGattCharacteristic versionCharacteristic = gatt.getService(DFU_SERVICE_UUID).getCharacteristic(DFU_VERSION_UUID); // this may be null for older versions of the Bootloader
 
 		/*
 		 * Read the version number if available.

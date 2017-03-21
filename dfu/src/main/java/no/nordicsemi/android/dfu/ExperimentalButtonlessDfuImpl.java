@@ -17,7 +17,11 @@ import no.nordicsemi.android.error.SecureDfuError;
 
 public class ExperimentalButtonlessDfuImpl extends BaseDfuImpl {
 	/** The UUID of the experimental Buttonless DFU service from SDK 12.x. */
-	protected static final UUID EXPERIMENTAL_BUTTONLESS_DFU_SERVICE_UUID = new UUID(0x8E400001F3154F60L, 0x9FB8838830DAEA50L);
+	protected static final UUID DEFAULT_EXPERIMENTAL_BUTTONLESS_DFU_SERVICE_UUID = new UUID(0x8E400001F3154F60L, 0x9FB8838830DAEA50L);
+	protected static final UUID DEFAULT_EXPERIMENTAL_BUTTONLESS_DFU_UUID         = new UUID(0x8E400001F3154F60L, 0x9FB8838830DAEA50L); // the same as service
+
+	protected static UUID EXPERIMENTAL_BUTTONLESS_DFU_SERVICE_UUID = DEFAULT_EXPERIMENTAL_BUTTONLESS_DFU_SERVICE_UUID;
+	protected static UUID EXPERIMENTAL_BUTTONLESS_DFU_UUID         = DEFAULT_EXPERIMENTAL_BUTTONLESS_DFU_UUID;
 
 	private static final int DFU_STATUS_SUCCESS = 1;
 	private static final int ERROR_OP_CODE_NOT_SUPPORTED = 2;
@@ -65,7 +69,7 @@ public class ExperimentalButtonlessDfuImpl extends BaseDfuImpl {
 	@Override
 	public boolean hasRequiredCharacteristics(final BluetoothGatt gatt) {
 		final BluetoothGattService dfuService = gatt.getService(EXPERIMENTAL_BUTTONLESS_DFU_SERVICE_UUID);
-		mButtonlessDfuCharacteristic = dfuService.getCharacteristic(EXPERIMENTAL_BUTTONLESS_DFU_SERVICE_UUID);
+		mButtonlessDfuCharacteristic = dfuService.getCharacteristic(EXPERIMENTAL_BUTTONLESS_DFU_UUID);
 		return mButtonlessDfuCharacteristic != null;
 	}
 

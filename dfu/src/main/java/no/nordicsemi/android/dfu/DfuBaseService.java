@@ -568,6 +568,10 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 */
 	public static final int ACTION_ABORT = 2;
 
+	public static final String EXTRA_CUSTOM_UUIDS_FOR_LEGACY_DFU = "no.nordicsemi.android.dfu.extra.EXTRA_CUSTOM_UUIDS_FOR_LEGACY_DFU";
+	public static final String EXTRA_CUSTOM_UUIDS_FOR_SECURE_DFU = "no.nordicsemi.android.dfu.extra.EXTRA_CUSTOM_UUIDS_FOR_SECURE_DFU";
+	public static final String EXTRA_CUSTOM_UUIDS_FOR_EXPERIMENTAL_BUTTONLESS_DFU = "no.nordicsemi.android.dfu.extra.EXTRA_CUSTOM_UUIDS_FOR_EXPERIMENTAL_BUTTONLESS_DFU";
+
 	// DFU status values. Those values are now implementation dependent.
 	@Deprecated
 	public static final int DFU_STATUS_SUCCESS = 1;
@@ -880,6 +884,8 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 			report(ERROR_FILE_TYPE_UNSUPPORTED);
 			return;
 		}
+
+		UuidHelper.assignCustomUuids(intent);
 
 		mDeviceAddress = deviceAddress;
 		mDeviceName = deviceName;
