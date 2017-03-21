@@ -275,14 +275,6 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 
 		// The requirement of enabling Service Changed indications manually has been fixed on Android 6.
 		// Now the Android enables Service Changed indications automatically after bonding.
-		//
-		// However, be aware, that in SDK 8 (and perhaps some never) the Service Changed CCCD state is saved on DISCONNECT event on the nRF.
-		// That means, that if a user has connected to a new device, bonded and enabled SC indications (manually on automatically) the
-		// setting will not be preserved in flash if DFU is started immediately. Jumping to DFU mode causes reset, not a DISCONNECT, so the
-		// CCCD value will be lost and SC indication will not be sent from the bootloader.
-		// If the device has disconnected at least once after SC CCCD value was written everything will work.
-		// Also, the Secure DFU does not support sharing bond information between App and Bootloader (instead it uses address+1 trick, so no bonding),
-		// so this issue does no apply there.
 		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M && gatt.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
 			final BluetoothGattService genericAttributeService = gatt.getService(GENERIC_ATTRIBUTE_SERVICE_UUID);
 			if (genericAttributeService != null) {
@@ -291,53 +283,10 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 					// Let's read the current value of the Service Changed CCCD
 					final boolean serviceChangedIndicationsEnabled = isServiceChangedCCCDEnabled();
 
-					if (!serviceChangedIndicationsEnabled) {
+					if (!serviceChangedIndicationsEnabled)
 						enableCCCD(serviceChangedCharacteristic, INDICATIONS);
-						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Service Changed indications enabled");
 
-						/*
-						 * NOTE: The DFU Bootloader from SDK 8.0 (v0.6 and 0.5) has the following issue:
-						 *
-						 * When a central device (phone) connects to a bonded device (or connects and bonds) which supports the Service Changed characteristic,
-						 * but does not have the Service Changed indications enabled, the phone must enable them, disconnect and reconnect before starting the
-						 * DFU operation. This is because the current version of the Soft Device saves the ATT table on the DISCONNECTED event.
-						 * Sending the "jump to Bootloader" command (0x01-04) will cause the disconnect followed be a reset. The SoftDevice does not
-						 * have time to store the ATT table on Flash memory before the reset.
-						 *
-						 * This applies only if:
-						 * - the device was bonded before an upgrade,
-						 * - In case of an Application update:
-						 *     - For Legacy DFU:
-						  *        if the DFU Bootloader has been modified and compiled to preserve the LTK and the ATT table after application upgrade (at least 2 pages)
-						 *         See: http://infocenter.nordicsemi.com/topic/com.nordic.infocenter.sdk5.v11.0.0/bledfu_memory_banks.html?cp=4_0_3_4_3_1_3_2 -> Preserving application data
-						 *     - For Secure DFU:
-						 *         the default number of pages to be preserved is set to 3. That includes the LTK and ATT table
-						 *         See: http://infocenter.nordicsemi.com/topic/com.nordic.infocenter.sdk5.v12.0.0/lib_bootloader_dfu_banks.html#lib_bootloader_dfu_appdata -> Preserving application data
-						 *
-						 * If the bond information is not to be preserved between the old and new applications, we may skip this disconnect/reconnect process.
-						 * The DFU Bootloader will send the SD indication anyway when we will just continue here, as the information whether it should send it or not it is not being
-						 * read from the application's ATT table, but rather passed as an argument of the "reboot to bootloader" method.
-						 */
-						final boolean keepBond = intent.getBooleanExtra(DfuBaseService.EXTRA_KEEP_BOND, false);
-						if (keepBond) {
-							mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Restarting service...");
-
-							// Disconnect
-							mService.disconnect(gatt);
-
-							// Close the device
-							mService.close(gatt);
-
-							logi("Restarting service");
-							mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Restarting service...");
-							final Intent newIntent = new Intent();
-							newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
-							restartService(newIntent, false);
-							return false;
-						}
-					} else {
-						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Service Changed indications enabled");
-					}
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Service Changed indications enabled");
 				}
 			}
 		}
