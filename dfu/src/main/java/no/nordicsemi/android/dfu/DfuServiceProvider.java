@@ -31,6 +31,12 @@ import android.content.Intent;
 	/* package */ static BaseDfuImpl getDfuImpl(final Intent intent, final DfuBaseService service, final BluetoothGatt gatt) {
 		final BluetoothGattService secureService = gatt.getService(SecureDfuImpl.DFU_SERVICE_UUID);
 		if (secureService != null) {
+			if (secureService.getCharacteristic(ButtonlessDfuWithBondSharingImpl.BUTTONLESS_DFU_UUID) != null) {
+				return new ButtonlessDfuWithBondSharingImpl(intent, service);
+			}
+			if (secureService.getCharacteristic(ButtonlessDfuWithoutBondSharingImpl.BUTTONLESS_DFU_UUID) != null) {
+				return new ButtonlessDfuWithoutBondSharingImpl(intent, service);
+			}
 			return new SecureDfuImpl(intent, service);
 		}
 		final BluetoothGattService legacyService = gatt.getService(LegacyDfuImpl.DFU_SERVICE_UUID);

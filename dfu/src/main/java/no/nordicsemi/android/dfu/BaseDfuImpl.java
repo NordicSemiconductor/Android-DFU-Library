@@ -569,6 +569,15 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 	}
 
 	/**
+	 * Returns whether the device is bonded.
+	 * @return true if the device is bonded, false if not bonded or in process of bonding.
+	 */
+	protected boolean isBonded() {
+		final BluetoothDevice device = mGatt.getDevice();
+		return device.getBondState() == BluetoothDevice.BOND_BONDED;
+	}
+
+	/**
 	 * Waits until the notification will arrive. Returns the data returned by the notification. This method will block the thread until response is not ready or
 	 * the device gets disconnected. If connection state will change, or an error will occur, an exception will be thrown.
 	 *

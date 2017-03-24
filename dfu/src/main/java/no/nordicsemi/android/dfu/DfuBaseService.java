@@ -490,6 +490,10 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 */
 	public static final int ERROR_CRC_ERROR = ERROR_MASK | 0x0D;
 	/**
+	 * Thrown when device had to be paired before the DFU process was started.
+	 */
+	public static final int ERROR_DEVICE_NOT_BONDED = ERROR_MASK | 0x0E;
+	/**
 	 * Flag set when the DFU target returned a DFU error. Look for DFU specification to get error codes.
 	 */
 	public static final int ERROR_REMOTE_MASK = 0x2000;
