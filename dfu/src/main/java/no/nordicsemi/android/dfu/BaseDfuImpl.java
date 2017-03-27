@@ -96,10 +96,11 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 	protected int mImageSizeInBytes;
 	protected int mInitPacketSizeInBytes;
 
-	protected class BaseBluetoothGattCallback extends BluetoothGattCallback {
+	protected class BaseBluetoothGattCallback extends DfuGattCallback {
 		// The Implementation object is created depending on device services, so after the device is connected and services were scanned.
 		// public void onConnected() { }
 
+		@Override
 		public void onDisconnected() {
 			mConnected = false;
 			notifyLock();
@@ -190,6 +191,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 
 	/* package */ BaseDfuImpl(final Intent intent, final DfuBaseService service) {
 		mService = service;
+		mProgressInfo = service.mProgressInfo;
 		mConnected = true; // the device is connected when impl object it created
 	}
 
@@ -262,7 +264,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 			// not possible
 		}
 		mImageSizeInBytes = size;
-		mProgressInfo = mService.mProgressInfo.init(size, currentPart, totalParts);
+		mProgressInfo.init(size, currentPart, totalParts);
 
 		// If we are bonded we may want to enable Service Changed characteristic indications.
 		// Note: Sending SC indication on services change was introduced in the SDK 8.0.
@@ -310,11 +312,6 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 			loge("Sleeping interrupted", e);
 		}
 	}
-
-	/**
-	 * Returns the final BluetoothGattCallback instance, depending on the implementation.
-	 */
-	protected abstract BaseBluetoothGattCallback getGattCallback();
 
 	/**
 	 * Enables or disables the notifications for given characteristic. This method is SYNCHRONOUS and wait until the
@@ -566,6 +563,15 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 			Log.w(TAG, "An exception occurred while removing bond information", e);
 		}
 		return result;
+	}
+
+	/**
+	 * Returns whether the device is bonded.
+	 * @return true if the device is bonded, false if not bonded or in process of bonding.
+	 */
+	protected boolean isBonded() {
+		final BluetoothDevice device = mGatt.getDevice();
+		return device.getBondState() == BluetoothDevice.BOND_BONDED;
 	}
 
 	/**

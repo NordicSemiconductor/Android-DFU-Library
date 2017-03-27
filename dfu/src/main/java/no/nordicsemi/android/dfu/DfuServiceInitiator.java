@@ -66,6 +66,8 @@ public class DfuServiceInitiator {
 	private Parcelable[] legacyDfuUuids;
 	private Parcelable[] secureDfuUuids;
 	private Parcelable[] experimentalButtonlessDfuUuids;
+	private Parcelable[] buttonlessDfuWithoutBondSharingUuids;
+	private Parcelable[] buttonlessDfuWithBondSharingUuids;
 
 	/**
 	 * Creates the builder. Use setZip(...), or setBinOrHex(...) methods to specify the file you want to upload.
@@ -204,12 +206,12 @@ public class DfuServiceInitiator {
 	}
 
 	/**
-	 * Sets custom UUIDs for Legacy DFU. Use this method if your DFU implementation uses different UUID for at least one of the given UUIDs.
+	 * Sets custom UUIDs for Legacy DFU and Legacy Buttonless DFU. Use this method if your DFU implementation uses different UUID for at least one of the given UUIDs.
 	 * Parameter set to <code>null</code> will reset the UUID to the default value.
 	 * @param dfuServiceUuid custom Legacy DFU service UUID or null, if default is to be used
 	 * @param dfuControlPointUuid custom Legacy DFU Control Point characteristic UUID or null, if default is to be used
 	 * @param dfuPacketUuid custom Legacy DFU Packet characteristic UUID or null, if default is to be used
-	 * @param dfuVersionUuid custom Legacy DFU Version characteristic UUID or null, if default is to be used (SDK 7.0 - 11.0 only)
+	 * @param dfuVersionUuid custom Legacy DFU Version characteristic UUID or null, if default is to be used (SDK 7.0 - 11.0 only, set null for earlier SDKs)
 	 * @return the builder
 	 */
 	public DfuServiceInitiator setCustomUuidsForLegacyDfu(final UUID dfuServiceUuid, final UUID dfuControlPointUuid, final UUID dfuPacketUuid, final UUID dfuVersionUuid) {
@@ -252,6 +254,36 @@ public class DfuServiceInitiator {
 		uuids[0] = buttonlessDfuServiceUuid      != null ? new ParcelUuid(buttonlessDfuServiceUuid)      : null;
 		uuids[1] = buttonlessDfuControlPointUuid != null ? new ParcelUuid(buttonlessDfuControlPointUuid) : null;
 		experimentalButtonlessDfuUuids = uuids;
+		return this;
+	}
+
+	/**
+	 * Sets custom UUIDs for the Buttonless DFU Service from SDK 14 (or later). Use this method if your DFU implementation uses different UUID for at least one of the given UUIDs.
+	 * Parameter set to <code>null</code> will reset the UUID to the default value.
+	 * @param buttonlessDfuServiceUuid custom Buttonless DFU service UUID or null, if default is to be used
+	 * @param buttonlessDfuControlPointUuid custom Buttonless DFU characteristic UUID or null, if default is to be used
+	 * @return the builder
+	 */
+	public DfuServiceInitiator setCustomUuidsForButtonlessDfuWithBondSharing(final UUID buttonlessDfuServiceUuid, final UUID buttonlessDfuControlPointUuid) {
+		final ParcelUuid[] uuids = new ParcelUuid[2];
+		uuids[0] = buttonlessDfuServiceUuid      != null ? new ParcelUuid(buttonlessDfuServiceUuid)      : null;
+		uuids[1] = buttonlessDfuControlPointUuid != null ? new ParcelUuid(buttonlessDfuControlPointUuid) : null;
+		buttonlessDfuWithBondSharingUuids = uuids;
+		return this;
+	}
+
+	/**
+	 * Sets custom UUIDs for the Buttonless DFU Service from SDK 13. Use this method if your DFU implementation uses different UUID for at least one of the given UUIDs.
+	 * Parameter set to <code>null</code> will reset the UUID to the default value.
+	 * @param buttonlessDfuServiceUuid custom Buttonless DFU service UUID or null, if default is to be used
+	 * @param buttonlessDfuControlPointUuid custom Buttonless DFU characteristic UUID or null, if default is to be used
+	 * @return the builder
+	 */
+	public DfuServiceInitiator setCustomUuidsForButtonlessDfuWithoutBondSharing(final UUID buttonlessDfuServiceUuid, final UUID buttonlessDfuControlPointUuid) {
+		final ParcelUuid[] uuids = new ParcelUuid[2];
+		uuids[0] = buttonlessDfuServiceUuid      != null ? new ParcelUuid(buttonlessDfuServiceUuid)      : null;
+		uuids[1] = buttonlessDfuControlPointUuid != null ? new ParcelUuid(buttonlessDfuControlPointUuid) : null;
+		buttonlessDfuWithoutBondSharingUuids = uuids;
 		return this;
 	}
 
@@ -446,6 +478,10 @@ public class DfuServiceInitiator {
 			intent.putExtra(DfuBaseService.EXTRA_CUSTOM_UUIDS_FOR_SECURE_DFU, secureDfuUuids);
 		if (experimentalButtonlessDfuUuids != null)
 			intent.putExtra(DfuBaseService.EXTRA_CUSTOM_UUIDS_FOR_EXPERIMENTAL_BUTTONLESS_DFU, experimentalButtonlessDfuUuids);
+		if (buttonlessDfuWithoutBondSharingUuids != null)
+			intent.putExtra(DfuBaseService.EXTRA_CUSTOM_UUIDS_FOR_BUTTONLESS_DFU_WITHOUT_BOND_SHARING, buttonlessDfuWithoutBondSharingUuids);
+		if (buttonlessDfuWithBondSharingUuids != null)
+			intent.putExtra(DfuBaseService.EXTRA_CUSTOM_UUIDS_FOR_BUTTONLESS_DFU_WITH_BOND_SHARING, buttonlessDfuWithBondSharingUuids);
 
 		context.startService(intent);
 		return new DfuServiceController(context);
