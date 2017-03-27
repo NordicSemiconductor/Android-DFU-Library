@@ -33,14 +33,10 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	}
 
 	@Override
-	public boolean hasRequiredService(final BluetoothGatt gatt) {
+	public boolean isClientCompatible(final Intent intent, final BluetoothGatt gatt) {
 		final BluetoothGattService dfuService = gatt.getService(EXPERIMENTAL_BUTTONLESS_DFU_SERVICE_UUID);
-		return dfuService != null;
-	}
-
-	@Override
-	public boolean hasRequiredCharacteristics(final BluetoothGatt gatt) {
-		final BluetoothGattService dfuService = gatt.getService(EXPERIMENTAL_BUTTONLESS_DFU_SERVICE_UUID);
+		if (dfuService == null)
+			return false;
 		mButtonlessDfuCharacteristic = dfuService.getCharacteristic(EXPERIMENTAL_BUTTONLESS_DFU_UUID);
 		return mButtonlessDfuCharacteristic != null;
 	}
@@ -62,7 +58,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 
 	@Override
 	public void performDfu(final Intent intent) throws DfuException, DeviceDisconnectedException, UploadAbortedException {
-		logi("Experimental buttonless service found");
+		logi("Experimental buttonless service found -> SDK 12.x");
 		super.performDfu(intent);
 	}
 }

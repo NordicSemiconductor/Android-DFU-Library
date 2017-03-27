@@ -32,19 +32,16 @@ import android.support.v4.content.LocalBroadcastManager;
  * will work for all DFU processes, but the {@link #isPaused()} and {@link #isAborted()} methods may report incorrect values.</p>
  * <p>Added in DFU Library version 1.0.2.</p>
  */
-public class DfuServiceController {
+public class DfuServiceController implements DfuController {
 	private LocalBroadcastManager mBroadcastManager;
 	private boolean mPaused;
 	private boolean mAborted;
 
-	/* package */DfuServiceController(final Context context) {
+	/* package */ DfuServiceController(final Context context) {
 		mBroadcastManager = LocalBroadcastManager.getInstance(context);
 	}
 
-	/**
-	 * Pauses the DFU operation. Call {@link #resume()} to resume, or {@link #abort()} to cancel.
-	 * This method does nothing if DFU operation was already paused.
-	 */
+	@Override
 	public void pause() {
 		if (!mAborted && !mPaused) {
 			mPaused = true;
@@ -54,10 +51,7 @@ public class DfuServiceController {
 		}
 	}
 
-	/**
-	 * Resumes a previously paused DFU operation.
-	 * @see #pause()
-	 */
+	@Override
 	public void resume() {
 		if (!mAborted && mPaused) {
 			mPaused = false;
@@ -67,9 +61,7 @@ public class DfuServiceController {
 		}
 	}
 
-	/**
-	 * Aborts the DFU operation after it has started.
-	 */
+	@Override
 	public void abort() {
 		if (!mAborted) {
 			mAborted = true;

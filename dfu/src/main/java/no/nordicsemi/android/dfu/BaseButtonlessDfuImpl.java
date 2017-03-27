@@ -34,7 +34,7 @@ import android.content.Intent;
 	}
 
 	@Override
-	protected BaseBluetoothGattCallback getGattCallback() {
+	public BaseBluetoothGattCallback getGattCallback() {
 		return mBluetoothCallback;
 	}
 
