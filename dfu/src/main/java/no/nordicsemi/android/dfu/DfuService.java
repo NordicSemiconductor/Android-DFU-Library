@@ -31,24 +31,10 @@ import no.nordicsemi.android.dfu.internal.exception.DeviceDisconnectedException;
 import no.nordicsemi.android.dfu.internal.exception.DfuException;
 import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 
-/* package */ interface DfuService {
-	/** Pauses the DFU process. */
-	void pause();
-
-	/** Resumes the paused DFU process. */
-	void resume();
-
-	/** Terminates the DFU process. The device will disconnect and restore old application or bootloader. */
-	void abort();
+/* package */ interface DfuService extends DfuCallback {
 
 	/** This method must return true if the device is compatible with this DFU implementation, false otherwise. */
-	boolean hasRequiredService(final BluetoothGatt gatt);
-
-	/** This method must return true if the device is compatible with this DFU implementation, false otherwise. */
-	boolean hasRequiredCharacteristics(final BluetoothGatt gatt);
-
-	/** Callback invoked when bond state changes to {@link android.bluetooth.BluetoothDevice#BOND_BONDED BOND_BONDED} or {@link android.bluetooth.BluetoothDevice#BOND_NONE BOND_NONE}. */
-	void onBondStateChanged(final int state);
+	boolean isClientCompatible(final Intent intent, final BluetoothGatt gatt) throws DfuException, DeviceDisconnectedException, UploadAbortedException;
 
 	/**
 	 * Initializes the DFU implementation and does some initial setting up.

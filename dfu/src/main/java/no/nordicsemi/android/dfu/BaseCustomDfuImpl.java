@@ -38,7 +38,6 @@ import no.nordicsemi.android.dfu.internal.exception.DeviceDisconnectedException;
 import no.nordicsemi.android.dfu.internal.exception.DfuException;
 import no.nordicsemi.android.dfu.internal.exception.HexFileValidationException;
 import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
-import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 
 /* package */ abstract class BaseCustomDfuImpl extends BaseDfuImpl {
 	/**
@@ -425,7 +424,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 		boolean alreadyWaited = false;
 		if (mGatt.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
 			final boolean restoreBond = intent.getBooleanExtra(DfuBaseService.EXTRA_RESTORE_BOND, false);
-			if (restoreBond || !keepBond || (mFileType & DfuBaseService.TYPE_SOFT_DEVICE) > 0) {
+			if (restoreBond || !keepBond) {
 				// The bond information was lost.
 				removeBond();
 
@@ -453,7 +452,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 			mProgressInfo.setProgress(DfuBaseService.PROGRESS_COMPLETED);
 		} else {
 			/*
-			 * In case when the Soft Device has been upgraded, and the application should be send in the following connection, we have to
+			 * In case when the SoftDevice has been upgraded, and the application should be send in the following connection, we have to
 			 * make sure that we know the address the device is advertising with. Depending on the method used to start the DFU bootloader the first time
 			 * the new Bootloader may advertise with the same address or one incremented by 1.
 			 * When the buttonless update was used, the bootloader will use the same address as the application. The cached list of services on the Android device
@@ -465,13 +464,6 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 			 * We could have save the fact of jumping as a parameter of the service but it ma be that some Android devices must first scan a device before connecting to it.
 			 * It a device with the address+1 has never been detected before the service could have failed on connection.
 			 */
-			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Scanning for the DFU Bootloader...");
-			final String newAddress = BootloaderScannerFactory.getScanner().searchFor(mGatt.getDevice().getAddress());
-			if (newAddress != null)
-				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "DFU Bootloader found with address " + newAddress);
-			else {
-				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "DFU Bootloader not found. Trying the same address...");
-			}
 
 			/*
 			 * The current service instance has uploaded the Soft Device and/or Bootloader.
@@ -482,11 +474,9 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 			newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
 			newIntent.putExtra(DfuBaseService.EXTRA_FILE_MIME_TYPE, DfuBaseService.MIME_TYPE_ZIP); // ensure this is set (e.g. for scripts)
 			newIntent.putExtra(DfuBaseService.EXTRA_FILE_TYPE, DfuBaseService.TYPE_APPLICATION); // set the type to application only
-			if (newAddress != null)
-				newIntent.putExtra(DfuBaseService.EXTRA_DEVICE_ADDRESS, newAddress);
 			newIntent.putExtra(DfuBaseService.EXTRA_PART_CURRENT, mProgressInfo.getCurrentPart() + 1);
 			newIntent.putExtra(DfuBaseService.EXTRA_PARTS_TOTAL, mProgressInfo.getTotalParts());
-			mService.startService(newIntent);
+			restartService(newIntent, /* the bootloader may advertise with different address */ true);
 		}
 	}
 }

@@ -146,28 +146,32 @@ public class GattError {
 				return "TOO MANY OPEN CONNECTIONS";
 			case DfuBaseService.ERROR_DEVICE_DISCONNECTED:
 				return "DFU DEVICE DISCONNECTED";
+			case DfuBaseService.ERROR_FILE_NOT_FOUND:
+				return "DFU FILE NOT FOUND";
 			case DfuBaseService.ERROR_FILE_ERROR:
 				return "DFU FILE ERROR";
 			case DfuBaseService.ERROR_FILE_INVALID:
 				return "DFU NOT A VALID HEX FILE";
-			case DfuBaseService.ERROR_FILE_SIZE_INVALID:
-				return "DFU FILE NOT WORD ALIGNED";
 			case DfuBaseService.ERROR_FILE_IO_EXCEPTION:
 				return "DFU IO EXCEPTION";
-			case DfuBaseService.ERROR_FILE_NOT_FOUND:
-				return "DFU FILE NOT FOUND";
 			case DfuBaseService.ERROR_SERVICE_DISCOVERY_NOT_STARTED:
 				return "DFU SERVICE DISCOVERY NOT STARTED";
 			case DfuBaseService.ERROR_SERVICE_NOT_FOUND:
 				return "DFU SERVICE NOT FOUND";
 			case DfuBaseService.ERROR_CHARACTERISTICS_NOT_FOUND:
 				return "DFU CHARACTERISTICS NOT FOUND";
+			case DfuBaseService.ERROR_INVALID_RESPONSE:
+				return "DFU INVALID RESPONSE";
 			case DfuBaseService.ERROR_FILE_TYPE_UNSUPPORTED:
 				return "DFU FILE TYPE NOT SUPPORTED";
 			case DfuBaseService.ERROR_BLUETOOTH_DISABLED:
 				return "BLUETOOTH ADAPTER DISABLED";
 			case DfuBaseService.ERROR_INIT_PACKET_REQUIRED:
 				return "INIT PACKET REQUIRED";
+			case DfuBaseService.ERROR_FILE_SIZE_INVALID:
+				return "DFU FILE NOT WORD ALIGNED";
+			case DfuBaseService.ERROR_DEVICE_NOT_BONDED:
+				return "DFU DEVICE NOT BONDED";
 			default:
 				// Deprecated: use Legacy or SecureDfuError parser
 				if ((DfuBaseService.ERROR_REMOTE_MASK & error) > 0) {

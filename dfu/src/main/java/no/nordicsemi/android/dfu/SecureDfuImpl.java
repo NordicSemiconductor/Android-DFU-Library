@@ -45,9 +45,13 @@ import no.nordicsemi.android.error.SecureDfuError;
 
 /* package */ class SecureDfuImpl extends BaseCustomDfuImpl {
 	// UUIDs used by the DFU
-	protected static final UUID DFU_SERVICE_UUID       = new UUID(0x0000FE5900001000L, 0x800000805F9B34FBL); // 16-bit UUID assigned by Bluetooth SIG
-	protected static final UUID DFU_CONTROL_POINT_UUID = new UUID(0x8EC90001F3154F60L, 0x9FB8838830DAEA50L);
-	protected static final UUID DFU_PACKET_UUID        = new UUID(0x8EC90002F3154F60L, 0x9FB8838830DAEA50L);
+	protected static final UUID DEFAULT_DFU_SERVICE_UUID       = new UUID(0x0000FE5900001000L, 0x800000805F9B34FBL); // 16-bit UUID assigned by Bluetooth SIG
+	protected static final UUID DEFAULT_DFU_CONTROL_POINT_UUID = new UUID(0x8EC90001F3154F60L, 0x9FB8838830DAEA50L);
+	protected static final UUID DEFAULT_DFU_PACKET_UUID        = new UUID(0x8EC90002F3154F60L, 0x9FB8838830DAEA50L);
+
+	protected static UUID DFU_SERVICE_UUID       = DEFAULT_DFU_SERVICE_UUID;
+	protected static UUID DFU_CONTROL_POINT_UUID = DEFAULT_DFU_CONTROL_POINT_UUID;
+	protected static UUID DFU_PACKET_UUID        = DEFAULT_DFU_PACKET_UUID;
 
 	private static final int DFU_STATUS_SUCCESS = 1;
 	private static final int MAX_ATTEMPTS = 3;
@@ -126,14 +130,10 @@ import no.nordicsemi.android.error.SecureDfuError;
 	}
 
 	@Override
-	public boolean hasRequiredService(final BluetoothGatt gatt) {
+	public boolean isClientCompatible(final Intent intent, final BluetoothGatt gatt) {
 		final BluetoothGattService dfuService = gatt.getService(DFU_SERVICE_UUID);
-		return dfuService != null;
-	}
-
-	@Override
-	public boolean hasRequiredCharacteristics(final BluetoothGatt gatt) {
-		final BluetoothGattService dfuService = gatt.getService(DFU_SERVICE_UUID);
+		if (dfuService == null)
+			return false;
 		mControlPointCharacteristic = dfuService.getCharacteristic(DFU_CONTROL_POINT_UUID);
 		mPacketCharacteristic = dfuService.getCharacteristic(DFU_PACKET_UUID);
 		return mControlPointCharacteristic != null && mPacketCharacteristic != null;
@@ -151,7 +151,7 @@ import no.nordicsemi.android.error.SecureDfuError;
 	}
 
 	@Override
-	protected BaseBluetoothGattCallback getGattCallback() {
+	public BaseBluetoothGattCallback getGattCallback() {
 		return mBluetoothCallback;
 	}
 
@@ -172,6 +172,7 @@ import no.nordicsemi.android.error.SecureDfuError;
 
 	@Override
 	public void performDfu(final Intent intent) throws DfuException, DeviceDisconnectedException, UploadAbortedException {
+		logw("Secure DFU bootloader found");
 		mProgressInfo.setProgress(DfuBaseService.PROGRESS_STARTING);
 
 		// Add one second delay to avoid the traffic jam before the DFU mode is enabled

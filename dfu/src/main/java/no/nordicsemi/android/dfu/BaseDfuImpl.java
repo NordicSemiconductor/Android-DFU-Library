@@ -41,6 +41,7 @@ import no.nordicsemi.android.dfu.internal.ArchiveInputStream;
 import no.nordicsemi.android.dfu.internal.exception.DeviceDisconnectedException;
 import no.nordicsemi.android.dfu.internal.exception.DfuException;
 import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
+import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 
 /* package */ abstract class BaseDfuImpl implements DfuService {
 	private static final String TAG = "DfuImpl";
@@ -95,10 +96,11 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	protected int mImageSizeInBytes;
 	protected int mInitPacketSizeInBytes;
 
-	protected class BaseBluetoothGattCallback extends BluetoothGattCallback {
+	protected class BaseBluetoothGattCallback extends DfuGattCallback {
 		// The Implementation object is created depending on device services, so after the device is connected and services were scanned.
 		// public void onConnected() { }
 
+		@Override
 		public void onDisconnected() {
 			mConnected = false;
 			notifyLock();
@@ -189,6 +191,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 
 	/* package */ BaseDfuImpl(final Intent intent, final DfuBaseService service) {
 		mService = service;
+		mProgressInfo = service.mProgressInfo;
 		mConnected = true; // the device is connected when impl object it created
 	}
 
@@ -261,7 +264,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 			// not possible
 		}
 		mImageSizeInBytes = size;
-		mProgressInfo = mService.mProgressInfo.init(size, currentPart, totalParts);
+		mProgressInfo.init(size, currentPart, totalParts);
 
 		// If we are bonded we may want to enable Service Changed characteristic indications.
 		// Note: Sending SC indication on services change was introduced in the SDK 8.0.
@@ -272,7 +275,8 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		//       not work by default on iOS with buttonless update on SDKs < 8 on bonded devices. The bootloader must be modified to
 		//       always send the indication when connected.
 
-		// This has been fixed on Android 6. Now the Android enables Service Changed indications automatically after bonding.
+		// The requirement of enabling Service Changed indications manually has been fixed on Android 6.
+		// Now the Android enables Service Changed indications automatically after bonding.
 		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M && gatt.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
 			final BluetoothGattService genericAttributeService = gatt.getService(GENERIC_ATTRIBUTE_SERVICE_UUID);
 			if (genericAttributeService != null) {
@@ -281,53 +285,10 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 					// Let's read the current value of the Service Changed CCCD
 					final boolean serviceChangedIndicationsEnabled = isServiceChangedCCCDEnabled();
 
-					if (!serviceChangedIndicationsEnabled) {
+					if (!serviceChangedIndicationsEnabled)
 						enableCCCD(serviceChangedCharacteristic, INDICATIONS);
-						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Service Changed indications enabled");
 
-						/*
-						 * NOTE: The DFU Bootloader from SDK 8.0 (v0.6 and 0.5) has the following issue:
-						 *
-						 * When the central device (phone) connects to a bonded device (or connects and bonds) which supports the Service Changed characteristic,
-						 * but does not have the Service Changed indications enabled, the phone must enable them, disconnect and reconnect before starting the
-						 * DFU operation. This is because the current version of the Soft Device saves the ATT table on the DISCONNECTED event.
-						 * Sending the "jump to Bootloader" command (0x01-04) will cause the disconnect followed be a reset. The Soft Device does not
-						 * have time to store the ATT table on Flash memory before the reset.
-						 *
-						 * This applies only if:
-						 * - the device was bonded before an upgrade,
-						 * - the Application or the Bootloader is upgraded (upgrade of the Soft Device will erase the bond information anyway),
-						 *     - Application:
-						  *        if the DFU Bootloader has been modified and compiled to preserve the LTK and the ATT table after application upgrade (at least 2 pages)
-						 *         See: \Nordic\nrf51\components\libraries\bootloader_dfu\dfu_types.h, line 56(?):
-						 *          #define DFU_APP_DATA_RESERVED           0x0000  ->  0x0800+   //< Size of Application Data that must be preserved between application updates...
-						 *     - Bootloader:
-						 *         The Application memory should not be removed when the Bootloader is upgraded, so the Bootloader configuration does not matter.
-						 *
-						 * If the bond information is not to be preserved between the old and new applications, we may skip this disconnect/reconnect process.
-						 * The DFU Bootloader will send the SD indication anyway when we will just continue here, as the information whether it should send it or not it is not being
-						 * read from the application's ATT table, but rather passed as an argument of the "reboot to bootloader" method.
-						 */
-						final boolean keepBond = intent.getBooleanExtra(DfuBaseService.EXTRA_KEEP_BOND, false);
-						if (keepBond && (mFileType & DfuBaseService.TYPE_SOFT_DEVICE) == 0) {
-							mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Restarting service...");
-
-							// Disconnect
-							mService.disconnect(gatt);
-
-							// Close the device
-							mService.close(gatt);
-
-							logi("Restarting service");
-							mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Restarting service...");
-							final Intent newIntent = new Intent();
-							newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
-							mService.startService(newIntent);
-							return false;
-						}
-					} else {
-						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Service Changed indications enabled");
-					}
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Service Changed indications enabled");
 				}
 			}
 		}
@@ -351,11 +312,6 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 			loge("Sleeping interrupted", e);
 		}
 	}
-
-	/**
-	 * Returns the final BluetoothGattCallback instance, depending on the implementation.
-	 */
-	protected abstract BaseBluetoothGattCallback getGattCallback();
 
 	/**
 	 * Enables or disables the notifications for given characteristic. This method is SYNCHRONOUS and wait until the
@@ -610,6 +566,15 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	}
 
 	/**
+	 * Returns whether the device is bonded.
+	 * @return true if the device is bonded, false if not bonded or in process of bonding.
+	 */
+	protected boolean isBonded() {
+		final BluetoothDevice device = mGatt.getDevice();
+		return device.getBondState() == BluetoothDevice.BOND_BONDED;
+	}
+
+	/**
 	 * Waits until the notification will arrive. Returns the data returned by the notification. This method will block the thread until response is not ready or
 	 * the device gets disconnected. If connection state will change, or an error will occur, an exception will be thrown.
 	 *
@@ -635,6 +600,30 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		if (!mConnected)
 			throw new DeviceDisconnectedException("Unable to write Op Code: device disconnected");
 		return mReceivedData;
+	}
+
+	/**
+	 * Restarts the service based on the given intent. If parameter set this method will also scan for
+	 * an advertising bootloader that has address equal or incremented by 1 to the current one.
+	 * @param intent the intent to be started as a service
+ 	 * @param scanForBootloader true to scan for advertising bootloader, false to keep the same address
+	 */
+	protected void restartService(final Intent intent, final boolean scanForBootloader) {
+		String newAddress = null;
+		if (scanForBootloader) {
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Scanning for the DFU Bootloader...");
+			newAddress = BootloaderScannerFactory.getScanner().searchFor(mGatt.getDevice().getAddress());
+			logi("Scanning for new address finished with: " + newAddress);
+			if (newAddress != null)
+				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "DFU Bootloader found with address " + newAddress);
+			else {
+				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "DFU Bootloader not found. Trying the same address...");
+			}
+		}
+
+		if (newAddress != null)
+			intent.putExtra(DfuBaseService.EXTRA_DEVICE_ADDRESS, newAddress);
+		mService.startService(intent);
 	}
 
 	protected String parse(final byte[] data) {

@@ -129,9 +129,9 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 * If an application is being updated on a bonded device with the DFU Bootloader that has been configured to preserve the bond information for the new application,
 	 * set it to <code>true</code>.</p>
 	 *
-	 * <p>By default the DFU Bootloader clears the whole application's memory. It may be however configured in the \Nordic\nrf51\components\libraries\bootloader_dfu\dfu_types.h
+	 * <p>By default the Legacy DFU Bootloader clears the whole application's memory. It may be however configured in the \Nordic\nrf51\components\libraries\bootloader_dfu\dfu_types.h
 	 * file (sdk 11, line 76: <code>#define DFU_APP_DATA_RESERVED 0x0000</code>) to preserve some pages. The BLE_APP_HRM_DFU sample app stores the LTK and System Attributes in the first
-	 * two pages, so in order to preserve the bond information this value should be changed to 0x0800 or more.
+	 * two pages, so in order to preserve the bond information this value should be changed to 0x0800 or more. For Secure DFU this value is by default set to 3 pages.
 	 * When those data are preserved, the new Application will notify the app with the Service Changed indication when launched for the first time. Otherwise this
 	 * service will remove the bond information from the phone and force to refresh the device cache (see {@link #refreshDeviceCache(android.bluetooth.BluetoothGatt, boolean)}).</p>
 	 *
@@ -463,7 +463,9 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	public static final int ERROR_SERVICE_NOT_FOUND = ERROR_MASK | 0x06;
 	/**
 	 * Thrown when the required DFU service has been found but at least one of the DFU characteristics is absent.
+	 * @deprecated This error will no longer be thrown. {@link #ERROR_SERVICE_NOT_FOUND} will be thrown instead.
 	 */
+	@Deprecated
 	public static final int ERROR_CHARACTERISTICS_NOT_FOUND = ERROR_MASK | 0x07;
 	/**
 	 * Thrown when unknown response has been obtained from the target. The DFU target must follow specification.
@@ -489,6 +491,10 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 * Thrown when the received CRC does not match with the calculated one. The service will try 3 times to send the data, and if the CRC fails each time this error will be thrown.
 	 */
 	public static final int ERROR_CRC_ERROR = ERROR_MASK | 0x0D;
+	/**
+	 * Thrown when device had to be paired before the DFU process was started.
+	 */
+	public static final int ERROR_DEVICE_NOT_BONDED = ERROR_MASK | 0x0E;
 	/**
 	 * Flag set when the DFU target returned a DFU error. Look for DFU specification to get error codes.
 	 */
@@ -568,6 +574,12 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 */
 	public static final int ACTION_ABORT = 2;
 
+	public static final String EXTRA_CUSTOM_UUIDS_FOR_LEGACY_DFU = "no.nordicsemi.android.dfu.extra.EXTRA_CUSTOM_UUIDS_FOR_LEGACY_DFU";
+	public static final String EXTRA_CUSTOM_UUIDS_FOR_SECURE_DFU = "no.nordicsemi.android.dfu.extra.EXTRA_CUSTOM_UUIDS_FOR_SECURE_DFU";
+	public static final String EXTRA_CUSTOM_UUIDS_FOR_EXPERIMENTAL_BUTTONLESS_DFU = "no.nordicsemi.android.dfu.extra.EXTRA_CUSTOM_UUIDS_FOR_EXPERIMENTAL_BUTTONLESS_DFU";
+	public static final String EXTRA_CUSTOM_UUIDS_FOR_BUTTONLESS_DFU_WITHOUT_BOND_SHARING = "no.nordicsemi.android.dfu.extra.EXTRA_CUSTOM_UUIDS_FOR_BUTTONLESS_DFU_WITHOUT_BOND_SHARING";
+	public static final String EXTRA_CUSTOM_UUIDS_FOR_BUTTONLESS_DFU_WITH_BOND_SHARING = "no.nordicsemi.android.dfu.extra.EXTRA_CUSTOM_UUIDS_FOR_BUTTONLESS_DFU_WITH_BOND_SHARING";
+
 	// DFU status values. Those values are now implementation dependent.
 	@Deprecated
 	public static final int DFU_STATUS_SUCCESS = 1;
@@ -614,7 +626,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	/** Flag set to true if sending was aborted. */
 	private boolean mAborted;
 
-	private BaseDfuImpl mDfuServiceImpl;
+	private DfuCallback mDfuServiceImpl;
 
 	private final BroadcastReceiver mDfuActionReceiver = new BroadcastReceiver() {
 		@Override
@@ -881,6 +893,8 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 			return;
 		}
 
+		UuidHelper.assignCustomUuids(intent);
+
 		mDeviceAddress = deviceAddress;
 		mDeviceName = deviceName;
 		mDisableNotification = disableNotification;
@@ -1064,6 +1078,8 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 				mProgressInfo.setProgress(PROGRESS_ABORTED);
 				return;
 			}
+			sendLogBroadcast(LOG_LEVEL_INFO, "Services discovered");
+
 			// Reset the attempt counter
 			intent.putExtra(EXTRA_ATTEMPT, 0);
 
@@ -1072,22 +1088,15 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 				/*
 				 * Device services were discovered. Based on them we may now choose the implementation.
 				 */
-				dfuService = mDfuServiceImpl = DfuServiceProvider.getDfuImpl(intent, this, gatt);
-				if (dfuService == null || !dfuService.hasRequiredService(gatt)) {
-					Log.w(TAG, "Connected. DFU Service not found");
+				final DfuServiceProvider serviceProvider = new DfuServiceProvider();
+				mDfuServiceImpl = serviceProvider; // This is required if the provider is now able read data from the device
+				mDfuServiceImpl = dfuService = serviceProvider.getServiceImpl(intent, this, gatt);
+				if (dfuService == null) {
+					Log.w(TAG, "DFU Service not found.");
 					sendLogBroadcast(LOG_LEVEL_WARNING, "DFU Service not found");
 					terminateConnection(gatt, ERROR_SERVICE_NOT_FOUND);
 					return;
 				}
-				if (!dfuService.hasRequiredCharacteristics(gatt)) {
-					Log.w(TAG, "Connected. DFU Characteristics not found");
-					sendLogBroadcast(LOG_LEVEL_WARNING, "DFU Characteristics not found");
-					terminateConnection(gatt, DfuBaseService.ERROR_CHARACTERISTICS_NOT_FOUND);
-					return;
-				}
-
-				Log.i(TAG, "Services discovered");
-				sendLogBroadcast(LOG_LEVEL_INFO, "Services discovered");
 
 				// Begin the DFU depending on the implementation
 				if (dfuService.initialize(intent, gatt, fileType, is, initIs)) {
