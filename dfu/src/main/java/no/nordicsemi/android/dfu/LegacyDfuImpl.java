@@ -63,6 +63,7 @@ import no.nordicsemi.android.error.LegacyDfuError;
 	private static final int OP_CODE_RESPONSE_CODE_KEY = 0x10; // 16
 	private static final int OP_CODE_PACKET_RECEIPT_NOTIF_KEY = 0x11; // 11
 	private static final byte[] OP_CODE_START_DFU = new byte[]{OP_CODE_START_DFU_KEY, 0x00};
+	private static final byte[] OP_CODE_INIT_DFU_PARAMS = new byte[]{OP_CODE_INIT_DFU_PARAMS_KEY}; // SDK 6.0.0 or older
 	private static final byte[] OP_CODE_INIT_DFU_PARAMS_START = new byte[]{OP_CODE_INIT_DFU_PARAMS_KEY, 0x00};
 	private static final byte[] OP_CODE_INIT_DFU_PARAMS_COMPLETE = new byte[]{OP_CODE_INIT_DFU_PARAMS_KEY, 0x01};
 	private static final byte[] OP_CODE_RECEIVE_FIRMWARE_IMAGE = new byte[]{OP_CODE_RECEIVE_FIRMWARE_IMAGE_KEY};
@@ -254,6 +255,7 @@ import no.nordicsemi.android.error.LegacyDfuError;
 				appImageSize = zhis.applicationImageSize();
 			}
 
+			boolean extendedInitPacketSupported = true;
 			try {
 				OP_CODE_START_DFU[1] = (byte) fileType;
 
@@ -351,6 +353,7 @@ import no.nordicsemi.android.error.LegacyDfuError;
 					if (fileType == DfuBaseService.TYPE_APPLICATION) {
 						// Clear the remote error flag
 						mRemoteErrorOccurred = false;
+						extendedInitPacketSupported = false;
 
 						// The DFU target does not support DFU v.2 protocol
 						logw("DFU target does not support DFU v.2");
@@ -386,14 +389,6 @@ import no.nordicsemi.android.error.LegacyDfuError;
 				}
 			}
 
-			// Since SDK 6.1 this delay is no longer required as the Receive Start DFU notification is postponed until the memory is clear.
-
-			//		if ((fileType & TYPE_SOFT_DEVICE) > 0) {
-			//			// In the experimental version of bootloader (SDK 6.0.0) we must wait some time until we can proceed with Soft Device update. Bootloader must prepare the RAM for the new firmware.
-			//			// Most likely this step will not be needed in the future as the notification received a moment before will be postponed until Bootloader is ready.
-			//          mService.waitFor(6000);
-			//		}
-
 			/*
 			 * If the DFU Version characteristic is present and the version returned from it is greater or equal to 0.5, the Extended Init Packet is required.
 			 * For older versions, or if the DFU Version characteristic is not present (pre SDK 7.0.0), the Init Packet (which could have contained only the firmware CRC) was optional.
@@ -418,15 +413,25 @@ import no.nordicsemi.android.error.LegacyDfuError;
 			if (mInitPacketStream != null) {
 				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Writing Initialize DFU Parameters...");
 
-				logi("Sending the Initialize DFU Parameters START (Op Code = 2, Value = 0)");
-				writeOpCode(mControlPointCharacteristic, OP_CODE_INIT_DFU_PARAMS_START);
+				if (extendedInitPacketSupported) {
+					logi("Sending the Initialize DFU Parameters START (Op Code = 2, Value = 0)");
+					writeOpCode(mControlPointCharacteristic, OP_CODE_INIT_DFU_PARAMS_START);
 
-				logi("Sending " + mInitPacketSizeInBytes + " bytes of init packet");
-				writeInitData(mPacketCharacteristic, null);
+					logi("Sending " + mInitPacketSizeInBytes + " bytes of init packet");
+					writeInitData(mPacketCharacteristic, null);
 
-				logi("Sending the Initialize DFU Parameters COMPLETE (Op Code = 2, Value = 1)");
-				writeOpCode(mControlPointCharacteristic, OP_CODE_INIT_DFU_PARAMS_COMPLETE);
-				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Initialize DFU Parameters completed");
+					logi("Sending the Initialize DFU Parameters COMPLETE (Op Code = 2, Value = 1)");
+					writeOpCode(mControlPointCharacteristic, OP_CODE_INIT_DFU_PARAMS_COMPLETE);
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Initialize DFU Parameters completed");
+				} else {
+					// In SDK 4.3 - 6.0.0 the Init Packet could have had only 2 bytes - the CRC16. START-STOP commands were not supported,
+					// instead there was just a single command 0x02, followed by a write to DFU Packet after which the device was sending a response.
+					logi("Sending the Initialize DFU Parameters (Op Code = 2)");
+					writeOpCode(mControlPointCharacteristic, OP_CODE_INIT_DFU_PARAMS);
+
+					logi("Sending " + mInitPacketSizeInBytes + " bytes of init packet");
+					writeInitData(mPacketCharacteristic, null);
+				}
 
 				// A notification will come with confirmation. Let's wait for it a bit
 				response = readNotificationResponse();
@@ -437,7 +442,10 @@ import no.nordicsemi.android.error.LegacyDfuError;
 			}
 
 			// Send the number of packets of firmware before receiving a receipt notification
-			final int numberOfPacketsBeforeNotification = mPacketsBeforeNotification;
+			// Note: DFU bootloaders from SDK 6.0.0 or older were unable to save incoming data to the flash memory with the same speed
+			//       as they are being sent from modern devices, therefore the PRNs are here force-enabled for them.
+			//       It has been tested that PRN = 10 may be the highest supported value.
+			final int numberOfPacketsBeforeNotification = extendedInitPacketSupported || (mPacketsBeforeNotification > 0 && mPacketsBeforeNotification <= 10) ? mPacketsBeforeNotification : 10;
 			if (numberOfPacketsBeforeNotification > 0) {
 				logi("Sending the number of packets before notifications (Op Code = 8, Value = " + numberOfPacketsBeforeNotification + ")");
 				setNumberOfPackets(OP_CODE_PACKET_RECEIPT_NOTIF_REQ, numberOfPacketsBeforeNotification);
