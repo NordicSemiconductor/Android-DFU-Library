@@ -684,6 +684,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 			final String action = intent.getAction();
 
 			logi("Action received: " + action);
+			sendLogBroadcast(LOG_LEVEL_DEBUG, "[Broadcast] Action received: " + action);
 			mConnectionState = STATE_DISCONNECTED;
 
 			if (mDfuServiceImpl != null)
