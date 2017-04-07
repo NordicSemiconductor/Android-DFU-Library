@@ -7,7 +7,7 @@
 The compat library may be found on jcenter and Maven Central repository. Add it to your project by adding the following dependency:
 
 ```Groovy
-compile 'no.nordicsemi.android:dfu:1.2.0'
+compile 'no.nordicsemi.android:dfu:1.3.0'
 ```
 
 If you use proguard, add the following line to your proguard rules:
@@ -41,8 +41,8 @@ The library is compatible with nRF51 and nRF52 devices with S-Series Soft Device
 #### Legacy DFU
 
 * **SDK 4.3.0** - First version of DFU over Bluetooth Smart. DFU supports Application update.
-* **SDK 6.0.0** - DFU Bootloader supports Soft Device and Bootloader update. As the updated Bootloader may be dependent on the new Soft Device, those two may be sent and installed together.
-* **SDK 6.1.0** - Buttonless update support for non-bonded devices.
+* **SDK 6.1.0** - DFU Bootloader supports Soft Device and Bootloader update. As the updated Bootloader may be dependent on the new Soft Device, those two may be sent and installed together.
+    - Buttonless update support for non-bonded devices.
 * **SDK 7.0.0** - The extended init packet is required. The init packet contains additional validation information: device type and revision, application version, compatible Soft Devices and the firmware CRC.
 * **SDK 8.0.0** - The bond information may be preserved after an application update. The new application, when first started, will send the Service Change indication to the phone to refresh the services.
     - Buttonless update support for bonded devices 
@@ -51,11 +51,13 @@ The library is compatible with nRF51 and nRF52 devices with S-Series Soft Device
 #### Secure DFU
 
 * **SDK 12.0.0** - New Secure DFU has been released. Buttonless service is experimental.
+* **SDK 13.0.0** - Buttonless DFU (still experimental) uses different UUIDs. No bond sharing supported. Bootloader will use address +1.
 
 This library is fully backwards compatible and supports both the new and legacy DFU.
 The experimental buttonless DFU service from SDK 12 is supported since version 1.1.0. Due to the fact, that this experimental service is not safe,
 you have to call [starter.setUnsafeExperimentalButtonlessServiceInSecureDfuEnabled(true)](https://github.com/NordicSemiconductor/Android-DFU-Library/blob/release/dfu/src/main/java/no/nordicsemi/android/dfu/DfuServiceInitiator.java#L194)
-to enable it. Read the method documentation for details.
+to enable it. Read the method documentation for details. It is recommended to use the Buttonless service from SDK 13 (for non-bonded devices, or 14 (when released) for bonded).
+Both are supported since DFU Library 1.3.0.
 
 Check platform folders for mode details about compatibility for each library.
 
