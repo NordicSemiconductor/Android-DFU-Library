@@ -53,7 +53,7 @@ However, if you want to modify the code to your needs you have to clone the proj
     include ':dfu'
     project(':dfu').projectDir = file('../DFULibrary/dfu')
     ```
-    2. Open Project Structure -> Modules -> app -> Dependencies tab and add dfu module dependency. You may also edit the *build.gradle* file in your app module manually by adding the following dependency: `compile project(':..:DFULibrary:dfu')`
+    2. Open Project Structure -> Modules -> app -> Dependencies tab and add dfu module dependency. You may also edit the *build.gradle* file in your app module manually by adding the following dependency: `compile project(':dfu')`
 
 #### Eclipse
 
