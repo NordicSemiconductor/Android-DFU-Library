@@ -57,6 +57,7 @@ public class DfuServiceInitiator {
 	private int fileType = -1;
 
 	private boolean keepBond;
+	private boolean restoreBond;
 	private boolean forceDfu = false;
 	private boolean enableUnsafeExperimentalButtonlessDfu = false;
 
@@ -108,6 +109,17 @@ public class DfuServiceInitiator {
 	 */
 	public DfuServiceInitiator setKeepBond(final boolean keepBond) {
 		this.keepBond = keepBond;
+		return this;
+	}
+
+	/**
+	 * Sets whether the bond should be created after the DFU is complete.
+	 * Please see the {@link DfuBaseService#EXTRA_RESTORE_BOND} for more information regarding requirements.
+	 * @param restoreBond whether the bond should be created after the DFU is complete.
+	 * @return the builder
+	 */
+	public DfuServiceInitiator setRestoreBond(final boolean restoreBond) {
+		this.restoreBond = restoreBond;
 		return this;
 	}
 
@@ -461,6 +473,7 @@ public class DfuServiceInitiator {
 		intent.putExtra(DfuBaseService.EXTRA_INIT_FILE_PATH, initFilePath);
 		intent.putExtra(DfuBaseService.EXTRA_INIT_FILE_RES_ID, initFileResId);
 		intent.putExtra(DfuBaseService.EXTRA_KEEP_BOND, keepBond);
+		intent.putExtra(DfuBaseService.EXTRA_RESTORE_BOND, restoreBond);
 		intent.putExtra(DfuBaseService.EXTRA_FORCE_DFU, forceDfu);
 		intent.putExtra(DfuBaseService.EXTRA_UNSAFE_EXPERIMENTAL_BUTTONLESS_DFU, enableUnsafeExperimentalButtonlessDfu);
 		if (packetReceiptNotificationsEnabled != null) {
