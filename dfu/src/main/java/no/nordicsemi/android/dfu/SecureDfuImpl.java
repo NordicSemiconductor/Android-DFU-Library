@@ -296,6 +296,7 @@ import no.nordicsemi.android.error.SecureDfuError;
 					// We have to send the whole Init packet again.
 					mInitPacketStream.reset();
 					crc32.reset();
+					info.offset = 0;
 				}
 			} catch (final IOException e) {
 				loge("Error while reading " + info.offset + " bytes from the init packet stream", e);
@@ -303,6 +304,7 @@ import no.nordicsemi.android.error.SecureDfuError;
 					// Go back to the beginning of the stream, we will send the whole init packet
 					mInitPacketStream.reset();
 					crc32.reset();
+					info.offset = 0;
 				} catch (final IOException e1) {
 					loge("Error while resetting the init packet stream", e1);
 					mService.terminateConnection(gatt, DfuBaseService.ERROR_FILE_IO_EXCEPTION);
