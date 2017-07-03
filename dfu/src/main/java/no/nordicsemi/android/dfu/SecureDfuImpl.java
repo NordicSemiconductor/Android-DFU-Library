@@ -432,10 +432,8 @@ import no.nordicsemi.android.error.SecureDfuError;
 					mFirmwareStream.read(new byte[bytesSentAndExecuted]); // Read executed bytes
 					mFirmwareStream.mark(info.maxSize); // Mark here
 				}
-				if (bytesSentNotExecuted > 0) {
-					// This may be 0 if the whole last chunk was completed before. It may not have been executed and may have CRC error.
-					mFirmwareStream.read(new byte[bytesSentNotExecuted]); // Read the rest
-				}
+				// Here the bytesSentNotExecuted is for sure greater then 0
+				mFirmwareStream.read(new byte[bytesSentNotExecuted]); // Read the rest
 
 				// Calculate the CRC32
 				final int crc = (int) (((ArchiveInputStream) mFirmwareStream).getCrc32() & 0xFFFFFFFFL);
@@ -485,8 +483,9 @@ import no.nordicsemi.android.error.SecureDfuError;
 			while (mProgressInfo.getAvailableObjectSizeIsBytes() > 0) {
 				if (!resumeSendingData) {
 					// Create the Data object
-					logi("Creating Data object (Op Code = 1, Type = 2, Size = " + mProgressInfo.getAvailableObjectSizeIsBytes() + ") (" + (currentChunk + 1) + "/" + chunkCount + ")");
-					writeCreateRequest(OBJECT_DATA, mProgressInfo.getAvailableObjectSizeIsBytes());
+					final int availableObjectSizeInBytes = mProgressInfo.getAvailableObjectSizeIsBytes();
+					logi("Creating Data object (Op Code = 1, Type = 2, Size = " + availableObjectSizeInBytes + ") (" + (currentChunk + 1) + "/" + chunkCount + ")");
+					writeCreateRequest(OBJECT_DATA, availableObjectSizeInBytes);
 					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Data object (" + (currentChunk + 1) + "/" + chunkCount + ") created");
 					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Uploading firmware...");
 				} else {
@@ -506,12 +505,34 @@ import no.nordicsemi.android.error.SecureDfuError;
 				// Calculate Checksum
 				logi("Sending Calculate Checksum command (Op Code = 3)");
 				final ObjectChecksum checksum = readChecksum();
-				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, String.format(Locale.US, "Checksum received (Offset = %d, CRC = %08X)", checksum.offset, checksum.CRC32));
 				logi(String.format(Locale.US, "Checksum received (Offset = %d, CRC = %08X)", checksum.offset, checksum.CRC32));
+				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, String.format(Locale.US, "Checksum received (Offset = %d, CRC = %08X)", checksum.offset, checksum.CRC32));
+
+				// It may happen, that not all bytes that were sent were received by the remote device
+				final int bytesLost = mProgressInfo.getBytesSent() - checksum.offset;
+				if (bytesLost > 0) {
+					logw(bytesLost + " bytes were lost!");
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, bytesLost + " bytes were lost");
+
+					try {
+						// We have to reset the stream and read 'offset' number of bytes to recalculate the CRC
+						mFirmwareStream.reset(); // Resets to the beginning of current object
+						mFirmwareStream.read(new byte[info.maxSize - bytesLost]); // Reads additional bytes that were sent and received in this object
+						mProgressInfo.setBytesSent(checksum.offset);
+					} catch (final IOException e) {
+						loge("Error while reading firmware stream", e);
+						mService.terminateConnection(gatt, DfuBaseService.ERROR_FILE_IO_EXCEPTION);
+						return;
+					}
+				}
 
 				// Calculate the CRC32
 				final int crc = (int) (((ArchiveInputStream) mFirmwareStream).getCrc32() & 0xFFFFFFFFL);
 				if (crc == checksum.CRC32) {
+					if (bytesLost > 0) {
+						resumeSendingData = true;
+						continue;
+					}
 					// Execute Init packet
 					logi("Executing data object (Op Code = 4)");
 					writeExecute();
@@ -532,7 +553,7 @@ import no.nordicsemi.android.error.SecureDfuError;
 						try {
 							// Reset the CRC and file pointer back to the previous mark() point after completion of the last successful packet.
 							mFirmwareStream.reset();
-							mProgressInfo.setBytesSent(checksum.offset - info.maxSize);
+							mProgressInfo.setBytesSent(((ArchiveInputStream) mFirmwareStream).getBytesRead());
 						} catch (final IOException e) {
 							loge("Error while resetting the firmware stream", e);
 							mService.terminateConnection(gatt, DfuBaseService.ERROR_FILE_IO_EXCEPTION);
@@ -574,6 +595,7 @@ import no.nordicsemi.android.error.SecureDfuError;
 						response[2] != SecureDfuError.INSUFFICIENT_RESOURCES &&
 						response[2] != SecureDfuError.INVALID_OBJECT &&
 						response[2] != SecureDfuError.UNSUPPORTED_TYPE &&
+						response[2] != SecureDfuError.OPERATION_NOT_PERMITTED &&
 						response[2] != SecureDfuError.OPERATION_FAILED &&
 						response[2] != SecureDfuError.EXTENDED_ERROR))
 			throw new UnknownResponseException("Invalid response received", response, OP_CODE_RESPONSE_CODE_KEY, request);

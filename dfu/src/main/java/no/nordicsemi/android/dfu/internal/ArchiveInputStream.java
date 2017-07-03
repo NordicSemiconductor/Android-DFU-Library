@@ -367,6 +367,13 @@ public class ArchiveInputStream extends ZipInputStream {
 	}
 
 	/**
+	 * Returns number of bytes read until now.
+	 */
+	public int getBytesRead() {
+		return bytesRead;
+	}
+
+	/**
 	 * Returns the CRC32 of the part of the firmware that was already read.
 	 * @return the CRC
 	 */
