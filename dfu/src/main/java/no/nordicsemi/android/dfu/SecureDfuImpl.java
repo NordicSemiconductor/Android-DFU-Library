@@ -260,9 +260,10 @@ import no.nordicsemi.android.error.SecureDfuError;
 		// a command saved from a previous connection is returned.
 		logi("Setting object to Command (Op Code = 6, Type = 1)");
 		final ObjectInfo info = selectObject(OBJECT_COMMAND);
+		logi(String.format(Locale.US, "Command object info received (Max size = %d, Offset = %d, CRC = %08X)", info.maxSize, info.offset, info.CRC32));
 		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, String.format(Locale.US, "Command object info received (Max size = %d, Offset = %d, CRC = %08X)", info.maxSize, info.offset, info.CRC32));
 		if (mInitPacketSizeInBytes > info.maxSize) {
-			// Ignore this. DFU target will send an error if init packet is too large after sending the 'Create object' command
+			// Ignore this here. Later, after sending the 'Create object' command, DFU target will send an error if init packet is too large
 		}
 
 		// Can we resume? If the offset obtained from the device is greater then zero we can compare it with the local init packet CRC
@@ -316,7 +317,6 @@ import no.nordicsemi.android.error.SecureDfuError;
 		if (!skipSendingInitPacket) {
 			// The Init packet is sent different way in this implementation than the firmware, and receiving PRNs is not implemented.
 			// This value might have been stored on the device, so we have to explicitly disable PRNs.
-			logi("Disabling Packet Receipt Notifications (Op Code = 2, Value = 0)");
 			setPacketReceiptNotifications(0);
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Packet Receipt Notif disabled (Op Code = 2, Value = 0)");
 
@@ -396,15 +396,15 @@ import no.nordicsemi.android.error.SecureDfuError;
 		// Send the number of packets of firmware before receiving a receipt notification
 		final int numberOfPacketsBeforeNotification = mPacketsBeforeNotification;
 		if (numberOfPacketsBeforeNotification > 0) {
-			logi("Sending the number of packets before notifications (Op Code = 2, Value = " + numberOfPacketsBeforeNotification + ")");
 			setPacketReceiptNotifications(numberOfPacketsBeforeNotification);
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Packet Receipt Notif Req (Op Code = 2) sent (Value = " + numberOfPacketsBeforeNotification + ")");
 		}
 
 		// We are ready to start sending the new firmware.
 
-		logi("Setting object to Data (Op Code = 6, Type = 1)");
+		logi("Setting object to Data (Op Code = 6, Type = 2)");
 		final ObjectInfo info = selectObject(OBJECT_DATA);
+		logi(String.format(Locale.US, "Data object info received (Max size = %d, Offset = %d, CRC = %08X)", info.maxSize, info.offset, info.CRC32));
 		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, String.format(Locale.US, "Data object info received (Max size = %d, Offset = %d, CRC = %08X)", info.maxSize, info.offset, info.CRC32));
 		mProgressInfo.setMaxObjectSizeInBytes(info.maxSize);
 
@@ -441,9 +441,10 @@ import no.nordicsemi.android.error.SecureDfuError;
 				final int crc = (int) (((ArchiveInputStream) mFirmwareStream).getCrc32() & 0xFFFFFFFFL);
 
 				if (crc == info.CRC32) {
+					logi(info.offset + " bytes of data sent before, CRC match");
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, info.offset + " bytes of data sent before, CRC match");
 					mProgressInfo.setBytesSent(info.offset);
 					mProgressInfo.setBytesReceived(info.offset);
-					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, info.offset + " bytes of data sent before, CRC match");
 
 					// If the whole page was sent and CRC match, we have to make sure it was executed
 					if (bytesSentNotExecuted == info.maxSize && info.offset < mImageSizeInBytes) {
@@ -454,6 +455,7 @@ import no.nordicsemi.android.error.SecureDfuError;
 						resumeSendingData = true;
 					}
 				} else {
+					logi(info.offset + " bytes sent before, CRC does not match");
 					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, info.offset + " bytes sent before, CRC does not match");
 					// The CRC of the current object is not correct. If there was another Data object sent before, its CRC must have been correct,
 					// as it has been executed. Either way, we have to create the current object again.
@@ -462,6 +464,7 @@ import no.nordicsemi.android.error.SecureDfuError;
 					info.offset -= bytesSentNotExecuted;
 					info.CRC32 = 0; // invalidate
 					mFirmwareStream.reset();
+					logi("Resuming from byte " + info.offset + "...");
 					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Resuming from byte " + info.offset + "...");
 				}
 			} catch (final IOException e) {
