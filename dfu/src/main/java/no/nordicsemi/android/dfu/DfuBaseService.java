@@ -1281,7 +1281,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 
 		// We have to wait until device gets disconnected or an error occur
 		waitUntilDisconnected();
-		sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Disconnected");
+		sendLogBroadcast(LOG_LEVEL_INFO, "Disconnected");
 	}
 
 	/**
