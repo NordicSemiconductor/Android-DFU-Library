@@ -7,7 +7,7 @@
 The compat library may be found on jcenter and Maven Central repository. Add it to your project by adding the following dependency:
 
 ```Groovy
-compile 'no.nordicsemi.android:dfu:1.3.1'
+compile 'no.nordicsemi.android:dfu:1.4.0'
 ```
 
 If you use proguard, add the following line to your proguard rules:
@@ -53,11 +53,12 @@ The library is compatible with nRF51 and nRF52 devices with S-Series Soft Device
 * **SDK 12.0.0** - New Secure DFU has been released. Buttonless service is experimental.
 * **SDK 13.0.0** - Buttonless DFU (still experimental) uses different UUIDs. No bond sharing supported. Bootloader will use address +1.
 * **SDK 14.0.0** - Buttonless DFU is no longer experimental. A new UUID (0004) added for bonded only devices (previous one (0003) is for non-bonded only).
+* **SDK 14.1.0** - Support for higher MTUs added.
 
 This library is fully backwards compatible and supports both the new and legacy DFU.
 The experimental buttonless DFU service from SDK 12 is supported since version 1.1.0. Due to the fact, that this experimental service from SDK 12 is not safe,
 you have to call [starter.setUnsafeExperimentalButtonlessServiceInSecureDfuEnabled(true)](https://github.com/NordicSemiconductor/Android-DFU-Library/blob/release/dfu/src/main/java/no/nordicsemi/android/dfu/DfuServiceInitiator.java#L194)
-to enable it. Read the method documentation for details. It is recommended to use the Buttonless service from SDK 13 (for non-bonded devices, or 14 (when released) for bonded).
+to enable it. Read the method documentation for details. It is recommended to use the Buttonless service from SDK 13 (for non-bonded devices, or 14 for bonded).
 Both are supported since DFU Library 1.3.0.
 
 Check platform folders for mode details about compatibility for each library.

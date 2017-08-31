@@ -15,7 +15,7 @@ apply plugin: 'com.jfrog.bintray'
 ext {
     PUBLISH_GROUP_ID = 'no.nordicsemi.android'
     PUBLISH_ARTIFACT_ID = 'dfu'
-    PUBLISH_VERSION = '1.3.1'
+    PUBLISH_VERSION = '1.4.0'
 
     bintrayRepo = 'android'
     bintrayName = 'dfu-library'
@@ -46,8 +46,8 @@ android {
     defaultConfig {
         minSdkVersion 18
         targetSdkVersion 25
-        versionCode 11
-        versionName "1.3.1"
+        versionCode 12
+        versionName "1.4.0"
     }
     buildTypes {
         release {
