@@ -686,6 +686,14 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 
 			logi("Action received: " + action);
 			sendLogBroadcast(LOG_LEVEL_DEBUG, "[Broadcast] Action received: " + action);
+			/*
+			Handling the disconnection event here could lead to race conditions, as it also may (most probably will)
+			be delivered to onConnectionStateChange below.
+			See: https://github.com/NordicSemiconductor/Android-DFU-Library/issues/55
+
+			Note: This broadcast is now received on all 3 ACL events!
+				  Don't assume DISCONNECT here.
+
 			mConnectionState = STATE_DISCONNECTED;
 
 			if (mDfuServiceImpl != null)
@@ -695,6 +703,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 			synchronized (mLock) {
 				mLock.notifyAll();
 			}
+			*/
 		}
 	};
 
@@ -840,7 +849,11 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		manager.registerReceiver(mDfuActionReceiver, actionFilter);
 		registerReceiver(mDfuActionReceiver, actionFilter); // Additionally we must register this receiver as a non-local to get broadcasts from the notification actions
 
-		final IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECTED);
+		final IntentFilter filter = new IntentFilter();
+		// As we no longer perform any action based on this broadcast, we may log all ACL events
+		filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
+		filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED);
+		filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
 		registerReceiver(mConnectionStateBroadcastReceiver, filter);
 
 		final IntentFilter bondFilter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
