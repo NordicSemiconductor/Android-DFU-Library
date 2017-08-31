@@ -25,12 +25,12 @@ package no.nordicsemi.android.dfu;
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.content.Intent;
 import android.os.Build;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 import java.io.InputStream;
@@ -53,7 +53,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 	protected static final int INDICATIONS = 2;
 
 	protected static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
-	protected static final int MAX_PACKET_SIZE = 20; // the maximum number of bytes in one packet is 20. May be less.
+	protected static final int MAX_PACKET_SIZE_DEFAULT = 20; // the default maximum number of bytes in one packet is 20.
 
 	/**
 	 * Lock used in synchronization purposes
@@ -90,7 +90,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 	 * Latest data received from device using notification.
 	 */
 	protected byte[] mReceivedData = null;
-	protected final byte[] mBuffer = new byte[MAX_PACKET_SIZE];
+	protected byte[] mBuffer = new byte[MAX_PACKET_SIZE_DEFAULT];
 	protected DfuBaseService mService;
 	protected DfuProgressInfo mProgressInfo;
 	protected int mImageSizeInBytes;
@@ -159,6 +159,20 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 				loge("Descriptor write error: " + status);
 				mError = DfuBaseService.ERROR_CONNECTION_MASK | status;
 			}
+			notifyLock();
+		}
+
+		@Override
+		public void onMtuChanged(final BluetoothGatt gatt, final int mtu, final int status) {
+			if (status ==  BluetoothGatt.GATT_SUCCESS) {
+				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "MTU changed to: " + mtu);
+				if (mtu - 3 > mBuffer.length)
+					mBuffer = new byte[mtu - 3]; // Maximum payload size is MTU - 3 bytes
+				logw("MTU changed to: " + mtu);
+			} else {
+				logw("Changing MTU failed: " + status + " (mtu: " + mtu + ")");
+			}
+			mRequestCompleted = true;
 			notifyLock();
 		}
 
@@ -572,6 +586,35 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 	protected boolean isBonded() {
 		final BluetoothDevice device = mGatt.getDevice();
 		return device.getBondState() == BluetoothDevice.BOND_BONDED;
+	}
+
+	/**
+	 * Requests given MTU. This method is only supported on Android Lollipop or newer versions.
+	 * Only DFU from SDK 14.1 or newer supports MTU > 23.
+	 * @param mtu new MTU to be requested
+	 */
+	@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+	protected void requestMtu(final int mtu) throws DeviceDisconnectedException, UploadAbortedException {
+		if (mAborted)
+			throw new UploadAbortedException();
+		mRequestCompleted = false;
+
+		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Requesting new MTU...");
+		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG, "gatt.requestMtu(" + mtu + ")");
+		if (!mGatt.requestMtu(mtu))
+			return;
+
+		// We have to wait until the MTU exchange finishes
+		try {
+			synchronized (mLock) {
+				while ((!mRequestCompleted && mConnected && mError == 0) || mPaused)
+					mLock.wait();
+			}
+		} catch (final InterruptedException e) {
+			loge("Sleeping interrupted", e);
+		}
+		if (!mConnected)
+			throw new DeviceDisconnectedException("Unable to read Service Changed CCCD: device disconnected");
 	}
 
 	/**

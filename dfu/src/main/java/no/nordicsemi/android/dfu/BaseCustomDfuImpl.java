@@ -136,7 +136,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 
 							final int available = mProgressInfo.getAvailableObjectSizeIsBytes();
 							byte[] buffer = mBuffer;
-							if (available < 20)
+							if (available < buffer.length)
 								buffer = new byte[available];
 							final int size = mFirmwareStream.read(buffer);
 							writePacket(gatt, characteristic, buffer, size);
@@ -203,7 +203,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 
 				final int available = mProgressInfo.getAvailableObjectSizeIsBytes();
 				byte[] buffer = mBuffer;
-				if (available < 20)
+				if (available < buffer.length)
 					buffer = new byte[available];
 				final int size = mFirmwareStream.read(buffer);
 				writePacket(gatt, packetCharacteristic, buffer, size);
@@ -269,7 +269,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	 */
 	protected void writeInitData(final BluetoothGattCharacteristic characteristic, final CRC32 crc32) throws DfuException, DeviceDisconnectedException, UploadAbortedException {
 		try {
-			byte[] data = new byte[20];
+			byte[] data = mBuffer;
 			int size;
 			while ((size = mInitPacketStream.read(data, 0, data.length)) != -1) {
 				writeInitPacket(characteristic, data, size);

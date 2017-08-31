@@ -26,6 +26,7 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.content.Intent;
+import android.os.Build;
 import android.os.SystemClock;
 
 import java.io.IOException;
@@ -183,6 +184,13 @@ import no.nordicsemi.android.error.SecureDfuError;
 		// End
 
 		final BluetoothGatt gatt = mGatt;
+
+		// Secure DFU since SDK 14.1 supports higher MTUs. Let's request maximum one supported by Android,
+		// the maximum one supported by the target will be used.
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+			logi("Requesting MTU = 517");
+			requestMtu(517);
+		}
 
 		try {
 			// Enable notifications

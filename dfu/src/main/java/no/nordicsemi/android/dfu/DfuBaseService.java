@@ -22,6 +22,7 @@
 
 package no.nordicsemi.android.dfu;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.IntentService;
 import android.app.NotificationManager;
@@ -807,6 +808,13 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
 			if (mDfuServiceImpl != null)
 				mDfuServiceImpl.getGattCallback().onDescriptorRead(gatt, descriptor, status);
+		}
+
+		@SuppressLint("NewApi")
+		@Override
+		public void onMtuChanged(final BluetoothGatt gatt, final int mtu, final int status) {
+			if (mDfuServiceImpl != null)
+				mDfuServiceImpl.getGattCallback().onMtuChanged(gatt, mtu, status);
 		}
 	};
 
