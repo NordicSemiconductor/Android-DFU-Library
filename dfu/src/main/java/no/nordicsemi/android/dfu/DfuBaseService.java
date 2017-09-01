@@ -63,6 +63,7 @@ import no.nordicsemi.android.dfu.internal.exception.DeviceDisconnectedException;
 import no.nordicsemi.android.dfu.internal.exception.DfuException;
 import no.nordicsemi.android.dfu.internal.exception.SizeValidationException;
 import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
+import no.nordicsemi.android.dfu.internal.scanner.BootloaderCustomScanner;
 import no.nordicsemi.android.error.GattError;
 
 /**
@@ -1622,5 +1623,9 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	private void logi(final String message) {
 		if (DfuBaseService.DEBUG)
 			Log.i(TAG, message);
+	}
+
+	public BootloaderCustomScanner.BootloaderReferee getBootloaderReferee(BluetoothGatt gatt) {
+		return null;
 	}
 }

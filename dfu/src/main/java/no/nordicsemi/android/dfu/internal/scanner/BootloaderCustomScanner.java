@@ -22,28 +22,37 @@
 
 package no.nordicsemi.android.dfu.internal.scanner;
 
+import android.annotation.TargetApi;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.le.BluetoothLeScanner;
+import android.bluetooth.le.ScanCallback;
+import android.bluetooth.le.ScanRecord;
+import android.bluetooth.le.ScanResult;
+import android.bluetooth.le.ScanSettings;
+import android.os.Build;
+import android.util.Log;
 
 /**
  * @see BootloaderScanner
  */
-public class BootloaderScannerJB implements BootloaderScanner, BluetoothAdapter.LeScanCallback {
+public class BootloaderCustomScanner implements BootloaderScanner, BluetoothAdapter.LeScanCallback {
 	private final Object mLock = new Object();
 	private String mDeviceAddress;
-	private String mDeviceAddressIncremented;
 	private String mBootloaderAddress;
-	private boolean mFound;
 
-	@SuppressWarnings("deprecation")
+	private String mDeviceAddressIncremented;
+	private boolean mFound;
+	private BootloaderReferee mReferee;
+
+	public BootloaderCustomScanner(BootloaderReferee bootloaderReferee) {
+		mReferee = bootloaderReferee;
+	}
+
 	@Override
 	public String searchFor(final String deviceAddress, final String deviceName) {
-		final String firstBytes = deviceAddress.substring(0, 15);
-		final String lastByte = deviceAddress.substring(15); // assuming that the device address is correct
-		final String lastByteIncremented = String.format("%02X", (Integer.valueOf(lastByte, 16) + ADDRESS_DIFF) & 0xFF);
-
 		mDeviceAddress = deviceAddress;
-		mDeviceAddressIncremented = firstBytes + lastByteIncremented;
+		mDeviceAddressIncremented = getExpectedBootloaderAddress(deviceAddress);
 		mBootloaderAddress = null;
 		mFound = false;
 
@@ -71,7 +80,33 @@ public class BootloaderScannerJB implements BootloaderScanner, BluetoothAdapter.
 		}, "Scanner timer").start();
 
 		final BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
-		adapter.startLeScan(this);
+
+		final BluetoothLeScanner scanner;
+		ScanCallback callback;
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+			scanner = adapter.getBluetoothLeScanner();
+			callback = new ScanCallback() {
+				@TargetApi(Build.VERSION_CODES.LOLLIPOP)
+				@Override
+				public void onScanResult(int callbackType, ScanResult result) {
+					judge(result.getDevice(), result.getScanRecord() != null ? result.getScanRecord().getBytes(): null);
+				}
+			};
+
+			/*
+			 * Scanning with filters does not work on Nexus 9 (Android 5.1). No devices are found and scanner terminates on timeout.
+			 * We will match the device address in the callback method instead. It's not like it should be, but at least it works.
+			 */
+			//final List<ScanFilter> filters = new ArrayList<>();
+			//filters.add(new ScanFilter.Builder().setDeviceAddress(mDeviceAddress).build());
+			//filters.add(new ScanFilter.Builder().setDeviceAddress(mDeviceAddressIncremented).build());
+			final ScanSettings settings = new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build();
+			scanner.startScan(/*filters*/ null, settings, callback);
+		} else {
+			adapter.startLeScan(this);
+			scanner = null;
+			callback = null;
+		}
 
 		try {
 			synchronized (mLock) {
@@ -81,17 +116,23 @@ public class BootloaderScannerJB implements BootloaderScanner, BluetoothAdapter.
 		} catch (final InterruptedException e) {
 			// do nothing
 		}
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+			scanner.stopScan(callback);
+		} else {
+			adapter.stopLeScan(this);
+		}
 
-		adapter.stopLeScan(this);
 		return mBootloaderAddress;
 	}
 
 	@Override
 	public void onLeScan(final BluetoothDevice device, final int rssi, final byte[] scanRecord) {
-		final String address = device.getAddress();
+		judge(device,scanRecord);
+	}
 
-		if (mDeviceAddress.equals(address) || mDeviceAddressIncremented.equals(address)) {
-			mBootloaderAddress = address;
+	public void judge(BluetoothDevice device, byte[] scanRecord) {
+		if (isDeviceExpected(device, scanRecord)) {
+			mBootloaderAddress = device.getAddress();
 			mFound = true;
 
 			// Notify the waiting thread
@@ -99,6 +140,22 @@ public class BootloaderScannerJB implements BootloaderScanner, BluetoothAdapter.
 				mLock.notifyAll();
 			}
 		}
+	}
+
+	public boolean isDeviceExpected(BluetoothDevice device, final byte[] scanRecord) {
+		if (mReferee != null) return mReferee.isDeviceExpected(device, scanRecord);
+		return mDeviceAddress.equals(device.getAddress()) || mDeviceAddressIncremented.equals(device.getName());
+	}
+
+	public String getExpectedBootloaderAddress(final String originalAddress) {
+		final String firstBytes = originalAddress.substring(0, 15);
+		final String lastByte = originalAddress.substring(15); // assuming that the device address is correct
+		final String lastByteIncremented = String.format("%02X", (Integer.valueOf(lastByte, 16) + ADDRESS_DIFF) & 0xFF);
+		return firstBytes + lastByteIncremented;
+	}
+
+	public interface BootloaderReferee {
+		boolean isDeviceExpected(BluetoothDevice device, final byte[] scanRecord);
 	}
 
 }
