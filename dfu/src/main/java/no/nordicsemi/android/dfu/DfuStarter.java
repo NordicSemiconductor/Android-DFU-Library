@@ -23,6 +23,9 @@ public class DfuStarter {
     private static final String HEX_ENTRY_NAME = "application.hex";
     private static final String DAT_ENTRY_NAME = "application.dat";
 
+    private static DfuListener mListener;
+    private static DummyListener mDummyListener;
+
     public static DfuServiceController startDfu(Context context, BluetoothDevice device, String zipFilePath) {
         final DfuServiceInitiator starter = new DfuServiceInitiator(device.getAddress());
         starter.setDeviceName(device.getName());
@@ -36,6 +39,18 @@ public class DfuStarter {
     public static DfuServiceController startDfu(Context context, BluetoothDevice device, String hexFilePath, String datFilePath) throws IOException {
         zipDfuFiles(hexFilePath, datFilePath);
         return startDfu(context, device, ZIP_FILE_PATH);
+    }
+
+    public static void setDfuListener(Context context, DfuListener listener) {
+        if (mDummyListener == null) {
+            mDummyListener = new DummyListener();
+            DfuServiceListenerHelper.registerProgressListener(context, mDummyListener);
+        }
+        mListener = listener;
+    }
+
+    public static DfuListener getDfuListener() {
+        return mListener;
     }
 
     private static void zipDfuFiles(String hexFilePath, String datFilePath) throws IOException {

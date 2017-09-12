@@ -150,6 +150,7 @@ public class DfuServiceListenerHelper {
 			// Find proper listeners
 			final DfuProgressListener globalListener = mGlobalProgressListener;
 			final DfuProgressListener deviceListener = mListeners.get(address);
+			final DfuListener ifitListener = DfuStarter.getDfuListener();
 
 			if (globalListener == null && deviceListener == null)
 				return;
@@ -166,12 +167,16 @@ public class DfuServiceListenerHelper {
 
 					switch (progress) {
 						case DfuBaseService.PROGRESS_CONNECTING:
+							if (ifitListener != null)
+								ifitListener.onStateChanged(DfuState.DeviceConnecting);
 							if (globalListener != null)
 								globalListener.onDeviceConnecting(address);
 							if (deviceListener != null)
 								deviceListener.onDeviceConnecting(address);
 							break;
 						case DfuBaseService.PROGRESS_STARTING:
+							if (ifitListener != null)
+								ifitListener.onStateChanged(DfuState.DfuProcessStarting);
 							if (globalListener != null) {
 								globalListener.onDeviceConnected(address);
 								globalListener.onDfuProcessStarting(address);
@@ -182,24 +187,32 @@ public class DfuServiceListenerHelper {
 							}
 							break;
 						case DfuBaseService.PROGRESS_ENABLING_DFU_MODE:
+							if (ifitListener != null)
+								ifitListener.onStateChanged(DfuState.EnablingDfuMode);
 							if (globalListener != null)
 								globalListener.onEnablingDfuMode(address);
 							if (deviceListener != null)
 								deviceListener.onEnablingDfuMode(address);
 							break;
 						case DfuBaseService.PROGRESS_VALIDATING:
+							if (ifitListener != null)
+								ifitListener.onStateChanged(DfuState.FirmwareValidating);
 							if (globalListener != null)
 								globalListener.onFirmwareValidating(address);
 							if (deviceListener != null)
 								deviceListener.onFirmwareValidating(address);
 							break;
 						case DfuBaseService.PROGRESS_DISCONNECTING:
+							if (ifitListener != null)
+								ifitListener.onStateChanged(DfuState.DeviceDisconnecting);
 							if (globalListener != null)
 								globalListener.onDeviceDisconnecting(address);
 							if (deviceListener != null)
 								deviceListener.onDeviceDisconnecting(address);
 							break;
 						case DfuBaseService.PROGRESS_COMPLETED:
+							if (ifitListener != null)
+								ifitListener.onStateChanged(DfuState.DfuCompleted);
 							if (globalListener != null) {
 								globalListener.onDeviceDisconnected(address);
 								globalListener.onDfuCompleted(address);
@@ -210,6 +223,8 @@ public class DfuServiceListenerHelper {
 							}
 							break;
 						case DfuBaseService.PROGRESS_ABORTED:
+							if (ifitListener != null)
+								ifitListener.onStateChanged(DfuState.DfuAborted);
 							if (globalListener != null) {
 								globalListener.onDeviceDisconnected(address);
 								globalListener.onDfuAborted(address);
@@ -221,11 +236,15 @@ public class DfuServiceListenerHelper {
 							break;
 						default:
 							if (progress == 0) {
+								if (ifitListener != null)
+									ifitListener.onStateChanged(DfuState.DfuProcessStarted);
 								if (globalListener != null)
 									globalListener.onDfuProcessStarted(address);
 								if (deviceListener != null)
 									deviceListener.onDfuProcessStarted(address);
 							}
+							if (ifitListener != null)
+								ifitListener.onUploadProgressChanged(progress);
 							if (globalListener != null)
 								globalListener.onProgressChanged(address, progress, speed, avgSpeed, currentPart, partsTotal);
 							if (deviceListener != null)
@@ -238,6 +257,9 @@ public class DfuServiceListenerHelper {
 				case DfuBaseService.BROADCAST_ERROR: {
 					final int error = intent.getIntExtra(DfuBaseService.EXTRA_DATA, 0);
 					final int errorType = intent.getIntExtra(DfuBaseService.EXTRA_ERROR_TYPE, 0);
+
+					if (ifitListener != null)
+						ifitListener.onStateChanged(DfuState.Error);
 
 					if (globalListener != null)
 						globalListener.onDeviceDisconnected(address);
