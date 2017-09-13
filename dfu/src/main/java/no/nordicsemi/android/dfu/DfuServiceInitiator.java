@@ -40,6 +40,11 @@ import java.util.UUID;
 public class DfuServiceInitiator {
 	public static final int DEFAULT_PRN_VALUE = 12;
 
+	/** Constant used to narrow the scope of the update to system components (SD+BL) only. */
+	public static final int SCOPE_SYSTEM_COMPONENTS = 7578;
+	/** Constant used to narrow the scope of the update to application only. */
+	public static final int SCOPE_APPLICATION = 3542;
+
 	private final String deviceAddress;
 	private String deviceName;
 
@@ -178,6 +183,25 @@ public class DfuServiceInitiator {
 	 */
 	public DfuServiceInitiator setForceDfu(final boolean force) {
 		this.forceDfu = force;
+		return this;
+	}
+
+	/**
+	 * This method allows to narrow the update to selected parts from the ZIP, for example
+	 * to allow only application update from a ZIP file that has SD+BL+App. System components scope include the Softdevice and/or
+	 * the Bootloader (they can't be separated as they are packed in a single bin file and the library does not know whether it
+	 * contains only the softdevice, the bootloader or both) Application scope includes the application only.
+	 * @param scope the update scope, one of {@link #SCOPE_SYSTEM_COMPONENTS} or {@link #SCOPE_APPLICATION}.
+	 * @return the builder
+	 */
+	public DfuServiceInitiator setScope(final int scope) {
+		if (DfuBaseService.MIME_TYPE_ZIP.equals(mimeType))
+			throw new UnsupportedOperationException("Scope can be set only for a ZIP file");
+		if (scope == SCOPE_APPLICATION)
+			fileType = DfuBaseService.TYPE_APPLICATION;
+		else if (scope == SCOPE_SYSTEM_COMPONENTS)
+			fileType = DfuBaseService.TYPE_SOFT_DEVICE | DfuBaseService.TYPE_BOOTLOADER;
+		else throw new UnsupportedOperationException("Unknown scope");
 		return this;
 	}
 
