@@ -37,7 +37,7 @@ public interface BootloaderScanner {
 	/**
 	 * After the buttonless jump from the application mode to the bootloader mode the service will wait this long for the advertising bootloader (in milliseconds).
 	 */
-	long TIMEOUT = 5000l; // ms
+	long TIMEOUT = 5000L; // ms
 	/** The bootloader may advertise with the same address or one with the last byte incremented by this value. F.e. 00:11:22:33:44:55 -&gt; 00:11:22:33:44:56. FF changes to 00. */
 	int ADDRESS_DIFF = 1;
 

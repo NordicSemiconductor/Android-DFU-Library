@@ -201,7 +201,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 			}
 			return new String(out);
 		}
-	};
+	}
 
 	/* package */ BaseDfuImpl(final Intent intent, final DfuBaseService service) {
 		mService = service;
