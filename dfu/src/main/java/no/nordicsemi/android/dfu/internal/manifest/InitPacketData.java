@@ -29,7 +29,7 @@ import java.util.List;
 public class InitPacketData {
 	@SerializedName("packet_version") protected int packetVersion;
 	@SerializedName("compression_type") protected int compressionType;
-	@SerializedName("application_version") protected long applicationVersion;
+	@SerializedName("application_version") protected String applicationVersion;
 	@SerializedName("device_revision") protected int deviceRevision;
 	@SerializedName("device_type") protected int deviceType;
 	@SerializedName("firmware_crc16") protected int firmwareCRC16;
@@ -44,7 +44,7 @@ public class InitPacketData {
 		return compressionType;
 	}
 
-	public long getApplicationVersion() {
+	public String getApplicationVersion() {
 		return applicationVersion;
 	}
 
