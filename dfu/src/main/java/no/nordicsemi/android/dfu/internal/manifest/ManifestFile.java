@@ -23,7 +23,7 @@
 package no.nordicsemi.android.dfu.internal.manifest;
 
 public class ManifestFile {
-	protected Manifest manifest;
+	private Manifest manifest;
 
 	public Manifest getManifest() {
 		return manifest;

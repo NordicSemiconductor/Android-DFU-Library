@@ -382,14 +382,6 @@ public class ArchiveInputStream extends ZipInputStream {
 	}
 
 	/**
-	 * Returns the manifest object if it was specified in the ZIP file.
-	 * @return the manifest object
-	 */
-	public Manifest getManifest() {
-		return manifest;
-	}
-
-	/**
 	 * Returns the content type based on the content of the ZIP file. The content type may be truncated using {@link #setContentType(int)}.
 	 * 
 	 * @return a bit field of {@link DfuBaseService#TYPE_SOFT_DEVICE TYPE_SOFT_DEVICE}, {@link DfuBaseService#TYPE_BOOTLOADER TYPE_BOOTLOADER} and {@link DfuBaseService#TYPE_APPLICATION

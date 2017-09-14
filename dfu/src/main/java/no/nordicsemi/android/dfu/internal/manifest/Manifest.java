@@ -25,20 +25,20 @@ package no.nordicsemi.android.dfu.internal.manifest;
 import com.google.gson.annotations.SerializedName;
 
 public class Manifest {
-	protected FileInfo application;
-	protected FileInfo bootloader;
-	protected FileInfo softdevice;
+	private FileInfo application;
+	private FileInfo bootloader;
+	private FileInfo softdevice;
 	@SerializedName("softdevice_bootloader")
-	protected SoftDeviceBootloaderFileInfo softdeviceBootloader;
+	private SoftDeviceBootloaderFileInfo softdeviceBootloader;
 
-	// The following options are available only in Secure DFU and will be sent as application (in a single connection).
+	// The following options are available only in some implementations of Secure DFU and will be sent as application (in a single connection).
 	// The service is not aware of sizes of each component in the bin file. This information is hidden in the Init Packet.
 	@SerializedName("bootloader_application")
-	protected SoftDeviceBootloaderFileInfo bootloaderApplication;
+	private FileInfo bootloaderApplication;
 	@SerializedName("softdevice_application")
-	protected SoftDeviceBootloaderFileInfo softdeviceApplication;
+	private FileInfo softdeviceApplication;
 	@SerializedName("softdevice_bootloader_application")
-	protected SoftDeviceBootloaderFileInfo softdeviceBootloaderApplication;
+	private FileInfo softdeviceBootloaderApplication;
 
 	public FileInfo getApplicationInfo() {
 		if (application != null)
