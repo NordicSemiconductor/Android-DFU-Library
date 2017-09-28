@@ -1396,8 +1396,9 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 			return;
 
 		// the notification may not be refreshed too quickly as the ABORT button becomes not clickable
+		// If new state is an end-state, update regardless so it will not stick around in "Disconnecting" state
 		final long now = SystemClock.elapsedRealtime();
-		if (now - mLastNotificationTime < 250)
+		if (now - mLastNotificationTime < 250 && !(PROGRESS_COMPLETED == progress || PROGRESS_ABORTED == progress))
 			return;
 		mLastNotificationTime = now;
 
