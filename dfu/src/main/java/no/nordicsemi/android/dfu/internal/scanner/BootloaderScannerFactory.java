@@ -39,4 +39,15 @@ public class BootloaderScannerFactory {
 			return new BootloaderScannerLollipop();
 		return new BootloaderScannerJB();
 	}
+
+	/**
+	 * Returns the custom scanner implementation.
+	 *
+	 * @return the bootloader scanner
+	 * @param bootloaderReferee Callback to judge the scaned device is or not the expected one;
+	 */
+	public static BootloaderScanner getScanner(BootloaderCustomScanner.BootloaderReferee bootloaderReferee) {
+		if (bootloaderReferee == null) return getScanner();
+		return new BootloaderCustomScanner(bootloaderReferee);
+	}
 }

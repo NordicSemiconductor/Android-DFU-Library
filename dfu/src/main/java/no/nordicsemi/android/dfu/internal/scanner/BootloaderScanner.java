@@ -50,5 +50,5 @@ public interface BootloaderScanner {
 	 *            the application device address
 	 * @return the address of the advertising DFU bootloader. If may be the same as the application address or one with the last byte incremented by 1 (AA:BB:CC:DD:EE:45/FF -&gt; AA:BB:CC:DD:EE:46/00).
 	 */
-	String searchFor(final String deviceAddress);
+	String searchFor(final String deviceAddress, final String name);
 }
