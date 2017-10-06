@@ -26,5 +26,8 @@
     <string name="dfu_status_aborted_msg">Application upload has been canceled.</string>
     <string name="dfu_status_disconnecting_msg">Disconnecting from %s&#8230;</string>
     <string name="dfu_status_error_msg">DFU process failed.</string>
+
+    <string name="dfu_channel_name">DFU</string>
+    <string name="dfu_channel_description">Shows DFU progress.</string>
     
 </resources>

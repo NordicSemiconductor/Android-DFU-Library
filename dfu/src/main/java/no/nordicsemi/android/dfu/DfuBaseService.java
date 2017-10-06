@@ -95,6 +95,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	/* package */ static boolean DEBUG = false;
 
 	public static final int NOTIFICATION_ID = 283; // a random number
+	public static final String NOTIFICATION_CHANNEL_DFU = "dfu";
 
 	/**
 	 * The address of the device to update.
@@ -936,6 +937,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 			mbrSize = DfuSettingsConstants.SETTINGS_DEFAULT_MBR_SIZE;
 		}
 
+		startForeground();
 		sendLogBroadcast(LOG_LEVEL_VERBOSE, "DFU service started");
 
 		/*
@@ -1160,6 +1162,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 			} catch (final IOException e) {
 				// do nothing
 			}
+			stopForeground(false);
 		}
 	}
 
@@ -1406,7 +1409,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		final String deviceAddress = mDeviceAddress;
 		final String deviceName = mDeviceName != null ? mDeviceName : getString(R.string.dfu_unknown_name);
 
-		final NotificationCompat.Builder builder = new NotificationCompat.Builder(this).setSmallIcon(android.R.drawable.stat_sys_upload).setOnlyAlertOnce(true);//.setLargeIcon(largeIcon);
+		final NotificationCompat.Builder builder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_DFU).setSmallIcon(android.R.drawable.stat_sys_upload).setOnlyAlertOnce(true);//.setLargeIcon(largeIcon);
 		// Android 5
 		builder.setColor(Color.GRAY);
 
@@ -1479,7 +1482,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		final String deviceAddress = mDeviceAddress;
 		final String deviceName = mDeviceName != null ? mDeviceName : getString(R.string.dfu_unknown_name);
 
-		final NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
+		final NotificationCompat.Builder builder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_DFU)
 				.setSmallIcon(android.R.drawable.stat_sys_upload)
 				.setOnlyAlertOnce(true)
 				.setColor(Color.RED)
@@ -1500,6 +1503,23 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 
 		final NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 		manager.notify(NOTIFICATION_ID, builder.build());
+	}
+
+	private void startForeground() {
+		final NotificationCompat.Builder builder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_DFU)
+				.setSmallIcon(android.R.drawable.stat_sys_upload)
+				.setContentTitle(getString(R.string.dfu_status_initializing)).setContentText(getString(R.string.dfu_status_starting_msg))
+				.setColor(Color.GRAY)
+				.setOngoing(true);
+		// update the notification
+		final Intent targetIntent = new Intent(this, getNotificationTarget());
+		targetIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+		targetIntent.putExtra(EXTRA_DEVICE_ADDRESS, mDeviceAddress);
+		targetIntent.putExtra(EXTRA_DEVICE_NAME, mDeviceName);
+		final PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, targetIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+		builder.setContentIntent(pendingIntent);
+
+		startForeground(NOTIFICATION_ID, builder.build());
 	}
 
 	/**

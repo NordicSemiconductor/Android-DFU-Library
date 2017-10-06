@@ -200,6 +200,12 @@ protected void onPause() {
 }
 ```
 
+For Android Oreo and above, if you want the DfuService to show a notification with the progress, you have to create a notification channel. The easiest way to do this is to call
+
+```java
+DfuServiceInitiator.createDfuNotificationChannel(context);
+```
+
 ### Example
 
 Check the Android projects: nRF Toolbox ([here](https://github.com/NordicSemiconductor/Android-nRF-Toolbox "nRF Toolbox")) or nRF Beacon ([here](https://github.com/NordicSemiconductor/Android-nRF-Beacon "nRF Beacon")) for usage examples.
