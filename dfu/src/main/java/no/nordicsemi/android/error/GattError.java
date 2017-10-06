@@ -104,6 +104,10 @@ public class GattError {
 				return "GATT UNSUPPORT GRP TYPE";
 			case 0x0011:
 				return "GATT INSUF RESOURCE";
+			case 0x0022:
+				return "GATT CONN LMP TIMEOUT";
+			case 0x003A:
+				return "GATT CONTROLLER BUSY";
 			case 0x0087:
 				return "GATT ILLEGAL PARAMETER";
 			case 0x0080:

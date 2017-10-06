@@ -230,10 +230,13 @@ import no.nordicsemi.android.error.SecureDfuError;
 			// For the Extended Error more details can be obtained on some devices.
 			if (e instanceof RemoteDfuExtendedErrorException) {
 				final RemoteDfuExtendedErrorException ee = (RemoteDfuExtendedErrorException) e;
-				logi("Extended Error details: " + SecureDfuError.parseExtendedError(ee.getExtendedErrorNumber()));
-				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, "Details: " + SecureDfuError.parseExtendedError(ee.getExtendedErrorNumber()) + " (Code = " + ee.getExtendedErrorNumber() + ")");
+				final int extendedError = ee.getExtendedErrorNumber();
+				logi("Extended Error details: " + SecureDfuError.parseExtendedError(extendedError));
+				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, "Details: " + SecureDfuError.parseExtendedError(extendedError) + " (Code = " + extendedError + ")");
+				mService.terminateConnection(gatt, extendedError & DfuBaseService.ERROR_REMOTE_MASK);
+			} else {
+				mService.terminateConnection(gatt, error);
 			}
-			mService.terminateConnection(gatt, error);
 		}
 	}
 
