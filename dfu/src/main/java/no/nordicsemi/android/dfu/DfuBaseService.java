@@ -1565,10 +1565,10 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 			broadcast.putExtra(EXTRA_DATA, error & ~ERROR_CONNECTION_STATE_MASK);
 			broadcast.putExtra(EXTRA_ERROR_TYPE, ERROR_TYPE_COMMUNICATION_STATE);
 		} else if ((error & ERROR_REMOTE_MASK) > 0) {
-			broadcast.putExtra(EXTRA_DATA, error);
+			broadcast.putExtra(EXTRA_DATA, error & ~ERROR_REMOTE_MASK);
 			broadcast.putExtra(EXTRA_ERROR_TYPE, ERROR_TYPE_DFU_REMOTE);
 		} else {
-			broadcast.putExtra(EXTRA_DATA, error & ~ERROR_REMOTE_MASK);
+			broadcast.putExtra(EXTRA_DATA, error);
 			broadcast.putExtra(EXTRA_ERROR_TYPE, ERROR_TYPE_OTHER);
 		}
 		broadcast.putExtra(EXTRA_DEVICE_ADDRESS, mDeviceAddress);
