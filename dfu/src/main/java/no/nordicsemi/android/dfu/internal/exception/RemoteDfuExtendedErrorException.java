@@ -44,6 +44,6 @@ public class RemoteDfuExtendedErrorException extends RemoteDfuException {
 
 	@Override
 	public String getMessage() {
-		return super.getMessage() + " (error " + SecureDfuError.EXTENDED_ERROR + "." + mError + ")";
+		return super.getMessage() + " (extended error " + mError + ")";
 	}
 }

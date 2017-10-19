@@ -29,6 +29,7 @@ import no.nordicsemi.android.dfu.DfuBaseService;
 /**
  * Parses the error numbers according to the <b>gatt_api.h</b> file from bluedroid stack.
  * See: https://android.googlesource.com/platform/external/bluetooth/bluedroid/+/android-5.1.0_r1/stack/include/gatt_api.h (and other versions) for details.
+ * See also: https://android.googlesource.com/platform/external/libnfc-nci/+/master/src/include/hcidefs.h#447 for other possible HCI errors.
  */
 public class GattError {
 	// Starts at line 106 of gatt_api.h file
@@ -161,8 +162,6 @@ public class GattError {
 			case DfuBaseService.ERROR_SERVICE_DISCOVERY_NOT_STARTED:
 				return "DFU SERVICE DISCOVERY NOT STARTED";
 			case DfuBaseService.ERROR_SERVICE_NOT_FOUND:
-				return "DFU SERVICE NOT FOUND";
-			case DfuBaseService.ERROR_CHARACTERISTICS_NOT_FOUND:
 				return "DFU CHARACTERISTICS NOT FOUND";
 			case DfuBaseService.ERROR_INVALID_RESPONSE:
 				return "DFU INVALID RESPONSE";
@@ -171,17 +170,30 @@ public class GattError {
 			case DfuBaseService.ERROR_BLUETOOTH_DISABLED:
 				return "BLUETOOTH ADAPTER DISABLED";
 			case DfuBaseService.ERROR_INIT_PACKET_REQUIRED:
-				return "INIT PACKET REQUIRED";
+				return "DFU INIT PACKET REQUIRED";
 			case DfuBaseService.ERROR_FILE_SIZE_INVALID:
-				return "DFU FILE NOT WORD ALIGNED";
+				return "DFU INIT PACKET REQUIRED";
+			case DfuBaseService.ERROR_CRC_ERROR:
+				return "DFU CRC ERROR";
 			case DfuBaseService.ERROR_DEVICE_NOT_BONDED:
 				return "DFU DEVICE NOT BONDED";
 			default:
-				// Deprecated: use Legacy or SecureDfuError parser
-				if ((DfuBaseService.ERROR_REMOTE_MASK & error) > 0) {
-					return LegacyDfuError.parse(error);
-				}
+				return "UNKNOWN (" + error + ")";
 		}
-		return "UNKNOWN (" + error + ")";
+	}
+
+	public static String parseDfuRemoteError(final int error) {
+		switch (error & (DfuBaseService.ERROR_REMOTE_TYPE_LEGACY | DfuBaseService.ERROR_REMOTE_TYPE_SECURE | DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | DfuBaseService.ERROR_REMOTE_TYPE_SECURE_BUTTONLESS)) {
+			case DfuBaseService.ERROR_REMOTE_TYPE_LEGACY:
+				return LegacyDfuError.parse(error);
+			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE:
+				return SecureDfuError.parse(error);
+			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED:
+				return SecureDfuError.parseExtendedError(error);
+			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_BUTTONLESS:
+				return SecureDfuError.parseButtonlessError(error);
+			default:
+				return "UNKNOWN (" + error + ")";
+		}
 	}
 }

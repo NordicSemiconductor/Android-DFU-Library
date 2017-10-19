@@ -9,6 +9,7 @@ import no.nordicsemi.android.dfu.internal.exception.DfuException;
 import no.nordicsemi.android.dfu.internal.exception.RemoteDfuException;
 import no.nordicsemi.android.dfu.internal.exception.UnknownResponseException;
 import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
+import no.nordicsemi.android.error.SecureDfuError;
 
 /**
  * A base class for buttonless service implementations made for Secure and in the future for Non-Secure DFU.
@@ -16,8 +17,6 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 /* package */ abstract class ButtonlessDfuImpl extends BaseButtonlessDfuImpl {
 
 	private static final int DFU_STATUS_SUCCESS = 1;
-	private static final int ERROR_OP_CODE_NOT_SUPPORTED = 2;
-	private static final int ERROR_OPERATION_FAILED = 4;
 
 	private static final int OP_CODE_ENTER_BOOTLOADER_KEY = 0x01;
 	private static final int OP_CODE_RESPONSE_CODE_KEY = 0x20;
@@ -127,10 +126,10 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, e.getMessage());
 			mService.terminateConnection(gatt, error);
 		} catch (final RemoteDfuException e) {
-			final int error = DfuBaseService.ERROR_REMOTE_MASK | e.getErrorNumber();
+			final int error = DfuBaseService.ERROR_REMOTE_TYPE_SECURE_BUTTONLESS | e.getErrorNumber();
 			loge(e.getMessage());
-			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, String.format("Remote DFU error: %s", parse(error)));
-			mService.terminateConnection(gatt, error);
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, String.format("Remote DFU error: %s", SecureDfuError.parseButtonlessError(error)));
+			mService.terminateConnection(gatt, error | DfuBaseService.ERROR_REMOTE_MASK);
 		}
 	}
 
@@ -144,16 +143,8 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	 */
 	private int getStatusCode(final byte[] response, final int request) throws UnknownResponseException {
 		if (response == null || response.length < 3 || response[0] != OP_CODE_RESPONSE_CODE_KEY || response[1] != request ||
-				(response[2] != DFU_STATUS_SUCCESS && response[2] != ERROR_OP_CODE_NOT_SUPPORTED &&	response[2] != ERROR_OPERATION_FAILED))
+				(response[2] != DFU_STATUS_SUCCESS && response[2] != SecureDfuError.BUTTONLESS_ERROR_OP_CODE_NOT_SUPPORTED && response[2] != SecureDfuError.BUTTONLESS_ERROR_OPERATION_FAILED))
 			throw new UnknownResponseException("Invalid response received", response, OP_CODE_RESPONSE_CODE_KEY, request);
 		return response[2];
-	}
-
-	private static String parse(final int error) {
-		switch (error & (~DfuBaseService.ERROR_REMOTE_MASK)) {
-			case ERROR_OP_CODE_NOT_SUPPORTED:	return "REMOTE DFU OP CODE NOT SUPPORTED";
-			case ERROR_OPERATION_FAILED:		return "REMOTE DFU OPERATION FAILED";
-			default:							return "UNKNOWN (" + error + ")";
-		}
 	}
 }

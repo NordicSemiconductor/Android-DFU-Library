@@ -530,14 +530,14 @@ import no.nordicsemi.android.error.LegacyDfuError;
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Reset request sent");
 			mService.terminateConnection(gatt, error);
 		} catch (final RemoteDfuException e) {
-			final int error = DfuBaseService.ERROR_REMOTE_MASK | e.getErrorNumber();
-			loge(e.getMessage());
+			final int error = DfuBaseService.ERROR_REMOTE_TYPE_LEGACY | e.getErrorNumber();
+			loge(e.getMessage() + ": " + LegacyDfuError.parse(error));
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, String.format("Remote DFU error: %s", LegacyDfuError.parse(error)));
 
 			logi("Sending Reset command (Op Code = 6)");
 			writeOpCode(mControlPointCharacteristic, OP_CODE_RESET);
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Reset request sent");
-			mService.terminateConnection(gatt, error);
+			mService.terminateConnection(gatt, error | DfuBaseService.ERROR_REMOTE_MASK);
 		}
 	}
 

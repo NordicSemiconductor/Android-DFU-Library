@@ -422,7 +422,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	/**
 	 * The broadcast error message contains the following extras:
 	 * <ul>
-	 * <li>{@link #EXTRA_DATA} - the error number. Use {@link GattError#parse(int)} to get String representation</li>
+	 * <li>{@link #EXTRA_DATA} - the error number. Use {@link GattError#parse(int)} to get String representation.</li>
 	 * <li>{@link #EXTRA_DEVICE_ADDRESS} - the target device address</li>
 	 * </ul>
 	 */
@@ -464,12 +464,6 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 */
 	public static final int ERROR_SERVICE_NOT_FOUND = ERROR_MASK | 0x06;
 	/**
-	 * Thrown when the required DFU service has been found but at least one of the DFU characteristics is absent.
-	 * @deprecated This error will no longer be thrown. {@link #ERROR_SERVICE_NOT_FOUND} will be thrown instead.
-	 */
-	@Deprecated
-	public static final int ERROR_CHARACTERISTICS_NOT_FOUND = ERROR_MASK | 0x07;
-	/**
 	 * Thrown when unknown response has been obtained from the target. The DFU target must follow specification.
 	 */
 	public static final int ERROR_INVALID_RESPONSE = ERROR_MASK | 0x08;
@@ -498,9 +492,14 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 */
 	public static final int ERROR_DEVICE_NOT_BONDED = ERROR_MASK | 0x0E;
 	/**
-	 * Flag set when the DFU target returned a DFU error. Look for DFU specification to get error codes.
+	 * Flag set when the DFU target returned a DFU error. Look for DFU specification to get error codes. The error code is binary OR-ed with one of:
+	 * {@link #ERROR_REMOTE_TYPE_LEGACY}, {@link #ERROR_REMOTE_TYPE_SECURE} or {@link #ERROR_REMOTE_TYPE_SECURE_EXTENDED}.
 	 */
 	public static final int ERROR_REMOTE_MASK = 0x2000;
+	public static final int ERROR_REMOTE_TYPE_LEGACY = 0x0100;
+	public static final int ERROR_REMOTE_TYPE_SECURE = 0x0200;
+	public static final int ERROR_REMOTE_TYPE_SECURE_EXTENDED = 0x0400;
+	public static final int ERROR_REMOTE_TYPE_SECURE_BUTTONLESS = 0x0800;
 	/**
 	 * The flag set when one of {@link android.bluetooth.BluetoothGattCallback} methods was called with status other than {@link android.bluetooth.BluetoothGatt#GATT_SUCCESS}.
 	 */

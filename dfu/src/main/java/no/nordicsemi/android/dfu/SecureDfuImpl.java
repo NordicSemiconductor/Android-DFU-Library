@@ -223,19 +223,19 @@ import no.nordicsemi.android.error.SecureDfuError;
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, e.getMessage());
 			mService.terminateConnection(gatt, error);
 		} catch (final RemoteDfuException e) {
-			final int error = DfuBaseService.ERROR_REMOTE_MASK | e.getErrorNumber();
-			loge(e.getMessage());
+			final int error = DfuBaseService.ERROR_REMOTE_TYPE_SECURE | e.getErrorNumber();
+			loge(e.getMessage() + ": " + SecureDfuError.parse(error));
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, String.format("Remote DFU error: %s", SecureDfuError.parse(error)));
 
 			// For the Extended Error more details can be obtained on some devices.
 			if (e instanceof RemoteDfuExtendedErrorException) {
 				final RemoteDfuExtendedErrorException ee = (RemoteDfuExtendedErrorException) e;
-				final int extendedError = ee.getExtendedErrorNumber();
-				logi("Extended Error details: " + SecureDfuError.parseExtendedError(extendedError));
-				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, "Details: " + SecureDfuError.parseExtendedError(extendedError) + " (Code = " + extendedError + ")");
-				mService.terminateConnection(gatt, extendedError & DfuBaseService.ERROR_REMOTE_MASK);
+				final int extendedError = DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | ee.getExtendedErrorNumber();
+				loge("Extended Error details: " + SecureDfuError.parseExtendedError(extendedError));
+				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, "Details: " + SecureDfuError.parseExtendedError(extendedError) + " (Code = " + ee.getExtendedErrorNumber() + ")");
+				mService.terminateConnection(gatt, extendedError | DfuBaseService.ERROR_REMOTE_MASK);
 			} else {
-				mService.terminateConnection(gatt, error);
+				mService.terminateConnection(gatt, error | DfuBaseService.ERROR_REMOTE_MASK);
 			}
 		}
 	}

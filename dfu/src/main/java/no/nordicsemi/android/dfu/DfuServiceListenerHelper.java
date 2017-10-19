@@ -247,6 +247,12 @@ public class DfuServiceListenerHelper {
 							if (deviceListener != null)
 								deviceListener.onError(address, error, errorType, GattError.parseConnectionError(error));
 							break;
+						case DfuBaseService.ERROR_TYPE_DFU_REMOTE:
+							if (globalListener != null)
+								globalListener.onError(address, error, errorType, GattError.parseDfuRemoteError(error));
+							if (deviceListener != null)
+								deviceListener.onError(address, error, errorType, GattError.parseDfuRemoteError(error));
+							break;
 						default:
 							if (globalListener != null)
 								globalListener.onError(address, error, errorType, GattError.parse(error));
