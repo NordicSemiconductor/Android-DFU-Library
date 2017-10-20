@@ -98,8 +98,21 @@ import no.nordicsemi.android.error.SecureDfuError;
 
 				switch (requestType) {
 					case OP_CODE_CALCULATE_CHECKSUM_KEY: {
-						mProgressInfo.setBytesReceived(characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 3));
-						// TODO check CRC?
+						final int offset = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 3);
+						final int remoteCrc = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 3 + 4);
+						final int localCrc = (int) (((ArchiveInputStream) mFirmwareStream).getCrc32() & 0xFFFFFFFFL);
+						// Check whether local and remote CRC match
+						if (localCrc == remoteCrc) {
+							// If so, update the number of bytes received
+							mProgressInfo.setBytesReceived(offset);
+						} else {
+							// Else, and only in case it was a PRN received, not the response for Calculate Checksum Request, stop sending data
+							if (mFirmwareUploadInProgress) {
+								mFirmwareUploadInProgress = false;
+								notifyLock();
+								return;
+							} // else will be handled by sendFirmware(gatt) below
+						}
 						handlePacketReceiptNotification(gatt, characteristic);
 						break;
 					}
@@ -405,7 +418,7 @@ import no.nordicsemi.android.error.SecureDfuError;
 	 */
 	private void sendFirmware(final BluetoothGatt gatt) throws RemoteDfuException, DeviceDisconnectedException, DfuException, UploadAbortedException, UnknownResponseException {
 		// Send the number of packets of firmware before receiving a receipt notification
-		final int numberOfPacketsBeforeNotification = mPacketsBeforeNotification;
+		int numberOfPacketsBeforeNotification = mPacketsBeforeNotification;
 		if (numberOfPacketsBeforeNotification > 0) {
 			setPacketReceiptNotifications(numberOfPacketsBeforeNotification);
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Packet Receipt Notif Req (Op Code = 2) sent (Value = " + numberOfPacketsBeforeNotification + ")");

@@ -47,11 +47,11 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	/**
 	 * Flag indicating whether the firmware is being transmitted or not.
 	 */
-	private boolean mFirmwareUploadInProgress;
+	protected boolean mFirmwareUploadInProgress;
 	/**
 	 * The number of packets of firmware data to be send before receiving a new Packets receipt notification. 0 disables the packets notifications.
 	 */
-	protected final int mPacketsBeforeNotification;
+	protected int mPacketsBeforeNotification;
 	/**
 	 * The number of packets sent since last notification.
 	 */
