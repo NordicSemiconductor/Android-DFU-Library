@@ -548,6 +548,10 @@ import no.nordicsemi.android.error.SecureDfuError;
 						mService.terminateConnection(gatt, DfuBaseService.ERROR_FILE_IO_EXCEPTION);
 						return;
 					}
+					// To decrease the chance of loosing data next time let's set PRN to 1. This will make the update very long, but perhaps it will succeed.
+					numberOfPacketsBeforeNotification = mPacketsBeforeNotification = 1;
+					setPacketReceiptNotifications(numberOfPacketsBeforeNotification);
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Packet Receipt Notif Req (Op Code = 2) sent (Value = " + numberOfPacketsBeforeNotification + ")");
 				}
 
 				// Calculate the CRC32

@@ -105,7 +105,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 						mProgressInfo.addBytesSent(characteristic.getValue().length);
 						mPacketsSentSinceNotification++;
 
-						final boolean notificationExpected = mPacketsBeforeNotification > 0 && mPacketsSentSinceNotification == mPacketsBeforeNotification;
+						final boolean notificationExpected = mPacketsBeforeNotification > 0 && mPacketsSentSinceNotification >= mPacketsBeforeNotification;
 						final boolean lastPacketTransferred = mProgressInfo.isComplete();
 						final boolean lastObjectPacketTransferred = mProgressInfo.isObjectComplete();
 
