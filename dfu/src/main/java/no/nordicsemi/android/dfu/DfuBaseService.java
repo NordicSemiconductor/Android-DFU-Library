@@ -69,7 +69,7 @@ import no.nordicsemi.android.error.GattError;
  * The DFU Service provides full support for Over-the-Air (OTA) Device Firmware Update (DFU) by Nordic Semiconductor.
  * With the Soft Device 7.0.0+ it allows to upload a new Soft Device, new Bootloader and a new Application. For older soft devices only the Application update is supported.
  * <p>
- * To run the service to your application extend it in your project and overwrite the missing method. Remember to add your class to the AndroidManifest.xml file.
+ * To run the service to your application extend it in your project and overwrite the missing method. Remember to add your service class to the AndroidManifest.xml file.
  * </p>
  * <p>
  * The {@link DfuServiceInitiator} object should be used to start the DFU Service.
@@ -580,20 +580,6 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	public static final String EXTRA_CUSTOM_UUIDS_FOR_EXPERIMENTAL_BUTTONLESS_DFU = "no.nordicsemi.android.dfu.extra.EXTRA_CUSTOM_UUIDS_FOR_EXPERIMENTAL_BUTTONLESS_DFU";
 	public static final String EXTRA_CUSTOM_UUIDS_FOR_BUTTONLESS_DFU_WITHOUT_BOND_SHARING = "no.nordicsemi.android.dfu.extra.EXTRA_CUSTOM_UUIDS_FOR_BUTTONLESS_DFU_WITHOUT_BOND_SHARING";
 	public static final String EXTRA_CUSTOM_UUIDS_FOR_BUTTONLESS_DFU_WITH_BOND_SHARING = "no.nordicsemi.android.dfu.extra.EXTRA_CUSTOM_UUIDS_FOR_BUTTONLESS_DFU_WITH_BOND_SHARING";
-
-	// DFU status values. Those values are now implementation dependent.
-	@Deprecated
-	public static final int DFU_STATUS_SUCCESS = 1;
-	@Deprecated
-	public static final int DFU_STATUS_INVALID_STATE = 2;
-	@Deprecated
-	public static final int DFU_STATUS_NOT_SUPPORTED = 3;
-	@Deprecated
-	public static final int DFU_STATUS_DATA_SIZE_EXCEEDS_LIMIT = 4;
-	@Deprecated
-	public static final int DFU_STATUS_CRC_ERROR = 5;
-	@Deprecated
-	public static final int DFU_STATUS_OPERATION_FAILED = 6;
 
 	/**
 	 * Lock used in synchronization purposes
