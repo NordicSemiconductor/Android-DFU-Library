@@ -527,7 +527,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 * This is to make the Dfu module independent from logging tool.
 	 *
 	 * The log levels below are equal to log levels in nRF Logger API library, v 2.0.
-	 * @see https://github.com/NordicSemiconductor/nRF-Logger-API
+	 * @see https://github.com/NordicPlayground/nRF-Logger-API
 	 */
 	/**
 	 * Level used just for debugging purposes. It has lowest level
