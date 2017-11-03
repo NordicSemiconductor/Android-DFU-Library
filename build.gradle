@@ -6,7 +6,7 @@ buildscript {
         google()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.0.0-rc2'
+        classpath 'com.android.tools.build:gradle:3.0.0'
         /*
         classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3"
         // The following dependency has been replaced with newer version according to https://github.com/dcendents/android-maven-plugin
