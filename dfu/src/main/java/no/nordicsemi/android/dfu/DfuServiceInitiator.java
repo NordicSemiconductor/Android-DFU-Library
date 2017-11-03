@@ -200,7 +200,7 @@ public class DfuServiceInitiator {
 	 * @return the builder
 	 */
 	public DfuServiceInitiator setScope(final int scope) {
-		if (DfuBaseService.MIME_TYPE_ZIP.equals(mimeType))
+		if (!DfuBaseService.MIME_TYPE_ZIP.equals(mimeType))
 			throw new UnsupportedOperationException("Scope can be set only for a ZIP file");
 		if (scope == SCOPE_APPLICATION)
 			fileType = DfuBaseService.TYPE_APPLICATION;
