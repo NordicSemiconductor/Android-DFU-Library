@@ -743,7 +743,10 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 						mDfuServiceImpl.getGattCallback().onDisconnected();
 				}
 			} else {
-				loge("Connection state change error: " + status + " newState: " + newState);
+				if (status == 0x08 /* GATT CONN TIMEOUT */ || status == 0x13 /* GATT CONN TERMINATE PEER USER */)
+					logw("Target device disconnected with status: " + status);
+				else
+					loge("Connection state change error: " + status + " newState: " + newState);
 				if (newState == BluetoothGatt.STATE_DISCONNECTED) {
 					mConnectionState = STATE_DISCONNECTED;
 					if (mDfuServiceImpl != null)
@@ -827,6 +830,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	public void onCreate() {
 		super.onCreate();
 
+		Log.i(TAG, "DFU version: " + BuildConfig.VERSION_NAME);
 		DEBUG = isDebug();
 		initialize();
 
@@ -984,7 +988,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 							initIs = new ByteArrayInputStream(zhis.getSystemInit());
 					}
 				}
-				sendLogBroadcast(LOG_LEVEL_INFO, "Image file opened (" + imageSizeInBytes + " bytes in total)");
+				sendLogBroadcast(LOG_LEVEL_INFO, "Firmware file opened (" + imageSizeInBytes + " bytes in total)");
 			} catch (final SecurityException e) {
 				loge("A security exception occurred while opening file", e);
 				sendLogBroadcast(LOG_LEVEL_ERROR, "Opening file failed: Permission required");
@@ -1042,8 +1046,13 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 				return;
 			}
 			if (mConnectionState == STATE_DISCONNECTED) {
-				loge("Device got disconnected before service discovery finished");
-				sendLogBroadcast(LOG_LEVEL_INFO, "Disconnected");
+				if (mError == (ERROR_CONNECTION_STATE_MASK | 133)) {
+					loge("Device not reachable. Check if the device with address " + deviceAddress + " is in range, is advertising and is connectable");
+					sendLogBroadcast(LOG_LEVEL_ERROR, "Error 133: Connection timeout");
+				} else {
+					loge("Device got disconnected before service discovery finished");
+					sendLogBroadcast(LOG_LEVEL_ERROR, "Disconnected");
+				}
 				terminateConnection(gatt, ERROR_DEVICE_DISCONNECTED);
 				return;
 			}

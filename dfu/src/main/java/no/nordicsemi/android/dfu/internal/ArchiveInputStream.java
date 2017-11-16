@@ -23,10 +23,12 @@
 package no.nordicsemi.android.dfu.internal;
 
 import android.support.annotation.NonNull;
+import android.util.Log;
 
 import com.google.gson.Gson;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -49,6 +51,8 @@ import no.nordicsemi.android.dfu.internal.manifest.SoftDeviceBootloaderFileInfo;
  * <p>The ArchiveInputStream will read only files with types specified by <b>types</b> parameter of the constructor.</p>
  */
 public class ArchiveInputStream extends ZipInputStream {
+	private static final String TAG = "DfuArchiveInputStream";
+
 	/** The name of the manifest file is fixed. */
 	private static final String MANIFEST = "manifest.json";
 	// Those file names are for backwards compatibility mode
@@ -269,6 +273,11 @@ public class ArchiveInputStream extends ZipInputStream {
 		while ((ze = getNextEntry()) != null) {
 			final String filename = ze.getName();
 
+			if (ze.isDirectory()) {
+				Log.w(TAG, "A directory found in the ZIP: " + filename + "!");
+				continue;
+			}
+
 			// Read file content to byte array
 			final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			int count;
@@ -292,9 +301,21 @@ public class ArchiveInputStream extends ZipInputStream {
 				entries.put(filename, source);
 		}
 
+		// Some validation
+		if (entries.isEmpty()) {
+			throw new FileNotFoundException("No files found in the ZIP. Check if the URI provided is valid and the ZIP contains required files on root level, not in a directory.");
+		}
+
 		if (manifestData != null) {
 			final ManifestFile manifestFile = new Gson().fromJson(manifestData, ManifestFile.class);
 			manifest = manifestFile.getManifest();
+			if (manifest == null) {
+				Log.w(TAG, "Manifest failed to be parsed. Did you add \n" +
+						"-keep class no.nordicsemi.android.dfu.** { *; }\n" +
+						"to your proguard rules?");
+			}
+		} else {
+			Log.w(TAG, "Manifest not found in the ZIP. It is recommended to use a distribution file created with: https://github.com/NordicSemiconductor/pc-nrfutil/ (for Legacy DFU use version 0.5.x)");
 		}
 	}
 
