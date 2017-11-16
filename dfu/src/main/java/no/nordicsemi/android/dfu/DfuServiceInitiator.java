@@ -53,7 +53,8 @@ public class DfuServiceInitiator {
 	private final String deviceAddress;
 	private String deviceName;
 
-	private boolean disableNotification;
+	private boolean disableNotification = false;
+	private boolean startAsForegroundService = true;
 
 	private Uri fileUri;
 	private String filePath;
@@ -108,6 +109,19 @@ public class DfuServiceInitiator {
 	 */
 	public DfuServiceInitiator setDisableNotification(final boolean disableNotification) {
 		this.disableNotification = disableNotification;
+		return this;
+	}
+
+	/**
+	 * Sets whether the DFU service should be started as a foreground service. By default it's <i>true</i>.
+	 * According to <a href="https://developer.android.com/about/versions/oreo/background.html>https://developer.android.com/about/versions/oreo/background.html</a>
+	 * the background service may be killed by the system on Android Oreo after user quits the application
+	 * so it is recommended to keep it as a foreground service (default) at least on Android Oreo+.
+	 * @param foreground whether the service should be started in foreground state.
+	 * @return the builder
+	 */
+	public DfuServiceInitiator setForeground(final boolean foreground) {
+		this.startAsForegroundService = foreground;
 		return this;
 	}
 
@@ -493,6 +507,7 @@ public class DfuServiceInitiator {
 		intent.putExtra(DfuBaseService.EXTRA_DEVICE_ADDRESS, deviceAddress);
 		intent.putExtra(DfuBaseService.EXTRA_DEVICE_NAME, deviceName);
 		intent.putExtra(DfuBaseService.EXTRA_DISABLE_NOTIFICATION, disableNotification);
+		intent.putExtra(DfuBaseService.EXTRA_FOREGROUND_SERVICE, startAsForegroundService);
 		intent.putExtra(DfuBaseService.EXTRA_FILE_MIME_TYPE, mimeType);
 		intent.putExtra(DfuBaseService.EXTRA_FILE_TYPE, fileType);
 		intent.putExtra(DfuBaseService.EXTRA_FILE_URI, fileUri);
@@ -525,7 +540,7 @@ public class DfuServiceInitiator {
 		if (buttonlessDfuWithBondSharingUuids != null)
 			intent.putExtra(DfuBaseService.EXTRA_CUSTOM_UUIDS_FOR_BUTTONLESS_DFU_WITH_BOND_SHARING, buttonlessDfuWithBondSharingUuids);
 
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && startAsForegroundService) {
 			// On Android Oreo and above the service must be started as a foreground service to make it accessible from
 			// a killed application.
 			context.startForegroundService(intent);

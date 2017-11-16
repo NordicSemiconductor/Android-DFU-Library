@@ -42,6 +42,7 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.Build;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
@@ -109,6 +110,13 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 * A boolean indicating whether to disable the progress notification in the status bar. Defaults to false.
 	 */
 	public static final String EXTRA_DISABLE_NOTIFICATION = "no.nordicsemi.android.dfu.extra.EXTRA_DISABLE_NOTIFICATION";
+	/**
+	 * A boolean indicating whether the DFU service should be set as a foreground service. It is recommended to have it
+	 * as a background service at least on Android Oreo or newer as the background service will be killed by the system
+	 * few moments after the user closed the foreground app.
+	 * <p>Read more here: <a href="https://developer.android.com/about/versions/oreo/background.html">https://developer.android.com/about/versions/oreo/background.html</a></p>
+	 */
+	public static final String EXTRA_FOREGROUND_SERVICE = "no.nordicsemi.android.dfu.extra.EXTRA_FOREGROUND_SERVICE";
 	/** An extra private field indicating which attempt is being performed. In case of error 133 the service will retry to connect one more time. */
 	private static final String EXTRA_ATTEMPT = "no.nordicsemi.android.dfu.extra.EXTRA_ATTEMPT";
 	/**
@@ -879,6 +887,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		final String deviceAddress = intent.getStringExtra(EXTRA_DEVICE_ADDRESS);
 		final String deviceName = intent.getStringExtra(EXTRA_DEVICE_NAME);
 		final boolean disableNotification = intent.getBooleanExtra(EXTRA_DISABLE_NOTIFICATION, false);
+		final boolean foregroundService = intent.getBooleanExtra(EXTRA_FOREGROUND_SERVICE, true);
 		final String filePath = intent.getStringExtra(EXTRA_FILE_PATH);
 		final Uri fileUri = intent.getParcelableExtra(EXTRA_FILE_URI);
 		final int fileResId = intent.getIntExtra(EXTRA_FILE_RES_ID, 0);
@@ -904,7 +913,10 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 			report(ERROR_FILE_TYPE_UNSUPPORTED);
 			return;
 		}
-
+		if (!disableNotification && getNotificationTarget() == null) {
+			// This would eventually crash later...
+			throw new NullPointerException("getNotificationTarget() must not return null if notifications are enabled");
+		}
 		UuidHelper.assignCustomUuids(intent);
 
 		mDeviceAddress = deviceAddress;
@@ -926,7 +938,9 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 			mbrSize = DfuSettingsConstants.SETTINGS_DEFAULT_MBR_SIZE;
 		}
 
-		startForeground();
+		if (foregroundService) {
+			startForeground();
+		}
 		sendLogBroadcast(LOG_LEVEL_VERBOSE, "DFU service started");
 
 		/*
@@ -1156,7 +1170,11 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 			} catch (final IOException e) {
 				// do nothing
 			}
-			stopForeground(false);
+			if (foregroundService) {
+				// This will stop foreground state and, if the progress notifications were disabled
+				// it will also remove the notification indicating foreground service.
+				stopForeground(disableNotification);
+			}
 		}
 	}
 
@@ -1403,23 +1421,27 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		final String deviceAddress = mDeviceAddress;
 		final String deviceName = mDeviceName != null ? mDeviceName : getString(R.string.dfu_unknown_name);
 
-		final NotificationCompat.Builder builder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_DFU).setSmallIcon(android.R.drawable.stat_sys_upload).setOnlyAlertOnce(true);//.setLargeIcon(largeIcon);
+		final NotificationCompat.Builder builder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_DFU)
+				.setSmallIcon(android.R.drawable.stat_sys_upload).setOnlyAlertOnce(true);//.setLargeIcon(largeIcon);
 		// Android 5
 		builder.setColor(Color.GRAY);
 
 		switch (progress) {
 			case PROGRESS_CONNECTING:
-				builder.setOngoing(true).setContentTitle(getString(R.string.dfu_status_connecting)).setContentText(getString(R.string.dfu_status_connecting_msg, deviceName)).setProgress(100, 0, true);
+				builder.setOngoing(true).setContentTitle(getString(R.string.dfu_status_connecting)).setContentText(getString(R.string.dfu_status_connecting_msg, deviceName))
+						.setProgress(100, 0, true);
 				break;
 			case PROGRESS_STARTING:
-				builder.setOngoing(true).setContentTitle(getString(R.string.dfu_status_starting)).setContentText(getString(R.string.dfu_status_starting_msg)).setProgress(100, 0, true);
+				builder.setOngoing(true).setContentTitle(getString(R.string.dfu_status_starting)).setContentText(getString(R.string.dfu_status_starting_msg))
+						.setProgress(100, 0, true);
 				break;
 			case PROGRESS_ENABLING_DFU_MODE:
 				builder.setOngoing(true).setContentTitle(getString(R.string.dfu_status_switching_to_dfu)).setContentText(getString(R.string.dfu_status_switching_to_dfu_msg))
 						.setProgress(100, 0, true);
 				break;
 			case PROGRESS_VALIDATING:
-				builder.setOngoing(true).setContentTitle(getString(R.string.dfu_status_validating)).setContentText(getString(R.string.dfu_status_validating_msg)).setProgress(100, 0, true);
+				builder.setOngoing(true).setContentTitle(getString(R.string.dfu_status_validating)).setContentText(getString(R.string.dfu_status_validating_msg))
+						.setProgress(100, 0, true);
 				break;
 			case PROGRESS_DISCONNECTING:
 				builder.setOngoing(true).setContentTitle(getString(R.string.dfu_status_disconnecting)).setContentText(getString(R.string.dfu_status_disconnecting_msg, deviceName))
@@ -1434,10 +1456,12 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 						.setContentText(getString(R.string.dfu_status_aborted_msg)).setAutoCancel(true);
 				break;
 			default:
-					// progress is in percents
-					final String title = info.getTotalParts() == 1 ? getString(R.string.dfu_status_uploading) : getString(R.string.dfu_status_uploading_part, info.getCurrentPart(), info.getTotalParts());
-					final String text = getString(R.string.dfu_status_uploading_msg, deviceName);
-					builder.setOngoing(true).setContentTitle(title).setContentText(text).setProgress(100, progress, false);
+				// progress is in percents
+				final String title = info.getTotalParts() == 1 ? getString(R.string.dfu_status_uploading) : getString(R.string.dfu_status_uploading_part, info.getCurrentPart(), info.getTotalParts());
+				final String text = getString(R.string.dfu_status_uploading_msg, deviceName);
+				builder.setOngoing(true).setContentTitle(title).setContentText(text)
+						.setProgress(100, progress, false);
+				break;
 		}
 
 		// update the notification
@@ -1449,6 +1473,18 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		final PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 		builder.setContentIntent(pendingIntent);
 
+		// Any additional configuration?
+		updateProgressNotification(builder, progress);
+
+		final NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+		manager.notify(NOTIFICATION_ID, builder.build());
+	}
+
+	/**
+	 * This method allows you to update the notification showing the upload progress.
+	 * @param builder notification builder
+	 */
+	protected void updateProgressNotification(final NotificationCompat.Builder builder, final int progress) {
 		// Add Abort action to the notification
 		if (progress != PROGRESS_ABORTED && progress != PROGRESS_COMPLETED) {
 			final Intent abortIntent = new Intent(BROADCAST_ACTION);
@@ -1456,9 +1492,6 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 			final PendingIntent pendingAbortIntent = PendingIntent.getBroadcast(this, 1, abortIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 			builder.addAction(R.drawable.ic_action_notify_cancel, getString(R.string.dfu_action_abort), pendingAbortIntent);
 		}
-
-		final NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-		manager.notify(NOTIFICATION_ID, builder.build());
 	}
 
 	/**
@@ -1495,37 +1528,78 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		final PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 		builder.setContentIntent(pendingIntent);
 
+		// Any additional configuration?
+		updateErrorNotification(builder);
+
 		final NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 		manager.notify(NOTIFICATION_ID, builder.build());
+	}
+
+	/**
+	 * This method allows you to update the notification showing an error.
+	 * @param builder error notification builder
+	 */
+	protected void updateErrorNotification(final NotificationCompat.Builder builder) {
+		// Empty default implementation
 	}
 
 	private void startForeground() {
 		final NotificationCompat.Builder builder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_DFU)
 				.setSmallIcon(android.R.drawable.stat_sys_upload)
-				.setContentTitle(getString(R.string.dfu_status_initializing)).setContentText(getString(R.string.dfu_status_starting_msg))
+				.setContentTitle(getString(R.string.dfu_status_foreground_title)).setContentText(getString(R.string.dfu_status_foreground_content))
 				.setColor(Color.GRAY)
+				.setPriority(NotificationCompat.PRIORITY_LOW)
 				.setOngoing(true);
-		// update the notification
-		final Intent targetIntent = new Intent(this, getNotificationTarget());
-		targetIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-		targetIntent.putExtra(EXTRA_DEVICE_ADDRESS, mDeviceAddress);
-		targetIntent.putExtra(EXTRA_DEVICE_NAME, mDeviceName);
-		final PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, targetIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-		builder.setContentIntent(pendingIntent);
+
+		// Update the notification
+		final Class<? extends Activity> clazz = getNotificationTarget();
+		if (clazz != null) {
+			final Intent targetIntent = new Intent(this, clazz);
+			targetIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+			targetIntent.putExtra(EXTRA_DEVICE_ADDRESS, mDeviceAddress);
+			targetIntent.putExtra(EXTRA_DEVICE_NAME, mDeviceName);
+			final PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, targetIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+			builder.setContentIntent(pendingIntent);
+		} else {
+			logw("getNotificationTarget() should not return null if the service is to be started as a foreground service");
+			// otherwise the notification will not be clickable.
+		}
+
+		// Any additional configuration?
+		updateForegroundNotification(builder);
 
 		startForeground(NOTIFICATION_ID, builder.build());
 	}
 
 	/**
-	 * This method must return the activity class that will be used to create the pending intent used as a content intent in the notification showing the upload progress.
-	 * The activity will be launched when user click the notification. DfuService will add {@link android.content.Intent#FLAG_ACTIVITY_NEW_TASK} flag and the following extras:
+	 * This method allows you to update the notification that will be shown when the service goes to the foreground state.
+	 * @param builder foreground notification builder
+	 */
+	protected void updateForegroundNotification(final NotificationCompat.Builder builder) {
+		// Empty default implementation
+	}
+
+	/**
+	 * This method must return the activity class that will be used to create the pending intent
+	 * used as a content intent in the notification showing the upload progress
+	 * or service foreground state. The activity will be launched when user click the notification.
+	 * DfuService will add {@link android.content.Intent#FLAG_ACTIVITY_NEW_TASK} flag and the following extras:
 	 * <ul>
 	 * <li>{@link #EXTRA_DEVICE_ADDRESS} - target device address</li>
 	 * <li>{@link #EXTRA_DEVICE_NAME} - target device name</li>
-	 * <li>{@link #EXTRA_PROGRESS} - the connection state (values &lt; 0)*, current progress (0-100) or error number if {@link #ERROR_MASK} bit set.</li>
+	 * <li>{@link #EXTRA_PROGRESS} - the connection state (values &lt; 0)*, current progress (0-100)
+	 * 		or error number if {@link #ERROR_MASK} bit set.</li>
 	 * </ul>
-	 * If your application disabled DFU notifications by calling {@link DfuServiceInitiator#setDisableNotification(boolean)} with parameter true this method will never be called
-	 * and may return null.<br>
+	 * <p>
+	 *     The {@link #EXTRA_PROGRESS} is not set when a notification indicating a foreground service
+	 *     was clicked and notifications were disabled using {@link DfuServiceInitiator#setDisableNotification(boolean)}.
+	 * </p>
+	 * <p>
+	 *     If your application disabled DFU notifications by calling
+	 * {@link DfuServiceInitiator#setDisableNotification(boolean)} with parameter <code>true</code> this method
+	 * will still be called if the service was started as foreground service. To disable foreground service
+	 * call {@link DfuServiceInitiator#setForeground(boolean)} with parameter <code>false</code>.
+	 * </p>
 	 * _______________________________<br>
 	 * * - connection state constants:
 	 * <ul>

@@ -4,6 +4,8 @@
     
     <string name="dfu_action_abort">Abort</string>
 
+    <string name="dfu_status_foreground_title">Device Firmware Update</string>
+    <string name="dfu_status_foreground_content">Update in progress…</string>
     <string name="dfu_status_initializing">Initializing&#8230;</string>
     <string name="dfu_status_connecting">Connecting&#8230;</string>
     <string name="dfu_status_starting">Starting DFU&#8230;</string>
