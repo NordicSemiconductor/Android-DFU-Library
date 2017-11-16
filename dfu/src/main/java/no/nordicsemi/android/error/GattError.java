@@ -109,6 +109,8 @@ public class GattError {
 				return "GATT CONN LMP TIMEOUT";
 			case 0x003A:
 				return "GATT CONTROLLER BUSY";
+			case 0x003B:
+				return "GATT UNACCEPT CONN INTERVAL";
 			case 0x0087:
 				return "GATT ILLEGAL PARAMETER";
 			case 0x0080:
