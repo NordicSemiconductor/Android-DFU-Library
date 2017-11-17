@@ -77,6 +77,7 @@ public class ArchiveInputStream extends ZipInputStream {
 	private byte[] systemInitBytes;
 	private byte[] applicationInitBytes;
 	private byte[] currentSource;
+	private int type;
 	private int bytesReadFromCurrentSource;
 	private int softDeviceSize;
 	private int bootloaderSize;
@@ -251,6 +252,7 @@ public class ArchiveInputStream extends ZipInputStream {
 			}
 			mark(0);
 		} finally {
+			type = getContentType();
 			super.close();
 		}
 	}
@@ -372,9 +374,6 @@ public class ArchiveInputStream extends ZipInputStream {
 
 	@Override
 	public void reset() throws IOException {
-		if (applicationBytes != null && (softDeviceBytes != null || bootloaderBytes != null || softDeviceAndBootloaderBytes != null))
-			throw new UnsupportedOperationException("Application must be sent in a separate connection.");
-
 		currentSource = markedSource;
 		bytesRead = bytesReadFromCurrentSource = bytesReadFromMarkedSource;
 
@@ -409,7 +408,7 @@ public class ArchiveInputStream extends ZipInputStream {
 	 *         TYPE_APPLICATION}
 	 */
 	public int getContentType() {
-		byte type = 0;
+		type = 0;
 		// In Secure DFU the softDeviceSize and bootloaderSize may be 0 if both are in the ZIP file. The size of each part is embedded in the Init packet.
 		if (softDeviceAndBootloaderBytes != null)
 			type |= DfuBaseService.TYPE_SOFT_DEVICE | DfuBaseService.TYPE_BOOTLOADER;
@@ -431,33 +430,40 @@ public class ArchiveInputStream extends ZipInputStream {
 	 * @return the final type after truncating
 	 */
 	public int setContentType(final int type) {
-		if (bytesRead > 0)
-			throw new UnsupportedOperationException("Content type must not be change after reading content");
+		this.type = type;
+		// If the new type has Application, but there is no application fw, remove this type bit
+		if ((type & DfuBaseService.TYPE_APPLICATION) > 0 && applicationBytes == null)
+			this.type &= ~DfuBaseService.TYPE_APPLICATION;
+		// If the new type has SD+BL
+		if ((type & (DfuBaseService.TYPE_SOFT_DEVICE | DfuBaseService.TYPE_BOOTLOADER)) == (DfuBaseService.TYPE_SOFT_DEVICE | DfuBaseService.TYPE_BOOTLOADER)) {
+			// but there is no SD, remove the softdevice type bit
+			if (softDeviceBytes == null && softDeviceAndBootloaderBytes == null)
+				this.type &= ~DfuBaseService.TYPE_SOFT_DEVICE;
+			// or there is no BL, remove the bootloader type bit
+			if (bootloaderBytes == null && softDeviceAndBootloaderBytes == null)
+				this.type &= ~DfuBaseService.TYPE_SOFT_DEVICE;
+		} else {
+			// If at least one of SD or B: bit is cleared, but the SD+BL file is set, remove both bits.
+			if (softDeviceAndBootloaderBytes != null)
+				this.type &= ~(DfuBaseService.TYPE_SOFT_DEVICE | DfuBaseService.TYPE_BOOTLOADER);
+		}
 
-		final int t = getContentType() & type;
-
-		if ((t & DfuBaseService.TYPE_SOFT_DEVICE) == 0) {
-			softDeviceBytes = null;
-			if (softDeviceAndBootloaderBytes != null) {
-				softDeviceAndBootloaderBytes = null;
-				bootloaderSize = 0;
-			}
-			softDeviceSize = 0;
+		if ((type & (DfuBaseService.TYPE_SOFT_DEVICE | DfuBaseService.TYPE_BOOTLOADER)) > 0 && softDeviceAndBootloaderBytes != null)
+			currentSource = softDeviceAndBootloaderBytes;
+		else if ((type & DfuBaseService.TYPE_SOFT_DEVICE) > 0)
+			currentSource = softDeviceBytes;
+		else if ((type & DfuBaseService.TYPE_BOOTLOADER) > 0)
+			currentSource = bootloaderBytes;
+		else if ((type & DfuBaseService.TYPE_APPLICATION) > 0)
+			currentSource = applicationBytes;
+		bytesReadFromCurrentSource = 0;
+		try {
+			mark(0);
+			reset();
+		} catch (final IOException e) {
+			// not available
 		}
-		if ((t & DfuBaseService.TYPE_BOOTLOADER) == 0) {
-			bootloaderBytes = null;
-			if (softDeviceAndBootloaderBytes != null) {
-				softDeviceAndBootloaderBytes = null;
-				softDeviceSize = 0;
-			}
-			bootloaderSize = 0;
-		}
-		if ((t & DfuBaseService.TYPE_APPLICATION) == 0) {
-			applicationBytes = null;
-			applicationSize = 0;
-		}
-		mark(0);
-		return t;
+		return this.type;
 	}
 
 	/**
@@ -467,9 +473,9 @@ public class ArchiveInputStream extends ZipInputStream {
 	 */
 	private byte[] startNextFile() {
 		byte[] ret;
-		if (currentSource == softDeviceBytes && bootloaderBytes != null) {
+		if (currentSource == softDeviceBytes && bootloaderBytes != null && (type & DfuBaseService.TYPE_BOOTLOADER) > 0) {
 			ret = currentSource = bootloaderBytes;
-		} else if (currentSource != applicationBytes && applicationBytes != null) {
+		} else if (currentSource != applicationBytes && applicationBytes != null && (type & DfuBaseService.TYPE_APPLICATION) > 0) {
 			ret = currentSource = applicationBytes;
 		} else {
 			ret = currentSource = null;
@@ -488,11 +494,12 @@ public class ArchiveInputStream extends ZipInputStream {
 		// This method then is just used to log file size.
 
 		// In case of SD+BL in Secure DFU:
-		if (softDeviceAndBootloaderBytes != null && softDeviceSize == 0 && bootloaderSize == 0)
-			return softDeviceAndBootloaderBytes.length + applicationSize - bytesRead;
+		if (softDeviceAndBootloaderBytes != null && softDeviceSize == 0 && bootloaderSize == 0
+				&& (type & (DfuBaseService.TYPE_SOFT_DEVICE | DfuBaseService.TYPE_BOOTLOADER)) > 0)
+			return softDeviceAndBootloaderBytes.length + applicationImageSize() - bytesRead;
 
 		// Otherwise:
-		return softDeviceSize + bootloaderSize + applicationSize - bytesRead;
+		return softDeviceImageSize() + bootloaderImageSize() + applicationImageSize() - bytesRead;
 	}
 
 	/**
@@ -500,7 +507,7 @@ public class ArchiveInputStream extends ZipInputStream {
 	 * @return the size of the SoftDevice firmware (BIN part)
 	 */
 	public int softDeviceImageSize() {
-		return softDeviceSize;
+		return (type & DfuBaseService.TYPE_SOFT_DEVICE) > 0 ? softDeviceSize : 0;
 	}
 
 	/**
@@ -508,7 +515,7 @@ public class ArchiveInputStream extends ZipInputStream {
 	 * @return the size of the Bootloader firmware (BIN part)
 	 */
 	public int bootloaderImageSize() {
-		return bootloaderSize;
+		return (type & DfuBaseService.TYPE_BOOTLOADER) > 0 ? bootloaderSize : 0;
 	}
 
 	/**
@@ -516,7 +523,7 @@ public class ArchiveInputStream extends ZipInputStream {
 	 * @return the size of the Application firmware (BIN part)
 	 */
 	public int applicationImageSize() {
-		return applicationSize;
+		return (type & DfuBaseService.TYPE_APPLICATION) > 0 ? applicationSize : 0;
 	}
 
 	/**

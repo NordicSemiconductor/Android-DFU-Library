@@ -622,6 +622,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	private boolean mAborted;
 
 	private DfuCallback mDfuServiceImpl;
+	private InputStream mFirmwareInputStream, mInitFileInputStream;
 
 	private final BroadcastReceiver mDfuActionReceiver = new BroadcastReceiver() {
 		@Override
@@ -879,6 +880,20 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		unregisterReceiver(mDfuActionReceiver);
 		unregisterReceiver(mConnectionStateBroadcastReceiver);
 		unregisterReceiver(mBondStateBroadcastReceiver);
+
+		try {
+			// Ensure that input stream is always closed
+			if (mFirmwareInputStream != null)
+				mFirmwareInputStream.close();
+			if (mInitFileInputStream != null)
+				mInitFileInputStream.close();
+		} catch (final IOException e) {
+			// do nothing
+		} finally {
+			mFirmwareInputStream = null;
+			mInitFileInputStream = null;
+		}
+		logi("DFU service destroyed");
 	}
 
 	@Override
@@ -946,53 +961,65 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		/*
 		 * First the service is trying to read the firmware and init packet files.
 		 */
-		InputStream is = null;
-		InputStream initIs = null;
-		int imageSizeInBytes;
+		InputStream is = mFirmwareInputStream;
+		InputStream initIs = mInitFileInputStream;
 		try {
+			final boolean firstRun = mFirmwareInputStream == null;
+
 			// Prepare data to send, calculate stream size
 			try {
-				sendLogBroadcast(LOG_LEVEL_VERBOSE, "Opening file...");
-				if (fileUri != null) {
-					is = openInputStream(fileUri, mimeType, mbrSize, fileType);
-				} else if (filePath != null) {
-					is = openInputStream(filePath, mimeType, mbrSize, fileType);
-				} else if (fileResId > 0) {
-					is = openInputStream(fileResId, mimeType, mbrSize, fileType);
+				if (firstRun) {
+					// The files are opened only once, when DFU service is first started.
+					// In case the service needs to be restarted (for example a buttonless service
+					// was found or to send Application in the second connection) the input stream
+					// is kept as a global service field. This is to avoid SecurityException
+					// when the URI was granted with one-time read permission.
+					// See: Intent#FLAG_GRANT_READ_URI_PERMISSION (https://developer.android.com/reference/android/content/Intent.html#FLAG_GRANT_READ_URI_PERMISSION).
+					sendLogBroadcast(LOG_LEVEL_VERBOSE, "Opening file...");
+					if (fileUri != null) {
+						is = openInputStream(fileUri, mimeType, mbrSize, fileType);
+					} else if (filePath != null) {
+						is = openInputStream(filePath, mimeType, mbrSize, fileType);
+					} else if (fileResId > 0) {
+						is = openInputStream(fileResId, mimeType, mbrSize, fileType);
+					}
+
+					// The Init file Input Stream is kept global only in case it was provided
+					// as an argument (separate file for HEX/BIN and DAT files).
+					// If a ZIP file was given with DAT file(s) inside it will be taken from the ZIP
+					// ~20 lines below.
+					if (initFileUri != null) {
+						// Try to read the Init Packet file from URI
+						initIs = getContentResolver().openInputStream(initFileUri);
+					} else if (initFilePath != null) {
+						// Try to read the Init Packet file from path
+						initIs = new FileInputStream(initFilePath);
+					} else if (initFileResId > 0) {
+						// Try to read the Init Packet file from given resource
+						initIs = getResources().openRawResource(initFileResId);
+					}
+
+					final int imageSizeInBytes = is.available();
+					if ((imageSizeInBytes % 4) != 0)
+						throw new SizeValidationException("The new firmware is not word-aligned.");
 				}
-
-				if (initFileUri != null) {
-					// Try to read the Init Packet file from URI
-					initIs = getContentResolver().openInputStream(initFileUri);
-				} else if (initFilePath != null) {
-					// Try to read the Init Packet file from path
-					initIs = new FileInputStream(initFilePath);
-				} else if (initFileResId > 0) {
-					// Try to read the Init Packet file from given resource
-					initIs = getResources().openRawResource(initFileResId);
-				}
-
-				imageSizeInBytes = is.available();
-
-                if ((imageSizeInBytes % 4) != 0)
-                    throw new SizeValidationException("The new firmware is not word-aligned.");
 
 				// Update the file type bit field basing on the ZIP content
-				if (fileType == TYPE_AUTO && MIME_TYPE_ZIP.equals(mimeType)) {
-					final ArchiveInputStream zhis = (ArchiveInputStream) is;
-					fileType = zhis.getContentType();
-				}
-				// Set the Init packet stream in case of a ZIP file
 				if (MIME_TYPE_ZIP.equals(mimeType)) {
 					final ArchiveInputStream zhis = (ArchiveInputStream) is;
+					if (fileType == TYPE_AUTO) {
+						fileType = zhis.getContentType();
+					} else {
+						fileType = zhis.setContentType(fileType);
+					}
 
-                    // Validate sizes
-                    if ((fileType & TYPE_APPLICATION) > 0 && (zhis.applicationImageSize() % 4) != 0)
-                        throw new SizeValidationException("Application firmware is not word-aligned.");
-                    if ((fileType & TYPE_BOOTLOADER) > 0 && (zhis.bootloaderImageSize() % 4) != 0)
-                        throw new SizeValidationException("Bootloader firmware is not word-aligned.");
-                    if ((fileType & TYPE_SOFT_DEVICE) > 0 && (zhis.softDeviceImageSize() % 4) != 0)
-                        throw new SizeValidationException("Soft Device firmware is not word-aligned.");
+					// Validate sizes
+					if ((fileType & TYPE_APPLICATION) > 0 && (zhis.applicationImageSize() % 4) != 0)
+						throw new SizeValidationException("Application firmware is not word-aligned.");
+					if ((fileType & TYPE_BOOTLOADER) > 0 && (zhis.bootloaderImageSize() % 4) != 0)
+						throw new SizeValidationException("Bootloader firmware is not word-aligned.");
+					if ((fileType & TYPE_SOFT_DEVICE) > 0 && (zhis.softDeviceImageSize() % 4) != 0)
+						throw new SizeValidationException("Soft Device firmware is not word-aligned.");
 
 					if (fileType == TYPE_APPLICATION) {
 						if (zhis.getApplicationInit() != null)
@@ -1002,7 +1029,9 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 							initIs = new ByteArrayInputStream(zhis.getSystemInit());
 					}
 				}
-				sendLogBroadcast(LOG_LEVEL_INFO, "Firmware file opened (" + imageSizeInBytes + " bytes in total)");
+				mFirmwareInputStream = is;
+				mInitFileInputStream = initIs;
+				sendLogBroadcast(LOG_LEVEL_INFO, "Firmware file opened successfully");
 			} catch (final SecurityException e) {
 				loge("A security exception occurred while opening file", e);
 				sendLogBroadcast(LOG_LEVEL_ERROR, "Opening file failed: Permission required");
@@ -1013,11 +1042,11 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 				sendLogBroadcast(LOG_LEVEL_ERROR, "Opening file failed: File not found");
 				report(ERROR_FILE_NOT_FOUND);
 				return;
-            } catch (final SizeValidationException e) {
-                loge("Firmware not word-aligned", e);
+			} catch (final SizeValidationException e) {
+				loge("Firmware not word-aligned", e);
 				sendLogBroadcast(LOG_LEVEL_ERROR, "Opening file failed: Firmware size must be word-aligned");
-                report(ERROR_FILE_SIZE_INVALID);
-                return;
+				report(ERROR_FILE_SIZE_INVALID);
+				return;
 			} catch (final IOException e) {
 				loge("An exception occurred while calculating file size", e);
 				sendLogBroadcast(LOG_LEVEL_ERROR, "Opening file failed: " + e.getLocalizedMessage());
@@ -1030,10 +1059,12 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 				return;
 			}
 
-			// Wait a second... If we were connected before it's good to give some time before we start reconnecting.
-			waitFor(1000);
-			// Looks like a second is not enough. The ACL_DISCONNECTED broadcast sometimes comes later (on Android 7.0)
-			waitFor(1000);
+			if (!firstRun) {
+				// Wait a second... If we were connected before it's good to give some time before we start reconnecting.
+				waitFor(1000);
+				// Looks like a second is not enough. The ACL_DISCONNECTED broadcast sometimes comes later (on Android 7.0)
+				waitFor(1000);
+			}
 
 			mProgressInfo = new DfuProgressInfo(this);
 
@@ -1163,13 +1194,6 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 				}
 			}
 		} finally {
-			try {
-				// Ensure that input stream is always closed
-				if (is != null)
-					is.close();
-			} catch (final IOException e) {
-				// do nothing
-			}
 			if (foregroundService) {
 				// This will stop foreground state and, if the progress notifications were disabled
 				// it will also remove the notification indicating foreground service.
