@@ -563,7 +563,7 @@ import no.nordicsemi.android.error.SecureDfuError;
 					}
 					// Execute Init packet
 					logi("Executing data object (Op Code = 4)");
-					writeExecute();
+					writeExecute(mProgressInfo.isComplete());
 					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Data object executed");
 
 					// Increment iterator
@@ -598,7 +598,7 @@ import no.nordicsemi.android.error.SecureDfuError;
 		} else {
 			// Looks as if the whole file was sent correctly but has not been executed
 			logi("Executing data object (Op Code = 4)");
-			writeExecute();
+			writeExecute(true);
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Data object executed");
 		}
 
@@ -809,6 +809,45 @@ import no.nordicsemi.android.error.SecureDfuError;
 			throw new RemoteDfuExtendedErrorException("Executing object failed", response[3]);
 		if (status != DFU_STATUS_SUCCESS)
 			throw new RemoteDfuException("Executing object failed", status);
+	}
+
+	/**
+	 * After the whole firmware image was sent, the last command Execute will cause erasing memory
+	 * and flashing the new firmware. This may result in INVALID_OBJECT error in 2 cases:
+	 * <ol>
+	 *     <li>The SoftDevice (which is responsible for allowing writing) was busy and the bootloader
+	 *         tried to erase the memory N times without a success. Then we can resend the Execute here.</li>
+	 *     <li>The firmware sent contained only SoftDevice (no Bootloader) and the Major version has
+	 *         changed comparing to the previous one. The old bootloader would not work with this new SD
+	 *         so such update is forbidden as it would brick the device.</li>
+	 * </ol>
+	 * See: <a href="https://github.com/NordicSemiconductor/Android-DFU-Library/issues/86">https://github.com/NordicSemiconductor/Android-DFU-Library/issues/86</a>
+	 * @param allowRetry if true service will retry to send the execute command in case of INVALID_OBJECT error.
+	 * @throws DfuException
+	 * @throws DeviceDisconnectedException
+	 * @throws UploadAbortedException
+	 * @throws UnknownResponseException
+	 * @throws RemoteDfuException thrown when the returned status code is not equal to {@link #DFU_STATUS_SUCCESS}
+	 */
+	private void writeExecute(final boolean allowRetry) throws DfuException, DeviceDisconnectedException, UploadAbortedException, UnknownResponseException, RemoteDfuException {
+		try {
+			writeExecute();
+		} catch (final RemoteDfuException e) {
+			if (allowRetry && e.getErrorNumber() == SecureDfuError.INVALID_OBJECT) {
+				logw(e.getMessage() + ": " + SecureDfuError.parse(DfuBaseService.ERROR_REMOTE_TYPE_SECURE | SecureDfuError.INVALID_OBJECT));
+				if (mFileType == DfuBaseService.TYPE_SOFT_DEVICE) {
+					logw("Are you sure your new SoftDevice is API compatible with the updated one? If not, update the bootloader as well");
+					// API compatible = both SoftDevices have the same Major version
+				}
+				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, String.format("Remote DFU error: %s. SD busy? Retrying...",
+						SecureDfuError.parse(DfuBaseService.ERROR_REMOTE_TYPE_SECURE | SecureDfuError.INVALID_OBJECT)));
+				logi("SD busy? Retrying...");
+				logi("Executing data object (Op Code = 4)");
+				writeExecute();
+			} else {
+				throw e;
+			}
+		}
 	}
 
 	private class ObjectInfo extends ObjectChecksum {
