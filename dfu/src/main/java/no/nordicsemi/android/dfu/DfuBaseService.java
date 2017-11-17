@@ -839,8 +839,8 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	public void onCreate() {
 		super.onCreate();
 
-		Log.i(TAG, "DFU version: " + BuildConfig.VERSION_NAME);
 		DEBUG = isDebug();
+		logi("DFU service created. Version: " + BuildConfig.VERSION_NAME);
 		initialize();
 
 		final LocalBroadcastManager manager = LocalBroadcastManager.getInstance(this);
@@ -931,6 +931,10 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		if (!disableNotification && getNotificationTarget() == null) {
 			// This would eventually crash later...
 			throw new NullPointerException("getNotificationTarget() must not return null if notifications are enabled");
+		}
+		if (!foregroundService && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+			logw("Foreground service disabled. Android Oreo or newer may kill a background service few moments after user closes the application.\n" +
+					"Consider enabling foreground service using DfuServiceInitiator#setForeground(boolean)");
 		}
 		UuidHelper.assignCustomUuids(intent);
 
