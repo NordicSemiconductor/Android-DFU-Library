@@ -205,7 +205,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	public static final String EXTRA_PACKET_RECEIPT_NOTIFICATIONS_ENABLED = "no.nordicsemi.android.dfu.extra.EXTRA_PRN_ENABLED";
 	/**
 	 * This property must contain a positive integer value, usually from range 1-200.
-	 * <p>The default value is {@value DfuServiceInitiator#DEFAULT_PRN_VALUE}. Setting it to 0 will disable the Packet Receipt Notification procedure.
+	 * <p>The default value is {@link DfuServiceInitiator#DEFAULT_PRN_VALUE}. Setting it to 0 will disable the Packet Receipt Notification procedure.
 	 * When sending a firmware using the DFU procedure the service will send this number of packets before waiting for a notification.
 	 * Packet Receipt Notifications are used to synchronize the sender with receiver.
 	 * <p>On Android, calling {@link android.bluetooth.BluetoothGatt#writeCharacteristic(BluetoothGattCharacteristic)}
