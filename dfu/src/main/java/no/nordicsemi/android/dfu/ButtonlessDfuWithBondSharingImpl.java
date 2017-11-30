@@ -66,6 +66,10 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 			mService.terminateConnection(mGatt, DfuBaseService.ERROR_DEVICE_NOT_BONDED);
 			return;
 		}
+		// In Secure DFU with Bond Sharing the bond information should not be removed
+		intent.putExtra(DfuBaseService.EXTRA_KEEP_BOND, true);
+		intent.putExtra(DfuBaseService.EXTRA_RESTORE_BOND, false);
+
 		super.performDfu(intent);
 	}
 }

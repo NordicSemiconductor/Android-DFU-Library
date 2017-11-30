@@ -132,6 +132,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 * <p>
 	 * Search for occurrences of EXTRA_RESTORE_BOND in this file to check the implementation and get more details.
 	 * </p>
+	 * <p>This flag is ignored when Secure DFU Buttonless Service is used. It will keep or will not restore the bond depending on the Buttonless service type.</p>
 	 */
 	public static final String EXTRA_RESTORE_BOND = "no.nordicsemi.android.dfu.extra.EXTRA_RESTORE_BOND";
 	/**
@@ -146,7 +147,9 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 * service will remove the bond information from the phone and force to refresh the device cache (see {@link #refreshDeviceCache(android.bluetooth.BluetoothGatt, boolean)}).</p>
 	 *
 	 * <p>In contrast to {@link #EXTRA_RESTORE_BOND} this flag will not remove the old bonding and recreate a new one, but will keep the bond information untouched.</p>
-	 * <p>The default value of this flag is <code>false</code></p>
+	 * <p>The default value of this flag is <code>false</code>.</p>
+	 *
+	 * <p>This flag is ignored when Secure DFU Buttonless Service is used. It will keep or remove the bond depending on the Buttonless service type.</p>
 	 */
 	public static final String EXTRA_KEEP_BOND = "no.nordicsemi.android.dfu.extra.EXTRA_KEEP_BOND";
 	/**

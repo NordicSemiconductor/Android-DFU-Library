@@ -69,6 +69,10 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	@Override
 	public void performDfu(final Intent intent) throws DfuException, DeviceDisconnectedException, UploadAbortedException {
 		logi("Buttonless service without bond sharing found -> SDK 13 or newer");
+		if (isBonded()) {
+			logw("Device is paired! Use Buttonless DFU with Bond Sharing instead (SDK 14 or newer)");
+		}
+
 		super.performDfu(intent);
 	}
 }
