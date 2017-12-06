@@ -1112,11 +1112,11 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 				if ((mError & ERROR_CONNECTION_STATE_MASK) > 0) {
 					final int error = mError & ~ERROR_CONNECTION_STATE_MASK;
 					loge("An error occurred while connecting to the device:" + error);
-					sendLogBroadcast(LOG_LEVEL_ERROR, String.format("Connection failed (0x%02X): %s", error, GattError.parseConnectionError(error)));
+					sendLogBroadcast(LOG_LEVEL_ERROR, String.format(Locale.US, "Connection failed (0x%02X): %s", error, GattError.parseConnectionError(error)));
 				} else {
 					final int error = mError & ~ERROR_CONNECTION_MASK;
 					loge("An error occurred during discovering services:" + error);
-					sendLogBroadcast(LOG_LEVEL_ERROR, String.format("Connection failed (0x%02X): %s", error, GattError.parse(error)));
+					sendLogBroadcast(LOG_LEVEL_ERROR, String.format(Locale.US, "Connection failed (0x%02X): %s", error, GattError.parse(error)));
 				}
 				// Connection usually fails due to a 133 error (device unreachable, or.. something else went wrong).
 				// Usually trying the same for the second time works.
@@ -1188,10 +1188,10 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 				// Connection state errors and other Bluetooth GATT callbacks share the same error numbers. Therefore we are using bit masks to identify the type.
 				if ((error & ERROR_CONNECTION_STATE_MASK) > 0) {
 					error &= ~ERROR_CONNECTION_STATE_MASK;
-					sendLogBroadcast(LOG_LEVEL_ERROR, String.format("Error (0x%02X): %s", error, GattError.parseConnectionError(error)));
+					sendLogBroadcast(LOG_LEVEL_ERROR, String.format(Locale.US, "Error (0x%02X): %s", error, GattError.parseConnectionError(error)));
 				} else {
 					error &= ~ERROR_CONNECTION_MASK;
-					sendLogBroadcast(LOG_LEVEL_ERROR, String.format("Error (0x%02X): %s", error, GattError.parse(error)));
+					sendLogBroadcast(LOG_LEVEL_ERROR, String.format(Locale.US, "Error (0x%02X): %s", error, GattError.parse(error)));
 				}
 				loge(e.getMessage());
 				terminateConnection(gatt, e.getErrorNumber() /* we return the whole error number, including the error type mask */);

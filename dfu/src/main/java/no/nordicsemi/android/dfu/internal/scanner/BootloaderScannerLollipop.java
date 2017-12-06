@@ -30,6 +30,8 @@ import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.os.Build;
 
+import java.util.Locale;
+
 /**
  * @see BootloaderScanner
  */
@@ -45,7 +47,7 @@ public class BootloaderScannerLollipop extends ScanCallback implements Bootloade
 	public String searchFor(final String deviceAddress) {
 		final String firstBytes = deviceAddress.substring(0, 15);
 		final String lastByte = deviceAddress.substring(15); // assuming that the device address is correct
-		final String lastByteIncremented = String.format("%02X", (Integer.valueOf(lastByte, 16) + ADDRESS_DIFF) & 0xFF);
+		final String lastByteIncremented = String.format(Locale.US, "%02X", (Integer.valueOf(lastByte, 16) + ADDRESS_DIFF) & 0xFF);
 
 		mDeviceAddress = deviceAddress;
 		mDeviceAddressIncremented = firstBytes + lastByteIncremented;

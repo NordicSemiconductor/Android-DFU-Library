@@ -29,6 +29,7 @@ import android.content.IntentFilter;
 import android.support.v4.content.LocalBroadcastManager;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import no.nordicsemi.android.dfu.internal.scanner.BootloaderScanner;
@@ -368,7 +369,7 @@ public class DfuServiceListenerHelper {
 	private static String getIncrementedAddress(final String deviceAddress) {
 		final String firstBytes = deviceAddress.substring(0, 15);
 		final String lastByte = deviceAddress.substring(15); // assuming that the device address is correct
-		final String lastByteIncremented = String.format("%02X", (Integer.valueOf(lastByte, 16) + BootloaderScanner.ADDRESS_DIFF) & 0xFF);
+		final String lastByteIncremented = String.format(Locale.US, "%02X", (Integer.valueOf(lastByte, 16) + BootloaderScanner.ADDRESS_DIFF) & 0xFF);
 		return firstBytes + lastByteIncremented;
 	}
 }

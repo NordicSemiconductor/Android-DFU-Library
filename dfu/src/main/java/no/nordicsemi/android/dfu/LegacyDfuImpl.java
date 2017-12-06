@@ -28,6 +28,7 @@ import android.bluetooth.BluetoothGattService;
 import android.content.Intent;
 import android.os.SystemClock;
 
+import java.util.Locale;
 import java.util.UUID;
 
 import no.nordicsemi.android.dfu.internal.ArchiveInputStream;
@@ -532,7 +533,7 @@ import no.nordicsemi.android.error.LegacyDfuError;
 		} catch (final RemoteDfuException e) {
 			final int error = DfuBaseService.ERROR_REMOTE_TYPE_LEGACY | e.getErrorNumber();
 			loge(e.getMessage() + ": " + LegacyDfuError.parse(error));
-			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, String.format("Remote DFU error: %s", LegacyDfuError.parse(error)));
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, String.format(Locale.US, "Remote DFU error: %s", LegacyDfuError.parse(error)));
 
 			logi("Sending Reset command (Op Code = 6)");
 			writeOpCode(mControlPointCharacteristic, OP_CODE_RESET);

@@ -4,6 +4,8 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.content.Intent;
 
+import java.util.Locale;
+
 import no.nordicsemi.android.dfu.internal.exception.DeviceDisconnectedException;
 import no.nordicsemi.android.dfu.internal.exception.DfuException;
 import no.nordicsemi.android.dfu.internal.exception.RemoteDfuException;
@@ -128,7 +130,7 @@ import no.nordicsemi.android.error.SecureDfuError;
 		} catch (final RemoteDfuException e) {
 			final int error = DfuBaseService.ERROR_REMOTE_TYPE_SECURE_BUTTONLESS | e.getErrorNumber();
 			loge(e.getMessage());
-			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, String.format("Remote DFU error: %s", SecureDfuError.parseButtonlessError(error)));
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, String.format(Locale.US, "Remote DFU error: %s", SecureDfuError.parseButtonlessError(error)));
 			mService.terminateConnection(gatt, error | DfuBaseService.ERROR_REMOTE_MASK);
 		}
 	}

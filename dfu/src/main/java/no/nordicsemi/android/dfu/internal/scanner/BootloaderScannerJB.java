@@ -25,6 +25,8 @@ package no.nordicsemi.android.dfu.internal.scanner;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 
+import java.util.Locale;
+
 /**
  * @see BootloaderScanner
  */
@@ -40,7 +42,7 @@ public class BootloaderScannerJB implements BootloaderScanner, BluetoothAdapter.
 	public String searchFor(final String deviceAddress) {
 		final String firstBytes = deviceAddress.substring(0, 15);
 		final String lastByte = deviceAddress.substring(15); // assuming that the device address is correct
-		final String lastByteIncremented = String.format("%02X", (Integer.valueOf(lastByte, 16) + ADDRESS_DIFF) & 0xFF);
+		final String lastByteIncremented = String.format(Locale.US, "%02X", (Integer.valueOf(lastByte, 16) + ADDRESS_DIFF) & 0xFF);
 
 		mDeviceAddress = deviceAddress;
 		mDeviceAddressIncremented = firstBytes + lastByteIncremented;

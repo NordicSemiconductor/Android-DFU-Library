@@ -238,7 +238,7 @@ import no.nordicsemi.android.error.SecureDfuError;
 		} catch (final RemoteDfuException e) {
 			final int error = DfuBaseService.ERROR_REMOTE_TYPE_SECURE | e.getErrorNumber();
 			loge(e.getMessage() + ": " + SecureDfuError.parse(error));
-			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, String.format("Remote DFU error: %s", SecureDfuError.parse(error)));
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, String.format(Locale.US, "Remote DFU error: %s", SecureDfuError.parse(error)));
 
 			// For the Extended Error more details can be obtained on some devices.
 			if (e instanceof RemoteDfuExtendedErrorException) {
@@ -839,7 +839,7 @@ import no.nordicsemi.android.error.SecureDfuError;
 					logw("Are you sure your new SoftDevice is API compatible with the updated one? If not, update the bootloader as well");
 					// API compatible = both SoftDevices have the same Major version
 				}
-				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, String.format("Remote DFU error: %s. SD busy? Retrying...",
+				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, String.format(Locale.US, "Remote DFU error: %s. SD busy? Retrying...",
 						SecureDfuError.parse(DfuBaseService.ERROR_REMOTE_TYPE_SECURE | SecureDfuError.INVALID_OBJECT)));
 				logi("SD busy? Retrying...");
 				logi("Executing data object (Op Code = 4)");
