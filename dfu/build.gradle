@@ -41,7 +41,6 @@ ext {
 
 android {
     compileSdkVersion 27
-    buildToolsVersion '26.0.2'
 
     defaultConfig {
         minSdkVersion 18
@@ -49,6 +48,7 @@ android {
         versionCode 19
         versionName "1.6.1"
     }
+
     buildTypes {
         release {
             minifyEnabled false
@@ -58,7 +58,6 @@ android {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.android.support:support-core-utils:27.0.2'
     compile 'com.google.code.gson:gson:2.8.0'
 }
