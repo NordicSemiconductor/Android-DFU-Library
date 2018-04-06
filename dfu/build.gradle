@@ -58,8 +58,8 @@ android {
 }
 
 dependencies {
-    compile 'com.android.support:support-core-utils:27.0.2'
-    compile 'com.google.code.gson:gson:2.8.0'
+    implementation 'com.android.support:support-core-utils:27.1.1'
+    implementation 'com.google.code.gson:gson:2.8.0'
 }
 /*
 
