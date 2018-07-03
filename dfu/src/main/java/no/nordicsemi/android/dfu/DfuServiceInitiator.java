@@ -42,6 +42,7 @@ import java.util.UUID;
  * Starting the DfuService service requires a knowledge of some EXTRA_* constants used to pass parameters to the service.
  * The DfuServiceInitiator class may be used to make this process easier. It provides simple API that covers all low lever operations.
  */
+@SuppressWarnings({"WeakerAccess", "unused"})
 public class DfuServiceInitiator {
 	public static final int DEFAULT_PRN_VALUE = 12;
 
@@ -74,6 +75,8 @@ public class DfuServiceInitiator {
 
 	private Boolean packetReceiptNotificationsEnabled;
 	private int numberOfPackets = 12;
+
+	private int mtu = 517;
 
 	private Parcelable[] legacyDfuUuids;
 	private Parcelable[] secureDfuUuids;
@@ -210,6 +213,41 @@ public class DfuServiceInitiator {
 	 */
 	public DfuServiceInitiator setForceDfu(final boolean force) {
 		this.forceDfu = force;
+		return this;
+	}
+
+	/**
+	 * Sets the Maximum Transfer Unit (MTU) value that the Secure DFU service will try to request
+	 * before performing DFU. By default, value 517 will be used, which is the highest supported
+	 * by Android. However, as the highest supported MTU by the Secure DFU from SDK 15
+	 * (first which supports higher MTU) is 247, the sides will agree on using MTU = 247 instead
+	 * if the phone supports it (Lollipop or newer device).
+	 * <p>
+	 * The higher the MTU, the faster the data may be sent.
+	 * <p>
+	 * If you encounter problems with high MTU, you may lower the required value using this method.
+	 * See: https://github.com/NordicSemiconductor/Android-DFU-Library/issues/111
+	 * <p>
+	 * To disable requesting MTU, use value 0, or {@link #disableMtuRequest()}.
+	 * <p>
+	 * Note: Higher (that is greater then 23) MTUs are supported on Lollipop or newer Android
+	 * devices, and on DFU bootloader from SDK 15 or newer (Secure DFU only).
+	 *
+	 * @param mtu the MTU that wil be requested, 0 to disable MTU request.
+	 * @return the builder
+	 */
+	public DfuServiceInitiator setMtu(final int mtu) {
+		this.mtu = mtu;
+		return this;
+	}
+
+	/**
+	 * Disables MTU request.
+	 * @return the builder
+	 * @see #setMtu(int)
+	 */
+	public DfuServiceInitiator disableMtuRequest() {
+		this.mtu = 0;
 		return this;
 	}
 
@@ -527,6 +565,8 @@ public class DfuServiceInitiator {
 		intent.putExtra(DfuBaseService.EXTRA_KEEP_BOND, keepBond);
 		intent.putExtra(DfuBaseService.EXTRA_RESTORE_BOND, restoreBond);
 		intent.putExtra(DfuBaseService.EXTRA_FORCE_DFU, forceDfu);
+		if (mtu > 0)
+			intent.putExtra(DfuBaseService.EXTRA_MTU, mtu);
 		intent.putExtra(DfuBaseService.EXTRA_UNSAFE_EXPERIMENTAL_BUTTONLESS_DFU, enableUnsafeExperimentalButtonlessDfu);
 		if (packetReceiptNotificationsEnabled != null) {
 			intent.putExtra(DfuBaseService.EXTRA_PACKET_RECEIPT_NOTIFICATIONS_ENABLED, packetReceiptNotificationsEnabled);

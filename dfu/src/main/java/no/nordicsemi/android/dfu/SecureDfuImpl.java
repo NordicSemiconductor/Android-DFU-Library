@@ -198,11 +198,12 @@ import no.nordicsemi.android.error.SecureDfuError;
 
 		final BluetoothGatt gatt = mGatt;
 
-		// Secure DFU since SDK 14.1 supports higher MTUs. Let's request maximum one supported by Android,
-		// the maximum one supported by the target will be used.
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-			logi("Requesting MTU = 517");
-			requestMtu(517);
+		// Secure DFU since SDK 15 supports higher MTUs.
+		// Let's request the MTU requested by the user. It may be that a lower MTU will be used.
+		if (intent.hasExtra(DfuBaseService.EXTRA_MTU) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+			final int requiredMtu = intent.getIntExtra(DfuBaseService.EXTRA_MTU, 517);
+			logi("Requesting MTU = " + requiredMtu);
+			requestMtu(requiredMtu);
 		}
 
 		try {

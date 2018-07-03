@@ -164,6 +164,12 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 */
 	public static final String EXTRA_FORCE_DFU = "no.nordicsemi.android.dfu.extra.EXTRA_FORCE_DFU";
 	/**
+	 * This extra allows you to control the MTU that will be requested (on Lollipop or newer devices).
+	 * If the field is null, the service will not request higher MTU and will use MTU = 23
+	 * (even if it has been set to a higher value before).
+	 */
+	public static final String EXTRA_MTU = "no.nordicsemi.android.dfu.extra.EXTRA_MTU";
+	/**
 	 * Set this flag to true to enable experimental buttonless feature in Secure DFU. When the
 	 * experimental Buttonless DFU Service is found on a device, the service will use it to
 	 * switch the device to the bootloader mode, connect to it in that mode and proceed with DFU.
