@@ -67,28 +67,28 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 import no.nordicsemi.android.error.GattError;
 
 /**
- * The DFU Service provides full support for Over-the-Air (OTA) Device Firmware Update (DFU) by Nordic Semiconductor.
- * With the Soft Device 7.0.0+ it allows to upload a new Soft Device, new Bootloader and a new Application. For older soft devices only the Application update is supported.
+ * The DFU Service provides full support for Over-the-Air (OTA) Device Firmware Update (DFU)
+ * by Nordic Semiconductor.
+ * With the Soft Device 7.0.0+ it allows to upload a new Soft Device, new Bootloader and a
+ * new Application. For older soft devices only the Application update is supported.
  * <p>
- * To run the service to your application extend it in your project and overwrite the missing method. Remember to add your service class to the AndroidManifest.xml file.
- * </p>
+ * To run the service to your application extend it in your project and overwrite the missing method.
+ * Remember to add your service class to the AndroidManifest.xml file.
  * <p>
  * The {@link DfuServiceInitiator} object should be used to start the DFU Service.
- * </p>
  * <pre>
  * final DfuServiceInitiator starter = new DfuServiceInitiator(mSelectedDevice.getAddress())
  * 		.setDeviceName(mSelectedDevice.getName())
  * 		.setKeepBond(keepBond)
- * 		.setZip(mFileStreamUri, mFilePath)
+ * 		.setZip(mFileStreamUri, mFilePath) // where one, URI or path, should be null
  *		.start(this, DfuService.class);
  * </pre>
  * <p>
- *     You may register the progress and log listeners using the {@link DfuServiceListenerHelper} helper class. See {@link DfuProgressListener} and {@link DfuLogListener} for
- *     more information.
- * </p>
+ * You may register the progress and log listeners using the {@link DfuServiceListenerHelper}
+ * helper class. See {@link DfuProgressListener} and {@link DfuLogListener} for more information.
  * <p>
- * The service will show its progress on the notification bar and will send local broadcasts to the application.
- * </p>
+ * The service will show its progress on the notification bar and will send local broadcasts to the
+ * application.
  */
 public abstract class DfuBaseService extends IntentService implements DfuProgressInfo.ProgressListener {
 	private static final String TAG = "DfuBaseService";
