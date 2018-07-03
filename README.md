@@ -53,7 +53,7 @@ The library is compatible with nRF51 and nRF52 devices with S-Series Soft Device
 * **SDK 12.0.0** - New Secure DFU has been released. Buttonless service is experimental.
 * **SDK 13.0.0** - Buttonless DFU (still experimental) uses different UUIDs. No bond sharing supported. Bootloader will use address +1.
 * **SDK 14.0.0** - Buttonless DFU is no longer experimental. A new UUID (0004) added for bonded only devices (previous one (0003) is for non-bonded only).
-* **SDK 15.0.0** - Support for higher MTUs added (planned, may be postponed).
+* **SDK 15.0.0** - Support for higher MTUs added.
 
 This library is fully backwards compatible and supports both the new and legacy DFU.
 The experimental buttonless DFU service from SDK 12 is supported since version 1.1.0. Due to the fact, that this experimental service from SDK 12 is not safe,
