@@ -826,6 +826,13 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 			if (mDfuServiceImpl != null)
 				mDfuServiceImpl.getGattCallback().onMtuChanged(gatt, mtu, status);
 		}
+
+		@SuppressLint("NewApi")
+		@Override
+		public void onPhyUpdate(final BluetoothGatt gatt, final int txPhy, final int rxPhy, final int status) {
+			if (mDfuServiceImpl != null)
+				mDfuServiceImpl.getGattCallback().onPhyUpdate(gatt, txPhy, rxPhy, status);
+		}
 	};
 
 	public DfuBaseService() {

@@ -168,12 +168,22 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "MTU changed to: " + mtu);
 				if (mtu - 3 > mBuffer.length)
 					mBuffer = new byte[mtu - 3]; // Maximum payload size is MTU - 3 bytes
-				logw("MTU changed to: " + mtu);
+				logi("MTU changed to: " + mtu);
 			} else {
 				logw("Changing MTU failed: " + status + " (mtu: " + mtu + ")");
 			}
 			mRequestCompleted = true;
 			notifyLock();
+		}
+
+		@Override
+		public void onPhyUpdate(final BluetoothGatt gatt, final int txPhy, final int rxPhy, final int status) {
+			if (status ==  BluetoothGatt.GATT_SUCCESS) {
+				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "PHY updated (TX: " + phyToString(txPhy) + ", RX: " + phyToString(rxPhy) + ")");
+				logi("PHY updated (TX: " + phyToString(txPhy) + ", RX: " + phyToString(rxPhy) + ")");
+			} else {
+				logw("Updating PHY failed: " + status + " (txPhy: " + txPhy + ", rxPhy: " + rxPhy + ")");
+			}
 		}
 
 		protected String parse(final BluetoothGattCharacteristic characteristic) {
@@ -200,6 +210,19 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 					out[j * 3 + 2] = '-';
 			}
 			return new String(out);
+		}
+
+		private String phyToString(final int phy) {
+			switch (phy) {
+				case BluetoothDevice.PHY_LE_1M:
+					return "LE 1M";
+				case BluetoothDevice.PHY_LE_2M:
+					return "LE 2M";
+				case BluetoothDevice.PHY_LE_CODED:
+					return "LE Coded";
+				default:
+					return "UNKNOWN (" + phy + ")";
+			}
 		}
 	}
 
@@ -651,7 +674,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 	 * Restarts the service based on the given intent. If parameter set this method will also scan for
 	 * an advertising bootloader that has address equal or incremented by 1 to the current one.
 	 * @param intent the intent to be started as a service
- 	 * @param scanForBootloader true to scan for advertising bootloader, false to keep the same address
+	 * @param scanForBootloader true to scan for advertising bootloader, false to keep the same address
 	 */
 	protected void restartService(final Intent intent, final boolean scanForBootloader) {
 		String newAddress = null;
