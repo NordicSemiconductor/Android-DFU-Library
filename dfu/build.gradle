@@ -8,14 +8,14 @@ apply plugin: 'com.android.library'
  *
  * A newer then described version of maven plugin dependency is required (see project's gradle.build).
  */
-
-/*apply plugin: 'com.github.dcendents.android-maven'
+/*
+apply plugin: 'com.github.dcendents.android-maven'
 apply plugin: 'com.jfrog.bintray'
 
 ext {
     PUBLISH_GROUP_ID = 'no.nordicsemi.android'
     PUBLISH_ARTIFACT_ID = 'dfu'
-    PUBLISH_VERSION = '1.6.1'
+    PUBLISH_VERSION = '1.7.0'
 
     bintrayRepo = 'android'
     bintrayName = 'dfu-library'
@@ -37,16 +37,16 @@ ext {
     licenseName = 'The BSD 3-Clause License'
     licenseUrl = 'http://opensource.org/licenses/BSD-3-Clause'
     allLicenses = ["BSD 3-Clause"]
-}*/
-
+}
+*/
 android {
     compileSdkVersion 27
 
     defaultConfig {
         minSdkVersion 18
         targetSdkVersion 27
-        versionCode 19
-        versionName "1.6.1"
+        versionCode 20
+        versionName "1.7.0"
     }
 
     buildTypes {
@@ -59,7 +59,7 @@ android {
 
 dependencies {
     implementation 'com.android.support:support-core-utils:27.1.1'
-    implementation 'com.google.code.gson:gson:2.8.0'
+    implementation 'com.google.code.gson:gson:2.8.2'
 }
 /*
 
@@ -112,4 +112,5 @@ if (JavaVersion.current().isJava8Compatible()) {
             options.addStringOption('Xdoclint:none', '-quiet')
         }
     }
-}*/
+}
+*/
