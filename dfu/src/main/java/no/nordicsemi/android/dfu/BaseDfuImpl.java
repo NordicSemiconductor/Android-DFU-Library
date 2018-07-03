@@ -289,9 +289,11 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 		//       not work by default on iOS with buttonless update on SDKs < 8 on bonded devices. The bootloader must be modified to
 		//       always send the indication when connected.
 
-		// The requirement of enabling Service Changed indications manually has been fixed on Android 6.
-		// Now the Android enables Service Changed indications automatically after bonding.
-		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M && gatt.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
+		// <strike>The requirement of enabling Service Changed indications manually has been fixed on Android 6.
+		// Now the Android enables Service Changed indications automatically after bonding.</strike>
+		// This no longer works in Android 8 and 8.1:
+		// issue: https://github.com/NordicSemiconductor/Android-DFU-Library/issues/112
+		if (gatt.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
 			final BluetoothGattService genericAttributeService = gatt.getService(GENERIC_ATTRIBUTE_SERVICE_UUID);
 			if (genericAttributeService != null) {
 				final BluetoothGattCharacteristic serviceChangedCharacteristic = genericAttributeService.getCharacteristic(SERVICE_CHANGED_UUID);
