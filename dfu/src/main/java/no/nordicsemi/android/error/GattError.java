@@ -105,8 +105,14 @@ public class GattError {
 				return "GATT UNSUPPORT GRP TYPE";
 			case 0x0011:
 				return "GATT INSUF RESOURCE";
+			case 0x001A:
+				return "HCI ERROR UNSUPPORTED REMOTE FEATURE";
+			case 0x001E:
+				return "HCI ERROR INVALID LMP PARAM";
 			case 0x0022:
 				return "GATT CONN LMP TIMEOUT";
+			case 0x002A:
+				return "HCI ERROR DIFF TRANSACTION COLLISION";
 			case 0x003A:
 				return "GATT CONTROLLER BUSY";
 			case 0x003B:
