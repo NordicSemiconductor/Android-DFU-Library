@@ -890,6 +890,9 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	public void onDestroy() {
 		super.onDestroy();
 
+		if (mDfuServiceImpl != null)
+			mDfuServiceImpl.abort();
+
 		final LocalBroadcastManager manager = LocalBroadcastManager.getInstance(this);
 		manager.unregisterReceiver(mDfuActionReceiver);
 
