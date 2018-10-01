@@ -32,6 +32,7 @@ import android.support.v4.content.LocalBroadcastManager;
  * will work for all DFU processes, but the {@link #isPaused()} and {@link #isAborted()} methods may report incorrect values.</p>
  * <p>Added in DFU Library version 1.0.2.</p>
  */
+@SuppressWarnings({"WeakerAccess", "unused"})
 public class DfuServiceController implements DfuController {
 	private LocalBroadcastManager mBroadcastManager;
 	private boolean mPaused;

@@ -44,6 +44,7 @@ import no.nordicsemi.android.error.GattError;
  * <p>Use {@link #registerProgressListener(Context, DfuProgressListener)} or {@link #registerLogListener(Context, DfuLogListener)} to register your listeners. Remember about unregistering them
  * when your context is destroyed.</p>
  */
+@SuppressWarnings({"WeakerAccess", "unused"})
 public class DfuServiceListenerHelper {
 	private static LogBroadcastReceiver mLogBroadcastReceiver;
 	private static ProgressBroadcastsReceiver mProgressBroadcastReceiver;
