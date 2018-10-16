@@ -80,7 +80,7 @@ public final class SecureDfuError {
 			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | EXT_ERROR_SIGNATURE_MISSING :	return "Signature mismatch";
 			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | EXT_ERROR_WRONG_HASH_TYPE:		return "Wrong hash type";
 			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | EXT_ERROR_HASH_FAILED:			return "Hash failed";
-			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | EXT_ERROR_WRONG_SIGNATURE_TYPE: return "Wring signature type";
+			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | EXT_ERROR_WRONG_SIGNATURE_TYPE: return "Wrong signature type";
 			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | EXT_ERROR_VERIFICATION_FAILED:	return "Verification failed";
 			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | EXT_ERROR_INSUFFICIENT_SPACE:	return "Insufficient space";
 			default:
