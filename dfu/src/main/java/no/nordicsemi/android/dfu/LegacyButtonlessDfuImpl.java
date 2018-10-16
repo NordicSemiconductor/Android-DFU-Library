@@ -58,9 +58,10 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		final BluetoothGattService dfuService = gatt.getService(DFU_SERVICE_UUID);
 		if (dfuService == null)
 			return false;
-		mControlPointCharacteristic = dfuService.getCharacteristic(DFU_CONTROL_POINT_UUID);
-		if (mControlPointCharacteristic == null)
+		final BluetoothGattCharacteristic characteristic = dfuService.getCharacteristic(DFU_CONTROL_POINT_UUID);
+		if (characteristic == null || characteristic.getDescriptor(CLIENT_CHARACTERISTIC_CONFIG) == null)
 			return false;
+		mControlPointCharacteristic = characteristic;
 
 		mProgressInfo.setProgress(DfuBaseService.PROGRESS_STARTING);
 

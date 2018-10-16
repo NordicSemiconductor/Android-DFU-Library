@@ -148,9 +148,12 @@ import no.nordicsemi.android.error.SecureDfuError;
 		final BluetoothGattService dfuService = gatt.getService(DFU_SERVICE_UUID);
 		if (dfuService == null)
 			return false;
-		mControlPointCharacteristic = dfuService.getCharacteristic(DFU_CONTROL_POINT_UUID);
+		final BluetoothGattCharacteristic characteristic = dfuService.getCharacteristic(DFU_CONTROL_POINT_UUID);
+		if (characteristic == null || characteristic.getDescriptor(CLIENT_CHARACTERISTIC_CONFIG) == null)
+			return false;
+		mControlPointCharacteristic = characteristic;
 		mPacketCharacteristic = dfuService.getCharacteristic(DFU_PACKET_UUID);
-		return mControlPointCharacteristic != null && mPacketCharacteristic != null;
+		return mPacketCharacteristic != null;
 	}
 
 	@Override

@@ -59,8 +59,11 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		final BluetoothGattService dfuService = gatt.getService(EXPERIMENTAL_BUTTONLESS_DFU_SERVICE_UUID);
 		if (dfuService == null)
 			return false;
-		mButtonlessDfuCharacteristic = dfuService.getCharacteristic(EXPERIMENTAL_BUTTONLESS_DFU_UUID);
-		return mButtonlessDfuCharacteristic != null;
+		final BluetoothGattCharacteristic characteristic = dfuService.getCharacteristic(EXPERIMENTAL_BUTTONLESS_DFU_UUID);
+		if (characteristic == null || characteristic.getDescriptor(CLIENT_CHARACTERISTIC_CONFIG) == null)
+			return false;
+		mButtonlessDfuCharacteristic = characteristic;
+		return true;
 	}
 
 	@Override
