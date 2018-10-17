@@ -45,7 +45,9 @@ import no.nordicsemi.android.dfu.internal.exception.UnknownResponseException;
 import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 import no.nordicsemi.android.error.SecureDfuError;
 
-/* package */ class SecureDfuImpl extends BaseCustomDfuImpl {
+/* package */
+@SuppressWarnings("JavaDoc")
+class SecureDfuImpl extends BaseCustomDfuImpl {
 	// UUIDs used by the DFU
 	protected static final UUID DEFAULT_DFU_SERVICE_UUID       = new UUID(0x0000FE5900001000L, 0x800000805F9B34FBL); // 16-bit UUID assigned by Bluetooth SIG
 	protected static final UUID DEFAULT_DFU_CONTROL_POINT_UUID = new UUID(0x8EC90001F3154F60L, 0x9FB8838830DAEA50L);
