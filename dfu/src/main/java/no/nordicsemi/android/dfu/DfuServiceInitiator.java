@@ -25,6 +25,8 @@ package no.nordicsemi.android.dfu;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -78,6 +80,7 @@ public class DfuServiceInitiator {
 	private int numberOfPackets = 12;
 
 	private int mtu = 517;
+	private int currentMtu = 23;
 
 	private Parcelable[] legacyDfuUuids;
 	private Parcelable[] secureDfuUuids;
@@ -253,6 +256,28 @@ public class DfuServiceInitiator {
 	 */
 	public DfuServiceInitiator setMtu(final int mtu) {
 		this.mtu = mtu;
+		return this;
+	}
+
+	/**
+	 * Sets the current MTU value. This method should be used only if the device is already
+	 * connected and MTU has been requested before DFU service is started.
+	 * The SoftDevice allows to change MTU only once, while the following requests fail with
+	 * Invalid PDU error. In case this error is received, the MTU will be set to the value
+	 * specified using this method. There is no verification of this value. If it's set to
+	 * too high value, some of the packets will not be sent and DFU will not succeed.
+	 * <p>
+	 * By default value 23 is used for compatibility reasons.
+	 * <p>
+	 * Higher MTU values were supported since SDK 15.0.
+	 *
+	 * @param mtu the MTU value received in
+	 *            {@link android.bluetooth.BluetoothGattCallback#onMtuChanged(BluetoothGatt, int, int)} or
+	 *            {@link android.bluetooth.BluetoothGattServerCallback#onMtuChanged(BluetoothDevice, int)}.
+	 * @return the builder
+	 */
+	public DfuServiceInitiator setCurrentMtu(final int mtu) {
+		this.currentMtu = mtu;
 		return this;
 	}
 
@@ -623,6 +648,7 @@ public class DfuServiceInitiator {
 		intent.putExtra(DfuBaseService.EXTRA_FORCE_DFU, forceDfu);
 		if (mtu > 0)
 			intent.putExtra(DfuBaseService.EXTRA_MTU, mtu);
+		intent.putExtra(DfuBaseService.EXTRA_CURRENT_MTU, currentMtu);
 		intent.putExtra(DfuBaseService.EXTRA_UNSAFE_EXPERIMENTAL_BUTTONLESS_DFU, enableUnsafeExperimentalButtonlessDfu);
 		if (packetReceiptNotificationsEnabled != null) {
 			intent.putExtra(DfuBaseService.EXTRA_PACKET_RECEIPT_NOTIFICATIONS_ENABLED, packetReceiptNotificationsEnabled);

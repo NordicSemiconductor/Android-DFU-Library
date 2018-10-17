@@ -95,6 +95,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 	protected DfuProgressInfo mProgressInfo;
 	protected int mImageSizeInBytes;
 	protected int mInitPacketSizeInBytes;
+	private int mCurrentMtu;
 
 	protected class BaseBluetoothGattCallback extends DfuGattCallback {
 		// The Implementation object is created depending on device services, so after the device is connected and services were scanned.
@@ -171,6 +172,10 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 				logi("MTU changed to: " + mtu);
 			} else {
 				logw("Changing MTU failed: " + status + " (mtu: " + mtu + ")");
+				if (status == 4 /* Invalid PDU */ && mCurrentMtu > 23 && mCurrentMtu - 3 > mBuffer.length) {
+					mBuffer = new byte[mCurrentMtu - 3]; // Maximum payload size is MTU - 3 bytes
+					logi("MTU restored to: " + mCurrentMtu);
+				}
 			}
 			mRequestCompleted = true;
 			notifyLock();
@@ -270,6 +275,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 
 		final int currentPart = intent.getIntExtra(DfuBaseService.EXTRA_PART_CURRENT, 1);
 		int totalParts = intent.getIntExtra(DfuBaseService.EXTRA_PARTS_TOTAL, 1);
+		mCurrentMtu = intent.getIntExtra(DfuBaseService.EXTRA_CURRENT_MTU, 23);
 
 		// Sending App together with SD or BL is not supported. It must be spilt into two parts.
 		if (fileType > DfuBaseService.TYPE_APPLICATION) {
