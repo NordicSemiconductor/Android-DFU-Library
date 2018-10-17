@@ -260,6 +260,13 @@ import no.nordicsemi.android.error.LegacyDfuError;
 				appImageSize = zhis.applicationImageSize();
 			}
 
+			// If there is no DFU Version characteristic (SDK 6.1 or older), 1 second delay is required (600 ms was not enough).
+			// See: https://github.com/NordicSemiconductor/Android-DFU-Library/issues/131
+			// and: https://github.com/NordicSemiconductor/IOS-Pods-DFU-Library/blob/88b2a836bc627fcadd2528c8da4ce630309118d9/iOSDFULibrary/Classes/Implementation/LegacyDFU/Services/LegacyDFUService.swift#L235
+			if (version == 0) {
+				mService.waitFor(1000);
+			}
+
 			boolean extendedInitPacketSupported = true;
 			try {
 				OP_CODE_START_DFU[1] = (byte) fileType;
