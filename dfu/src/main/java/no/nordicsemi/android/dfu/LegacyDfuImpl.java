@@ -64,6 +64,7 @@ import no.nordicsemi.android.error.LegacyDfuError;
 	private static final int OP_CODE_RESPONSE_CODE_KEY = 0x10; // 16
 	private static final int OP_CODE_PACKET_RECEIPT_NOTIF_KEY = 0x11; // 11
 	private static final byte[] OP_CODE_START_DFU = new byte[]{OP_CODE_START_DFU_KEY, 0x00};
+	private static final byte[] OP_CODE_START_DFU_V1 = new byte[]{OP_CODE_START_DFU_KEY};
 	private static final byte[] OP_CODE_INIT_DFU_PARAMS = new byte[]{OP_CODE_INIT_DFU_PARAMS_KEY}; // SDK 6.0.0 or older
 	private static final byte[] OP_CODE_INIT_DFU_PARAMS_START = new byte[]{OP_CODE_INIT_DFU_PARAMS_KEY, 0x00};
 	private static final byte[] OP_CODE_INIT_DFU_PARAMS_COMPLETE = new byte[]{OP_CODE_INIT_DFU_PARAMS_KEY, 0x01};
@@ -366,7 +367,7 @@ import no.nordicsemi.android.error.LegacyDfuError;
 						// Send Start DFU command to Control Point
 						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Switching to DFU v.1");
 						logi("Resending Start DFU command (Op Code = 1)");
-						writeOpCode(mControlPointCharacteristic, OP_CODE_START_DFU); // If has 2 bytes, but the second one is ignored
+						writeOpCode(mControlPointCharacteristic, OP_CODE_START_DFU_V1);
 						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "DFU Start sent (Op Code = 1)");
 
 						// Send image size in bytes to DFU Packet
