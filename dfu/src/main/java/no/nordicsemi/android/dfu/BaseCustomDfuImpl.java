@@ -263,6 +263,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	/**
 	 * Wends the whole init packet stream to the given characteristic.
 	 * @param characteristic the target characteristic
+	 * @param crc32          the CRC object to be updated based on the data sent
 	 * @throws DfuException
 	 * @throws DeviceDisconnectedException
 	 * @throws UploadAbortedException
