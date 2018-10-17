@@ -29,6 +29,7 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.SystemClock;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Locale;
@@ -220,7 +221,33 @@ import no.nordicsemi.android.error.SecureDfuError;
 			mService.waitFor(1000);
 			// End
 
-			sendInitPacket(gatt);
+			try {
+				sendInitPacket(gatt, true);
+			} catch (final RemoteDfuException e) {
+				// If the SD+BL upload failed, we may still be able to upload the App.
+				// The SD+BL might have been updated before.
+				if (!mProgressInfo.isLastPart()) {
+					mRemoteErrorOccurred = false;
+
+					logw("Sending SD+BL failed. Trying to send App only");
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, "Invalid system components. Trying to send application");
+					mFileType = DfuBaseService.TYPE_APPLICATION;
+
+					// Set new content type in the ZIP Input Stream and update sizes of images
+					final ArchiveInputStream zhis = (ArchiveInputStream) mFirmwareStream;
+					zhis.setContentType(mFileType);
+					final byte[] applicationInit = zhis.getApplicationInit();
+					mInitPacketStream = new ByteArrayInputStream(applicationInit);
+					mInitPacketSizeInBytes = applicationInit.length;
+					mImageSizeInBytes = zhis.applicationImageSize();
+					mProgressInfo.init(mImageSizeInBytes, 2, 2);
+
+					sendInitPacket(gatt, false);
+				} else {
+					// There's noting we could do about it.
+					throw e;
+				}
+			}
 			sendFirmware(gatt);
 
 			// The device will reset so we don't have to send Disconnect signal.
@@ -273,14 +300,16 @@ import no.nordicsemi.android.error.SecureDfuError;
 	 *     Init file as the previous one was different.</li>
 	 * </ol>
 	 * Sending of the Init packet is done without using PRNs (Packet Receipt Notifications), so they are disabled prior to sending the data.
-	 * @param gatt the target GATT device
+	 *
+	 * @param gatt        the target GATT device
+	 * @param allowResume true to allow resuming sending Init Packet. If false, it will be started again.
 	 * @throws RemoteDfuException
 	 * @throws DeviceDisconnectedException
 	 * @throws DfuException
 	 * @throws UploadAbortedException
 	 * @throws UnknownResponseException
 	 */
-	private void sendInitPacket(final BluetoothGatt gatt) throws RemoteDfuException, DeviceDisconnectedException, DfuException, UploadAbortedException, UnknownResponseException {
+	private void sendInitPacket(final BluetoothGatt gatt, final boolean allowResume) throws RemoteDfuException, DeviceDisconnectedException, DfuException, UploadAbortedException, UnknownResponseException {
 		final CRC32 crc32 = new CRC32(); // Used to calculate CRC32 of the Init packet
 		ObjectChecksum checksum;
 
@@ -298,7 +327,7 @@ import no.nordicsemi.android.error.SecureDfuError;
 		// and resume sending the init packet, or even skip sending it if the whole file was sent before.
 		boolean skipSendingInitPacket = false;
 		boolean resumeSendingInitPacket = false;
-		if (info.offset > 0 && info.offset <= mInitPacketSizeInBytes) {
+		if (allowResume && info.offset > 0 && info.offset <= mInitPacketSizeInBytes) {
 			try {
 				// Read the same number of bytes from the current init packet to calculate local CRC32
 				final byte[] buffer = new byte[info.offset];
