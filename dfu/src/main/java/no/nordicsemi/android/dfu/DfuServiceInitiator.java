@@ -92,6 +92,7 @@ public class DfuServiceInitiator {
 	 * Creates the builder. Use setZip(...), or setBinOrHex(...) methods to specify the file you
 	 * want to upload. In the latter case an init file may also be set using the setInitFile(...)
 	 * method. Init files are required by DFU Bootloader version 0.5 or newer (SDK 7.0.0+).
+	 *
 	 * @param deviceAddress the target device device address
 	 */
 	public DfuServiceInitiator(@NonNull final String deviceAddress) {
@@ -103,6 +104,7 @@ public class DfuServiceInitiator {
 	 * during the DFU process. If not set the
 	 * {@link no.nordicsemi.android.dfu.R.string#dfu_unknown_name R.string.dfu_unknown_name}
 	 * value will be used.
+	 *
 	 * @param name the device name (optional)
 	 * @return the builder
 	 */
@@ -114,6 +116,7 @@ public class DfuServiceInitiator {
 	/**
 	 * Sets whether the progress notification in the status bar should be disabled.
 	 * Defaults to false.
+	 *
 	 * @param disableNotification whether to disable the notification
 	 * @return the builder
 	 */
@@ -126,10 +129,11 @@ public class DfuServiceInitiator {
 	 * Sets whether the DFU service should be started as a foreground service. By default it's
 	 * <i>true</i>. According to
 	 * <a href="https://developer.android.com/about/versions/oreo/background.html">
-	 *     https://developer.android.com/about/versions/oreo/background.html</a>
+	 * https://developer.android.com/about/versions/oreo/background.html</a>
 	 * the background service may be killed by the system on Android Oreo after user quits the
 	 * application so it is recommended to keep it as a foreground service (default) at least on
 	 * Android Oreo+.
+	 *
 	 * @param foreground whether the service should be started in foreground state.
 	 * @return the builder
 	 */
@@ -147,6 +151,7 @@ public class DfuServiceInitiator {
 	 * <p>
 	 * This flag is ignored when Secure DFU Buttonless Service is used. It will keep or remove the
 	 * bond depending on the Buttonless service type.
+	 *
 	 * @param keepBond whether the bond information should be preserved in the new application.
 	 * @return the builder
 	 */
@@ -162,6 +167,7 @@ public class DfuServiceInitiator {
 	 * <p>
 	 * This flag is ignored when Secure DFU Buttonless Service is used. It will keep or will not
 	 * restore the bond depending on the Buttonless service type.
+	 *
 	 * @param restoreBond whether the bond should be created after the DFU is complete.
 	 * @return the builder
 	 */
@@ -175,6 +181,7 @@ public class DfuServiceInitiator {
 	 * <p>
 	 * By default the PRNs are disabled on devices with Android Marshmallow or newer and enabled on
 	 * older ones.
+	 *
 	 * @param enabled true to enabled PRNs, false to disable
 	 * @return the builder
 	 * @see DfuSettingsConstants#SETTINGS_PACKET_RECEIPT_NOTIFICATION_ENABLED
@@ -187,6 +194,7 @@ public class DfuServiceInitiator {
 	/**
 	 * If Packet Receipt Notification procedure is enabled, this method sets number of packets to
 	 * be sent before receiving a PRN. A PRN is used to synchronize the transmitter and receiver.
+	 *
 	 * @param number number of packets to be sent before receiving a PRN. Defaulted when set to 0.
 	 * @return the builder
 	 * @see #setPacketsReceiptNotificationsEnabled(boolean)
@@ -223,6 +231,7 @@ public class DfuServiceInitiator {
 	 * method with parameter equal to true.
 	 * <p>
 	 * This method is ignored in Secure DFU.
+	 *
 	 * @param force true to ensure the DFU will start if there is no DFU Version characteristic
 	 *              (Legacy DFU only)
 	 * @return the builder
@@ -283,6 +292,7 @@ public class DfuServiceInitiator {
 
 	/**
 	 * Disables MTU request.
+	 *
 	 * @return the builder
 	 * @see #setMtu(int)
 	 */
@@ -297,6 +307,7 @@ public class DfuServiceInitiator {
 	 * include the Softdevice and/or the Bootloader (they can't be separated as they are packed in
 	 * a single bin file and the library does not know whether it contains only the softdevice,
 	 * the bootloader or both) Application scope includes the application only.
+	 *
 	 * @param scope the update scope, one of {@link #SCOPE_SYSTEM_COMPONENTS} or
 	 *              {@link #SCOPE_APPLICATION}.
 	 * @return the builder
@@ -352,13 +363,14 @@ public class DfuServiceInitiator {
 	 * Sets custom UUIDs for Legacy DFU and Legacy Buttonless DFU. Use this method if your DFU
 	 * implementation uses different UUID for at least one of the given UUIDs.
 	 * Parameter set to <code>null</code> will reset the UUID to the default value.
-	 * @param dfuServiceUuid custom Legacy DFU service UUID or null, if default is to be used
+	 *
+	 * @param dfuServiceUuid      custom Legacy DFU service UUID or null, if default is to be used
 	 * @param dfuControlPointUuid custom Legacy DFU Control Point characteristic UUID or null,
 	 *                            if default is to be used
-	 * @param dfuPacketUuid custom Legacy DFU Packet characteristic UUID or null, if default is
-	 *                      to be used
-	 * @param dfuVersionUuid custom Legacy DFU Version characteristic UUID or null,
-	 *                       if default is to be used (SDK 7.0 - 11.0 only, set null for earlier SDKs)
+	 * @param dfuPacketUuid       custom Legacy DFU Packet characteristic UUID or null, if default is
+	 *                            to be used
+	 * @param dfuVersionUuid      custom Legacy DFU Version characteristic UUID or null,
+	 *                            if default is to be used (SDK 7.0 - 11.0 only, set null for earlier SDKs)
 	 * @return the builder
 	 */
 	public DfuServiceInitiator setCustomUuidsForLegacyDfu(@Nullable final UUID dfuServiceUuid,
@@ -378,11 +390,12 @@ public class DfuServiceInitiator {
 	 * Sets custom UUIDs for Secure DFU. Use this method if your DFU implementation uses different
 	 * UUID for at least one of the given UUIDs. Parameter set to <code>null</code> will reset
 	 * the UUID to the default value.
-	 * @param dfuServiceUuid custom Secure DFU service UUID or null, if default is to be used
+	 *
+	 * @param dfuServiceUuid      custom Secure DFU service UUID or null, if default is to be used
 	 * @param dfuControlPointUuid custom Secure DFU Control Point characteristic UUID or null,
 	 *                            if default is to be used
-	 * @param dfuPacketUuid custom Secure DFU Packet characteristic UUID or null, if default is to
-	 *                      be used
+	 * @param dfuPacketUuid       custom Secure DFU Packet characteristic UUID or null, if default
+	 *                            is to be used
 	 * @return the builder
 	 */
 	public DfuServiceInitiator setCustomUuidsForSecureDfu(@Nullable final UUID dfuServiceUuid,
@@ -403,8 +416,9 @@ public class DfuServiceInitiator {
 	 * <p>
 	 * Remember to call {@link #setUnsafeExperimentalButtonlessServiceInSecureDfuEnabled(boolean)}
 	 * with parameter <code>true</code> if you intent to use this service.
-	 * @param buttonlessDfuServiceUuid custom Buttonless DFU service UUID or null, if default is to
-	 *                                 be used
+	 *
+	 * @param buttonlessDfuServiceUuid      custom Buttonless DFU service UUID or null, if default
+	 *                                      is to be used
 	 * @param buttonlessDfuControlPointUuid custom Buttonless DFU characteristic UUID or null,
 	 *                                      if default is to be used
 	 * @return the builder
@@ -422,8 +436,9 @@ public class DfuServiceInitiator {
 	 * Sets custom UUIDs for the Buttonless DFU Service from SDK 14 (or later).
 	 * Use this method if your DFU implementation uses different UUID for at least one of the given
 	 * UUIDs. Parameter set to <code>null</code> will reset the UUID to the default value.
-	 * @param buttonlessDfuServiceUuid custom Buttonless DFU service UUID or null, if default is to
-	 *                                 be used
+	 *
+	 * @param buttonlessDfuServiceUuid      custom Buttonless DFU service UUID or null, if default
+	 *                                      is to be used
 	 * @param buttonlessDfuControlPointUuid custom Buttonless DFU characteristic UUID or null,
 	 *                                      if default is to be used
 	 * @return the builder
@@ -441,8 +456,9 @@ public class DfuServiceInitiator {
 	 * Sets custom UUIDs for the Buttonless DFU Service from SDK 13. Use this method if your DFU
 	 * implementation uses different UUID for at least one of the given UUIDs.
 	 * Parameter set to <code>null</code> will reset the UUID to the default value.
-	 * @param buttonlessDfuServiceUuid custom Buttonless DFU service UUID or null, if default is to
-	 *                                 be used
+	 *
+	 * @param buttonlessDfuServiceUuid      custom Buttonless DFU service UUID or null, if default
+	 *                                      is to be used
 	 * @param buttonlessDfuControlPointUuid custom Buttonless DFU characteristic UUID or null,
 	 *                                      if default is to be used
 	 * @return the builder
@@ -459,6 +475,7 @@ public class DfuServiceInitiator {
 	/**
 	 * Sets the URI to the Distribution packet (ZIP) or to a ZIP file matching the deprecated naming
 	 * convention.
+	 *
 	 * @param uri the URI of the file
 	 * @return the builder
 	 * @see #setZip(String)
@@ -471,6 +488,7 @@ public class DfuServiceInitiator {
 	/**
 	 * Sets the path to the Distribution packet (ZIP) or the a ZIP file matching the deprecated naming
 	 * convention.
+	 *
 	 * @param path path to the file
 	 * @return the builder
 	 * @see #setZip(Uri)
@@ -483,6 +501,7 @@ public class DfuServiceInitiator {
 	/**
 	 * Sets the resource ID of the Distribution packet (ZIP) or the a ZIP file matching the
 	 * deprecated naming convention. The file should be in the /res/raw folder.
+	 *
 	 * @param rawResId file's resource ID
 	 * @return the builder
 	 * @see #setZip(Uri)
@@ -496,7 +515,8 @@ public class DfuServiceInitiator {
 	 * Sets the URI or path of the ZIP file.
 	 * At least one of the parameters must not be null.
 	 * If the URI and path are not null the URI will be used.
-	 * @param uri the URI of the file
+	 *
+	 * @param uri  the URI of the file
 	 * @param path the path of the file
 	 * @return the builder
 	 */
@@ -508,13 +528,14 @@ public class DfuServiceInitiator {
 	 * Sets the URI of the BIN or HEX file containing the new firmware.
 	 * For DFU Bootloader version 0.5 or newer the init file must be specified using one of
 	 * {@link #setInitFile(Uri)} methods.
+	 *
 	 * @param fileType the file type, a bit field created from:
-	 *  	<ul>
-	 * 		    <li>{@link DfuBaseService#TYPE_APPLICATION} - the Application will be sent</li>
-	 * 		    <li>{@link DfuBaseService#TYPE_SOFT_DEVICE} - he Soft Device will be sent</li>
-	 * 		    <li>{@link DfuBaseService#TYPE_BOOTLOADER} - the Bootloader will be sent</li>
-	 * 		</ul>
-	 * @param uri the URI of the file
+	 *                 <ul>
+	 *                 <li>{@link DfuBaseService#TYPE_APPLICATION} - the Application will be sent</li>
+	 *                 <li>{@link DfuBaseService#TYPE_SOFT_DEVICE} - he Soft Device will be sent</li>
+	 *                 <li>{@link DfuBaseService#TYPE_BOOTLOADER} - the Bootloader will be sent</li>
+	 *                 </ul>
+	 * @param uri      the URI of the file
 	 * @return the builder
 	 */
 	@Deprecated
@@ -528,8 +549,9 @@ public class DfuServiceInitiator {
 	 * Sets the URI of the BIN or HEX file containing the new firmware.
 	 * For DFU Bootloader version 0.5 or newer the init file must be specified using one of
 	 * {@link #setInitFile(String)} methods.
+	 *
 	 * @param fileType see {@link #setBinOrHex(int, Uri)} for details
-	 * @param path path to the file
+	 * @param path     path to the file
 	 * @return the builder
 	 */
 	@Deprecated
@@ -543,9 +565,10 @@ public class DfuServiceInitiator {
 	 * Sets the URI or path to the BIN or HEX file containing the new firmware.
 	 * For DFU Bootloader version 0.5 or newer the init file must be specified using one of
 	 * {@link #setInitFile(String)} methods.
+	 *
 	 * @param fileType see {@link #setBinOrHex(int, Uri)} for details
-	 * @param uri the URI of the file
-	 * @param path path to the file
+	 * @param uri      the URI of the file
+	 * @param path     path to the file
 	 * @return the builder
 	 * @deprecated The Distribution packet (ZIP) should be used for DFU Bootloader version 0.5 or newer
 	 */
@@ -560,6 +583,7 @@ public class DfuServiceInitiator {
 	 * Sets the resource ID pointing the BIN or HEX file containing the new firmware.
 	 * The file should be in the /res/raw folder. For DFU Bootloader version 0.5 or newer the init
 	 * file must be specified using one of {@link #setInitFile(int)} methods.
+	 *
 	 * @param fileType see {@link #setBinOrHex(int, Uri)} for details
 	 * @param rawResId resource ID
 	 * @return the builder
@@ -575,6 +599,7 @@ public class DfuServiceInitiator {
 	 * Sets the URI of the Init file. The init file for DFU Bootloader version pre-0.5
 	 * (SDK 4.3, 6.0, 6.1) contains only the CRC-16 of the firmware.
 	 * Bootloader version 0.5 or newer requires the Extended Init Packet.
+	 *
 	 * @param initFileUri the URI of the init file
 	 * @return the builder
 	 */
@@ -587,6 +612,7 @@ public class DfuServiceInitiator {
 	 * Sets the path to the Init file. The init file for DFU Bootloader version pre-0.5
 	 * (SDK 4.3, 6.0, 6.1) contains only the CRC-16 of the firmware.
 	 * Bootloader version 0.5 or newer requires the Extended Init Packet.
+	 *
 	 * @param initFilePath the path to the init file
 	 * @return the builder
 	 */
@@ -599,6 +625,7 @@ public class DfuServiceInitiator {
 	 * Sets the resource ID of the Init file. The init file for DFU Bootloader version pre-0.5
 	 * (SDK 4.3, 6.0, 6.1) contains only the CRC-16 of the firmware.
 	 * Bootloader version 0.5 or newer requires the Extended Init Packet.
+	 *
 	 * @param initFileResId the resource ID of the init file
 	 * @return the builder
 	 */
@@ -611,7 +638,8 @@ public class DfuServiceInitiator {
 	 * Sets the URI or path to the Init file. The init file for DFU Bootloader version pre-0.5
 	 * (SDK 4.3, 6.0, 6.1) contains only the CRC-16 of the firmware. Bootloader version 0.5 or newer
 	 * requires the Extended Init Packet. If the URI and path are not null the URI will be used.
-	 * @param initFileUri the URI of the init file
+	 *
+	 * @param initFileUri  the URI of the init file
 	 * @param initFilePath the path of the init file
 	 * @return the builder
 	 */
@@ -622,6 +650,7 @@ public class DfuServiceInitiator {
 
 	/**
 	 * Starts the DFU service.
+	 *
 	 * @param context the application context
 	 * @param service the class derived from the BaseDfuService
 	 */
