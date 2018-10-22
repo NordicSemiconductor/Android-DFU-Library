@@ -596,6 +596,13 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 						resumeSendingData = true;
 						continue;
 					}
+					// The whole firmware was sent correctly. Wait a bit before executing, as
+					// on SDK 14 there may occur a race condition if Execute is sent too early,
+					// which would cause Validation Fail error.
+					// See: https://github.com/NordicSemiconductor/Android-DFU-Library/issues/111
+					if (checksum.offset == mImageSizeInBytes) {
+						mService.waitFor(300);
+					}
 					// Execute Init packet
 					logi("Executing data object (Op Code = 4)");
 					writeExecute(mProgressInfo.isComplete());
