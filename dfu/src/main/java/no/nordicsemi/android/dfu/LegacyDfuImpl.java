@@ -446,13 +446,6 @@ import no.nordicsemi.android.error.LegacyDfuError;
 					throw new RemoteDfuException("Device returned error after sending init packet", status);
 			}
 
-			// If there is no DFU Version characteristic (SDK 6.1 or older), 1 second delay is required (600 ms was not enough).
-			// See: https://github.com/NordicSemiconductor/Android-DFU-Library/issues/131
-			// and: https://github.com/NordicSemiconductor/IOS-Pods-DFU-Library/blob/88b2a836bc627fcadd2528c8da4ce630309118d9/iOSDFULibrary/Classes/Implementation/LegacyDFU/Services/LegacyDFUService.swift#L235
-			if (version == 0) {
-				mService.waitFor(1000);
-			}
-
 			// Send the number of packets of firmware before receiving a receipt notification
 			// Note: DFU bootloaders from SDK 6.0.0 or older were unable to save incoming data to the flash memory with the same speed
 			//       as they are being sent from modern devices, therefore the PRNs are here force-enabled for them.
