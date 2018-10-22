@@ -452,6 +452,7 @@ import no.nordicsemi.android.error.LegacyDfuError;
 			//       It has been tested that PRN = 10 may be the highest supported value.
 			final int numberOfPacketsBeforeNotification = extendedInitPacketSupported || (mPacketsBeforeNotification > 0 && mPacketsBeforeNotification <= 10) ? mPacketsBeforeNotification : 10;
 			if (numberOfPacketsBeforeNotification > 0) {
+				mPacketsBeforeNotification = numberOfPacketsBeforeNotification;
 				logi("Sending the number of packets before notifications (Op Code = 8, Value = " + numberOfPacketsBeforeNotification + ")");
 				setNumberOfPackets(OP_CODE_PACKET_RECEIPT_NOTIF_REQ, numberOfPacketsBeforeNotification);
 				writeOpCode(mControlPointCharacteristic, OP_CODE_PACKET_RECEIPT_NOTIF_REQ);
