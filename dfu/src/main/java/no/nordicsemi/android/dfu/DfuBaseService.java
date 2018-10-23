@@ -1057,6 +1057,16 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 							initIs = new ByteArrayInputStream(zhis.getSystemInit());
 					}
 				}
+
+				// Mark the beginning of the streams. In case the service is restarted, it should
+				// re-upload again the whole file.
+				if (firstRun) {
+					// The input streams will be reset in initialize(), keep
+					is.mark(is.available());
+					if (initIs != null)
+						initIs.mark(initIs.available());
+				}
+
 				mFirmwareInputStream = is;
 				mInitFileInputStream = initIs;
 				sendLogBroadcast(LOG_LEVEL_INFO, "Firmware file opened successfully");
