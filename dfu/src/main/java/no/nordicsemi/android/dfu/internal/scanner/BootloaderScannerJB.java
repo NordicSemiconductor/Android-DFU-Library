@@ -73,6 +73,8 @@ public class BootloaderScannerJB implements BootloaderScanner, BluetoothAdapter.
 		}, "Scanner timer").start();
 
 		final BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+		if (adapter == null || adapter.getState() != BluetoothAdapter.STATE_ON)
+			return null;
 		adapter.startLeScan(this);
 
 		try {
