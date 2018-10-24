@@ -223,8 +223,12 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 			mService.waitFor(1000);
 			// End
 
+			final boolean allowResume = !intent.hasExtra(DfuBaseService.EXTRA_DISABLE_RESUME)
+					|| !intent.getBooleanExtra(DfuBaseService.EXTRA_DISABLE_RESUME, false);
+			if (!allowResume)
+				logi("Resume feature disabled. Performing fresh DFU");
 			try {
-				sendInitPacket(gatt, true);
+				sendInitPacket(gatt, allowResume);
 			} catch (final RemoteDfuException e) {
 				// If the SD+BL upload failed, we may still be able to upload the App.
 				// The SD+BL might have been updated before.

@@ -75,6 +75,7 @@ public class DfuServiceInitiator {
 	private boolean restoreBond;
 	private boolean forceDfu = false;
 	private boolean enableUnsafeExperimentalButtonlessDfu = false;
+	private boolean disableResume = false;
 
 	private Boolean packetReceiptNotificationsEnabled;
 	private int numberOfPackets = 12;
@@ -240,6 +241,24 @@ public class DfuServiceInitiator {
 	@SuppressWarnings("JavaDoc")
 	public DfuServiceInitiator setForceDfu(final boolean force) {
 		this.forceDfu = force;
+		return this;
+	}
+
+	/**
+	 * This options allows to disable the resume feature in Secure DFU. When the extra value is set
+	 * to true, the DFU will send Init Packet and Data again, despite the firmware might have been
+	 * send partially before. By default, without setting this extra, or by setting it to false,
+	 * the DFU will resume the previously cancelled upload if CRC values match.
+	 * <p>
+	 * It is ignored when Legacy DFU is used.
+	 * <p>
+	 * This feature seems to help in some cases:
+	 * <a href="https://github.com/NordicSemiconductor/Android-DFU-Library/issues/71">#71</a>.
+	 *
+	 * @return the builder
+	 */
+	public DfuServiceInitiator disableResume() {
+		this.disableResume = true;
 		return this;
 	}
 
@@ -675,10 +694,12 @@ public class DfuServiceInitiator {
 		intent.putExtra(DfuBaseService.EXTRA_KEEP_BOND, keepBond);
 		intent.putExtra(DfuBaseService.EXTRA_RESTORE_BOND, restoreBond);
 		intent.putExtra(DfuBaseService.EXTRA_FORCE_DFU, forceDfu);
+		intent.putExtra(DfuBaseService.EXTRA_DISABLE_RESUME, disableResume);
 		if (mtu > 0)
 			intent.putExtra(DfuBaseService.EXTRA_MTU, mtu);
 		intent.putExtra(DfuBaseService.EXTRA_CURRENT_MTU, currentMtu);
 		intent.putExtra(DfuBaseService.EXTRA_UNSAFE_EXPERIMENTAL_BUTTONLESS_DFU, enableUnsafeExperimentalButtonlessDfu);
+		//noinspection StatementWithEmptyBody
 		if (packetReceiptNotificationsEnabled != null) {
 			intent.putExtra(DfuBaseService.EXTRA_PACKET_RECEIPT_NOTIFICATIONS_ENABLED, packetReceiptNotificationsEnabled);
 			intent.putExtra(DfuBaseService.EXTRA_PACKET_RECEIPT_NOTIFICATIONS_VALUE, numberOfPackets);
@@ -750,6 +771,8 @@ public class DfuServiceInitiator {
 
 		final NotificationManager notificationManager =
 				(NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-		notificationManager.createNotificationChannel(channel);
+		if (notificationManager != null) {
+			notificationManager.createNotificationChannel(channel);
+		}
 	}
 }

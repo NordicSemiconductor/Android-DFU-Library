@@ -164,6 +164,18 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 */
 	public static final String EXTRA_FORCE_DFU = "no.nordicsemi.android.dfu.extra.EXTRA_FORCE_DFU";
 	/**
+	 * This options allows to disable the resume feature in Secure DFU. When the extra value is set
+	 * to true, the DFU will send Init Packet and Data again, despite the firmware might have been
+	 * send partially before. By default, without setting this extra, or by setting it to false,
+	 * the DFU will resume the previously cancelled upload if CRC values match.
+	 * <p>
+	 * It is ignored when Legacy DFU is used.
+	 * <p>
+	 * This feature seems to help in some cases:
+	 * <a href="https://github.com/NordicSemiconductor/Android-DFU-Library/issues/71">#71</a>.
+	 */
+	public static final String EXTRA_DISABLE_RESUME = "no.nordicsemi.android.dfu.extra.EXTRA_DISABLE_RESUME";
+	/**
 	 * This extra allows you to control the MTU that will be requested (on Lollipop or newer devices).
 	 * If the field is null, the service will not request higher MTU and will use MTU = 23
 	 * (even if it has been set to a higher value before).
