@@ -78,7 +78,11 @@ public class BootloaderScannerLollipop extends ScanCallback implements Bootloade
 		}, "Scanner timer").start();
 
 		final BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+		if (adapter == null || adapter.getState() != BluetoothAdapter.STATE_ON)
+			return null;
 		final BluetoothLeScanner scanner = adapter.getBluetoothLeScanner();
+		if (scanner == null)
+			return null;
 		/*
 		 * Scanning with filters does not work on Nexus 9 (Android 5.1). No devices are found and scanner terminates on timeout.
 		 * We will match the device address in the callback method instead. It's not like it should be, but at least it works.

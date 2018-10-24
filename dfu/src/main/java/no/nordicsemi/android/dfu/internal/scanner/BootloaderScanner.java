@@ -22,33 +22,44 @@
 
 package no.nordicsemi.android.dfu.internal.scanner;
 
+import android.support.annotation.Nullable;
+
 /**
  * <p>
- *     The DFU Bootloader may advertise with the same address as an application (in case of the buttonless update) or one incremented by 1 (in case of jumping to the DFU mode with a button,
- *     or after flashing the new Soft Device (flashing new SD removes the old application)).
- * </p>
+ * The DFU Bootloader may advertise with the same address as an application (in case of the
+ * buttonless update) or one incremented by 1 (in case of jumping to the DFU mode with a button,
+ * or after flashing the new Soft Device (flashing new SD removes the old application)).
  * <p>
- *     The DFU service always connects to the address given as a parameter. However, when flashing SD+BL+App it will first send the SD+BL as part one followed by the App in the second connection.
- *     As the service does not know which address was used in the first connection (normal, when buttonless update, or +1 when with-button update) we have to scan for the advertising device
- *     after SD+BL part is completed.
- * </p>
+ * The DFU service always connects to the address given as a parameter. However, when flashing
+ * SD+BL+App it will first send the SD+BL as part one followed by the App in the second connection.
+ * As the service does not know which address was used in the first connection (normal,
+ * when buttonless update, or +1 when with-button update) we have to scan for the advertising
+ * device after SD+BL part is completed.
  */
 public interface BootloaderScanner {
 	/**
-	 * After the buttonless jump from the application mode to the bootloader mode the service will wait this long for the advertising bootloader (in milliseconds).
+	 * After the buttonless jump from the application mode to the bootloader mode the service
+	 * will wait this long for the advertising bootloader (in milliseconds).
 	 */
 	long TIMEOUT = 5000L; // ms
-	/** The bootloader may advertise with the same address or one with the last byte incremented by this value. F.e. 00:11:22:33:44:55 -&gt; 00:11:22:33:44:56. FF changes to 00. */
+	/**
+	 * The bootloader may advertise with the same address or one with the last byte incremented
+	 * by this value. F.e. 00:11:22:33:44:55 -&gt; 00:11:22:33:44:56. FF changes to 00.
+	 */
 	int ADDRESS_DIFF = 1;
 
 	/**
-	 * Searches for the advertising bootloader. The bootloader may advertise with the same device address or one with the last byte incremented by 1.
-	 * This method is a blocking one and ends when such device is found. There are two implementations of this interface - one for Androids 4.3 and 4.4.x and one for
-	 * the Android 5+ devices.
+	 * Searches for the advertising bootloader. The bootloader may advertise with the same device
+	 * address or one with the last byte incremented by 1.
+	 * This method is a blocking one and ends when such device is found. There are two
+	 * implementations of this interface - one for Androids 4.3 and 4.4.x and one for the
+	 * Android 5+ devices.
 	 *
-	 * @param deviceAddress
-	 *            the application device address
-	 * @return the address of the advertising DFU bootloader. If may be the same as the application address or one with the last byte incremented by 1 (AA:BB:CC:DD:EE:45/FF -&gt; AA:BB:CC:DD:EE:46/00).
+	 * @param deviceAddress the application device address
+	 * @return the address of the advertising DFU bootloader. It may be the same as the application
+	 * address or one with the last byte incremented by 1 (AA:BB:CC:DD:EE:45/FF -&gt; AA:BB:CC:DD:EE:46/00).
+	 * Null is returned when Bluetooth is off or the device has not been found.
 	 */
+	@Nullable
 	String searchFor(final String deviceAddress);
 }
