@@ -665,6 +665,22 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		}
 	};
 
+	private final BroadcastReceiver mBluetoothStateBroadcastReceiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(final Context context, final Intent intent) {
+			final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.STATE_OFF);
+			final int previousState = intent.getIntExtra(BluetoothAdapter.EXTRA_PREVIOUS_STATE, BluetoothAdapter.STATE_ON);
+			logw("Action received: android.bluetooth.adapter.action.STATE_CHANGED [state: " + state + ", previous state: " + previousState + "]");
+			if (previousState == BluetoothAdapter.STATE_ON
+					&& (state == BluetoothAdapter.STATE_TURNING_OFF || state == BluetoothAdapter.STATE_OFF)) {
+				sendLogBroadcast(LOG_LEVEL_WARNING, "Bluetooth adapter disabled");
+				mConnectionState = STATE_DISCONNECTED;
+				if (mDfuServiceImpl != null)
+					mDfuServiceImpl.getGattCallback().onDisconnected();
+			}
+		}
+	};
+
 	private final BroadcastReceiver mBondStateBroadcastReceiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(final Context context, final Intent intent) {
@@ -770,12 +786,12 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 					logw("Target device disconnected with status: " + status);
 				else
 					loge("Connection state change error: " + status + " newState: " + newState);
+				mError = ERROR_CONNECTION_STATE_MASK | status;
 				if (newState == BluetoothGatt.STATE_DISCONNECTED) {
 					mConnectionState = STATE_DISCONNECTED;
 					if (mDfuServiceImpl != null)
 						mDfuServiceImpl.getGattCallback().onDisconnected();
 				}
-				mError = ERROR_CONNECTION_STATE_MASK | status;
 			}
 
 			// Notify waiting thread
@@ -878,6 +894,9 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 
 		final IntentFilter bondFilter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
 		registerReceiver(mBondStateBroadcastReceiver, bondFilter);
+
+		final IntentFilter stateFilter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+		registerReceiver(mBluetoothStateBroadcastReceiver, stateFilter);
 	}
 
 	@Override
@@ -904,6 +923,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		unregisterReceiver(mDfuActionReceiver);
 		unregisterReceiver(mConnectionStateBroadcastReceiver);
 		unregisterReceiver(mBondStateBroadcastReceiver);
+		unregisterReceiver(mBluetoothStateBroadcastReceiver);
 
 		try {
 			// Ensure that input stream is always closed
