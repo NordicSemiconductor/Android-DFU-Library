@@ -25,7 +25,8 @@ package no.nordicsemi.android.dfu.internal.scanner;
 import android.os.Build;
 
 /**
- * The factory should be used to create the {@link BootloaderScanner} instance appropriate for the Android version.
+ * The factory should be used to create the {@link BootloaderScanner} instance appropriate
+ * for the Android version.
  */
 public class BootloaderScannerFactory {
 
