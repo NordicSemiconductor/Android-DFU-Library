@@ -7,7 +7,7 @@
 The compat library may be found on jcenter and Maven Central repository. Add it to your project by adding the following dependency:
 
 ```Groovy
-compile 'no.nordicsemi.android:dfu:1.7.0'
+compile 'no.nordicsemi.android:dfu:1.8.0'
 ```
 
 If you use proguard, add the following line to your proguard rules:
@@ -70,7 +70,7 @@ A library for both iOS and Android that is based on this library is available fo
 ### Resources
 
 - [DFU Introduction](http://infocenter.nordicsemi.com/topic/com.nordic.infocenter.sdk5.v11.0.0/examples_ble_dfu.html?cp=6_0_0_4_3_1 "BLE Bootloader/DFU")
-- [Secure DFU Introduction](http://infocenter.nordicsemi.com/topic/com.nordic.infocenter.sdk5.v12.0.0/ble_sdk_app_dfu_bootloader.html?cp=4_0_0_4_3_1 "BLE Secure DFU Bootloader")
-- [How to create init packet](https://github.com/NordicSemiconductor/Android-nRF-Connect/tree/master/init%20packet%20handling "Init packet handling")
+- [Secure DFU Introduction](http://infocenter.nordicsemi.com/topic/com.nordic.infocenter.sdk5.v15.2.0/examples_bootloader.html?cp=4_0_0_4_3 "BLE Secure DFU Bootloader")
+- [How to create legacy init packet](https://github.com/NordicSemiconductor/Android-nRF-Connect/tree/master/init%20packet%20handling "Init packet handling")
 - [nRF51 Development Kit (DK)](http://www.nordicsemi.com/eng/Products/nRF51-DK "nRF51 DK") (compatible with Arduino Uno Revision 3)
 - [nRF52 Development Kit (DK)](http://www.nordicsemi.com/eng/Products/Bluetooth-Smart-Bluetooth-low-energy/nRF52-DK "nRF52 DK") (compatible with Arduino Uno Revision 3)
