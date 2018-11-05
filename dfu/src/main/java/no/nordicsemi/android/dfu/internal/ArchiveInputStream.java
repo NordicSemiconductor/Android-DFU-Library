@@ -357,23 +357,18 @@ public class ArchiveInputStream extends InputStream {
 
 	@Override
 	public int read(@NonNull final byte[] buffer, final int offset, final int length) {
-		int maxSize = currentSource.length - bytesReadFromCurrentSource;
-		int size = length <= maxSize ? length : maxSize;
+		final int size = rawRead(buffer, offset, length);
+		if (length > size && startNextFile() != null) {
+			return size + rawRead(buffer, offset + size, length - size);
+		}
+		return size;
+	}
+
+	private int rawRead(@NonNull final byte[] buffer, final int offset, final int length) {
+		final int maxSize = currentSource.length - bytesReadFromCurrentSource;
+		final int size = length <= maxSize ? length : maxSize;
 		System.arraycopy(currentSource, bytesReadFromCurrentSource, buffer, offset, size);
 		bytesReadFromCurrentSource += size;
-		if (length > size) {
-			if (startNextFile() == null) {
-				bytesRead += size;
-				crc32.update(buffer, offset, size);
-				return size;
-			}
-
-			maxSize = currentSource.length;
-			final int nextSize = length - size <= maxSize ? length - size : maxSize;
-			System.arraycopy(currentSource, 0, buffer, offset + size, nextSize);
-			bytesReadFromCurrentSource += nextSize;
-			size += nextSize;
-		}
 		bytesRead += size;
 		crc32.update(buffer, offset, size);
 		return size;
@@ -395,7 +390,7 @@ public class ArchiveInputStream extends InputStream {
 	}
 
 	@Override
-	public void reset() throws IOException {
+	public void reset() {
 		currentSource = markedSource;
 		bytesRead = bytesReadFromCurrentSource = bytesReadFromMarkedSource;
 
@@ -479,12 +474,8 @@ public class ArchiveInputStream extends InputStream {
 		else if ((type & DfuBaseService.TYPE_APPLICATION) > 0)
 			currentSource = applicationBytes;
 		bytesReadFromCurrentSource = 0;
-		try {
-			mark(0);
-			reset();
-		} catch (final IOException e) {
-			// not available
-		}
+		mark(0);
+		reset();
 		return this.type;
 	}
 
