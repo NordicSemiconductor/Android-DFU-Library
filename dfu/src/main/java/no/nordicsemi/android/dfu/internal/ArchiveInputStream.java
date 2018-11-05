@@ -50,7 +50,7 @@ import no.nordicsemi.android.dfu.internal.manifest.SoftDeviceBootloaderFileInfo;
  * and/or system.dat with init packets.</p>
  * <p>The ArchiveInputStream will read only files with types specified by <b>types</b> parameter of the constructor.</p>
  */
-public class ArchiveInputStream extends ZipInputStream {
+public class ArchiveInputStream extends InputStream {
 	private static final String TAG = "DfuArchiveInputStream";
 
 	/** The name of the manifest file is fixed. */
@@ -64,6 +64,8 @@ public class ArchiveInputStream extends ZipInputStream {
 	private static final String APPLICATION_BIN = "application.bin";
 	private static final String SYSTEM_INIT = "system.dat";
 	private static final String APPLICATION_INIT = "application.dat";
+
+	private final ZipInputStream zipInputStream;
 
 	/** Contains bytes arrays with BIN files. HEX files are converted to BIN before being added to this map. */
 	private Map<String, byte[]> entries;
@@ -111,7 +113,7 @@ public class ArchiveInputStream extends ZipInputStream {
 	 * @throws java.io.IOException
 	 */
 	public ArchiveInputStream(final InputStream stream, final int mbrSize, final int types) throws IOException {
-		super(stream);
+		this.zipInputStream = new ZipInputStream(stream);
 
 		this.crc32 = new CRC32();
 		this.entries = new HashMap<>();
@@ -253,7 +255,7 @@ public class ArchiveInputStream extends ZipInputStream {
 			mark(0);
 		} finally {
 			type = getContentType();
-			super.close();
+			zipInputStream.close();
 		}
 	}
 
@@ -272,7 +274,7 @@ public class ArchiveInputStream extends ZipInputStream {
 		String manifestData = null;
 
 		ZipEntry ze;
-		while ((ze = getNextEntry()) != null) {
+		while ((ze = zipInputStream.getNextEntry()) != null) {
 			final String filename = ze.getName();
 
 			if (ze.isDirectory()) {
@@ -283,7 +285,7 @@ public class ArchiveInputStream extends ZipInputStream {
 			// Read file content to byte array
 			final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			int count;
-			while ((count = super.read(buffer)) != -1) {
+			while ((count = zipInputStream.read(buffer)) != -1) {
 				baos.write(buffer, 0, count);
 			}
 			byte[] source = baos.toByteArray();
@@ -330,30 +332,50 @@ public class ArchiveInputStream extends ZipInputStream {
 		softDeviceSize = bootloaderSize = applicationSize = 0;
 		currentSource = null;
 		bytesRead = bytesReadFromCurrentSource = 0;
-		super.close();
+		zipInputStream.close();
 	}
 
 	@Override
-	public int read(@NonNull final byte[] buffer) throws IOException {
+	public long skip(final long n) {
+		return 0;
+	}
+
+	@Override
+	public int read() {
+		final byte[] buffer = new byte[1];
+		if (read(buffer) == -1) {
+			return -1;
+		} else {
+			return buffer[0] & 0xFF;
+		}
+	}
+
+	@Override
+	public int read(@NonNull final byte[] buffer) {
+		return read(buffer, 0, buffer.length);
+	}
+
+	@Override
+	public int read(@NonNull final byte[] buffer, final int offset, final int length) {
 		int maxSize = currentSource.length - bytesReadFromCurrentSource;
-		int size = buffer.length <= maxSize ? buffer.length : maxSize;
-		System.arraycopy(currentSource, bytesReadFromCurrentSource, buffer, 0, size);
+		int size = length <= maxSize ? length : maxSize;
+		System.arraycopy(currentSource, bytesReadFromCurrentSource, buffer, offset, size);
 		bytesReadFromCurrentSource += size;
-		if (buffer.length > size) {
+		if (length > size) {
 			if (startNextFile() == null) {
 				bytesRead += size;
-				crc32.update(buffer, 0, size);
+				crc32.update(buffer, offset, size);
 				return size;
 			}
 
 			maxSize = currentSource.length;
-			final int nextSize = buffer.length - size <= maxSize ? buffer.length - size : maxSize;
-			System.arraycopy(currentSource, 0, buffer, size, nextSize);
+			final int nextSize = length - size <= maxSize ? length - size : maxSize;
+			System.arraycopy(currentSource, 0, buffer, offset + size, nextSize);
 			bytesReadFromCurrentSource += nextSize;
 			size += nextSize;
 		}
 		bytesRead += size;
-		crc32.update(buffer, 0, size);
+		crc32.update(buffer, offset, size);
 		return size;
 	}
 
@@ -403,7 +425,7 @@ public class ArchiveInputStream extends ZipInputStream {
 
 	/**
 	 * Returns the content type based on the content of the ZIP file. The content type may be truncated using {@link #setContentType(int)}.
-	 * 
+	 *
 	 * @return a bit field of {@link DfuBaseService#TYPE_SOFT_DEVICE TYPE_SOFT_DEVICE}, {@link DfuBaseService#TYPE_BOOTLOADER TYPE_BOOTLOADER} and {@link DfuBaseService#TYPE_APPLICATION
 	 *         TYPE_APPLICATION}
 	 */
@@ -424,7 +446,7 @@ public class ArchiveInputStream extends ZipInputStream {
 
 	/**
 	 * Truncates the current content type. May be used to hide some files, e.g. to send Soft Device and Bootloader without Application or only the Application.
-	 * 
+	 *
 	 * @param type
 	 *            the new type
 	 * @return the final type after truncating
@@ -468,7 +490,7 @@ public class ArchiveInputStream extends ZipInputStream {
 
 	/**
 	 * Sets the currentSource to the new file or to <code>null</code> if the last file has been transmitted.
-	 * 
+	 *
 	 * @return the new source, the same as {@link #currentSource}
 	 */
 	private byte[] startNextFile() {
