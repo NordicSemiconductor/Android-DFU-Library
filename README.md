@@ -57,7 +57,7 @@ The library is compatible with nRF51 and nRF52 devices with S-Series Soft Device
 
 This library is fully backwards compatible and supports both the new and legacy DFU.
 The experimental buttonless DFU service from SDK 12 is supported since version 1.1.0. Due to the fact, that this experimental service from SDK 12 is not safe,
-you have to call [starter.setUnsafeExperimentalButtonlessServiceInSecureDfuEnabled(true)](https://github.com/NordicSemiconductor/Android-DFU-Library/blob/release/dfu/src/main/java/no/nordicsemi/android/dfu/DfuServiceInitiator.java#L194)
+you have to call [starter.setUnsafeExperimentalButtonlessServiceInSecureDfuEnabled(true)](https://github.com/NordicSemiconductor/Android-DFU-Library/blob/release/dfu/src/main/java/no/nordicsemi/android/dfu/DfuServiceInitiator.java#L376)
 to enable it. Read the method documentation for details. It is recommended to use the Buttonless service from SDK 13 (for non-bonded devices, or 14 for bonded).
 Both are supported since DFU Library 1.3.0.
 
