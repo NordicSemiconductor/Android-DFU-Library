@@ -295,14 +295,18 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 
 		int size;
 		try {
-			initPacketStream.reset();
+			if (initPacketStream.markSupported()) {
+				initPacketStream.reset();
+			}
 			size = initPacketStream.available();
 		} catch (final Exception e) {
 			size = 0;
 		}
 		mInitPacketSizeInBytes = size;
 		try {
-			firmwareStream.reset();
+			if (firmwareStream.markSupported()) {
+				firmwareStream.reset();
+			}
 			size = firmwareStream.available();
 		} catch (final Exception e) {
 			size = 0;
