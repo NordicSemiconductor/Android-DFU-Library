@@ -34,8 +34,7 @@ public interface DfuSettingsConstants {
 	 * for more details. The number of packets before receiving a Packet Receipt Notification
 	 * is set with property {@link #SETTINGS_NUMBER_OF_PACKETS}.
 	 *
-	 * This constant is now deprecated. Please, use
-	 * {@link DfuServiceInitiator#setPacketsReceiptNotificationsEnabled(boolean)} to set it.
+	 * @deprecated Use {@link DfuServiceInitiator#setPacketsReceiptNotificationsEnabled(boolean)} to set it.
 	 */
 	@Deprecated
 	String SETTINGS_PACKET_RECEIPT_NOTIFICATION_ENABLED = "settings_packet_receipt_notification_enabled";
