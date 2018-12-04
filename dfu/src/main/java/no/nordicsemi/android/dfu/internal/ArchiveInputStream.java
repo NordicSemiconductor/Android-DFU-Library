@@ -404,6 +404,23 @@ public class ArchiveInputStream extends InputStream {
 	}
 
 	/**
+	 * Resets to the beginning of current stream.
+	 * If SD and BL were updated, the stream will be reset to the beginning.
+	 * If SD and BL were already sent and the current stream was changed to application,
+	 * this method will reset to the beginning of the application stream.
+	 */
+	public void fullReset() {
+		// Reset stream to SoftDevice if SD and BL firmware were given separately
+		if (softDeviceBytes != null && bootloaderBytes != null && currentSource == bootloaderBytes) {
+			currentSource = softDeviceBytes;
+		}
+		// Reset the bytes count to 0
+		bytesReadFromCurrentSource = 0;
+		mark(0);
+		reset();
+	}
+
+	/**
 	 * Returns number of bytes read until now.
 	 */
 	public int getBytesRead() {
