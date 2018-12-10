@@ -86,6 +86,11 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 
 		@Override
 		public void onCharacteristicChanged(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) {
+			if (characteristic.getUuid().toString().equalsIgnoreCase(DFU_CONTROL_POINT_UUID.toString()) == false &&
+					characteristic.getUuid().toString().equalsIgnoreCase(DFU_PACKET_UUID.toString()) == false) {
+				return;	// not interested
+			}
+
 			if (characteristic.getValue() == null || characteristic.getValue().length < 3) {
 				loge("Empty response: " + parse(characteristic));
 				mError = DfuBaseService.ERROR_INVALID_RESPONSE;

@@ -49,8 +49,8 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 	protected static final UUID GENERIC_ATTRIBUTE_SERVICE_UUID = new UUID(0x0000180100001000L, 0x800000805F9B34FBL);
 	protected static final UUID SERVICE_CHANGED_UUID = new UUID(0x00002A0500001000L, 0x800000805F9B34FBL);
 	protected static final UUID CLIENT_CHARACTERISTIC_CONFIG = new UUID(0x0000290200001000L, 0x800000805f9b34fbL);
-	protected static final int NOTIFICATIONS = 1;
-	protected static final int INDICATIONS = 2;
+	public static final int NOTIFICATIONS = 1;
+	public static final int INDICATIONS = 2;
 
 	protected static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
 	protected static final int MAX_PACKET_SIZE_DEFAULT = 20; // the default maximum number of bytes in one packet is 20.
@@ -370,7 +370,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 	 * @throws DfuException
 	 * @throws UploadAbortedException
 	 */
-	protected void enableCCCD(final BluetoothGattCharacteristic characteristic, final int type) throws DeviceDisconnectedException, DfuException, UploadAbortedException {
+	public void enableCCCD(final BluetoothGattCharacteristic characteristic, final int type) throws DeviceDisconnectedException, DfuException, UploadAbortedException {
 		final BluetoothGatt gatt = mGatt;
 		final String debugString = type == NOTIFICATIONS ? "notifications" : "indications";
 		if (!mConnected)

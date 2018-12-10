@@ -88,6 +88,7 @@ public class DfuServiceInitiator {
 	private Parcelable[] experimentalButtonlessDfuUuids;
 	private Parcelable[] buttonlessDfuWithoutBondSharingUuids;
 	private Parcelable[] buttonlessDfuWithBondSharingUuids;
+	private ParcelUuid[] customNotificationUUIDs;
 
 	/**
 	 * Creates the builder. Use setZip(...), or setBinOrHex(...) methods to specify the file you
@@ -491,6 +492,14 @@ public class DfuServiceInitiator {
 		return this;
 	}
 
+	public DfuServiceInitiator setCustomNotificationUUIDs(final UUID[] customNotificationUUIDs) {
+		this.customNotificationUUIDs = new ParcelUuid[customNotificationUUIDs.length];
+		for (int i=0; i < customNotificationUUIDs.length; i++) {
+			this.customNotificationUUIDs[i] = new ParcelUuid(customNotificationUUIDs[i]);
+		}
+		return this;
+	}
+
 	/**
 	 * Sets the URI to the Distribution packet (ZIP) or to a ZIP file matching the deprecated naming
 	 * convention.
@@ -719,6 +728,8 @@ public class DfuServiceInitiator {
 			intent.putExtra(DfuBaseService.EXTRA_CUSTOM_UUIDS_FOR_BUTTONLESS_DFU_WITHOUT_BOND_SHARING, buttonlessDfuWithoutBondSharingUuids);
 		if (buttonlessDfuWithBondSharingUuids != null)
 			intent.putExtra(DfuBaseService.EXTRA_CUSTOM_UUIDS_FOR_BUTTONLESS_DFU_WITH_BOND_SHARING, buttonlessDfuWithBondSharingUuids);
+		if (customNotificationUUIDs != null)
+			intent.putExtra(DfuBaseService.EXTRA_CUSTOM_UUIDS_FOR_NOTIFICATIONS, customNotificationUUIDs);
 
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && startAsForegroundService) {
 			// On Android Oreo and above the service must be started as a foreground service to make it accessible from

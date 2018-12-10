@@ -26,11 +26,13 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.ParcelUuid;
 import android.support.v4.content.LocalBroadcastManager;
 
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 
 import no.nordicsemi.android.dfu.internal.scanner.BootloaderScanner;
 import no.nordicsemi.android.error.GattError;
@@ -48,6 +50,65 @@ import no.nordicsemi.android.error.GattError;
 public class DfuServiceListenerHelper {
 	private static LogBroadcastReceiver mLogBroadcastReceiver;
 	private static ProgressBroadcastsReceiver mProgressBroadcastReceiver;
+	private static NotificationBroadcastReceiver mNotificationBroadcastReceiver;
+
+	private static class NotificationBroadcastReceiver extends BroadcastReceiver {
+		private DfuNotificationListener mGlobalNotificationListener;
+		private Map<String, DfuNotificationListener> mListeners = new HashMap<>();
+
+		private void setNotificationListener(final DfuNotificationListener globalLogListener) {
+			this.mGlobalNotificationListener = globalLogListener;
+		}
+
+		private void setNotificationListener(final String deviceAddress, final DfuNotificationListener listener) {
+			// When using the buttonless update and updating the SoftDevice the application will be removed to make space for the new SoftDevice.
+			// The new bootloader will afterwards advertise with the address incremented by 1. We need to make sure that the listener will receive also events from this device.
+			mListeners.put(deviceAddress, listener);
+			mListeners.put(getIncrementedAddress(deviceAddress), listener); // assuming the address is a valid BLE address
+		}
+
+		private boolean removeNotificationListener(final DfuNotificationListener listener) {
+			if (mGlobalNotificationListener == listener)
+				mGlobalNotificationListener = null;
+
+			// We do it 2 times as the listener was added for 2 addresses
+			for (final Map.Entry<String, DfuNotificationListener> entry : mListeners.entrySet()) {
+				if (entry.getValue() == listener) {
+					mListeners.remove(entry.getKey());
+					break;
+				}
+			}
+			for (final Map.Entry<String, DfuNotificationListener> entry : mListeners.entrySet()) {
+				if (entry.getValue() == listener) {
+					mListeners.remove(entry.getKey());
+					break;
+				}
+			}
+
+			return mGlobalNotificationListener == null && mListeners.isEmpty();
+		}
+
+		@Override
+		public void onReceive(final Context context, final Intent intent) {
+			final String address = intent.getStringExtra(DfuBaseService.EXTRA_DEVICE_ADDRESS);
+
+			// Find proper listeners
+			final DfuNotificationListener globalListener = mGlobalNotificationListener;
+			final DfuNotificationListener deviceListener = mListeners.get(address);
+
+			if (globalListener == null && deviceListener == null)
+				return;
+
+			final UUID characteristicUuid = ((ParcelUuid)intent.getParcelableExtra(DfuBaseService.EXTRA_NOTIFICATION_UUID_CHARACTERISTIC)).getUuid();
+			final byte[] data = intent.getByteArrayExtra(DfuBaseService.EXTRA_NOTIFICATION_DATA_BYTEARRAY);
+
+			if (globalListener != null)
+				globalListener.onNotificationEvent(address, characteristicUuid, data);
+			if (deviceListener != null)
+				deviceListener.onNotificationEvent(address, characteristicUuid, data);
+		}
+
+	}
 
 	private static class LogBroadcastReceiver extends BroadcastReceiver {
 		private DfuLogListener mGlobalLogListener;
@@ -363,6 +424,56 @@ public class DfuServiceListenerHelper {
 			if (empty) {
 				LocalBroadcastManager.getInstance(context).unregisterReceiver(mLogBroadcastReceiver);
 				mLogBroadcastReceiver = null;
+			}
+		}
+	}
+
+
+	/**
+	 * Registers the {@link DfuLogListener}. Registered listener will receive the log events from the DFU service.
+	 * @param context the application context
+	 * @param listener the listener to register
+	 */
+	public static void registerNotificationListener(final Context context, final DfuNotificationListener listener) {
+		if (mNotificationBroadcastReceiver == null) {
+			mNotificationBroadcastReceiver = new NotificationBroadcastReceiver();
+
+			final IntentFilter filter = new IntentFilter();
+			filter.addAction(DfuBaseService.BROADCAST_NOTIFICATION);
+			LocalBroadcastManager.getInstance(context).registerReceiver(mNotificationBroadcastReceiver, filter);
+		}
+		mNotificationBroadcastReceiver.setNotificationListener(listener);
+	}
+
+	/**
+	 * Registers the {@link DfuLogListener}. Registered listener will receive the log events from the DFU service.
+	 * @param context the application context
+	 * @param listener the listener to register
+	 * @param deviceAddress the address of the device to receive updates from (or null if any device)
+	 */
+	public static void registerNotificationListener(final Context context, final DfuNotificationListener listener, final String deviceAddress) {
+		if (mNotificationBroadcastReceiver == null) {
+			mNotificationBroadcastReceiver = new NotificationBroadcastReceiver();
+
+			final IntentFilter filter = new IntentFilter();
+			filter.addAction(DfuBaseService.BROADCAST_NOTIFICATION);
+			LocalBroadcastManager.getInstance(context).registerReceiver(mNotificationBroadcastReceiver, filter);
+		}
+		mNotificationBroadcastReceiver.setNotificationListener(deviceAddress, listener);
+	}
+
+	/**
+	 * Unregisters the previously registered log listener.
+	 * @param context the application context
+	 * @param listener the listener to unregister
+	 */
+	public static void unregisterNotificationListener(final Context context, final DfuNotificationListener listener) {
+		if (mNotificationBroadcastReceiver != null) {
+			final boolean empty = mNotificationBroadcastReceiver.removeNotificationListener(listener);
+
+			if (empty) {
+				LocalBroadcastManager.getInstance(context).unregisterReceiver(mNotificationBroadcastReceiver);
+				mNotificationBroadcastReceiver = null;
 			}
 		}
 	}

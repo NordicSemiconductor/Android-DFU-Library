@@ -23,6 +23,7 @@
 package no.nordicsemi.android.dfu;
 
 import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattCharacteristic;
 import android.content.Intent;
 
 import java.io.InputStream;
@@ -41,6 +42,9 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	 * @return true if initialization was successful and the DFU process may begin, false to finish teh DFU service
 	 */
 	boolean initialize(final Intent intent, final BluetoothGatt gatt, final int fileType, final InputStream firmwareStream, final InputStream initPacketStream) throws DfuException, DeviceDisconnectedException, UploadAbortedException;
+
+
+	void enableCCCD(final BluetoothGattCharacteristic characteristic, final int type) throws DeviceDisconnectedException, DfuException, UploadAbortedException;
 
 	/** Performs the DFU process. */
 	void performDfu(final Intent intent) throws DfuException, DeviceDisconnectedException, UploadAbortedException;

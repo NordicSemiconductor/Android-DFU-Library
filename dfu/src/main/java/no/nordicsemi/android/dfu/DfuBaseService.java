@@ -33,6 +33,7 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
+import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -43,6 +44,9 @@ import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Parcel;
+import android.os.ParcelUuid;
+import android.os.Parcelable;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
@@ -57,6 +61,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.Locale;
+import java.util.UUID;
 
 import no.nordicsemi.android.dfu.internal.ArchiveInputStream;
 import no.nordicsemi.android.dfu.internal.HexInputStream;
@@ -614,6 +619,12 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	public static final String EXTRA_CUSTOM_UUIDS_FOR_EXPERIMENTAL_BUTTONLESS_DFU = "no.nordicsemi.android.dfu.extra.EXTRA_CUSTOM_UUIDS_FOR_EXPERIMENTAL_BUTTONLESS_DFU";
 	public static final String EXTRA_CUSTOM_UUIDS_FOR_BUTTONLESS_DFU_WITHOUT_BOND_SHARING = "no.nordicsemi.android.dfu.extra.EXTRA_CUSTOM_UUIDS_FOR_BUTTONLESS_DFU_WITHOUT_BOND_SHARING";
 	public static final String EXTRA_CUSTOM_UUIDS_FOR_BUTTONLESS_DFU_WITH_BOND_SHARING = "no.nordicsemi.android.dfu.extra.EXTRA_CUSTOM_UUIDS_FOR_BUTTONLESS_DFU_WITH_BOND_SHARING";
+	public static final String EXTRA_CUSTOM_UUIDS_FOR_NOTIFICATIONS = "no.nordicsemi.android.dfu.extra.EXTRA_CUSTOM_UUIDS_FOR_NOTIFICATIONS";
+
+
+	public static final String BROADCAST_NOTIFICATION = "no.nordicsemi.android.dfu.broadcast.BROADCAST_NOTIFICATION";
+	public static final String EXTRA_NOTIFICATION_UUID_CHARACTERISTIC = "no.nordicsemi.android.dfu.extra.EXTRA_NOTIFICATION_UUID_CHARACTERISTIC";
+	public static final String EXTRA_NOTIFICATION_DATA_BYTEARRAY = "no.nordicsemi.android.dfu.extra.EXTRA_NOTIFICATION_DATA_BYTEARRAY";
 
 	/**
 	 * Lock used in synchronization purposes
@@ -843,6 +854,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 
 		@Override
 		public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+			sendNotificationBroadcast(characteristic);
 			if (mDfuServiceImpl != null)
 				mDfuServiceImpl.getGattCallback().onCharacteristicChanged(gatt, characteristic);
 		}
@@ -965,6 +977,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		final String initFilePath = intent.getStringExtra(EXTRA_INIT_FILE_PATH);
 		final Uri initFileUri = intent.getParcelableExtra(EXTRA_INIT_FILE_URI);
 		final int initFileResId = intent.getIntExtra(EXTRA_INIT_FILE_RES_ID, 0);
+		final Parcelable[] customNotificationUuidsExtra = intent.getParcelableArrayExtra(EXTRA_CUSTOM_UUIDS_FOR_NOTIFICATIONS);
 		int fileType = intent.getIntExtra(EXTRA_FILE_TYPE, TYPE_AUTO);
 		if (filePath != null && fileType == TYPE_AUTO)
 			fileType = filePath.toLowerCase(Locale.US).endsWith("zip") ? TYPE_AUTO : TYPE_APPLICATION;
@@ -1233,6 +1246,15 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 
 				// Begin the DFU depending on the implementation
 				if (dfuService.initialize(intent, gatt, fileType, is, initIs)) {
+
+					// set the notifications for custom uuids
+					if (customNotificationUuidsExtra != null) {
+						for (Parcelable parcelUuidExtra : customNotificationUuidsExtra) {
+							UUID uuid = ((ParcelUuid) parcelUuidExtra).getUuid();
+							dfuService.enableCCCD(findBluetoothGattCharacteristic(gatt, uuid), BaseDfuImpl.NOTIFICATIONS);
+						}
+					}
+
 					dfuService.performDfu(intent);
 				}
 			} catch (final UploadAbortedException e) {
@@ -1270,6 +1292,17 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 				stopForeground(disableNotification);
 			}
 		}
+	}
+
+	private BluetoothGattCharacteristic findBluetoothGattCharacteristic(final BluetoothGatt gatt, final UUID uuid) {
+		BluetoothGattCharacteristic characteristic;
+		for (BluetoothGattService service : gatt.getServices()) {
+			characteristic = service.getCharacteristic(uuid);
+			if (characteristic != null) {
+				return characteristic;
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -1763,6 +1796,17 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		broadcast.putExtra(EXTRA_LOG_MESSAGE, fullMessage);
 		broadcast.putExtra(EXTRA_LOG_LEVEL, level);
 		broadcast.putExtra(EXTRA_DEVICE_ADDRESS, mDeviceAddress);
+		LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
+	}
+
+	/* package */ void sendNotificationBroadcast(final BluetoothGattCharacteristic characteristic) {
+		final ParcelUuid characteristicUuid = new ParcelUuid(characteristic.getUuid());
+		final byte[] data = characteristic.getValue();
+
+		final Intent broadcast = new Intent(BROADCAST_NOTIFICATION);
+		broadcast.putExtra(EXTRA_DEVICE_ADDRESS, mDeviceAddress);
+		broadcast.putExtra(EXTRA_NOTIFICATION_UUID_CHARACTERISTIC, characteristicUuid);
+		broadcast.putExtra(EXTRA_NOTIFICATION_DATA_BYTEARRAY, data);
 		LocalBroadcastManager.getInstance(this).sendBroadcast(broadcast);
 	}
 
