@@ -333,7 +333,7 @@ public class HexInputStream extends FilterInputStream {
 
 		pos = 0;
 		bytesRead = 0;
-		localPos = 0;
+		localPos = LINE_LENGTH; // we are at the end of the local buffer, new one must be obtained
 	}
 
 	private void checkComma(final int comma) throws HexFileValidationException {
