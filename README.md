@@ -7,7 +7,7 @@
 The compat library may be found on jcenter and Maven Central repository. Add it to your project by adding the following dependency:
 
 ```Groovy
-implementation 'no.nordicsemi.android:dfu:1.8.0'
+implementation 'no.nordicsemi.android:dfu:1.8.1'
 ```
 
 If you use proguard, add the following line to your proguard rules:
