@@ -25,6 +25,7 @@ package no.nordicsemi.android.dfu;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.IntentService;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
@@ -647,6 +648,11 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	/** Flag set to true if sending was aborted. */
 	private boolean mAborted;
 
+	/**
+	 * Android Oreo notification management
+	 */
+	private NotificationManager notificationManager;
+
 	private DfuCallback mDfuServiceImpl;
 	private InputStream mFirmwareInputStream, mInitFileInputStream;
 
@@ -909,6 +915,13 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 
 		final IntentFilter stateFilter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
 		registerReceiver(mBluetoothStateBroadcastReceiver, stateFilter);
+
+		notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+			NotificationChannel notificationChannel =
+					new NotificationChannel(NOTIFICATION_CHANNEL_DFU, NOTIFICATION_CHANNEL_DFU, NotificationManager.IMPORTANCE_LOW);
+			notificationManager.createNotificationChannel(notificationChannel);
+		}
 	}
 
 	@Override
@@ -917,8 +930,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		// This method is called when user removed the app from Recents.
 		// By default, the service will be killed and recreated immediately after that,
 		// but we don't want it. User removed the task, so let's cancel DFU.
-		final NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-		manager.cancel(NOTIFICATION_ID);
+		notificationManager.cancel(NOTIFICATION_ID);
 		stopSelf();
 	}
 
@@ -1570,8 +1582,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		// Any additional configuration?
 		updateProgressNotification(builder, progress);
 
-		final NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-		manager.notify(NOTIFICATION_ID, builder.build());
+		notificationManager.notify(NOTIFICATION_ID, builder.build());
 	}
 
 	/**
@@ -1625,8 +1636,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		// Any additional configuration?
 		updateErrorNotification(builder);
 
-		final NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-		manager.notify(NOTIFICATION_ID, builder.build());
+		notificationManager.notify(NOTIFICATION_ID, builder.build());
 	}
 
 	/**
