@@ -176,6 +176,8 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		 *
 		 * However, as up to Android 7 the system does NOT respect this requirement and servers are cached for every device, even if Service Changed is enabled -> Android BUG?
 		 * For bonded devices Android performs service re-discovery when SC indication is received.
+		 *
+		 * Android 8 and 9 never cache services of not bonded devices.
 		 */
 		final BluetoothGatt gatt = mGatt;
 		final BluetoothGattService gas = gatt.getService(GENERIC_ATTRIBUTE_SERVICE_UUID);
