@@ -62,6 +62,7 @@ public class DfuServiceInitiator {
 
 	private Uri fileUri;
 	private String filePath;
+	private String fileAsseteName;
 	private int fileResId;
 
 	private Uri initFileUri;
@@ -517,6 +518,13 @@ public class DfuServiceInitiator {
 		return init(null, path, 0, DfuBaseService.TYPE_AUTO, DfuBaseService.MIME_TYPE_ZIP);
 	}
 
+	public DfuServiceInitiator setZipFromAssetsFile(@NonNull final String assetsFile) {
+		return init(assetsFile);
+	}
+
+
+	//fileAsseteName
+
 	/**
 	 * Sets the resource ID of the Distribution packet (ZIP) or the a ZIP file matching the
 	 * deprecated naming convention. The file should be in the /res/raw folder.
@@ -542,6 +550,11 @@ public class DfuServiceInitiator {
 	public DfuServiceInitiator setZip(@Nullable final Uri uri, @Nullable final String path) {
 		return init(uri, path, 0, DfuBaseService.TYPE_AUTO, DfuBaseService.MIME_TYPE_ZIP);
 	}
+
+
+
+
+
 
 	/**
 	 * Sets the URI of the BIN or HEX file containing the new firmware.
@@ -687,6 +700,7 @@ public class DfuServiceInitiator {
 		intent.putExtra(DfuBaseService.EXTRA_FILE_TYPE, fileType);
 		intent.putExtra(DfuBaseService.EXTRA_FILE_URI, fileUri);
 		intent.putExtra(DfuBaseService.EXTRA_FILE_PATH, filePath);
+		intent.putExtra(DfuBaseService.EXTRA_ASSETE_FILE_NAME, filePath);
 		intent.putExtra(DfuBaseService.EXTRA_FILE_RES_ID, fileResId);
 		intent.putExtra(DfuBaseService.EXTRA_INIT_FILE_URI, initFileUri);
 		intent.putExtra(DfuBaseService.EXTRA_INIT_FILE_PATH, initFilePath);
@@ -741,6 +755,24 @@ public class DfuServiceInitiator {
 		this.initFileResId = initFileResId;
 		return this;
 	}
+
+	private DfuServiceInitiator init(@Nullable final String fileAsseteName) {
+		this.fileUri = null;
+		this.filePath = null;
+		this.fileAsseteName = fileAsseteName;
+		this.fileResId = 0;
+		this.fileType = DfuBaseService.TYPE_AUTO;
+		this.mimeType = DfuBaseService.MIME_TYPE_ZIP;
+
+		// If the MIME TYPE implies it's a ZIP file then the init file must be included in the file.
+		if (DfuBaseService.MIME_TYPE_ZIP.equals(mimeType)) {
+			this.initFileUri = null;
+			this.initFilePath = null;
+			this.initFileResId = 0;
+		}
+		return this;
+	}
+
 
 	private DfuServiceInitiator init(@Nullable final Uri fileUri,
 									 @Nullable final String filePath,

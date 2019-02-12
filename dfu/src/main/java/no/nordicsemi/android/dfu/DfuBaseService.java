@@ -254,6 +254,11 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 * See {@link #EXTRA_FILE_PATH} for details.
 	 */
 	public static final String EXTRA_FILE_RES_ID = "no.nordicsemi.android.dfu.extra.EXTRA_FILE_RES_ID";
+
+	/**
+	 * See {@link #EXTRA_FILE_PATH} for details.
+	 */
+	public static final String EXTRA_ASSETE_FILE_NAME = "no.nordicsemi.android.dfu.extra.EXTRA_ASSETE_FILE_NAME";
 	/**
 	 * The Init packet URI. This file is required if the Extended Init Packet is required (SDK 7.0+). Must point to a 'dat' file corresponding with the selected firmware.
 	 * The Init packet may contain just the CRC (in case of older versions of DFU) or the Extended Init Packet in binary format (SDK 7.0+).
@@ -960,6 +965,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		final boolean disableNotification = intent.getBooleanExtra(EXTRA_DISABLE_NOTIFICATION, false);
 		final boolean foregroundService = intent.getBooleanExtra(EXTRA_FOREGROUND_SERVICE, true);
 		final String filePath = intent.getStringExtra(EXTRA_FILE_PATH);
+		final String asseteFileName = intent.getStringExtra(EXTRA_ASSETE_FILE_NAME);
 		final Uri fileUri = intent.getParcelableExtra(EXTRA_FILE_URI);
 		final int fileResId = intent.getIntExtra(EXTRA_FILE_RES_ID, 0);
 		final String initFilePath = intent.getStringExtra(EXTRA_INIT_FILE_PATH);
@@ -1042,6 +1048,8 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 						is = openInputStream(filePath, mimeType, mbrSize, fileType);
 					} else if (fileResId > 0) {
 						is = openInputStream(fileResId, mimeType, mbrSize, fileType);
+					} else if (asseteFileName != null){
+						is = getApplicationContext().getAssets().open(asseteFileName);
 					}
 
 					// The Init file Input Stream is kept global only in case it was provided
