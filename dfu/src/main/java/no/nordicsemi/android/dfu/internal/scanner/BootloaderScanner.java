@@ -22,7 +22,7 @@
 
 package no.nordicsemi.android.dfu.internal.scanner;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 /**
  * <p>
