@@ -1182,8 +1182,9 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 					sendLogBroadcast(LOG_LEVEL_ERROR, String.format(Locale.US, "Connection failed (0x%02X): %s", error, GattError.parse(error)));
 				}
 				// Connection usually fails due to a 133 error (device unreachable, or.. something else went wrong).
-				// Usually trying the same for the second time works.
-				if (intent.getIntExtra(EXTRA_ATTEMPT, 0) == 0) {
+				// Usually trying the same for the second time works. Let's try 2 times.
+				final int attempt = intent.getIntExtra(EXTRA_ATTEMPT, 0);
+				if (attempt < 2) {
 					sendLogBroadcast(LOG_LEVEL_WARNING, "Retrying...");
 
 					if (mConnectionState != STATE_DISCONNECTED) {
@@ -1197,7 +1198,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 					logi("Restarting the service");
 					final Intent newIntent = new Intent();
 					newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
-					newIntent.putExtra(EXTRA_ATTEMPT, 1);
+					newIntent.putExtra(EXTRA_ATTEMPT, attempt + 1);
 					startService(newIntent);
 					return;
 				}
