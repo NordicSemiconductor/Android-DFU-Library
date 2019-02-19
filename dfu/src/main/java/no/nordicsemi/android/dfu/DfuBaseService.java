@@ -117,8 +117,11 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 * <p>Read more here: <a href="https://developer.android.com/about/versions/oreo/background.html">https://developer.android.com/about/versions/oreo/background.html</a></p>
 	 */
 	public static final String EXTRA_FOREGROUND_SERVICE = "no.nordicsemi.android.dfu.extra.EXTRA_FOREGROUND_SERVICE";
-	/** An extra private field indicating which attempt is being performed. In case of error 133 the service will retry to connect one more time. */
-	private static final String EXTRA_ATTEMPT = "no.nordicsemi.android.dfu.extra.EXTRA_ATTEMPT";
+	/**
+	 * An extra private field indicating which reconnection attempt is being performed.
+	 * In case of error 133 the service will retry to connect 2 more times.
+	 */
+	private static final String EXTRA_RECONNECTION_ATTEMPT = "no.nordicsemi.android.dfu.extra.EXTRA_RECONNECTION_ATTEMPT";
 	/**
 	 * <p>
 	 * If the new firmware (application) does not share the bond information with the old one, the bond information is lost. Set this flag to <code>true</code>
@@ -1152,7 +1155,9 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 			sendLogBroadcast(LOG_LEVEL_VERBOSE, "Connecting to DFU target...");
 			mProgressInfo.setProgress(PROGRESS_CONNECTING);
 
+			final long before = SystemClock.elapsedRealtime();
 			final BluetoothGatt gatt = connect(deviceAddress);
+			final long after = SystemClock.elapsedRealtime();
 			// Are we connected?
 			if (gatt == null) {
 				loge("Bluetooth adapter disabled");
@@ -1160,22 +1165,17 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 				report(ERROR_BLUETOOTH_DISABLED);
 				return;
 			}
-			if (mConnectionState == STATE_DISCONNECTED) {
-				if (mError == (ERROR_CONNECTION_STATE_MASK | 133)) {
-					loge("Device not reachable. Check if the device with address " + deviceAddress + " is in range, is advertising and is connectable");
-					sendLogBroadcast(LOG_LEVEL_ERROR, "Error 133: Connection timeout");
-				} else {
-					loge("Device got disconnected before service discovery finished");
-					sendLogBroadcast(LOG_LEVEL_ERROR, "Disconnected");
-				}
-				terminateConnection(gatt, ERROR_DEVICE_DISCONNECTED);
-				return;
-			}
 			if (mError > 0) { // error occurred
 				if ((mError & ERROR_CONNECTION_STATE_MASK) > 0) {
 					final int error = mError & ~ERROR_CONNECTION_STATE_MASK;
-					loge("An error occurred while connecting to the device:" + error);
-					sendLogBroadcast(LOG_LEVEL_ERROR, String.format(Locale.US, "Connection failed (0x%02X): %s", error, GattError.parseConnectionError(error)));
+					final boolean timeout = error == 133 && after > before + 25000; // timeout is 30 sec
+					if (timeout) {
+						loge("Device not reachable. Check if the device with address " + deviceAddress + " is in range, is advertising and is connectable");
+						sendLogBroadcast(LOG_LEVEL_ERROR, "Error 133: Connection timeout");
+					} else {
+						loge("An error occurred while connecting to the device:" + error);
+						sendLogBroadcast(LOG_LEVEL_ERROR, String.format(Locale.US, "Connection failed (0x%02X): %s", error, GattError.parseConnectionError(error)));
+					}
 				} else {
 					final int error = mError & ~ERROR_CONNECTION_MASK;
 					loge("An error occurred during discovering services:" + error);
@@ -1183,7 +1183,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 				}
 				// Connection usually fails due to a 133 error (device unreachable, or.. something else went wrong).
 				// Usually trying the same for the second time works. Let's try 2 times.
-				final int attempt = intent.getIntExtra(EXTRA_ATTEMPT, 0);
+				final int attempt = intent.getIntExtra(EXTRA_RECONNECTION_ATTEMPT, 0);
 				if (attempt < 2) {
 					sendLogBroadcast(LOG_LEVEL_WARNING, "Retrying...");
 
@@ -1198,11 +1198,16 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 					logi("Restarting the service");
 					final Intent newIntent = new Intent();
 					newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
-					newIntent.putExtra(EXTRA_ATTEMPT, attempt + 1);
+					newIntent.putExtra(EXTRA_RECONNECTION_ATTEMPT, attempt + 1);
 					startService(newIntent);
 					return;
 				}
 				terminateConnection(gatt, mError);
+				return;
+			}
+			if (mConnectionState == STATE_DISCONNECTED) {
+				sendLogBroadcast(LOG_LEVEL_ERROR, "Disconnected");
+				terminateConnection(gatt, ERROR_DEVICE_DISCONNECTED);
 				return;
 			}
 			if (mAborted) {
@@ -1214,8 +1219,8 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 			}
 			sendLogBroadcast(LOG_LEVEL_INFO, "Services discovered");
 
-			// Reset the attempt counter
-			intent.putExtra(EXTRA_ATTEMPT, 0);
+			// Reset the reconnection attempt counter
+			intent.putExtra(EXTRA_RECONNECTION_ATTEMPT, 0);
 
 			DfuService dfuService = null;
 			try {
