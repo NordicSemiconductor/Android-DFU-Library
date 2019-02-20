@@ -33,8 +33,11 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.ParcelUuid;
 import android.os.Parcelable;
+
+import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RawRes;
 import androidx.annotation.RequiresApi;
 
 import java.security.InvalidParameterException;
@@ -50,9 +53,9 @@ public class DfuServiceInitiator {
 	public static final int DEFAULT_PRN_VALUE = 12;
 
 	/** Constant used to narrow the scope of the update to system components (SD+BL) only. */
-	public static final int SCOPE_SYSTEM_COMPONENTS = 7578;
+	public static final int SCOPE_SYSTEM_COMPONENTS = 1;
 	/** Constant used to narrow the scope of the update to application only. */
-	public static final int SCOPE_APPLICATION = 3542;
+	public static final int SCOPE_APPLICATION = 2;
 
 	private final String deviceAddress;
 	private String deviceName;
@@ -195,13 +198,17 @@ public class DfuServiceInitiator {
 	/**
 	 * If Packet Receipt Notification procedure is enabled, this method sets number of packets to
 	 * be sent before receiving a PRN. A PRN is used to synchronize the transmitter and receiver.
+	 * <p>
+	 * If the value given is equal to 0, the {@link #DEFAULT_PRN_VALUE} will be used instead.
+	 * <p>
+	 * To disable PRNs use {@link #setPacketsReceiptNotificationsEnabled(boolean)}.
 	 *
 	 * @param number number of packets to be sent before receiving a PRN. Defaulted when set to 0.
 	 * @return the builder
 	 * @see #setPacketsReceiptNotificationsEnabled(boolean)
 	 * @see DfuSettingsConstants#SETTINGS_NUMBER_OF_PACKETS
 	 */
-	public DfuServiceInitiator setPacketsReceiptNotificationsValue(final int number) {
+	public DfuServiceInitiator setPacketsReceiptNotificationsValue(@IntRange(from = 0) final int number) {
 		this.numberOfPackets = number > 0 ? number : DEFAULT_PRN_VALUE;
 		return this;
 	}
@@ -282,7 +289,7 @@ public class DfuServiceInitiator {
 	 * @param mtu the MTU that wil be requested, 0 to disable MTU request.
 	 * @return the builder
 	 */
-	public DfuServiceInitiator setMtu(final int mtu) {
+	public DfuServiceInitiator setMtu(@IntRange(from = 23, to = 517) final int mtu) {
 		this.mtu = mtu;
 		return this;
 	}
@@ -304,7 +311,7 @@ public class DfuServiceInitiator {
 	 *            {@link android.bluetooth.BluetoothGattServerCallback#onMtuChanged(BluetoothDevice, int)}.
 	 * @return the builder
 	 */
-	public DfuServiceInitiator setCurrentMtu(final int mtu) {
+	public DfuServiceInitiator setCurrentMtu(@IntRange(from = 23, to = 517) final int mtu) {
 		this.currentMtu = mtu;
 		return this;
 	}
@@ -331,13 +338,15 @@ public class DfuServiceInitiator {
 	 *              {@link #SCOPE_APPLICATION}.
 	 * @return the builder
 	 */
-	public DfuServiceInitiator setScope(final int scope) {
+	public DfuServiceInitiator setScope(@DfuScope final int scope) {
 		if (!DfuBaseService.MIME_TYPE_ZIP.equals(mimeType))
 			throw new UnsupportedOperationException("Scope can be set only for a ZIP file");
 		if (scope == SCOPE_APPLICATION)
 			fileType = DfuBaseService.TYPE_APPLICATION;
 		else if (scope == SCOPE_SYSTEM_COMPONENTS)
 			fileType = DfuBaseService.TYPE_SOFT_DEVICE | DfuBaseService.TYPE_BOOTLOADER;
+		else if (scope == (SCOPE_APPLICATION | SCOPE_SYSTEM_COMPONENTS))
+			fileType = DfuBaseService.TYPE_AUTO;
 		else throw new UnsupportedOperationException("Unknown scope");
 		return this;
 	}
@@ -526,7 +535,7 @@ public class DfuServiceInitiator {
 	 * @see #setZip(Uri)
 	 * @see #setZip(String)
 	 */
-	public DfuServiceInitiator setZip(final int rawResId) {
+	public DfuServiceInitiator setZip(@RawRes final int rawResId) {
 		return init(null, null, rawResId, DfuBaseService.TYPE_AUTO, DfuBaseService.MIME_TYPE_ZIP);
 	}
 
@@ -558,7 +567,7 @@ public class DfuServiceInitiator {
 	 * @return the builder
 	 */
 	@Deprecated
-	public DfuServiceInitiator setBinOrHex(final int fileType, @NonNull final Uri uri) {
+	public DfuServiceInitiator setBinOrHex(@FileType final int fileType, @NonNull final Uri uri) {
 		if (fileType == DfuBaseService.TYPE_AUTO)
 			throw new UnsupportedOperationException("You must specify the file type");
 		return init(uri, null, 0, fileType, DfuBaseService.MIME_TYPE_OCTET_STREAM);
@@ -574,7 +583,7 @@ public class DfuServiceInitiator {
 	 * @return the builder
 	 */
 	@Deprecated
-	public DfuServiceInitiator setBinOrHex(final int fileType, @NonNull final String path) {
+	public DfuServiceInitiator setBinOrHex(@FileType final int fileType, @NonNull final String path) {
 		if (fileType == DfuBaseService.TYPE_AUTO)
 			throw new UnsupportedOperationException("You must specify the file type");
 		return init(null, path, 0, fileType, DfuBaseService.MIME_TYPE_OCTET_STREAM);
@@ -592,7 +601,7 @@ public class DfuServiceInitiator {
 	 * @deprecated The Distribution packet (ZIP) should be used for DFU Bootloader version 0.5 or newer
 	 */
 	@Deprecated
-	public DfuServiceInitiator setBinOrHex(final int fileType, @Nullable final Uri uri, @Nullable final String path) {
+	public DfuServiceInitiator setBinOrHex(@FileType final int fileType, @Nullable final Uri uri, @Nullable final String path) {
 		if (fileType == DfuBaseService.TYPE_AUTO)
 			throw new UnsupportedOperationException("You must specify the file type");
 		return init(uri, path, 0, fileType, DfuBaseService.MIME_TYPE_OCTET_STREAM);
@@ -608,7 +617,7 @@ public class DfuServiceInitiator {
 	 * @return the builder
 	 */
 	@Deprecated
-	public DfuServiceInitiator setBinOrHex(final int fileType, final int rawResId) {
+	public DfuServiceInitiator setBinOrHex(@FileType final int fileType, @RawRes final int rawResId) {
 		if (fileType == DfuBaseService.TYPE_AUTO)
 			throw new UnsupportedOperationException("You must specify the file type");
 		return init(null, null, rawResId, fileType, DfuBaseService.MIME_TYPE_OCTET_STREAM);
@@ -649,7 +658,7 @@ public class DfuServiceInitiator {
 	 * @return the builder
 	 */
 	@Deprecated
-	public DfuServiceInitiator setInitFile(final int initFileResId) {
+	public DfuServiceInitiator setInitFile(@RawRes final int initFileResId) {
 		return init(null, null, initFileResId);
 	}
 
@@ -732,7 +741,7 @@ public class DfuServiceInitiator {
 
 	private DfuServiceInitiator init(@Nullable final Uri initFileUri,
 									 @Nullable final String initFilePath,
-									 final int initFileResId) {
+									 @RawRes final int initFileResId) {
 		if (DfuBaseService.MIME_TYPE_ZIP.equals(mimeType))
 			throw new InvalidParameterException("Init file must be located inside the ZIP");
 
@@ -744,7 +753,7 @@ public class DfuServiceInitiator {
 
 	private DfuServiceInitiator init(@Nullable final Uri fileUri,
 									 @Nullable final String filePath,
-									 final int fileResId, final int fileType,
+									 @RawRes final int fileResId, @FileType final int fileType,
 									 @NonNull final String mimeType) {
 		this.fileUri = fileUri;
 		this.filePath = filePath;
