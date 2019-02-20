@@ -1579,11 +1579,10 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 			 * There is a refresh() method in BluetoothGatt class but for now it's hidden. We will call it using reflections.
 			 */
 			try {
+				//noinspection JavaReflectionMemberAccess
 				final Method refresh = gatt.getClass().getMethod("refresh");
-				if (refresh != null) {
-					final boolean success = (Boolean) refresh.invoke(gatt);
-					logi("Refreshing result: " + success);
-				}
+				final boolean success = (Boolean) refresh.invoke(gatt);
+				logi("Refreshing result: " + success);
 			} catch (Exception e) {
 				loge("An exception occurred while refreshing device", e);
 				sendLogBroadcast(LOG_LEVEL_WARNING, "Refreshing failed");
@@ -1738,6 +1737,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 * This method allows you to update the notification showing an error.
 	 * @param builder error notification builder
 	 */
+	@SuppressWarnings("unused")
 	protected void updateErrorNotification(final NotificationCompat.Builder builder) {
 		// Empty default implementation
 	}
@@ -1774,6 +1774,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 * This method allows you to update the notification that will be shown when the service goes to the foreground state.
 	 * @param builder foreground notification builder
 	 */
+	@SuppressWarnings("unused")
 	protected void updateForegroundNotification(final NotificationCompat.Builder builder) {
 		// Empty default implementation
 	}
@@ -1876,6 +1877,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 *
 	 * @return <code>true</code> if initialization was successful
 	 */
+	@SuppressWarnings("UnusedReturnValue")
 	private boolean initialize() {
 		// For API level 18 and above, get a reference to BluetoothAdapter through
 		// BluetoothManager.
