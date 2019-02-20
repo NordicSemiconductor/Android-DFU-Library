@@ -107,14 +107,17 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 */
 	public static final String EXTRA_DEVICE_NAME = "no.nordicsemi.android.dfu.extra.EXTRA_DEVICE_NAME";
 	/**
-	 * A boolean indicating whether to disable the progress notification in the status bar. Defaults to false.
+	 * A boolean indicating whether to disable the progress notification in the status bar.
+	 * Defaults to false.
 	 */
 	public static final String EXTRA_DISABLE_NOTIFICATION = "no.nordicsemi.android.dfu.extra.EXTRA_DISABLE_NOTIFICATION";
 	/**
-	 * A boolean indicating whether the DFU service should be set as a foreground service. It is recommended to have it
-	 * as a background service at least on Android Oreo or newer as the background service will be killed by the system
-	 * few moments after the user closed the foreground app.
-	 * <p>Read more here: <a href="https://developer.android.com/about/versions/oreo/background.html">https://developer.android.com/about/versions/oreo/background.html</a></p>
+	 * A boolean indicating whether the DFU service should be set as a foreground service.
+	 * It is recommended to have it as a background service at least on Android Oreo or newer as
+	 * the background service will be killed by the system few moments after the user closed the
+	 * foreground app.
+	 * <p>
+	 * Read more here: <a href="https://developer.android.com/about/versions/oreo/background.html">https://developer.android.com/about/versions/oreo/background.html</a>
 	 */
 	public static final String EXTRA_FOREGROUND_SERVICE = "no.nordicsemi.android.dfu.extra.EXTRA_FOREGROUND_SERVICE";
 	/**
@@ -123,47 +126,77 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 */
 	private static final String EXTRA_RECONNECTION_ATTEMPT = "no.nordicsemi.android.dfu.extra.EXTRA_RECONNECTION_ATTEMPT";
 	/**
+	 * An extra private field indicating which DFU attempt is being performed.
+	 * If the target device will disconnect for some unknown reason during DFU, the service will
+	 * retry to connect and continue. In case of Legacy DFU it will reconnect and restart process.
+	 */
+	/* package */ static final String EXTRA_DFU_ATTEMPT = "no.nordicsemi.android.dfu.extra.EXTRA_DFU_ATTEMPT";
+	/**
+	 * Maximum number of DFU attempts. Default value is 0.
+	 */
+	public static final String EXTRA_MAX_DFU_ATTEMPTS = "no.nordicsemi.android.dfu.extra.EXTRA_MAX_DFU_ATTEMPTS";
+	/**
+	 * If the new firmware (application) does not share the bond information with the old one,
+	 * the bond information is lost. Set this flag to <code>true</code> to make the service create
+	 * new bond with the new application when the upload is done (and remove the old one).
+	 * When set to <code>false</code> (default), the DFU service assumes that the LTK is shared
+	 * between them. Note: currently it is not possible to remove the old bond without creating
+	 * a new one so if your old application supported bonding while the new one does not you have
+	 * to modify the source code yourself.
 	 * <p>
-	 * If the new firmware (application) does not share the bond information with the old one, the bond information is lost. Set this flag to <code>true</code>
-	 * to make the service create new bond with the new application when the upload is done (and remove the old one). When set to <code>false</code> (default),
-	 * the DFU service assumes that the LTK is shared between them. Note: currently it is not possible to remove the old bond without creating a new one so if
-	 * your old application supported bonding while the new one does not you have to modify the source code yourself.
-	 * </p>
+	 * In case of updating the soft device the application is always removed together with the
+	 * bond information.
 	 * <p>
-	 * In case of updating the soft device the application is always removed together with the bond information.
-	 * </p>
+	 * Search for occurrences of EXTRA_RESTORE_BOND in this file to check the implementation and
+	 * get more details.
 	 * <p>
-	 * Search for occurrences of EXTRA_RESTORE_BOND in this file to check the implementation and get more details.
-	 * </p>
-	 * <p>This flag is ignored when Secure DFU Buttonless Service is used. It will keep or will not restore the bond depending on the Buttonless service type.</p>
+	 * This flag is ignored when Secure DFU Buttonless Service is used.
+	 * It will keep or will not restore the bond depending on the Buttonless service type.
 	 */
 	public static final String EXTRA_RESTORE_BOND = "no.nordicsemi.android.dfu.extra.EXTRA_RESTORE_BOND";
 	/**
-	 * <p>This flag indicated whether the bond information should be kept or removed after an upgrade of the Application.
-	 * If an application is being updated on a bonded device with the DFU Bootloader that has been configured to preserve the bond information for the new application,
-	 * set it to <code>true</code>.</p>
-	 *
-	 * <p>By default the Legacy DFU Bootloader clears the whole application's memory. It may be however configured in the \Nordic\nrf51\components\libraries\bootloader_dfu\dfu_types.h
-	 * file (sdk 11, line 76: <code>#define DFU_APP_DATA_RESERVED 0x0000</code>) to preserve some pages. The BLE_APP_HRM_DFU sample app stores the LTK and System Attributes in the first
-	 * two pages, so in order to preserve the bond information this value should be changed to 0x0800 or more. For Secure DFU this value is by default set to 3 pages.
-	 * When those data are preserved, the new Application will notify the app with the Service Changed indication when launched for the first time. Otherwise this
-	 * service will remove the bond information from the phone and force to refresh the device cache (see {@link #refreshDeviceCache(android.bluetooth.BluetoothGatt, boolean)}).</p>
-	 *
-	 * <p>In contrast to {@link #EXTRA_RESTORE_BOND} this flag will not remove the old bonding and recreate a new one, but will keep the bond information untouched.</p>
-	 * <p>The default value of this flag is <code>false</code>.</p>
-	 *
-	 * <p>This flag is ignored when Secure DFU Buttonless Service is used. It will keep or remove the bond depending on the Buttonless service type.</p>
+	 * This flag indicated whether the bond information should be kept or removed after an upgrade
+	 * of the Application. If an application is being updated on a bonded device with the DFU
+	 * Bootloader that has been configured to preserve the bond information for the new application,
+	 * set it to <code>true</code>.
+	 * <p>
+	 * By default the Legacy DFU Bootloader clears the whole application's memory. It may be,
+	 * however, configured in the \Nordic\nrf51\components\libraries\bootloader_dfu\dfu_types.h
+	 * file (sdk 11, line 76: <code>#define DFU_APP_DATA_RESERVED 0x0000</code>) to preserve some pages.
+	 * The BLE_APP_HRM_DFU sample app stores the LTK and System Attributes in the first
+	 * two pages, so in order to preserve the bond information this value should be changed to
+	 * 0x0800 or more. For Secure DFU this value is by default set to 3 pages.
+	 * When those data are preserved, the new Application will notify the app with the
+	 * Service Changed indication when launched for the first time. Otherwise this service will
+	 * remove the bond information from the phone and force to refresh the device cache
+	 * (see {@link #refreshDeviceCache(android.bluetooth.BluetoothGatt, boolean)}).
+	 * <p>
+	 * In contrast to {@link #EXTRA_RESTORE_BOND} this flag will not remove the old bonding and
+	 * recreate a new one, but will keep the bond information untouched.
+	 * <p>
+	 * The default value of this flag is <code>false</code>.
+	 * <p>
+	 * This flag is ignored when Secure DFU Buttonless Service is used. It will keep or remove the
+	 * bond depending on the Buttonless service type.
 	 */
 	public static final String EXTRA_KEEP_BOND = "no.nordicsemi.android.dfu.extra.EXTRA_KEEP_BOND";
 	/**
 	 * This property must contain a boolean value.
-	 * <p>The {@link DfuBaseService}, when connected to a DFU target will check whether it is in application or in DFU bootloader mode. For DFU implementations from SDK 7.0 or newer
-	 * this is done by reading the value of DFU Version characteristic. If the returned value is equal to 0x0100 (major = 0, minor = 1) it means that we are in the application mode and
-	 * jump to the bootloader mode is required.
-	 * <p>However, for DFU implementations from older SDKs, where there was no DFU Version characteristic, the service must guess. If this option is set to false (default) it will count
-	 * number of device's services. If the count is equal to 3 (Generic Access, Generic Attribute, DFU Service) it will assume that it's in DFU mode. If greater than 3 - in app mode.
-	 * This guessing may not be always correct. One situation may be when the nRF chip is used to flash update on external MCU using DFU. The DFU procedure may be implemented in the
-	 * application, which may (and usually does) have more services. In such case set the value of this property to true.
+	 * <p>
+	 * The {@link DfuBaseService}, when connected to a DFU target will check whether it is in
+	 * application or in DFU bootloader mode. For DFU implementations from SDK 7.0 or newer
+	 * this is done by reading the value of DFU Version characteristic.
+	 * If the returned value is equal to 0x0100 (major = 0, minor = 1) it means that we are in the
+	 * application mode and jump to the bootloader mode is required.
+	 * <p>
+	 * However, for DFU implementations from older SDKs, where there was no DFU Version
+	 * characteristic, the service must guess. If this option is set to false (default) it will count
+	 * number of device's services. If the count is equal to 3 (Generic Access, Generic Attribute,
+	 * DFU Service) it will assume that it's in DFU mode. If greater than 3 - in app mode.
+	 * This guessing may not be always correct. One situation may be when the nRF chip is used to
+	 * flash update on external MCU using DFU. The DFU procedure may be implemented in the
+	 * application, which may (and usually does) have more services.
+	 * In such case set the value of this property to true.
 	 */
 	public static final String EXTRA_FORCE_DFU = "no.nordicsemi.android.dfu.extra.EXTRA_FORCE_DFU";
 	/**
@@ -198,13 +231,14 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 * <p>
 	 * In the SDK 12.x the Buttonless DFU feature for Secure DFU was experimental.
 	 * It is NOT recommended to use it: it was not properly tested, had implementation bugs
-	 * (e.g. https://devzone.nordicsemi.com/question/100609/sdk-12-bootloader-erased-after-programming/) and
-	 * does not required encryption and therefore may lead to DOS attack (anyone can use it to switch the device
-	 * to bootloader mode). However, as there is no other way to trigger bootloader mode on devices
-	 * without a button, this DFU Library supports this service, but the feature must be explicitly enabled here.
-	 * Be aware, that setting this flag to false will no protect your devices from this kind of attacks, as
-	 * an attacker may use another app for that purpose. To be sure your device is secure remove this
-	 * experimental service from your device.
+	 * (e.g. https://devzone.nordicsemi.com/question/100609/sdk-12-bootloader-erased-after-programming/)
+	 * and does not required encryption and therefore may lead to DOS attack (anyone can use it
+	 * to switch the device to bootloader mode). However, as there is no other way to trigger
+	 * bootloader mode on devices without a button, this DFU Library supports this service,
+	 * but the feature must be explicitly enabled here.
+	 * Be aware, that setting this flag to false will no protect your devices from this kind of
+	 * attacks, as an attacker may use another app for that purpose. To be sure your device is
+	 * secure remove this experimental service from your device.
 	 * <p>
 	 * <b>Spec:</b><br>
 	 * Buttonless DFU Service UUID: 8E400001-F315-4F60-9FB8-838830DAEA50<br>
@@ -217,36 +251,53 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 * The device should disconnect and restart in DFU mode after sending the notification.
 	 * <p>
 	 * In SDK 13 this issue will be fixed by a proper implementation (bonding required,
-	 * passing bond information to the bootloader, encryption, well tested). It is recommended to use this
-	 * new service when SDK 13 (or later) is out. TODO: fix the docs when SDK 13 is out.
+	 * passing bond information to the bootloader, encryption, well tested).
+	 * It is recommended to use this new service when SDK 13 (or later) is out.
 	 */
 	public static final String EXTRA_UNSAFE_EXPERIMENTAL_BUTTONLESS_DFU = "no.nordicsemi.android.dfu.extra.EXTRA_UNSAFE_EXPERIMENTAL_BUTTONLESS_DFU";
 	/**
 	 * This property must contain a boolean value.
-	 * <p>If true the Packet Receipt Notification procedure will be enabled. See DFU documentation on http://infocenter.nordicsemi.com for more details.
-	 * The number of packets before receiving a Packet Receipt Notification is set with property {@link #EXTRA_PACKET_RECEIPT_NOTIFICATIONS_VALUE}.
-	 * The PRNs by default are enabled on devices running Android 4.3, 4.4.x and 5.x and disabled on 6.x and newer.
+	 * <p>
+	 * If true the Packet Receipt Notification procedure will be enabled.
+	 * See DFU documentation on http://infocenter.nordicsemi.com for more details.
+	 * The number of packets before receiving a Packet Receipt Notification is set with property
+	 * {@link #EXTRA_PACKET_RECEIPT_NOTIFICATIONS_VALUE}.
+	 * The PRNs by default are enabled on devices running Android 4.3, 4.4.x and 5.x and
+	 * disabled on 6.x and newer.
+	 *
 	 * @see #EXTRA_PACKET_RECEIPT_NOTIFICATIONS_VALUE
 	 */
 	public static final String EXTRA_PACKET_RECEIPT_NOTIFICATIONS_ENABLED = "no.nordicsemi.android.dfu.extra.EXTRA_PRN_ENABLED";
 	/**
 	 * This property must contain a positive integer value, usually from range 1-200.
-	 * <p>The default value is {@link DfuServiceInitiator#DEFAULT_PRN_VALUE}. Setting it to 0 will disable the Packet Receipt Notification procedure.
-	 * When sending a firmware using the DFU procedure the service will send this number of packets before waiting for a notification.
-	 * Packet Receipt Notifications are used to synchronize the sender with receiver.
-	 * <p>On Android, calling {@link android.bluetooth.BluetoothGatt#writeCharacteristic(BluetoothGattCharacteristic)}
-	 * simply adds the packet to outgoing queue before returning the callback. Adding the next packet in the callback is much faster than the real transmission
-	 * (also the speed depends on the device chip manufacturer) and the queue may reach its limit. When does, the transmission stops and Android Bluetooth hangs (see Note below).
-	 * Using PRN procedure eliminates this problem as the notification is send when all packets were delivered the queue is empty.
-	 * <p>Note: this bug has been fixed on Android 6.0 Marshmallow and now no notifications are required. The onCharacteristicWrite callback will be
-	 * postponed until half of the queue is empty and upload will be resumed automatically. Disabling PRNs speeds up the upload process on those devices.
+	 * <p>
+	 * The default value is {@link DfuServiceInitiator#DEFAULT_PRN_VALUE}.
+	 * Setting it to 0 will disable the Packet Receipt Notification procedure.
+	 * When sending a firmware using the DFU procedure the service will send this number of packets
+	 * before waiting for a notification. Packet Receipt Notifications are used to synchronize
+	 * the sender with receiver.
+	 * <p>
+	 * On Android, calling
+	 * {@link android.bluetooth.BluetoothGatt#writeCharacteristic(BluetoothGattCharacteristic)}
+	 * simply adds the packet to outgoing queue before returning the callback. Adding the next
+	 * packet in the callback is much faster than the real transmission (also the speed depends on
+	 * the device chip manufacturer) and the queue may reach its limit. When does, the transmission
+	 * stops and Android Bluetooth hangs (see Note below). Using PRN procedure eliminates this
+	 * problem as the notification is send when all packets were delivered the queue is empty.
+	 * <p>
+	 * Note: this bug has been fixed on Android 6.0 Marshmallow and now no notifications are required.
+	 * The onCharacteristicWrite callback will be postponed until half of the queue is empty and
+	 * upload will be resumed automatically. Disabling PRNs speeds up the upload process on those
+	 * devices.
+	 *
 	 * @see #EXTRA_PACKET_RECEIPT_NOTIFICATIONS_ENABLED
 	 */
 	public static final String EXTRA_PACKET_RECEIPT_NOTIFICATIONS_VALUE = "no.nordicsemi.android.dfu.extra.EXTRA_PRN_VALUE";
 	/**
 	 * A path to the file with the new firmware. It may point to a HEX, BIN or a ZIP file.
-	 * Some file manager applications return the path as a String while other return a Uri. Use the {@link #EXTRA_FILE_URI} in the later case.
-	 * For files included in /res/raw resource directory please use {@link #EXTRA_FILE_RES_ID} instead.
+	 * Some file manager applications return the path as a String while other return a Uri.
+	 * Use the {@link #EXTRA_FILE_URI} in the later case. For files included
+	 * in /res/raw resource directory please use {@link #EXTRA_FILE_RES_ID} instead.
 	 */
 	public static final String EXTRA_FILE_PATH = "no.nordicsemi.android.dfu.extra.EXTRA_FILE_PATH";
 	/**
@@ -258,26 +309,33 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 */
 	public static final String EXTRA_FILE_RES_ID = "no.nordicsemi.android.dfu.extra.EXTRA_FILE_RES_ID";
 	/**
-	 * The Init packet URI. This file is required if the Extended Init Packet is required (SDK 7.0+). Must point to a 'dat' file corresponding with the selected firmware.
-	 * The Init packet may contain just the CRC (in case of older versions of DFU) or the Extended Init Packet in binary format (SDK 7.0+).
+	 * The Init packet URI. This file is required if the Extended Init Packet is required (SDK 7.0+).
+	 * Must point to a 'dat' file corresponding with the selected firmware.
+	 * The Init packet may contain just the CRC (in case of older versions of DFU) or the
+	 * Extended Init Packet in binary format (SDK 7.0+).
 	 */
 	public static final String EXTRA_INIT_FILE_PATH = "no.nordicsemi.android.dfu.extra.EXTRA_INIT_FILE_PATH";
 	/**
-	 * The Init packet URI. This file is required if the Extended Init Packet is required (SDK 7.0+). Must point to a 'dat' file corresponding with the selected firmware.
-	 * The Init packet may contain just the CRC (in case of older versions of DFU) or the Extended Init Packet in binary format (SDK 7.0+).
+	 * The Init packet URI. This file is required if the Extended Init Packet is required (SDK 7.0+).
+	 * Must point to a 'dat' file corresponding with the selected firmware.
+	 * The Init packet may contain just the CRC (in case of older versions of DFU) or the
+	 * Extended Init Packet in binary format (SDK 7.0+).
 	 */
 	public static final String EXTRA_INIT_FILE_URI = "no.nordicsemi.android.dfu.extra.EXTRA_INIT_FILE_URI";
 	/**
-	 * The Init packet URI. This file is required if the Extended Init Packet is required (SDK 7.0+). Must point to a 'dat' file corresponding with the selected firmware.
-	 * The Init packet may contain just the CRC (in case of older versions of DFU) or the Extended Init Packet in binary format (SDK 7.0+).
+	 * The Init packet URI. This file is required if the Extended Init Packet is required (SDK 7.0+).
+	 * Must point to a 'dat' file corresponding with the selected firmware.
+	 * The Init packet may contain just the CRC (in case of older versions of DFU) or the
+	 * Extended Init Packet in binary format (SDK 7.0+).
 	 */
 	public static final String EXTRA_INIT_FILE_RES_ID = "no.nordicsemi.android.dfu.extra.EXTRA_INIT_FILE_RES_ID";
 	/**
-	 * The input file mime-type. Currently only "application/zip" (ZIP) or "application/octet-stream" (HEX or BIN) are supported. If this parameter is
-	 * empty the "application/octet-stream" is assumed.
+	 * The input file mime-type. Currently only "application/zip" (ZIP) or "application/octet-stream"
+	 * (HEX or BIN) are supported. If this parameter is empty the "application/octet-stream" is assumed.
 	 */
 	public static final String EXTRA_FILE_MIME_TYPE = "no.nordicsemi.android.dfu.extra.EXTRA_MIME_TYPE";
-	// Since the DFU Library version 0.5 both HEX and BIN files are supported. As both files have the same MIME TYPE the distinction is made based on the file extension.
+	// Since the DFU Library version 0.5 both HEX and BIN files are supported.
+	// As both files have the same MIME TYPE the distinction is made based on the file extension.
 	public static final String MIME_TYPE_OCTET_STREAM = "application/octet-stream";
 	public static final String MIME_TYPE_ZIP = "application/zip";
 	/**
@@ -286,27 +344,32 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 * <li>{@link #TYPE_SOFT_DEVICE} - only Soft Device update</li>
 	 * <li>{@link #TYPE_BOOTLOADER} - only Bootloader update</li>
 	 * <li>{@link #TYPE_APPLICATION} - only application update</li>
-	 * <li>{@link #TYPE_AUTO} - the file is a ZIP file that may contain more than one HEX/BIN + DAT files. Since SDK 8.0 the ZIP Distribution packet is a recommended
-	 * way of delivering firmware files. Please, see the DFU documentation for more details. A ZIP distribution packet may be created using the 'nrf utility'
-	 * command line application, that is a part of Master Control Panel 3.8.0.The ZIP file MAY contain only the following files:
-	 * <b>softdevice.hex/bin</b>, <b>bootloader.hex/bin</b>, <b>application.hex/bin</b> to determine the type based on its name. At lease one of them MUST be present.
+	 * <li>{@link #TYPE_AUTO} - the file is a ZIP file that may contain more than one HEX/BIN + DAT files.
+	 * Since SDK 8.0 the ZIP Distribution packet is a recommended way of delivering firmware files.
+	 * Please, see the DFU documentation for more details. A ZIP distribution packet may be created
+	 * using the 'nrf util' Python application, available at
+	 * <a href="https://github.com/NordicSemiconductor/pc-nrfutil">https://github.com/NordicSemiconductor/pc-nrfutil</a>.
+	 * The ZIP file MAY contain only the following files: <b>softdevice.hex/bin</b>,
+	 * <b>bootloader.hex/bin</b>, <b>application.hex/bin</b> to determine the type based on its name.
+	 * At lease one of them MUST be present.
 	 * </li>
 	 * </ul>
 	 * If this parameter is not provided the type is assumed as follows:
 	 * <ol>
-	 * <li>If the {@link #EXTRA_FILE_MIME_TYPE} field is <code>null</code> or is equal to {@value #MIME_TYPE_OCTET_STREAM} - the {@link #TYPE_APPLICATION} is assumed.</li>
-	 * <li>If the {@link #EXTRA_FILE_MIME_TYPE} field is equal to {@value #MIME_TYPE_ZIP} - the {@link #TYPE_AUTO} is assumed.</li>
+	 * <li>If the {@link #EXTRA_FILE_MIME_TYPE} field is <code>null</code> or is equal to
+	 * {@value #MIME_TYPE_OCTET_STREAM} - the {@link #TYPE_APPLICATION} is assumed.</li>
+	 * <li>If the {@link #EXTRA_FILE_MIME_TYPE} field is equal to {@value #MIME_TYPE_ZIP}
+	 * - the {@link #TYPE_AUTO} is assumed.</li>
 	 * </ol>
 	 */
 	public static final String EXTRA_FILE_TYPE = "no.nordicsemi.android.dfu.extra.EXTRA_FILE_TYPE";
 	/**
 	 * <p>
 	 * The file contains a new version of Soft Device.
-	 * </p>
 	 * <p>
-	 * Since DFU Library 7.0 all firmware may contain an Init packet. The Init packet is required if Extended Init Packet is used by the DFU bootloader (SDK 7.0+)..
+	 * Since DFU Library 7.0 all firmware may contain an Init packet. The Init packet is required
+	 * if Extended Init Packet is used by the DFU bootloader (SDK 7.0+)..
 	 * The Init packet for the bootloader must be placed in the .dat file.
-	 * </p>
 	 *
 	 * @see #EXTRA_FILE_TYPE
 	 */
@@ -314,11 +377,10 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	/**
 	 * <p>
 	 * The file contains a new version of Bootloader.
-	 * </p>
 	 * <p>
-	 * Since DFU Library 7.0 all firmware may contain an Init packet. The Init packet is required if Extended Init Packet is used by the DFU bootloader (SDK 7.0+).
+	 * Since DFU Library 7.0 all firmware may contain an Init packet. The Init packet is required
+	 * if Extended Init Packet is used by the DFU bootloader (SDK 7.0+).
 	 * The Init packet for the bootloader must be placed in the .dat file.
-	 * </p>
 	 *
 	 * @see #EXTRA_FILE_TYPE
 	 */
@@ -326,31 +388,37 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	/**
 	 * <p>
 	 * The file contains a new version of Application.
-	 * </p>
 	 * <p>
-	 * Since DFU Library 0.5 all firmware may contain an Init packet. The Init packet is required if Extended Init Packet is used by the DFU bootloader (SDK 7.0+).
+	 * Since DFU Library 0.5 all firmware may contain an Init packet. The Init packet is required
+	 * if Extended Init Packet is used by the DFU bootloader (SDK 7.0+).
 	 * The Init packet for the application must be placed in the .dat file.
-	 * </p>
 	 *
 	 * @see #EXTRA_FILE_TYPE
 	 */
 	public static final int TYPE_APPLICATION = 0x04;
 	/**
 	 * <p>
-	 * A ZIP file that consists of more than 1 file. Since SDK 8.0 the ZIP Distribution packet is a recommended way of delivering firmware files. Please, see the DFU documentation for
-	 * more details. A ZIP distribution packet may be created using the 'nrf utility' command line application, that is a part of Master Control Panel 3.8.0.
-	 * For backwards compatibility this library supports also ZIP files without the manifest file. Instead they must follow the fixed naming convention:
-	 * The names of files in the ZIP must be: <b>softdevice.hex</b> (or .bin), <b>bootloader.hex</b> (or .bin), <b>application.hex</b> (or .bin) in order
-	 * to be read correctly. Using the Soft Device v7.0.0+ the Soft Device and Bootloader may be updated and sent together. In case of additional application file included,
-	 * the service will try to send Soft Device, Bootloader and Application together (which is not supported currently) and if it fails, send first SD+BL, reconnect and send the application
-	 * in the following connection.
-	 * </p>
+	 * A ZIP file that consists of more than 1 file. Since SDK 8.0 the ZIP Distribution packet is
+	 * a recommended way of delivering firmware files. Please, see the DFU documentation for
+	 * more details. A ZIP distribution packet may be created using the 'nrf utility' command line
+	 * application, that is a part of Master Control Panel 3.8.0.
+	 * For backwards compatibility this library supports also ZIP files without the manifest file.
+	 * Instead they must follow the fixed naming convention:
+	 * The names of files in the ZIP must be: <b>softdevice.hex</b> (or .bin), <b>bootloader.hex</b>
+	 * (or .bin), <b>application.hex</b> (or .bin) in order to be read correctly. Using the
+	 * Soft Device v7.0.0+ the Soft Device and Bootloader may be updated and sent together.
+	 * In case of additional application file included, the service will try to send Soft Device,
+	 * Bootloader and Application together (which is not supported currently) and if it fails,
+	 * send first SD+BL, reconnect and send the application in the following connection.
 	 * <p>
-	 * Since the DFU Library 0.5 you may specify the Init packet, that will be send prior to the firmware. The init packet contains some verification data, like a device type and
-	 * revision, application version or a list of supported Soft Devices. The Init packet is required if Extended Init Packet is used by the DFU bootloader (SDK 7.0+).
-	 * In case of using the compatibility ZIP files the Init packet for the Soft Device and Bootloader must be in the 'system.dat' file while for the application
-	 * in the 'application.dat' file (included in the ZIP). The CRC in the 'system.dat' must be a CRC of both BIN contents if both a Soft Device and a Bootloader is present.
-	 * </p>
+	 * Since the DFU Library 0.5 you may specify the Init packet, that will be send prior to the
+	 * firmware. The init packet contains some verification data, like a device type and revision,
+	 * application version or a list of supported Soft Devices. The Init packet is required if
+	 * Extended Init Packet is used by the DFU bootloader (SDK 7.0+).
+	 * In case of using the compatibility ZIP files the Init packet for the Soft Device and Bootloader
+	 * must be in the 'system.dat' file while for the application in the 'application.dat' file
+	 * (included in the ZIP). The CRC in the 'system.dat' must be a CRC of both BIN contents if
+	 * both a Soft Device and a Bootloader is present.
 	 *
 	 * @see #EXTRA_FILE_TYPE
 	 */
@@ -360,7 +428,8 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 */
 	public static final String EXTRA_DATA = "no.nordicsemi.android.dfu.extra.EXTRA_DATA";
 	/**
-	 * An extra field to send the progress or error information in the DFU notification. The value may contain:
+	 * An extra field to send the progress or error information in the DFU notification.
+	 * The value may contain:
 	 * <ul>
 	 * <li>Value 0 - 100 - percentage progress value</li>
 	 * <li>One of the following status constants:
@@ -376,15 +445,17 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 * </li>
 	 * <li>An error code with {@link #ERROR_MASK} if initialization error occurred</li>
 	 * <li>An error code with {@link #ERROR_REMOTE_MASK} if remote DFU target returned an error</li>
-	 * <li>An error code with {@link #ERROR_CONNECTION_MASK} if connection error occurred (f.e. GATT error (133) or Internal GATT Error (129))</li>
+	 * <li>An error code with {@link #ERROR_CONNECTION_MASK} if connection error occurred
+	 * (e.g. GATT error (133) or Internal GATT Error (129))</li>
 	 * </ul>
 	 * To check if error occurred use:<br>
 	 * {@code boolean error = progressValue >= DfuBaseService.ERROR_MASK;}
 	 */
 	public static final String EXTRA_PROGRESS = "no.nordicsemi.android.dfu.extra.EXTRA_PROGRESS";
 	/**
-	 * The number of currently transferred part. The SoftDevice and Bootloader may be send together as one part. If user wants to upload them together with an application it has to be sent
-	 * in another connection as the second part.
+	 * The number of currently transferred part. The SoftDevice and Bootloader may be send
+	 * together as one part. If user wants to upload them together with an application it has to be
+	 * sent in another connection as the second part.
 	 *
 	 * @see no.nordicsemi.android.dfu.DfuBaseService#EXTRA_PARTS_TOTAL
 	 */
@@ -419,11 +490,13 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 * </li>
 	 * <li>{@link #EXTRA_DEVICE_ADDRESS} - the target device address</li>
 	 * <li>{@link #EXTRA_PART_CURRENT} - the number of currently transmitted part</li>
-	 * <li>{@link #EXTRA_PARTS_TOTAL} - total number of parts that are being sent, f.e. if a ZIP file contains a Soft Device, a Bootloader and an Application,
-	 * the SoftDevice and Bootloader will be send together as one part. Then the service will disconnect and reconnect to the new Bootloader and send the
-	 * application as part number two.</li>
+	 * <li>{@link #EXTRA_PARTS_TOTAL} - total number of parts that are being sent, e.g. if a ZIP
+	 * file contains a Soft Device, a Bootloader and an Application, the SoftDevice and Bootloader
+	 * will be send together as one part. Then the service will disconnect and reconnect to the
+	 * new Bootloader and send the application as part number two.</li>
 	 * <li>{@link #EXTRA_SPEED_B_PER_MS} - current speed in bytes/millisecond as float</li>
-	 * <li>{@link #EXTRA_AVG_SPEED_B_PER_MS} - the average transmission speed in bytes/millisecond as float</li>
+	 * <li>{@link #EXTRA_AVG_SPEED_B_PER_MS} - the average transmission speed in bytes/millisecond
+	 * as float</li>
 	 * </ul>
 	 */
 	public static final String BROADCAST_PROGRESS = "no.nordicsemi.android.dfu.broadcast.BROADCAST_PROGRESS";
@@ -436,8 +509,9 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 */
 	public static final int PROGRESS_STARTING = -2;
 	/**
-	 * Service has triggered a switch to bootloader mode. Now the service waits for the link loss event (this may take up to several seconds) and will connect again
-	 * to the same device, now started in the bootloader mode.
+	 * Service has triggered a switch to bootloader mode. Now the service waits for the link loss
+	 * event (this may take up to several seconds) and will connect again to the same device,
+	 * now started in the bootloader mode.
 	 */
 	public static final int PROGRESS_ENABLING_DFU_MODE = -3;
 	/**
@@ -459,15 +533,19 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	/**
 	 * The broadcast error message contains the following extras:
 	 * <ul>
-	 * <li>{@link #EXTRA_DATA} - the error number. Use {@link GattError#parse(int)} to get String representation.</li>
+	 * <li>{@link #EXTRA_DATA} - the error number. Use {@link GattError#parse(int)} to get String
+	 * representation.</li>
 	 * <li>{@link #EXTRA_DEVICE_ADDRESS} - the target device address</li>
 	 * </ul>
 	 */
 	public static final String BROADCAST_ERROR = "no.nordicsemi.android.dfu.broadcast.BROADCAST_ERROR";
 	/**
-	 * The type of the error. This extra contains information about that kind of error has occurred. Connection state errors and other errors may share the same numbers.
-	 * For example, the {@link BluetoothGattCallback#onCharacteristicWrite(BluetoothGatt, BluetoothGattCharacteristic, int)} method may return a status code 8 (GATT INSUF AUTHORIZATION),
-	 * while the status code 8 returned by {@link BluetoothGattCallback#onConnectionStateChange(BluetoothGatt, int, int)} is a GATT CONN TIMEOUT error.
+	 * The type of the error. This extra contains information about that kind of error has occurred.
+	 * Connection state errors and other errors may share the same numbers. For example, the
+	 * {@link BluetoothGattCallback#onCharacteristicWrite(BluetoothGatt, BluetoothGattCharacteristic, int)}
+	 * method may return a status code 8 (GATT INSUF AUTHORIZATION), while the status code 8
+	 * returned by {@link BluetoothGattCallback#onConnectionStateChange(BluetoothGatt, int, int)}
+	 * is a GATT CONN TIMEOUT error.
 	 */
 	public static final String EXTRA_ERROR_TYPE = "no.nordicsemi.android.dfu.extra.EXTRA_ERROR_TYPE";
 	public static final int ERROR_TYPE_OTHER = 0;
@@ -475,7 +553,8 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	public static final int ERROR_TYPE_COMMUNICATION = 2;
 	public static final int ERROR_TYPE_DFU_REMOTE = 3;
 	/**
-	 * If this bit is set than the progress value indicates an error. Use {@link GattError#parse(int)} to obtain error name.
+	 * If this bit is set than the progress value indicates an error. Use {@link GattError#parse(int)}
+	 * to obtain error name.
 	 */
 	public static final int ERROR_MASK = 0x1000;
 	public static final int ERROR_DEVICE_DISCONNECTED = ERROR_MASK; // | 0x00;
@@ -497,11 +576,13 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 */
 	public static final int ERROR_SERVICE_DISCOVERY_NOT_STARTED = ERROR_MASK | 0x05;
 	/**
-	 * Thrown when the service discovery has finished but the DFU service has not been found. The device does not support DFU of is not in DFU mode.
+	 * Thrown when the service discovery has finished but the DFU service has not been found.
+	 * The device does not support DFU of is not in DFU mode.
 	 */
 	public static final int ERROR_SERVICE_NOT_FOUND = ERROR_MASK | 0x06;
 	/**
-	 * Thrown when unknown response has been obtained from the target. The DFU target must follow specification.
+	 * Thrown when unknown response has been obtained from the target. The DFU target must follow
+	 * specification.
 	 */
 	public static final int ERROR_INVALID_RESPONSE = ERROR_MASK | 0x08;
 	/**
@@ -513,15 +594,18 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 */
 	public static final int ERROR_BLUETOOTH_DISABLED = ERROR_MASK | 0x0A;
 	/**
-	 * DFU Bootloader version 0.6+ requires sending the Init packet. If such bootloader version is detected, but the init packet has not been set this error is thrown.
+	 * DFU Bootloader version 0.6+ requires sending the Init packet. If such bootloader version is
+	 * detected, but the init packet has not been set this error is thrown.
 	 */
 	public static final int ERROR_INIT_PACKET_REQUIRED = ERROR_MASK | 0x0B;
-    /**
-     * Thrown when the firmware file is not word-aligned. The firmware size must be dividable by 4 bytes.
-     */
-    public static final int ERROR_FILE_SIZE_INVALID = ERROR_MASK | 0x0C;
 	/**
-	 * Thrown when the received CRC does not match with the calculated one. The service will try 3 times to send the data, and if the CRC fails each time this error will be thrown.
+	 * Thrown when the firmware file is not word-aligned. The firmware size must be dividable by
+	 * 4 bytes.
+	 */
+	public static final int ERROR_FILE_SIZE_INVALID = ERROR_MASK | 0x0C;
+	/**
+	 * Thrown when the received CRC does not match with the calculated one. The service will try
+	 * 3 times to send the data, and if the CRC fails each time this error will be thrown.
 	 */
 	public static final int ERROR_CRC_ERROR = ERROR_MASK | 0x0D;
 	/**
@@ -529,8 +613,9 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 */
 	public static final int ERROR_DEVICE_NOT_BONDED = ERROR_MASK | 0x0E;
 	/**
-	 * Flag set when the DFU target returned a DFU error. Look for DFU specification to get error codes. The error code is binary OR-ed with one of:
-	 * {@link #ERROR_REMOTE_TYPE_LEGACY}, {@link #ERROR_REMOTE_TYPE_SECURE} or {@link #ERROR_REMOTE_TYPE_SECURE_EXTENDED}.
+	 * Flag set when the DFU target returned a DFU error. Look for DFU specification to get error
+	 * codes. The error code is binary OR-ed with one of: {@link #ERROR_REMOTE_TYPE_LEGACY},
+	 * {@link #ERROR_REMOTE_TYPE_SECURE} or {@link #ERROR_REMOTE_TYPE_SECURE_EXTENDED}.
 	 */
 	public static final int ERROR_REMOTE_MASK = 0x2000;
 	public static final int ERROR_REMOTE_TYPE_LEGACY = 0x0100;
@@ -538,19 +623,23 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	public static final int ERROR_REMOTE_TYPE_SECURE_EXTENDED = 0x0400;
 	public static final int ERROR_REMOTE_TYPE_SECURE_BUTTONLESS = 0x0800;
 	/**
-	 * The flag set when one of {@link android.bluetooth.BluetoothGattCallback} methods was called with status other than {@link android.bluetooth.BluetoothGatt#GATT_SUCCESS}.
+	 * The flag set when one of {@link android.bluetooth.BluetoothGattCallback} methods was called
+	 * with status other than {@link android.bluetooth.BluetoothGatt#GATT_SUCCESS}.
 	 */
 	public static final int ERROR_CONNECTION_MASK = 0x4000;
 	/**
-	 * The flag set when the {@link android.bluetooth.BluetoothGattCallback#onConnectionStateChange(android.bluetooth.BluetoothGatt, int, int)} method was called with
-	 * status other than {@link android.bluetooth.BluetoothGatt#GATT_SUCCESS}.
+	 * The flag set when the
+	 * {@link android.bluetooth.BluetoothGattCallback#onConnectionStateChange(android.bluetooth.BluetoothGatt, int, int)}
+	 * method was called with status other than {@link android.bluetooth.BluetoothGatt#GATT_SUCCESS}.
 	 */
 	public static final int ERROR_CONNECTION_STATE_MASK = 0x8000;
 	/**
-	 * The log events are only broadcast when there is no nRF Logger installed. The broadcast contains 2 extras:
+	 * The log events are only broadcast when there is no nRF Logger installed.
+	 * The broadcast contains 2 extras:
 	 * <ul>
-	 * <li>{@link #EXTRA_LOG_LEVEL} - The log level, one of following: {@link #LOG_LEVEL_DEBUG}, {@link #LOG_LEVEL_VERBOSE}, {@link #LOG_LEVEL_INFO},
-	 * {@link #LOG_LEVEL_APPLICATION}, {@link #LOG_LEVEL_WARNING}, {@link #LOG_LEVEL_ERROR}</li>
+	 * <li>{@link #EXTRA_LOG_LEVEL} - The log level, one of following: {@link #LOG_LEVEL_DEBUG},
+	 * {@link #LOG_LEVEL_VERBOSE}, {@link #LOG_LEVEL_INFO}, {@link #LOG_LEVEL_APPLICATION},
+	 * {@link #LOG_LEVEL_WARNING}, {@link #LOG_LEVEL_ERROR}</li>
 	 * <li>{@link #EXTRA_LOG_MESSAGE} - The log message</li>
 	 * </ul>
 	 */
@@ -560,8 +649,8 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	/*
 	 * Note:
 	 * The nRF Logger API library has been excluded from the DfuLibrary.
-	 * All log events are now being sent using local broadcasts and may be logged into nRF Logger in the app module.
-	 * This is to make the Dfu module independent from logging tool.
+	 * All log events are now being sent using local broadcasts and may be logged into nRF Logger
+	 * in the app module. This is to make the Dfu module independent from logging tool.
 	 *
 	 * The log levels below are equal to log levels in nRF Logger API library, v 2.0.
 	 * @see https://github.com/NordicSemiconductor/nRF-Logger-API
@@ -596,18 +685,24 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 */
 	public static final String BROADCAST_ACTION = "no.nordicsemi.android.dfu.broadcast.BROADCAST_ACTION";
 	/**
-	 * The action extra. It may have one of the following values: {@link #ACTION_PAUSE}, {@link #ACTION_RESUME}, {@link #ACTION_ABORT}.
+	 * The action extra. It may have one of the following values: {@link #ACTION_PAUSE},
+	 * {@link #ACTION_RESUME}, {@link #ACTION_ABORT}.
 	 */
 	public static final String EXTRA_ACTION = "no.nordicsemi.android.dfu.extra.EXTRA_ACTION";
-	/** Pauses the upload. The service will wait for broadcasts with the action set to {@link #ACTION_RESUME} or {@link #ACTION_ABORT}. */
+	/**
+	 * Pauses the upload. The service will wait for broadcasts with the action set to
+	 * {@link #ACTION_RESUME} or {@link #ACTION_ABORT}.
+	 */
 	public static final int ACTION_PAUSE = 0;
 	/** Resumes the upload that has been paused before using {@link #ACTION_PAUSE}. */
 	public static final int ACTION_RESUME = 1;
 	/**
 	 * Aborts the upload. The service does not need to be paused before.
-	 * After sending {@link #BROADCAST_ACTION} with extra {@link #EXTRA_ACTION} set to this value the DFU bootloader will restore the old application
-	 * (if there was already an application). Be aware that uploading the Soft Device will erase the application in order to make space in the memory.
-	 * In case there is no application, or the application has been removed, the DFU bootloader will be started and user may try to send the application again.
+	 * After sending {@link #BROADCAST_ACTION} with extra {@link #EXTRA_ACTION} set to this value
+	 * the DFU bootloader will restore the old application (if there was already an application).
+	 * Be aware, that uploading the Soft Device will erase the application in order to make space
+	 * in the memory. In case there is no application, or the application has been removed, the
+	 * DFU bootloader will be started and user may try to send the application again.
 	 * The bootloader may advertise with the address incremented by 1 to prevent caching services.
 	 */
 	public static final int ACTION_ABORT = 2;
@@ -627,7 +722,8 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	private String mDeviceName;
 	private boolean mDisableNotification;
 	/**
-	 * The current connection state. If its value is > 0 than an error has occurred. Error number is a negative value of mConnectionState
+	 * The current connection state. If its value is > 0 than an error has occurred.
+	 * Error number is a negative value of mConnectionState
 	 */
 	protected int mConnectionState;
 	protected final static int STATE_DISCONNECTED = 0;
@@ -641,7 +737,8 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 */
 	private int mError;
 	/**
-	 * Stores the last progress percent. Used to prevent from sending progress notifications with the same value.
+	 * Stores the last progress percent. Used to prevent from sending progress notifications with
+	 * the same value.
 	 */
 	private int mLastProgress = -1;
 	/* package */ DfuProgressInfo mProgressInfo;
@@ -1003,8 +1100,10 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		mConnectionState = STATE_DISCONNECTED;
 		mError = 0;
 
-		// The Soft Device starts where MBR ends (by default from the address 0x1000). Before there is a MBR section, which should not be transmitted over DFU.
-		// Applications and bootloader starts from bigger address. However, in custom DFU implementations, user may want to transmit the whole whole data, even from address 0x0000.
+		// The Soft Device starts where MBR ends (by default from the address 0x1000).
+		// Before there is a MBR section, which should not be transmitted over DFU.
+		// Applications and bootloader starts from bigger address. However, in custom DFU
+		// implementations, user may want to transmit the whole whole data, even from address 0x0000.
 		final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
 		final String value = preferences.getString(DfuSettingsConstants.SETTINGS_MBR_SIZE, String.valueOf(DfuSettingsConstants.SETTINGS_DEFAULT_MBR_SIZE));
 		int mbrSize;
@@ -1796,7 +1895,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	}
 
 	private void loge(final String message) {
-        Log.e(TAG, message);
+		Log.e(TAG, message);
 	}
 
 	private void loge(final String message, final Throwable e) {
