@@ -22,39 +22,44 @@
 
 package no.nordicsemi.android.dfu;
 
+import androidx.annotation.NonNull;
+
 public class DfuProgressListenerAdapter implements DfuProgressListener {
+
 	@Override
-	public void onDeviceConnecting(final String deviceAddress) {
+	public void onDeviceConnecting(@NonNull final String deviceAddress) {
 		// empty default implementation
 	}
 
 	@Override
-	public void onDeviceConnected(final String deviceAddress) {
+	public void onDeviceConnected(@NonNull final String deviceAddress) {
 		// empty default implementation
 	}
 
 	@Override
-	public void onDfuProcessStarting(final String deviceAddress) {
+	public void onDfuProcessStarting(@NonNull final String deviceAddress) {
 		// empty default implementation
 	}
 
 	@Override
-	public void onDfuProcessStarted(final String deviceAddress) {
+	public void onDfuProcessStarted(@NonNull final String deviceAddress) {
 		// empty default implementation
 	}
 
 	@Override
-	public void onEnablingDfuMode(final String deviceAddress) {
+	public void onEnablingDfuMode(@NonNull final String deviceAddress) {
 		// empty default implementation
 	}
 
 	@Override
-	public void onProgressChanged(final String deviceAddress, final int percent, final float speed, final float avgSpeed, final int currentPart, final int partsTotal) {
+	public void onProgressChanged(@NonNull final String deviceAddress, final int percent,
+								  final float speed, final float avgSpeed,
+								  final int currentPart, final int partsTotal) {
 		// empty default implementation
 	}
 
 	@Override
-	public void onFirmwareValidating(final String deviceAddress) {
+	public void onFirmwareValidating(@NonNull final String deviceAddress) {
 		// empty default implementation
 	}
 
@@ -64,22 +69,23 @@ public class DfuProgressListenerAdapter implements DfuProgressListener {
 	}
 
 	@Override
-	public void onDeviceDisconnected(final String deviceAddress) {
+	public void onDeviceDisconnected(@NonNull final String deviceAddress) {
 		// empty default implementation
 	}
 
 	@Override
-	public void onDfuCompleted(final String deviceAddress) {
+	public void onDfuCompleted(@NonNull final String deviceAddress) {
 		// empty default implementation
 	}
 
 	@Override
-	public void onDfuAborted(final String deviceAddress) {
+	public void onDfuAborted(@NonNull final String deviceAddress) {
 		// empty default implementation
 	}
 
 	@Override
-	public void onError(final String deviceAddress, final int error, final int errorType, final String message) {
+	public void onError(@NonNull final String deviceAddress,
+						final int error, final int errorType, final String message) {
 		// empty default implementation
 	}
 }

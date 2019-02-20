@@ -25,6 +25,7 @@ package no.nordicsemi.android.dfu;
 import android.bluetooth.BluetoothGatt;
 import android.content.Intent;
 
+import androidx.annotation.NonNull;
 import no.nordicsemi.android.dfu.internal.exception.DeviceDisconnectedException;
 import no.nordicsemi.android.dfu.internal.exception.DfuException;
 import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
@@ -34,7 +35,8 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	private boolean mPaused;
 	private boolean mAborted;
 
-	/* package */ DfuService getServiceImpl(final Intent intent, final DfuBaseService service, final BluetoothGatt gatt) throws DfuException, DeviceDisconnectedException, UploadAbortedException {
+	DfuService getServiceImpl(@NonNull final Intent intent, @NonNull final DfuBaseService service, @NonNull final BluetoothGatt gatt)
+			throws DfuException, DeviceDisconnectedException, UploadAbortedException {
 		try {
 			mImpl = new ButtonlessDfuWithBondSharingImpl(intent, service);
 			if (mImpl.isClientCompatible(intent, gatt))
@@ -56,7 +58,8 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 			if (mImpl.isClientCompatible(intent, gatt))
 				return mImpl;
 
-			// Support for experimental Buttonless DFU Service from SDK 12. This feature must be explicitly enabled in the initiator.
+			// Support for experimental Buttonless DFU Service from SDK 12.
+			// This feature must be explicitly enabled in the initiator.
 			final boolean enableUnsafeExperimentalButtonlessDfuService = intent.getBooleanExtra(DfuBaseService.EXTRA_UNSAFE_EXPERIMENTAL_BUTTONLESS_DFU, false);
 			if (enableUnsafeExperimentalButtonlessDfuService) {
 				mImpl = new ExperimentalButtonlessDfuImpl(intent, service);

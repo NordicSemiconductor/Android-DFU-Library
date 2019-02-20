@@ -27,6 +27,8 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.content.Intent;
 
+import androidx.annotation.NonNull;
+
 /**
  * A base implementation of a buttonless service. The purpose of a buttonless service is to
  * switch a device into the DFU bootloader mode.
@@ -51,7 +53,7 @@ import android.content.Intent;
 		}
 	}
 
-	BaseButtonlessDfuImpl(final Intent intent, final DfuBaseService service) {
+	BaseButtonlessDfuImpl(@NonNull final Intent intent, @NonNull final DfuBaseService service) {
 		super(intent, service);
 	}
 
@@ -68,7 +70,8 @@ import android.content.Intent;
 	 * @param forceRefresh true, if cache should be cleared even for a bonded device. Usually the Service Changed indication should be used for this purpose.
 	 * @param scanForBootloader true to scan for advertising bootloader, false to keep the same address
 	 */
-	protected void finalize(final Intent intent, final boolean forceRefresh, final boolean scanForBootloader) {
+	@SuppressWarnings("SameParameterValue")
+	void finalize(@NonNull final Intent intent, final boolean forceRefresh, final boolean scanForBootloader) {
 		/*
 		 * We are done with DFU. Now the service may refresh device cache and clear stored services.
 		 * For bonded device this is required only if if doesn't support Service Changed indication.

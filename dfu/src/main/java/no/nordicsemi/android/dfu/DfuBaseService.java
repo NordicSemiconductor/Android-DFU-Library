@@ -46,6 +46,9 @@ import android.os.Build;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import android.util.Log;
@@ -1388,15 +1391,17 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	}
 
 	/**
-	 * Opens the binary input stream that returns the firmware image content. A Path to the file is given.
+	 * Opens the binary input stream that returns the firmware image content.
+	 * A Path to the file is given.
 	 *
-	 * @param filePath the path to the HEX, BIN or ZIP file
-	 * @param mimeType the file type
-	 * @param mbrSize  the size of MBR, by default 0x1000
-	 * @param types    the content files types in ZIP
-	 * @return the input stream with binary image content
+	 * @param filePath the path to the HEX, BIN or ZIP file.
+	 * @param mimeType the file type.
+	 * @param mbrSize  the size of MBR, by default 0x1000.
+	 * @param types    the content files types in ZIP.
+	 * @return The input stream with binary image content.
 	 */
-	private InputStream openInputStream(final String filePath, final String mimeType, final int mbrSize, final int types) throws IOException {
+	private InputStream openInputStream(@NonNull final String filePath, final String mimeType, final int mbrSize, final int types)
+			throws IOException {
 		final InputStream is = new FileInputStream(filePath);
 		if (MIME_TYPE_ZIP.equals(mimeType))
 			return new ArchiveInputStream(is, mbrSize, types);
@@ -1408,13 +1413,14 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	/**
 	 * Opens the binary input stream. A Uri to the stream is given.
 	 *
-	 * @param stream   the Uri to the stream
-	 * @param mimeType the file type
-	 * @param mbrSize  the size of MBR, by default 0x1000
-	 * @param types    the content files types in ZIP
-	 * @return the input stream with binary image content
+	 * @param stream   the Uri to the stream.
+	 * @param mimeType the file type.
+	 * @param mbrSize  the size of MBR, by default 0x1000.
+	 * @param types    the content files types in ZIP.
+	 * @return The input stream with binary image content.
 	 */
-	private InputStream openInputStream(final Uri stream, final String mimeType, final int mbrSize, final int types) throws IOException {
+	private InputStream openInputStream(@NonNull final Uri stream, final String mimeType, final int mbrSize, final int types)
+			throws IOException {
 		final InputStream is = getContentResolver().openInputStream(stream);
 		if (MIME_TYPE_ZIP.equals(mimeType))
 			return new ArchiveInputStream(is, mbrSize, types);
@@ -1435,15 +1441,17 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	}
 
 	/**
-	 * Opens the binary input stream that returns the firmware image content. A resource id in the res/raw is given.
+	 * Opens the binary input stream that returns the firmware image content.
+	 * A resource id in the res/raw is given.
 	 *
-	 * @param resId the if of the resource file
-	 * @param mimeType the file type
-	 * @param mbrSize  the size of MBR, by default 0x1000
-	 * @param types    the content files types in ZIP
-	 * @return the input stream with binary image content
+	 * @param resId the if of the resource file.
+	 * @param mimeType the file type.
+	 * @param mbrSize  the size of MBR, by default 0x1000.
+	 * @param types    the content files types in ZIP.
+	 * @return The input stream with binary image content.
 	 */
-	private InputStream openInputStream(final int resId, final String mimeType, final int mbrSize, final int types) throws IOException {
+	private InputStream openInputStream(final int resId, final String mimeType, final int mbrSize, final int types)
+			throws IOException {
 		final InputStream is = getResources().openRawResource(resId);
 		if (MIME_TYPE_ZIP.equals(mimeType))
 			return new ArchiveInputStream(is, mbrSize, types);
@@ -1456,13 +1464,15 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	}
 
 	/**
-	 * Connects to the BLE device with given address. This method is SYNCHRONOUS, it wait until the connection status change from {@link #STATE_CONNECTING} to {@link #STATE_CONNECTED_AND_READY} or an
-	 * error occurs. This method returns <code>null</code> if Bluetooth adapter is disabled.
+	 * Connects to the BLE device with given address. This method is SYNCHRONOUS, it wait until
+	 * the connection status change from {@link #STATE_CONNECTING} to
+	 * {@link #STATE_CONNECTED_AND_READY} or an error occurs.
+	 * This method returns <code>null</code> if Bluetooth adapter is disabled.
 	 *
-	 * @param address the device address
-	 * @return the GATT device or <code>null</code> if Bluetooth adapter is disabled.
+	 * @param address the device address.
+	 * @return The GATT device or <code>null</code> if Bluetooth adapter is disabled.
 	 */
-	protected BluetoothGatt connect(final String address) {
+	protected BluetoothGatt connect(@NonNull final String address) {
 		if (!mBluetoothAdapter.isEnabled())
 			return null;
 
@@ -1487,12 +1497,13 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	}
 
 	/**
-	 * Disconnects from the device and cleans local variables in case of error. This method is SYNCHRONOUS and wait until the disconnecting process will be completed.
+	 * Disconnects from the device and cleans local variables in case of error.
+	 * This method is SYNCHRONOUS and wait until the disconnecting process will be completed.
 	 *
-	 * @param gatt  the GATT device to be disconnected
-	 * @param error error number
+	 * @param gatt  the GATT device to be disconnected.
+	 * @param error error number.
 	 */
-	protected void terminateConnection(final BluetoothGatt gatt, final int error) {
+	protected void terminateConnection(@NonNull final BluetoothGatt gatt, final int error) {
 		if (mConnectionState != STATE_DISCONNECTED) {
 			// Disconnect from the device
 			disconnect(gatt);
@@ -1507,12 +1518,13 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	}
 
 	/**
-	 * Disconnects from the device. This is SYNCHRONOUS method and waits until the callback returns new state. Terminates immediately if device is already disconnected. Do not call this method
+	 * Disconnects from the device. This is SYNCHRONOUS method and waits until the callback returns
+	 * new state. Terminates immediately if device is already disconnected. Do not call this method
 	 * directly, use {@link #terminateConnection(android.bluetooth.BluetoothGatt, int)} instead.
 	 *
-	 * @param gatt the GATT device that has to be disconnected
+	 * @param gatt the GATT device that has to be disconnected.
 	 */
-	protected void disconnect(final BluetoothGatt gatt) {
+	protected void disconnect(@NonNull final BluetoothGatt gatt) {
 		if (mConnectionState == STATE_DISCONNECTED)
 			return;
 
@@ -1530,7 +1542,8 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	}
 
 	/**
-	 * Wait until the connection state will change to {@link #STATE_DISCONNECTED} or until an error occurs.
+	 * Wait until the connection state will change to {@link #STATE_DISCONNECTED} or until
+	 * an error occurs.
 	 */
 	protected void waitUntilDisconnected() {
 		try {
@@ -1545,7 +1558,8 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 
 	/**
 	 * Wait for given number of milliseconds.
-	 * @param millis waiting period
+	 *
+	 * @param millis waiting period.
 	 */
 	protected void waitFor(final int millis) {
 		synchronized (mLock) {
@@ -1561,7 +1575,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	/**
 	 * Closes the GATT device and cleans up.
 	 *
-	 * @param gatt the GATT device to be closed
+	 * @param gatt the GATT device to be closed.
 	 */
 	protected void close(final BluetoothGatt gatt) {
 		logi("Cleaning up...");
@@ -1571,10 +1585,11 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	}
 
 	/**
-	 * Clears the device cache. After uploading new firmware the DFU target will have other services than before.
+	 * Clears the device cache. After uploading new firmware the DFU target will have other
+	 * services than before.
 	 *
-	 * @param gatt  the GATT device to be refreshed
-	 * @param force <code>true</code> to force the refresh
+	 * @param gatt  the GATT device to be refreshed.
+	 * @param force <code>true</code> to force the refresh.
 	 */
 	protected void refreshDeviceCache(final BluetoothGatt gatt, final boolean force) {
 		/*
@@ -1601,7 +1616,8 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	}
 
 	/**
-	 * Creates or updates the notification in the Notification Manager. Sends broadcast with given progress state to the activity.
+	 * Creates or updates the notification in the Notification Manager. Sends broadcast with
+	 * given progress state to the activity.
 	 */
 	@Override
 	public void updateProgressNotification() {
@@ -1690,9 +1706,10 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 
 	/**
 	 * This method allows you to update the notification showing the upload progress.
-	 * @param builder notification builder
+	 *
+	 * @param builder notification builder.
 	 */
-	protected void updateProgressNotification(final NotificationCompat.Builder builder, final int progress) {
+	protected void updateProgressNotification(@NonNull final NotificationCompat.Builder builder, final int progress) {
 		// Add Abort action to the notification
 		if (progress != PROGRESS_ABORTED && progress != PROGRESS_COMPLETED) {
 			final Intent abortIntent = new Intent(BROADCAST_ACTION);
@@ -1703,9 +1720,10 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	}
 
 	/**
-	 * Creates or updates the notification in the Notification Manager. Sends broadcast with given error numbre to the activity.
+	 * Creates or updates the notification in the Notification Manager. Sends broadcast with given
+	 * error number to the activity.
 	 *
-	 * @param error the error number
+	 * @param error the error number.
 	 */
 	private void report(final int error) {
 		sendErrorBroadcast(error);
@@ -1748,7 +1766,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 * @param builder error notification builder
 	 */
 	@SuppressWarnings("unused")
-	protected void updateErrorNotification(final NotificationCompat.Builder builder) {
+	protected void updateErrorNotification(@NonNull final NotificationCompat.Builder builder) {
 		// Empty default implementation
 	}
 
@@ -1781,11 +1799,13 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	}
 
 	/**
-	 * This method allows you to update the notification that will be shown when the service goes to the foreground state.
+	 * This method allows you to update the notification that will be shown when the service goes to
+	 * the foreground state.
+	 *
 	 * @param builder foreground notification builder
 	 */
 	@SuppressWarnings("unused")
-	protected void updateForegroundNotification(final NotificationCompat.Builder builder) {
+	protected void updateForegroundNotification(@NonNull final NotificationCompat.Builder builder) {
 		// Empty default implementation
 	}
 
@@ -1801,15 +1821,13 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 * 		or error number if {@link #ERROR_MASK} bit set.</li>
 	 * </ul>
 	 * <p>
-	 *     The {@link #EXTRA_PROGRESS} is not set when a notification indicating a foreground service
-	 *     was clicked and notifications were disabled using {@link DfuServiceInitiator#setDisableNotification(boolean)}.
-	 * </p>
+	 * The {@link #EXTRA_PROGRESS} is not set when a notification indicating a foreground service
+	 * was clicked and notifications were disabled using {@link DfuServiceInitiator#setDisableNotification(boolean)}.
 	 * <p>
-	 *     If your application disabled DFU notifications by calling
+	 * If your application disabled DFU notifications by calling
 	 * {@link DfuServiceInitiator#setDisableNotification(boolean)} with parameter <code>true</code> this method
 	 * will still be called if the service was started as foreground service. To disable foreground service
 	 * call {@link DfuServiceInitiator#setForeground(boolean)} with parameter <code>false</code>.
-	 * </p>
 	 * _______________________________<br>
 	 * * - connection state constants:
 	 * <ul>
@@ -1822,8 +1840,9 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 * <li>{@link #PROGRESS_VALIDATING}</li>
 	 * </ul>
 	 *
-	 * @return the target activity class
+	 * @return The target activity class.
 	 */
+	@Nullable
 	protected abstract Class<? extends Activity> getNotificationTarget();
 
 	/**
@@ -1835,11 +1854,12 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 *     return BuildConfig.DEBUG;
 	 * }
 	 * </pre>
-	 * @return true to enable LogCat output, false (default) if not
+	 * @return True to enable LogCat output, false (default) if not.
 	 */
 	protected boolean isDebug() {
 		// Override this method and return true if you need more logs in LogCat
-		// Note: BuildConfig.DEBUG always returns false in library projects, so please use your app package BuildConfig
+		// Note: BuildConfig.DEBUG always returns false in library projects, so please use
+		// your app package BuildConfig
 		return false;
 	}
 
@@ -1883,9 +1903,9 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	}
 
 	/**
-	 * Initializes bluetooth adapter
+	 * Initializes bluetooth adapter.
 	 *
-	 * @return <code>true</code> if initialization was successful
+	 * @return <code>True</code> if initialization was successful.
 	 */
 	@SuppressWarnings("UnusedReturnValue")
 	private boolean initialize() {

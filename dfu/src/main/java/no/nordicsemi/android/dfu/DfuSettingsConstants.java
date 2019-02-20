@@ -24,6 +24,7 @@ package no.nordicsemi.android.dfu;
 
 import android.bluetooth.BluetoothGattCharacteristic;
 
+@SuppressWarnings("DeprecatedIsStillUsed")
 public interface DfuSettingsConstants {
 	/**
 	 * This property must contain a boolean value.

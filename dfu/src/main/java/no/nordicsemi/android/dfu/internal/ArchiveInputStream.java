@@ -22,7 +22,6 @@
 
 package no.nordicsemi.android.dfu.internal;
 
-import androidx.annotation.NonNull;
 import android.util.Log;
 
 import com.google.gson.Gson;
@@ -38,6 +37,7 @@ import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import androidx.annotation.NonNull;
 import no.nordicsemi.android.dfu.DfuBaseService;
 import no.nordicsemi.android.dfu.internal.manifest.FileInfo;
 import no.nordicsemi.android.dfu.internal.manifest.Manifest;
@@ -45,15 +45,22 @@ import no.nordicsemi.android.dfu.internal.manifest.ManifestFile;
 import no.nordicsemi.android.dfu.internal.manifest.SoftDeviceBootloaderFileInfo;
 
 /**
- * <p>Reads the firmware files from the a ZIP file. The ZIP file must be either created using the <b>nrf utility</b> tool, available together with Master Control Panel v3.8.0+,
- * or follow the backward compatibility syntax: must contain only files with names: application.hex/bin, softdevice.hex/dat or bootloader.hex/bin, optionally also application.dat
- * and/or system.dat with init packets.</p>
- * <p>The ArchiveInputStream will read only files with types specified by <b>types</b> parameter of the constructor.</p>
+ * <p>
+ * Reads the firmware files from the a ZIP file. The ZIP file must be either created using the
+ * <a href="https://github.com/NordicSemiconductor/pc-nrfutil"><b>nrf util</b></a>,
+ * or follow the backward compatibility syntax: must contain only files with names:
+ * application.hex/bin, softdevice.hex/dat or bootloader.hex/bin, optionally also application.dat
+ * and/or system.dat with init packets.
+ * <p>
+ * The ArchiveInputStream will read only files with types specified by <b>types</b> parameter of
+ * the constructor.
  */
 public class ArchiveInputStream extends InputStream {
 	private static final String TAG = "DfuArchiveInputStream";
 
-	/** The name of the manifest file is fixed. */
+	/**
+	 * The name of the manifest file is fixed.
+	 */
 	private static final String MANIFEST = "manifest.json";
 	// Those file names are for backwards compatibility mode
 	private static final String SOFTDEVICE_HEX = "softdevice.hex";
@@ -67,7 +74,10 @@ public class ArchiveInputStream extends InputStream {
 
 	private final ZipInputStream zipInputStream;
 
-	/** Contains bytes arrays with BIN files. HEX files are converted to BIN before being added to this map. */
+	/**
+	 * Contains bytes arrays with BIN files. HEX files are converted to BIN before being
+     * added to this map.
+	 */
 	private Map<String, byte[]> entries;
 	private Manifest manifest;
 	private CRC32 crc32;
@@ -91,12 +101,13 @@ public class ArchiveInputStream extends InputStream {
 
 	/**
 	 * <p>
-	 * The ArchiveInputStream read HEX or BIN files from the Zip stream. It may skip some of them, depending on the value of the types parameter.
-	 * This is useful if the DFU service wants to send the Soft Device and Bootloader only, and then the Application in the following connection, despite
-	 * the ZIP file contains all 3 HEX/BIN files.
+	 * The ArchiveInputStream read HEX or BIN files from the Zip stream. It may skip some of them,
+     * depending on the value of the types parameter. This is useful if the DFU service wants to
+     * send the Soft Device and Bootloader only, and then the Application in the following connection,
+     * despite the ZIP file contains all 3 HEX/BIN files.
 	 * When types is equal to {@link DfuBaseService#TYPE_AUTO} all present files are read.
-	 * </p>
-	 * <p>Use bit combination of the following types:</p>
+	 * <p>
+     * Use bit combination of the following types:
 	 * <ul>
 	 * <li>{@link DfuBaseService#TYPE_SOFT_DEVICE}</li>
 	 * <li>{@link DfuBaseService#TYPE_BOOTLOADER}</li>
@@ -104,15 +115,15 @@ public class ArchiveInputStream extends InputStream {
 	 * <li>{@link DfuBaseService#TYPE_AUTO}</li>
 	 * </ul>
 	 *
-	 * @param stream
-	 *            the Zip Input Stream
-	 * @param mbrSize
-	 *            The size of the MRB segment (Master Boot Record) on the device. The parser will cut data from addresses below that number from all HEX files.
-	 * @param types
-	 *            File types that are to be read from the ZIP. Use {@link DfuBaseService#TYPE_APPLICATION} etc.
-	 * @throws java.io.IOException
+	 * @param stream  the Zip Input Stream
+	 * @param mbrSize The size of the MRB segment (Master Boot Record) on the device.
+     *                The parser will cut data from addresses below that number from all HEX files.
+	 * @param types   File types that are to be read from the ZIP. Use
+     *                {@link DfuBaseService#TYPE_APPLICATION} etc.
+	 * @throws java.io.IOException Thrown in case of an invalid ZIP file.
 	 */
-	public ArchiveInputStream(final InputStream stream, final int mbrSize, final int types) throws IOException {
+	public ArchiveInputStream(final InputStream stream, final int mbrSize, final int types)
+            throws IOException {
 		this.zipInputStream = new ZipInputStream(stream);
 
 		this.crc32 = new CRC32();
@@ -262,12 +273,15 @@ public class ArchiveInputStream extends InputStream {
 	/**
 	 * Reads all files into byte arrays.
 	 * Here we don't know whether the ZIP file is valid.
-	 *
-	 * The ZIP file is valid when contains a 'manifest.json' file and all BIN and DAT files that are specified in the manifest.
-	 *
-	 * For backwards compatibility ArchiveInputStream supports also ZIP archives without 'manifest.json' file
-	 * but than it MUST include at least one of the following files: softdevice.bin/hex, bootloader.bin/hex, application.bin/hex.
-	 * To support the init packet such ZIP file should contain also application.dat and/or system.dat (with the CRC16 of a SD, BL or SD+BL together).
+	 * <p>
+	 * The ZIP file is valid when contains a 'manifest.json' file and all BIN and DAT files that
+     * are specified in the manifest.
+	 * <p>
+	 * For backwards compatibility ArchiveInputStream supports also ZIP archives without
+     * 'manifest.json' file but than it MUST include at least one of the following files:
+     * softdevice.bin/hex, bootloader.bin/hex, application.bin/hex.
+	 * To support the init packet such ZIP file should contain also application.dat and/or system.dat
+     * (with the CRC16 of a SD, BL or SD+BL together).
 	 */
 	private void parseZip(final int mbrSize) throws IOException {
 		final byte[] buffer = new byte[1024];
@@ -307,7 +321,8 @@ public class ArchiveInputStream extends InputStream {
 
 		// Some validation
 		if (entries.isEmpty()) {
-			throw new FileNotFoundException("No files found in the ZIP. Check if the URI provided is valid and the ZIP contains required files on root level, not in a directory.");
+			throw new FileNotFoundException("No files found in the ZIP. Check if the URI provided is " +
+                    "valid and the ZIP contains required files on root level, not in a directory.");
 		}
 
 		if (manifestData != null) {
@@ -319,7 +334,8 @@ public class ArchiveInputStream extends InputStream {
 						"to your proguard rules?");
 			}
 		} else {
-			Log.w(TAG, "Manifest not found in the ZIP. It is recommended to use a distribution file created with: https://github.com/NordicSemiconductor/pc-nrfutil/ (for Legacy DFU use version 0.5.x)");
+			Log.w(TAG, "Manifest not found in the ZIP. It is recommended to use a distribution " +
+                    "file created with: https://github.com/NordicSemiconductor/pc-nrfutil/ (for Legacy DFU use version 0.5.x)");
 		}
 	}
 
@@ -381,6 +397,7 @@ public class ArchiveInputStream extends InputStream {
 
 	/**
 	 * Marks the current position in the stream. The parameter is ignored.
+	 *
 	 * @param readlimit this parameter is ignored, can be anything
 	 */
 	@Override
@@ -429,6 +446,7 @@ public class ArchiveInputStream extends InputStream {
 
 	/**
 	 * Returns the CRC32 of the part of the firmware that was already read.
+	 *
 	 * @return the CRC
 	 */
 	public long getCrc32() {
@@ -436,14 +454,17 @@ public class ArchiveInputStream extends InputStream {
 	}
 
 	/**
-	 * Returns the content type based on the content of the ZIP file. The content type may be truncated using {@link #setContentType(int)}.
+	 * Returns the content type based on the content of the ZIP file. The content type may be
+     * truncated using {@link #setContentType(int)}.
 	 *
-	 * @return a bit field of {@link DfuBaseService#TYPE_SOFT_DEVICE TYPE_SOFT_DEVICE}, {@link DfuBaseService#TYPE_BOOTLOADER TYPE_BOOTLOADER} and {@link DfuBaseService#TYPE_APPLICATION
-	 *         TYPE_APPLICATION}
+	 * @return A bit field of {@link DfuBaseService#TYPE_SOFT_DEVICE TYPE_SOFT_DEVICE},
+     * {@link DfuBaseService#TYPE_BOOTLOADER TYPE_BOOTLOADER} and
+     * {@link DfuBaseService#TYPE_APPLICATION TYPE_APPLICATION}
 	 */
 	public int getContentType() {
 		type = 0;
-		// In Secure DFU the softDeviceSize and bootloaderSize may be 0 if both are in the ZIP file. The size of each part is embedded in the Init packet.
+		// In Secure DFU the softDeviceSize and bootloaderSize may be 0 if both are in the ZIP file.
+        // The size of each part is embedded in the Init packet.
 		if (softDeviceAndBootloaderBytes != null)
 			type |= DfuBaseService.TYPE_SOFT_DEVICE | DfuBaseService.TYPE_BOOTLOADER;
 		// In Legacy DFU the size of each of these parts was given in the manifest file.
@@ -457,11 +478,11 @@ public class ArchiveInputStream extends InputStream {
 	}
 
 	/**
-	 * Truncates the current content type. May be used to hide some files, e.g. to send Soft Device and Bootloader without Application or only the Application.
+	 * Truncates the current content type. May be used to hide some files, e.g. to send Soft Device
+     * and Bootloader without Application or only the Application.
 	 *
-	 * @param type
-	 *            the new type
-	 * @return the final type after truncating
+	 * @param type the new type.
+	 * @return The final type after truncating.
 	 */
 	public int setContentType(final int type) {
 		this.type = type;
@@ -497,9 +518,10 @@ public class ArchiveInputStream extends InputStream {
 	}
 
 	/**
-	 * Sets the currentSource to the new file or to <code>null</code> if the last file has been transmitted.
+	 * Sets the currentSource to the new file or to <code>null</code> if the last file has been
+     * transmitted.
 	 *
-	 * @return the new source, the same as {@link #currentSource}
+	 * @return The new source, the same as {@link #currentSource}.
 	 */
 	private byte[] startNextFile() {
 		byte[] ret;
@@ -515,12 +537,15 @@ public class ArchiveInputStream extends InputStream {
 	}
 
 	/**
-	 * Returns the number of bytes that has not been read yet. This value includes only firmwares matching the content type set by the construcotor or the {@link #setContentType(int)} method.
+	 * Returns the number of bytes that has not been read yet. This value includes only
+     * firmwares matching the content type set by the constructor or the
+     * {@link #setContentType(int)} method.
 	 */
 	@Override
 	public int available() {
-		// In Secure DFU softdevice and bootloader sizes are not provided in the Init file (they are encoded inside the Init file instead).
-		// The service doesn't send those sizes, not the whole size of the firmware separately, like it was done in the Legacy DFU.
+		// In Secure DFU softdevice and bootloader sizes are not provided in the Init file
+        // (they are encoded inside the Init file instead). The service doesn't send those sizes,
+        // not the whole size of the firmware separately, like it was done in the Legacy DFU.
 		// This method then is just used to log file size.
 
 		// In case of SD+BL in Secure DFU:
@@ -533,42 +558,54 @@ public class ArchiveInputStream extends InputStream {
 	}
 
 	/**
-	 * Returns the total size of the SoftDevice firmware. In case the firmware was given as a HEX, this method returns the size of the BIN content of the file.
-	 * @return the size of the SoftDevice firmware (BIN part)
+	 * Returns the total size of the SoftDevice firmware. In case the firmware was given as a HEX,
+     * this method returns the size of the BIN content of the file.
+	 *
+	 * @return The size of the SoftDevice firmware (BIN part).
 	 */
 	public int softDeviceImageSize() {
 		return (type & DfuBaseService.TYPE_SOFT_DEVICE) > 0 ? softDeviceSize : 0;
 	}
 
 	/**
-	 * Returns the total size of the Bootloader firmware. In case the firmware was given as a HEX, this method returns the size of the BIN content of the file.
-	 * @return the size of the Bootloader firmware (BIN part)
+	 * Returns the total size of the Bootloader firmware. In case the firmware was given as a HEX,
+     * this method returns the size of the BIN content of the file.
+	 *
+	 * @return The size of the Bootloader firmware (BIN part).
 	 */
 	public int bootloaderImageSize() {
 		return (type & DfuBaseService.TYPE_BOOTLOADER) > 0 ? bootloaderSize : 0;
 	}
 
 	/**
-	 * Returns the total size of the Application firmware. In case the firmware was given as a HEX, this method returns the size of the BIN content of the file.
-	 * @return the size of the Application firmware (BIN part)
+	 * Returns the total size of the Application firmware. In case the firmware was given as a HEX,
+     * this method returns the size of the BIN content of the file.
+	 *
+	 * @return The size of the Application firmware (BIN part).
 	 */
 	public int applicationImageSize() {
 		return (type & DfuBaseService.TYPE_APPLICATION) > 0 ? applicationSize : 0;
 	}
 
 	/**
-	 * Returns the content of the init file for SoftDevice and/or Bootloader. When both SoftDevice and Bootloader are present in the ZIP file (as two files using the compatibility mode
-	 * or as one file using the new Distribution packet) the system init contains validation data for those two files combined (e.g. the CRC value). This method may return
-	 * <code>null</code> if there is no SoftDevice nor Bootloader in the ZIP or the DAT file is not present there.
-	 * @return the content of the init packet for SoftDevice and/or Bootloader
+	 * Returns the content of the init file for SoftDevice and/or Bootloader. When both SoftDevice
+     * and Bootloader are present in the ZIP file (as two files using the compatibility mode
+	 * or as one file using the new Distribution packet) the system init contains validation data
+     * for those two files combined (e.g. the CRC value). This method may return
+	 * <code>null</code> if there is no SoftDevice nor Bootloader in the ZIP or the DAT file is
+     * not present there.
+	 *
+	 * @return The content of the init packet for SoftDevice and/or Bootloader.
 	 */
 	public byte[] getSystemInit() {
 		return systemInitBytes;
 	}
 
 	/**
-	 * Returns the content of the init file for the Application or <code>null</code> if no application file in the ZIP, or the DAT file is not provided.
-	 * @return the content of the init packet for Application
+	 * Returns the content of the init file for the Application or <code>null</code> if no
+     * application file in the ZIP, or the DAT file is not provided.
+	 *
+	 * @return The content of the init packet for Application.
 	 */
 	public byte[] getApplicationInit() {
 		return applicationInitBytes;
@@ -576,9 +613,12 @@ public class ArchiveInputStream extends InputStream {
 
 	/**
 	 * This method returns true if the content of the ZIP file may be sent only using Secure DFU.
-	 * The reason may be that the ZIP contains a single bin file with SD and/or BL together with App, which has to be sent in a single connection.
-	 * Sizes of each component are not given explicitly in the Manifest (even if they are, they are ignored). They are hidden in the Init Packet instead.
-	 * @return true if the content of this ZIP may only be sent using Secure DFU.
+	 * The reason may be that the ZIP contains a single bin file with SD and/or BL together with
+     * App, which has to be sent in a single connection.
+	 * Sizes of each component are not given explicitly in the Manifest (even if they are,
+     * they are ignored). They are hidden in the Init Packet instead.
+	 *
+	 * @return True if the content of this ZIP may only be sent using Secure DFU.
 	 */
 	public boolean isSecureDfuRequired() {
 		return manifest != null && manifest.isSecureDfuRequired();

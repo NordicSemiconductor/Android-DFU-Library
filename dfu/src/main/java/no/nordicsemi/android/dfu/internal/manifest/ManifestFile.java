@@ -22,6 +22,7 @@
 
 package no.nordicsemi.android.dfu.internal.manifest;
 
+@SuppressWarnings("unused")
 public class ManifestFile {
 	private Manifest manifest;
 

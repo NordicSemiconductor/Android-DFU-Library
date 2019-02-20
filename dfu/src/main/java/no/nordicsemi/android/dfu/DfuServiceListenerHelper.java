@@ -26,23 +26,27 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import androidx.annotation.NonNull;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import no.nordicsemi.android.dfu.internal.scanner.BootloaderScanner;
 import no.nordicsemi.android.error.GattError;
 
 /**
  * A helper class that should be used to register listeners for DFU Service broadcast events.
- * The {@link DfuProgressListener} should be registered to listen for DFU status updates and errors, while the {@link DfuLogListener} listener receives the log updates.
- * Listeners may be registered for a specified device (given with device address) or for any device. Keep in mind, that while updating the SoftDevice using the buttonless update
- * the device may change its address in the bootloader mode.
- *
- * <p>Use {@link #registerProgressListener(Context, DfuProgressListener)} or {@link #registerLogListener(Context, DfuLogListener)} to register your listeners. Remember about unregistering them
- * when your context is destroyed.</p>
+ * The {@link DfuProgressListener} should be registered to listen for DFU status updates and errors,
+ * while the {@link DfuLogListener} listener receives the log updates.
+ * Listeners may be registered for a specified device (given with device address) or for any device.
+ * Keep in mind, that while updating the SoftDevice using the buttonless update the device may
+ * change its address in the bootloader mode.
+ * <p>
+ * Use {@link #registerProgressListener(Context, DfuProgressListener)} or
+ * {@link #registerLogListener(Context, DfuLogListener)} to register your listeners.
+ * Remember about unregistering them when your context is destroyed.
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
 public class DfuServiceListenerHelper {
@@ -58,8 +62,10 @@ public class DfuServiceListenerHelper {
 		}
 
 		private void setLogListener(final String deviceAddress, final DfuLogListener listener) {
-			// When using the buttonless update and updating the SoftDevice the application will be removed to make space for the new SoftDevice.
-			// The new bootloader will afterwards advertise with the address incremented by 1. We need to make sure that the listener will receive also events from this device.
+			// When using the buttonless update and updating the SoftDevice the application will
+			// be removed to make space for the new SoftDevice.
+			// The new bootloader will afterwards advertise with the address incremented by 1.
+			// We need to make sure that the listener will receive also events from this device.
 			mListeners.put(deviceAddress, listener);
 			mListeners.put(getIncrementedAddress(deviceAddress), listener); // assuming the address is a valid BLE address
 		}
@@ -154,6 +160,8 @@ public class DfuServiceListenerHelper {
 				return;
 
 			final String action = intent.getAction();
+			if (action == null)
+				return;
 
 			switch (action) {
 				case DfuBaseService.BROADCAST_PROGRESS: {
@@ -268,11 +276,13 @@ public class DfuServiceListenerHelper {
 	}
 
 	/**
-	 * Registers the {@link DfuProgressListener}. Registered listener will receive the progress events from the DFU service.
-	 * @param context the application context
-	 * @param listener the listener to register
+	 * Registers the {@link DfuProgressListener}.
+     * Registered listener will receive the progress events from the DFU service.
+	 *
+	 * @param context  the application context.
+	 * @param listener the listener to register.
 	 */
-	public static void registerProgressListener(final Context context, final DfuProgressListener listener) {
+	public static void registerProgressListener(@NonNull final Context context, @NonNull final DfuProgressListener listener) {
 		if (mProgressBroadcastReceiver == null) {
 			mProgressBroadcastReceiver = new ProgressBroadcastsReceiver();
 
@@ -285,12 +295,15 @@ public class DfuServiceListenerHelper {
 	}
 
 	/**
-	 * Registers the {@link DfuProgressListener}. Registered listener will receive the progress events from the DFU service.
-	 * @param context the application context
-	 * @param listener the listener to register
-	 * @param deviceAddress the address of the device to receive updates from (or null if any device)
+	 * Registers the {@link DfuProgressListener}. Registered listener will receive the progress
+     * events from the DFU service.
+	 *
+	 * @param context       the application context.
+	 * @param listener      the listener to register.
+	 * @param deviceAddress the address of the device to receive updates from (or null if any device).
 	 */
-	public static void registerProgressListener(final Context context, final DfuProgressListener listener, final String deviceAddress) {
+	public static void registerProgressListener(@NonNull final Context context,
+                                                @NonNull final DfuProgressListener listener, @NonNull final String deviceAddress) {
 		if (mProgressBroadcastReceiver == null) {
 			mProgressBroadcastReceiver = new ProgressBroadcastsReceiver();
 
@@ -304,10 +317,11 @@ public class DfuServiceListenerHelper {
 
 	/**
 	 * Unregisters the previously registered progress listener.
-	 * @param context the application context
-	 * @param listener the listener to unregister
+	 *
+	 * @param context  the application context.
+	 * @param listener the listener to unregister.
 	 */
-	public static void unregisterProgressListener(final Context context, final DfuProgressListener listener) {
+	public static void unregisterProgressListener(@NonNull final Context context, @NonNull final DfuProgressListener listener) {
 		if (mProgressBroadcastReceiver != null) {
 			final boolean empty = mProgressBroadcastReceiver.removeProgressListener(listener);
 
@@ -320,10 +334,11 @@ public class DfuServiceListenerHelper {
 
 	/**
 	 * Registers the {@link DfuLogListener}. Registered listener will receive the log events from the DFU service.
-	 * @param context the application context
-	 * @param listener the listener to register
+	 *
+	 * @param context  the application context.
+	 * @param listener the listener to register.
 	 */
-	public static void registerLogListener(final Context context, final DfuLogListener listener) {
+	public static void registerLogListener(@NonNull final Context context, @NonNull final DfuLogListener listener) {
 		if (mLogBroadcastReceiver == null) {
 			mLogBroadcastReceiver = new LogBroadcastReceiver();
 
@@ -335,12 +350,15 @@ public class DfuServiceListenerHelper {
 	}
 
 	/**
-	 * Registers the {@link DfuLogListener}. Registered listener will receive the log events from the DFU service.
-	 * @param context the application context
-	 * @param listener the listener to register
-	 * @param deviceAddress the address of the device to receive updates from (or null if any device)
+	 * Registers the {@link DfuLogListener}. Registered listener will receive the log events from
+     * the DFU service.
+	 *
+	 * @param context       the application context.
+	 * @param listener      the listener to register.
+	 * @param deviceAddress the address of the device to receive updates from (or null if any device).
 	 */
-	public static void registerLogListener(final Context context, final DfuLogListener listener, final String deviceAddress) {
+	public static void registerLogListener(@NonNull final Context context,
+                                           @NonNull final DfuLogListener listener, @NonNull final String deviceAddress) {
 		if (mLogBroadcastReceiver == null) {
 			mLogBroadcastReceiver = new LogBroadcastReceiver();
 
@@ -353,10 +371,11 @@ public class DfuServiceListenerHelper {
 
 	/**
 	 * Unregisters the previously registered log listener.
-	 * @param context the application context
-	 * @param listener the listener to unregister
+	 *
+	 * @param context  the application context.
+	 * @param listener the listener to unregister.
 	 */
-	public static void unregisterLogListener(final Context context, final DfuLogListener listener) {
+	public static void unregisterLogListener(@NonNull final Context context, @NonNull final DfuLogListener listener) {
 		if (mLogBroadcastReceiver != null) {
 			final boolean empty = mLogBroadcastReceiver.removeLogListener(listener);
 
@@ -367,7 +386,7 @@ public class DfuServiceListenerHelper {
 		}
 	}
 
-	private static String getIncrementedAddress(final String deviceAddress) {
+	private static String getIncrementedAddress(@NonNull final String deviceAddress) {
 		final String firstBytes = deviceAddress.substring(0, 15);
 		final String lastByte = deviceAddress.substring(15); // assuming that the device address is correct
 		final String lastByteIncremented = String.format(Locale.US, "%02X", (Integer.valueOf(lastByte, 16) + BootloaderScanner.ADDRESS_DIFF) & 0xFF);

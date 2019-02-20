@@ -31,6 +31,8 @@ import android.os.SystemClock;
 import java.util.Locale;
 import java.util.UUID;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import no.nordicsemi.android.dfu.internal.ArchiveInputStream;
 import no.nordicsemi.android.dfu.internal.exception.DeviceDisconnectedException;
 import no.nordicsemi.android.dfu.internal.exception.DfuException;
@@ -41,15 +43,15 @@ import no.nordicsemi.android.error.LegacyDfuError;
 
 /* package */ class LegacyDfuImpl extends BaseCustomDfuImpl {
 	// UUIDs used by the DFU
-	protected static final UUID DEFAULT_DFU_SERVICE_UUID       = new UUID(0x000015301212EFDEL, 0x1523785FEABCD123L);
-	protected static final UUID DEFAULT_DFU_CONTROL_POINT_UUID = new UUID(0x000015311212EFDEL, 0x1523785FEABCD123L);
-	protected static final UUID DEFAULT_DFU_PACKET_UUID        = new UUID(0x000015321212EFDEL, 0x1523785FEABCD123L);
-	protected static final UUID DEFAULT_DFU_VERSION_UUID       = new UUID(0x000015341212EFDEL, 0x1523785FEABCD123L);
+	static final UUID DEFAULT_DFU_SERVICE_UUID       = new UUID(0x000015301212EFDEL, 0x1523785FEABCD123L);
+	static final UUID DEFAULT_DFU_CONTROL_POINT_UUID = new UUID(0x000015311212EFDEL, 0x1523785FEABCD123L);
+	static final UUID DEFAULT_DFU_PACKET_UUID        = new UUID(0x000015321212EFDEL, 0x1523785FEABCD123L);
+	static final UUID DEFAULT_DFU_VERSION_UUID       = new UUID(0x000015341212EFDEL, 0x1523785FEABCD123L);
 
-	protected static UUID DFU_SERVICE_UUID       = DEFAULT_DFU_SERVICE_UUID;
-	protected static UUID DFU_CONTROL_POINT_UUID = DEFAULT_DFU_CONTROL_POINT_UUID;
-	protected static UUID DFU_PACKET_UUID        = DEFAULT_DFU_PACKET_UUID;
-	protected static UUID DFU_VERSION_UUID       = DEFAULT_DFU_VERSION_UUID;
+	static UUID DFU_SERVICE_UUID       = DEFAULT_DFU_SERVICE_UUID;
+	static UUID DFU_CONTROL_POINT_UUID = DEFAULT_DFU_CONTROL_POINT_UUID;
+	static UUID DFU_PACKET_UUID        = DEFAULT_DFU_PACKET_UUID;
+	static UUID DFU_VERSION_UUID       = DEFAULT_DFU_VERSION_UUID;
 
 	private static final int DFU_STATUS_SUCCESS = 1;
 	// Operation codes and packets
@@ -124,12 +126,12 @@ import no.nordicsemi.android.error.LegacyDfuError;
 		}
 	}
 
-	/* package */ LegacyDfuImpl(final Intent intent, final DfuBaseService service) {
+	/* package */ LegacyDfuImpl(@NonNull final Intent intent, @NonNull final DfuBaseService service) {
 		super(intent, service);
 	}
 
 	@Override
-	public boolean isClientCompatible(final Intent intent, final BluetoothGatt gatt) {
+	public boolean isClientCompatible(@NonNull final Intent intent, @NonNull final BluetoothGatt gatt) {
 		final BluetoothGattService dfuService = gatt.getService(DFU_SERVICE_UUID);
 		if (dfuService == null)
 			return false;
@@ -162,7 +164,8 @@ import no.nordicsemi.android.error.LegacyDfuError;
 	}
 
 	@Override
-	public void performDfu(final Intent intent) throws DfuException, DeviceDisconnectedException, UploadAbortedException {
+	public void performDfu(@NonNull final Intent intent)
+			throws DfuException, DeviceDisconnectedException, UploadAbortedException {
 		logw("Legacy DFU bootloader found");
 		mProgressInfo.setProgress(DfuBaseService.PROGRESS_STARTING);
 
@@ -549,10 +552,13 @@ import no.nordicsemi.android.error.LegacyDfuError;
 	/**
 	 * Sets number of data packets that will be send before the notification will be received.
 	 *
-	 * @param data  control point data packet
-	 * @param value number of packets before receiving notification. If this value is 0, then the notification of packet receipt will be disabled by the DFU target.
+	 * @param data  control point data packet.
+	 * @param value number of packets before receiving notification.
+	 *              If this value is 0, then the notification of packet receipt will be disabled
+	 *              by the DFU target.
 	 */
-	private void setNumberOfPackets(final byte[] data, final int value) {
+	@SuppressWarnings("SameParameterValue")
+	private void setNumberOfPackets(@NonNull final byte[] data, final int value) {
 		data[1] = (byte) (value & 0xFF);
 		data[2] = (byte) ((value >> 8) & 0xFF);
 	}
@@ -561,12 +567,14 @@ import no.nordicsemi.android.error.LegacyDfuError;
 	 * Checks whether the response received is valid and returns the status code.
 	 *
 	 * @param response the response received from the DFU device.
-	 * @param request  the expected Op Code
-	 * @return the status code
-	 * @throws UnknownResponseException if response was not valid
+	 * @param request  the expected Op Code.
+	 * @return The status code.
+	 * @throws UnknownResponseException if response was not valid.
 	 */
-	private int getStatusCode(final byte[] response, final int request) throws UnknownResponseException {
-		if (response == null || response.length != 3 || response[0] != OP_CODE_RESPONSE_CODE_KEY || response[1] != request || response[2] < 1 || response[2] > 6)
+	private int getStatusCode(@Nullable final byte[] response, final int request)
+			throws UnknownResponseException {
+		if (response == null || response.length != 3 || response[0] != OP_CODE_RESPONSE_CODE_KEY ||
+				response[1] != request || response[2] < 1 || response[2] > 6)
 			throw new UnknownResponseException("Invalid response received", response, OP_CODE_RESPONSE_CODE_KEY, request);
 		return response[2];
 	}
@@ -574,10 +582,10 @@ import no.nordicsemi.android.error.LegacyDfuError;
 	/**
 	 * Returns the DFU Version characteristic if such exists. Otherwise it returns 0.
 	 *
-	 * @param characteristic the characteristic to read
-	 * @return a version number or 0 if not present on the bootloader
+	 * @param characteristic the characteristic to read.
+	 * @return a version number or 0 if not present on the bootloader.
 	 */
-	private int readVersion(final BluetoothGattCharacteristic characteristic) {
+	private int readVersion(@Nullable final BluetoothGattCharacteristic characteristic) {
 		// The value of this characteristic has been read before by LegacyButtonlessDfuImpl
 		return characteristic != null ? characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 0) : 0;
 	}
@@ -588,28 +596,34 @@ import no.nordicsemi.android.error.LegacyDfuError;
 	 * will be called or the device gets disconnected.
 	 * If connection state will change, or an error will occur, an exception will be thrown.
 	 *
-	 * @param characteristic the characteristic to write to. Should be the DFU CONTROL POINT
-	 * @param value          the value to write to the characteristic
-	 * @throws DeviceDisconnectedException
-	 * @throws DfuException
-	 * @throws UploadAbortedException
+	 * @param characteristic the characteristic to write to. Should be the DFU CONTROL POINT.
+	 * @param value          the value to write to the characteristic.
+	 * @throws DeviceDisconnectedException Thrown when the device will disconnect in the middle of
+	 *                                     the transmission.
+	 * @throws DfuException                Thrown if DFU error occur.
+	 * @throws UploadAbortedException      Thrown if DFU operation was aborted by user.
 	 */
-	private void writeOpCode(final BluetoothGattCharacteristic characteristic, final byte[] value) throws DeviceDisconnectedException, DfuException, UploadAbortedException {
+	private void writeOpCode(@NonNull final BluetoothGattCharacteristic characteristic, @NonNull final byte[] value)
+			throws DeviceDisconnectedException, DfuException, UploadAbortedException {
 		final boolean reset = value[0] == OP_CODE_RESET_KEY || value[0] == OP_CODE_ACTIVATE_AND_RESET_KEY;
 		writeOpCode(characteristic, value, reset);
 	}
 
 	/**
-	 * Writes the image size to the characteristic. This method is SYNCHRONOUS and wait until the {@link android.bluetooth.BluetoothGattCallback#onCharacteristicWrite(android.bluetooth.BluetoothGatt, android.bluetooth.BluetoothGattCharacteristic, int)}
-	 * will be called or the device gets disconnected. If connection state will change, or an error will occur, an exception will be thrown.
+	 * Writes the image size to the characteristic. This method is SYNCHRONOUS and wait until the
+	 * {@link android.bluetooth.BluetoothGattCallback#onCharacteristicWrite(android.bluetooth.BluetoothGatt, android.bluetooth.BluetoothGattCharacteristic, int)}
+	 * will be called or the device gets disconnected. If connection state will change, or an
+	 * error will occur, an exception will be thrown.
 	 *
-	 * @param characteristic the characteristic to write to. Should be the DFU PACKET
-	 * @param imageSize      the image size in bytes
-	 * @throws DeviceDisconnectedException
-	 * @throws DfuException
-	 * @throws UploadAbortedException
+	 * @param characteristic the characteristic to write to. Should be the DFU PACKET.
+	 * @param imageSize      the image size in bytes.
+	 * @throws DeviceDisconnectedException Thrown when the device will disconnect in the middle of
+	 *                                     the transmission.
+	 * @throws DfuException                Thrown if DFU error occur.
+	 * @throws UploadAbortedException      Thrown if DFU operation was aborted by user.
 	 */
-	private void writeImageSize(final BluetoothGattCharacteristic characteristic, final int imageSize) throws DeviceDisconnectedException, DfuException,
+	private void writeImageSize(@NonNull final BluetoothGattCharacteristic characteristic, final int imageSize)
+			throws DeviceDisconnectedException, DfuException,
 			UploadAbortedException {
 		mReceivedData = null;
 		mError = 0;
@@ -641,23 +655,27 @@ import no.nordicsemi.android.error.LegacyDfuError;
 
 	/**
 	 * <p>
-	 * Writes the Soft Device, Bootloader and Application image sizes to the characteristic. Soft Device and Bootloader update is supported since Soft Device s110 v7.0.0.
-	 * Sizes of SD, BL and App are uploaded as 3x UINT32 even though some of them may be 0s. F.e. if only App is being updated the data will be <0x00000000, 0x00000000, [App size]>
-	 * </p>
+	 * Writes the Soft Device, Bootloader and Application image sizes to the characteristic.
+	 * Soft Device and Bootloader update is supported since Soft Device s110 v7.0.0.
+	 * Sizes of SD, BL and App are uploaded as 3x UINT32 even though some of them may be 0s.
+	 * E.g. if only App is being updated the data will be <0x00000000, 0x00000000, [App size]>
 	 * <p>
-	 * This method is SYNCHRONOUS and wait until the {@link android.bluetooth.BluetoothGattCallback#onCharacteristicWrite(android.bluetooth.BluetoothGatt, android.bluetooth.BluetoothGattCharacteristic, int)}
-	 * will be called or the device gets disconnected. If connection state will change, or an error will occur, an exception will be thrown.
-	 * </p>
+	 * This method is SYNCHRONOUS and wait until the
+	 * {@link android.bluetooth.BluetoothGattCallback#onCharacteristicWrite(android.bluetooth.BluetoothGatt, android.bluetooth.BluetoothGattCharacteristic, int)}
+	 * will be called or the device gets disconnected. If connection state will change, or an
+	 * error will occur, an exception will be thrown.
 	 *
-	 * @param characteristic      the characteristic to write to. Should be the DFU PACKET
-	 * @param softDeviceImageSize the Soft Device image size in bytes
-	 * @param bootloaderImageSize the Bootloader image size in bytes
-	 * @param appImageSize        the Application image size in bytes
-	 * @throws DeviceDisconnectedException
-	 * @throws DfuException
-	 * @throws UploadAbortedException
+	 * @param characteristic      the characteristic to write to. Should be the DFU PACKET.
+	 * @param softDeviceImageSize the Soft Device image size in bytes.
+	 * @param bootloaderImageSize the Bootloader image size in bytes.
+	 * @param appImageSize        the Application image size in bytes.
+	 * @throws DeviceDisconnectedException Thrown when the device will disconnect in the middle of
+	 *                                     the transmission.
+	 * @throws DfuException                Thrown if DFU error occur.
+	 * @throws UploadAbortedException      Thrown if DFU operation was aborted by user.
 	 */
-	private void writeImageSize(final BluetoothGattCharacteristic characteristic, final int softDeviceImageSize, final int bootloaderImageSize, final int appImageSize)
+	private void writeImageSize(@NonNull final BluetoothGattCharacteristic characteristic,
+								final int softDeviceImageSize, final int bootloaderImageSize, final int appImageSize)
 			throws DeviceDisconnectedException, DfuException, UploadAbortedException {
 		mReceivedData = null;
 		mError = 0;
@@ -691,13 +709,16 @@ import no.nordicsemi.android.error.LegacyDfuError;
 
 	/**
 	 * Sends Reset command to the target device to reset its state and restarts the DFU Service that will start again.
-	 * @param gatt the GATT device
-	 * @param intent intent used to start the service
-	 * @throws DfuException
-	 * @throws DeviceDisconnectedException
-	 * @throws UploadAbortedException
+	 *
+	 * @param gatt the GATT device.
+	 * @param intent intent used to start the service.
+	 * @throws DeviceDisconnectedException Thrown when the device will disconnect in the middle of
+	 *                                     the transmission.
+	 * @throws DfuException                Thrown if DFU error occur.
+	 * @throws UploadAbortedException      Thrown if DFU operation was aborted by user.
 	 */
-	private void resetAndRestart(final BluetoothGatt gatt, final Intent intent) throws DfuException, DeviceDisconnectedException, UploadAbortedException {
+	private void resetAndRestart(@NonNull final BluetoothGatt gatt, @NonNull final Intent intent)
+			throws DfuException, DeviceDisconnectedException, UploadAbortedException {
 		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, "Last upload interrupted. Restarting device...");
 		// Send 'jump to bootloader command' (Start DFU)
 		mProgressInfo.setProgress(DfuBaseService.PROGRESS_DISCONNECTING);

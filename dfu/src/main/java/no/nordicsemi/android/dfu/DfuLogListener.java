@@ -23,12 +23,15 @@
 package no.nordicsemi.android.dfu;
 
 /**
- * Listener for log events. This listener should be used instead of creating the BroadcastReceiver on your own.
+ * Listener for log events. This listener should be used instead of creating the
+ * BroadcastReceiver on your own.
+ *
  * @see DfuServiceListenerHelper
  */
 public interface DfuLogListener {
 	/**
 	 * Method called when a log event was sent from the DFU service.
+	 *
 	 * @param deviceAddress the target device address
 	 * @param level the log level, one of:
 	 * 		<ul>
