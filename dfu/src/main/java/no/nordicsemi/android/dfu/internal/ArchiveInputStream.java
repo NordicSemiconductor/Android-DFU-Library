@@ -343,7 +343,7 @@ public class ArchiveInputStream extends InputStream {
 	public void close() throws IOException {
 		softDeviceBytes = null;
 		bootloaderBytes = null;
-		softDeviceBytes = null;
+		applicationBytes = null;
 		softDeviceAndBootloaderBytes = null;
 		softDeviceSize = bootloaderSize = applicationSize = 0;
 		currentSource = null;
