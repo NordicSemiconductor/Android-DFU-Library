@@ -453,10 +453,10 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 		} catch (final InterruptedException e) {
 			loge("Sleeping interrupted", e);
 		}
-		if (mError != 0)
-			throw new DfuException("Unable to set " + debugString + " state", mError);
 		if (!mConnected)
 			throw new DeviceDisconnectedException("Unable to set " + debugString + " state: device disconnected");
+		if (mError != 0)
+			throw new DfuException("Unable to set " + debugString + " state", mError);
 	}
 
 	/**
@@ -506,10 +506,10 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 		} catch (final InterruptedException e) {
 			loge("Sleeping interrupted", e);
 		}
-		if (mError != 0)
-			throw new DfuException("Unable to read Service Changed CCCD", mError);
 		if (!mConnected)
 			throw new DeviceDisconnectedException("Unable to read Service Changed CCCD: device disconnected");
+		if (mError != 0)
+			throw new DfuException("Unable to read Service Changed CCCD", mError);
 
 		// Return true if the CCCD value is
 		return descriptor.getValue() != null && descriptor.getValue().length == 2
@@ -562,10 +562,10 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 		} catch (final InterruptedException e) {
 			loge("Sleeping interrupted", e);
 		}
-		if (!mResetRequestSent && mError != 0)
-			throw new DfuException("Unable to write Op Code " + value[0], mError);
 		if (!mResetRequestSent && !mConnected)
 			throw new DeviceDisconnectedException("Unable to write Op Code " + value[0] + ": device disconnected");
+		if (!mResetRequestSent && mError != 0)
+			throw new DfuException("Unable to write Op Code " + value[0], mError);
 	}
 
 	/**
@@ -725,10 +725,10 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 		}
 		if (mAborted)
 			throw new UploadAbortedException();
-		if (mError != 0)
-			throw new DfuException("Unable to write Op Code", mError);
 		if (!mConnected)
 			throw new DeviceDisconnectedException("Unable to write Op Code: device disconnected");
+		if (mError != 0)
+			throw new DfuException("Unable to write Op Code", mError);
 		return mReceivedData;
 	}
 

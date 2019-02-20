@@ -238,10 +238,10 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		} catch (final InterruptedException e) {
 			loge("Sleeping interrupted", e);
 		}
-		if (mError != 0)
-			throw new DfuException("Unable to read version number", mError);
 		if (!mConnected)
 			throw new DeviceDisconnectedException("Unable to read version number: device disconnected");
+		if (mError != 0)
+			throw new DfuException("Unable to read version number", mError);
 
 		// The version is a 16-bit unsigned int
 		return characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 0);

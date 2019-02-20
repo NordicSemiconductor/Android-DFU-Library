@@ -647,10 +647,10 @@ import no.nordicsemi.android.error.LegacyDfuError;
 		}
 		if (mAborted)
 			throw new UploadAbortedException();
-		if (mError != 0)
-			throw new DfuException("Unable to write Image Size", mError);
 		if (!mConnected)
 			throw new DeviceDisconnectedException("Unable to write Image Size: device disconnected");
+		if (mError != 0)
+			throw new DfuException("Unable to write Image Size", mError);
 	}
 
 	/**
@@ -701,10 +701,10 @@ import no.nordicsemi.android.error.LegacyDfuError;
 		}
 		if (mAborted)
 			throw new UploadAbortedException();
-		if (mError != 0)
-			throw new DfuException("Unable to write Image Sizes", mError);
 		if (!mConnected)
 			throw new DeviceDisconnectedException("Unable to write Image Sizes: device disconnected");
+		if (mError != 0)
+			throw new DfuException("Unable to write Image Sizes", mError);
 	}
 
 	/**

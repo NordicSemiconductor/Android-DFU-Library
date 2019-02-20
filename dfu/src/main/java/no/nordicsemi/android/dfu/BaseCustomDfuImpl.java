@@ -347,10 +347,10 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		} catch (final InterruptedException e) {
 			loge("Sleeping interrupted", e);
 		}
-		if (mError != 0)
-			throw new DfuException("Unable to write Init DFU Parameters", mError);
 		if (!mConnected)
 			throw new DeviceDisconnectedException("Unable to write Init DFU Parameters: device disconnected");
+		if (mError != 0)
+			throw new DfuException("Unable to write Init DFU Parameters", mError);
 	}
 
 	/**
@@ -394,10 +394,10 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 			loge("Sleeping interrupted", e);
 		}
 
-		if (mError != 0)
-			throw new DfuException("Uploading Firmware Image failed", mError);
 		if (!mConnected)
 			throw new DeviceDisconnectedException("Uploading Firmware Image failed: device disconnected");
+		if (mError != 0)
+			throw new DfuException("Uploading Firmware Image failed", mError);
 	}
 
 	/**
