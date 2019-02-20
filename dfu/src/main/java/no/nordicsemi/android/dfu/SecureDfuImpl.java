@@ -391,8 +391,13 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Command object created");
 				}
 				// Write Init data to the Packet Characteristic
-				logi("Sending " + (mInitPacketSizeInBytes - info.offset) + " bytes of init packet...");
-				writeInitData(mPacketCharacteristic, crc32);
+				try {
+					logi("Sending " + (mInitPacketSizeInBytes - info.offset) + " bytes of init packet...");
+					writeInitData(mPacketCharacteristic, crc32);
+				} catch (final DeviceDisconnectedException e) {
+					loge("Disconnected while sending init packet");
+					throw e;
+				}
 				final int crc = (int) (crc32.getValue() & 0xFFFFFFFFL);
 				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, String.format(Locale.US, "Command object sent (CRC = %08X)", crc));
 

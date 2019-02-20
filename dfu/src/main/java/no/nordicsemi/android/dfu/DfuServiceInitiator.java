@@ -79,6 +79,7 @@ public class DfuServiceInitiator {
 	private boolean forceDfu = false;
 	private boolean enableUnsafeExperimentalButtonlessDfu = false;
 	private boolean disableResume = false;
+	private int numberOfRetries = 0; // 0 to be backwards compatible
 
 	private Boolean packetReceiptNotificationsEnabled;
 	private int numberOfPackets = 12;
@@ -266,6 +267,28 @@ public class DfuServiceInitiator {
 	 */
 	public DfuServiceInitiator disableResume() {
 		this.disableResume = true;
+		return this;
+	}
+
+	/**
+	 * Sets the number of retries that the DFU service will use to complete DFU. The default
+	 * value is 0, for backwards compatibility reason.
+	 * <p>
+	 * If the given value is greater than 0, the service will restart itself at most {@code max}
+	 * times in case of an undesired disconnection during DFU operation. This attempt counter
+	 * is independent from another counter, for reconnection attempts, which is equal to 3.
+	 * The latter one will be used when connection will fail with an error (possible packet
+	 * collision or any other reason). After successful connection, the reconnection counter is
+	 * reset, while the retry counter is cleared after a DFU finishes with success.
+	 * <p>
+	 * The service will not try to retry DFU in case of any other error, for instance an error
+	 * sent from the target device.
+	 *
+	 * @param max Maximum number of retires to complete DFU. Usually around 2.
+	 * @return the builder
+	 */
+	public DfuServiceInitiator setNumberOfRetries(@IntRange(from = 0) final int max) {
+		this.numberOfRetries = max;
 		return this;
 	}
 
@@ -704,6 +727,7 @@ public class DfuServiceInitiator {
 		intent.putExtra(DfuBaseService.EXTRA_RESTORE_BOND, restoreBond);
 		intent.putExtra(DfuBaseService.EXTRA_FORCE_DFU, forceDfu);
 		intent.putExtra(DfuBaseService.EXTRA_DISABLE_RESUME, disableResume);
+		intent.putExtra(DfuBaseService.EXTRA_MAX_DFU_ATTEMPTS, numberOfRetries);
 		if (mtu > 0)
 			intent.putExtra(DfuBaseService.EXTRA_MTU, mtu);
 		intent.putExtra(DfuBaseService.EXTRA_CURRENT_MTU, currentMtu);

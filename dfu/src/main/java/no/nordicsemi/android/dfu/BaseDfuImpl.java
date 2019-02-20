@@ -707,6 +707,10 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 
 		if (newAddress != null)
 			intent.putExtra(DfuBaseService.EXTRA_DEVICE_ADDRESS, newAddress);
+
+		// Reset the DFU attempt counter
+		intent.putExtra(DfuBaseService.EXTRA_DFU_ATTEMPT, 0);
+
 		mService.startService(intent);
 	}
 

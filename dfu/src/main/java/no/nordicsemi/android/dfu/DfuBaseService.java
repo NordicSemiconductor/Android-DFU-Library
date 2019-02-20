@@ -1347,9 +1347,19 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 				mProgressInfo.setProgress(PROGRESS_ABORTED);
 			} catch (final DeviceDisconnectedException e) {
 				sendLogBroadcast(LOG_LEVEL_ERROR, "Device has disconnected");
-				// TODO reconnect n times?
 				loge(e.getMessage());
 				close(gatt);
+
+				final int attempt = intent.getIntExtra(EXTRA_DFU_ATTEMPT, 0);
+				final int limit = intent.getIntExtra(EXTRA_MAX_DFU_ATTEMPTS, 0);
+				if (attempt < limit) {
+					logi("Restarting the service (" + (attempt + 1)  + " /" + limit + ")");
+					final Intent newIntent = new Intent();
+					newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
+					newIntent.putExtra(EXTRA_DFU_ATTEMPT, attempt + 1);
+					startService(newIntent);
+					return;
+				}
 				report(ERROR_DEVICE_DISCONNECTED);
 			} catch (final DfuException e) {
 				int error = e.getErrorNumber();

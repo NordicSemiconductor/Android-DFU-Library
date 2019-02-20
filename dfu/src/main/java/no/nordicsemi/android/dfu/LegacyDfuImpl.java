@@ -474,7 +474,6 @@ import no.nordicsemi.android.error.LegacyDfuError;
 			} catch (final DeviceDisconnectedException e) {
 				loge("Disconnected while sending data");
 				throw e;
-				// TODO reconnect?
 			}
 			final long endTime = SystemClock.elapsedRealtime();
 
