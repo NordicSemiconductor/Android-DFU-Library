@@ -93,6 +93,7 @@ import no.nordicsemi.android.error.GattError;
  * The service will show its progress on the notification bar and will send local broadcasts to the
  * application.
  */
+@SuppressWarnings("deprecation")
 public abstract class DfuBaseService extends IntentService implements DfuProgressInfo.ProgressListener {
 	private static final String TAG = "DfuBaseService";
 
@@ -214,6 +215,12 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 * <a href="https://github.com/NordicSemiconductor/Android-DFU-Library/issues/71">#71</a>.
 	 */
 	public static final String EXTRA_DISABLE_RESUME = "no.nordicsemi.android.dfu.extra.EXTRA_DISABLE_RESUME";
+	/**
+	 * The MBR size.
+	 *
+	 * @see DfuServiceInitiator#setMbrSize(int)
+	 */
+	public static final String EXTRA_MBR_SIZE = "no.nordicsemi.android.dfu.extra.EXTRA_MBR_SIZE";
 	/**
 	 * This extra allows you to control the MTU that will be requested (on Lollipop or newer devices).
 	 * If the field is null, the service will not request higher MTU and will use MTU = 23
@@ -1108,14 +1115,20 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		// Applications and bootloader starts from bigger address. However, in custom DFU
 		// implementations, user may want to transmit the whole whole data, even from address 0x0000.
 		final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-		final String value = preferences.getString(DfuSettingsConstants.SETTINGS_MBR_SIZE, String.valueOf(DfuSettingsConstants.SETTINGS_DEFAULT_MBR_SIZE));
-		int mbrSize;
-		try {
-			mbrSize = Integer.parseInt(value);
+		int mbrSize = DfuServiceInitiator.DEFAULT_MBR_SIZE;
+		if (preferences.contains(DfuSettingsConstants.SETTINGS_MBR_SIZE)) {
+			final String value = preferences.getString(DfuSettingsConstants.SETTINGS_MBR_SIZE, String.valueOf(DfuServiceInitiator.DEFAULT_MBR_SIZE));
+			try {
+				mbrSize = Integer.parseInt(value);
+				if (mbrSize < 0)
+					mbrSize = 0;
+			} catch (final NumberFormatException e) {
+				// ignore, default value will be used
+			}
+		} else {
+			mbrSize = intent.getIntExtra(EXTRA_MBR_SIZE, DfuServiceInitiator.DEFAULT_MBR_SIZE);
 			if (mbrSize < 0)
 				mbrSize = 0;
-		} catch (final NumberFormatException e) {
-			mbrSize = DfuSettingsConstants.SETTINGS_DEFAULT_MBR_SIZE;
 		}
 
 		if (foregroundService) {

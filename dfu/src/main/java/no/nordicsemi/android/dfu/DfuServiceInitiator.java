@@ -48,9 +48,10 @@ import java.util.UUID;
  * parameters to the service. The DfuServiceInitiator class may be used to make this process easier.
  * It provides simple API that covers all low lever operations.
  */
-@SuppressWarnings({"WeakerAccess", "unused"})
-public class DfuServiceInitiator {
+@SuppressWarnings({"WeakerAccess", "unused", "deprecation"})
+public final class DfuServiceInitiator {
 	public static final int DEFAULT_PRN_VALUE = 12;
+	public static final int DEFAULT_MBR_SIZE = 0x1000;
 
 	/** Constant used to narrow the scope of the update to system components (SD+BL) only. */
 	public static final int SCOPE_SYSTEM_COMPONENTS = 1;
@@ -80,6 +81,7 @@ public class DfuServiceInitiator {
 	private boolean enableUnsafeExperimentalButtonlessDfu = false;
 	private boolean disableResume = false;
 	private int numberOfRetries = 0; // 0 to be backwards compatible
+	private int mbrSize = DEFAULT_MBR_SIZE;
 
 	private Boolean packetReceiptNotificationsEnabled;
 	private int numberOfPackets = 12;
@@ -371,6 +373,32 @@ public class DfuServiceInitiator {
 		else if (scope == (SCOPE_APPLICATION | SCOPE_SYSTEM_COMPONENTS))
 			fileType = DfuBaseService.TYPE_AUTO;
 		else throw new UnsupportedOperationException("Unknown scope");
+		return this;
+	}
+
+	/**
+	 * This method sets the size of an MBR (Master Boot Record). It should be used only
+	 * when updating a file from a HEX file. If you use BIN or ZIP, value set here will
+	 * be ignored.
+	 * <p>
+	 * The MBR size is important for the HEX parser, which has to cut it from the Soft Device's
+	 * HEX before sending it to the DFU target. The MBR can't be updated using DFU, and the
+	 * bootloader expects only the Soft Device bytes. Usually, the Soft Device HEX provided
+	 * by Nordic contains an MBR at addresses 0x0000 to 0x1000.
+	 * 0x1000 is the default size of MBR which will be used.
+	 * <p>
+	 * If you have a HEX file which address start from 0 and want to send the whole BIN content
+	 * from it, you have to set the MBR size to 0, otherwise first 4096 bytes will be cut off.
+	 * <p>
+	 * The value set here will not be used if the {@link DfuSettingsConstants#SETTINGS_MBR_SIZE}
+	 * is set in Shared Preferences.
+	 *
+	 * @param mbrSize the MBR size in bytes. Defaults to 4096 (0x1000) bytes.
+	 * @return the builder
+	 * @see DfuSettingsConstants#SETTINGS_MBR_SIZE
+	 */
+	public DfuServiceInitiator setMbrSize(@IntRange(from = 0) final int mbrSize) {
+		this.mbrSize = mbrSize;
 		return this;
 	}
 
@@ -730,6 +758,7 @@ public class DfuServiceInitiator {
 		intent.putExtra(DfuBaseService.EXTRA_FORCE_DFU, forceDfu);
 		intent.putExtra(DfuBaseService.EXTRA_DISABLE_RESUME, disableResume);
 		intent.putExtra(DfuBaseService.EXTRA_MAX_DFU_ATTEMPTS, numberOfRetries);
+		intent.putExtra(DfuBaseService.EXTRA_MBR_SIZE, mbrSize);
 		if (mtu > 0)
 			intent.putExtra(DfuBaseService.EXTRA_MTU, mtu);
 		intent.putExtra(DfuBaseService.EXTRA_CURRENT_MTU, currentMtu);
