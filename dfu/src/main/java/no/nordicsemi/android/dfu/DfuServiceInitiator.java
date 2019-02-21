@@ -401,9 +401,11 @@ public class DfuServiceInitiator {
 	 * 0x01 - Success<br>
 	 * The device should disconnect and restart in DFU mode after sending the notification.
 	 * <p>
-	 * In SDK 13 this issue will be fixed by a proper implementation (bonding required,
-	 * passing bond information to the bootloader, encryption, well tested). It is recommended
-	 * to use this new service when SDK 13 (or later) is out. TODO fix the docs when SDK 13 is out.
+	 * The Buttonless service has changed in SDK 13 and later. Indications are used instead of
+	 * notifications. Also, Buttonless service for bonded devices has been added.
+	 * It is recommended to use any of the new services instead.
+	 *
+	 * @return the builder
 	 */
 	public DfuServiceInitiator setUnsafeExperimentalButtonlessServiceInSecureDfuEnabled(final boolean enable) {
 		this.enableUnsafeExperimentalButtonlessDfu = enable;
