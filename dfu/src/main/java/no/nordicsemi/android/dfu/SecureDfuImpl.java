@@ -36,6 +36,8 @@ import java.util.Locale;
 import java.util.UUID;
 import java.util.zip.CRC32;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import no.nordicsemi.android.dfu.internal.ArchiveInputStream;
 import no.nordicsemi.android.dfu.internal.exception.DeviceDisconnectedException;
 import no.nordicsemi.android.dfu.internal.exception.DfuException;
@@ -49,13 +51,13 @@ import no.nordicsemi.android.error.SecureDfuError;
 @SuppressWarnings("JavaDoc")
 class SecureDfuImpl extends BaseCustomDfuImpl {
 	// UUIDs used by the DFU
-	protected static final UUID DEFAULT_DFU_SERVICE_UUID       = new UUID(0x0000FE5900001000L, 0x800000805F9B34FBL); // 16-bit UUID assigned by Bluetooth SIG
-	protected static final UUID DEFAULT_DFU_CONTROL_POINT_UUID = new UUID(0x8EC90001F3154F60L, 0x9FB8838830DAEA50L);
-	protected static final UUID DEFAULT_DFU_PACKET_UUID        = new UUID(0x8EC90002F3154F60L, 0x9FB8838830DAEA50L);
+	static final UUID DEFAULT_DFU_SERVICE_UUID       = new UUID(0x0000FE5900001000L, 0x800000805F9B34FBL); // 16-bit UUID assigned by Bluetooth SIG
+	static final UUID DEFAULT_DFU_CONTROL_POINT_UUID = new UUID(0x8EC90001F3154F60L, 0x9FB8838830DAEA50L);
+	static final UUID DEFAULT_DFU_PACKET_UUID        = new UUID(0x8EC90002F3154F60L, 0x9FB8838830DAEA50L);
 
-	protected static UUID DFU_SERVICE_UUID       = DEFAULT_DFU_SERVICE_UUID;
-	protected static UUID DFU_CONTROL_POINT_UUID = DEFAULT_DFU_CONTROL_POINT_UUID;
-	protected static UUID DFU_PACKET_UUID        = DEFAULT_DFU_PACKET_UUID;
+	static UUID DFU_SERVICE_UUID       = DEFAULT_DFU_SERVICE_UUID;
+	static UUID DFU_CONTROL_POINT_UUID = DEFAULT_DFU_CONTROL_POINT_UUID;
+	static UUID DFU_PACKET_UUID        = DEFAULT_DFU_PACKET_UUID;
 
 	private static final int DFU_STATUS_SUCCESS = 1;
 	private static final int MAX_ATTEMPTS = 3;
@@ -109,7 +111,8 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 							// If so, update the number of bytes received
 							mProgressInfo.setBytesReceived(offset);
 						} else {
-							// Else, and only in case it was a PRN received, not the response for Calculate Checksum Request, stop sending data
+							// Else, and only in case it was a PRN received, not the response for
+                            // Calculate Checksum Request, stop sending data
 							if (mFirmwareUploadInProgress) {
 								mFirmwareUploadInProgress = false;
 								notifyLock();
@@ -121,8 +124,10 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 					}
 					default: {
 						/*
-						 * If the DFU target device is in invalid state (e.g. the Init Packet is required but has not been selected), the target will send DFU_STATUS_INVALID_STATE error
-						 * for each firmware packet that was send. We are interested may ignore all but the first one.
+						 * If the DFU target device is in invalid state (e.g. the Init Packet is
+						 * required but has not been selected), the target will send
+						 * DFU_STATUS_INVALID_STATE error for each firmware packet that was send.
+						 * We are interested may ignore all but the first one.
 						 */
 						if (mRemoteErrorOccurred)
 							break;
@@ -142,12 +147,12 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 		}
 	}
 
-	SecureDfuImpl(final Intent intent, final DfuBaseService service) {
+	SecureDfuImpl(@NonNull final Intent intent, @NonNull final DfuBaseService service) {
 		super(intent, service);
 	}
 
 	@Override
-	public boolean isClientCompatible(final Intent intent, final BluetoothGatt gatt) {
+	public boolean isClientCompatible(@NonNull final Intent intent, @NonNull final BluetoothGatt gatt) {
 		final BluetoothGattService dfuService = gatt.getService(DFU_SERVICE_UUID);
 		if (dfuService == null)
 			return false;
@@ -160,9 +165,14 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 	}
 
 	@Override
-	public boolean initialize(final Intent intent, final BluetoothGatt gatt, final int fileType, final InputStream firmwareStream, final InputStream initPacketStream) throws DfuException, DeviceDisconnectedException, UploadAbortedException {
+	public boolean initialize(@NonNull final Intent intent, @NonNull final BluetoothGatt gatt,
+							  @FileType final int fileType,
+							  @NonNull final InputStream firmwareStream,
+							  @Nullable final InputStream initPacketStream)
+			throws DfuException, DeviceDisconnectedException, UploadAbortedException {
 		if (initPacketStream == null) {
-			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, "The Init packet is required by this version DFU Bootloader");
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR,
+                    "The Init packet is required by this version DFU Bootloader");
 			mService.terminateConnection(gatt, DfuBaseService.ERROR_INIT_PACKET_REQUIRED);
 			return false;
 		}
@@ -191,7 +201,8 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 	}
 
 	@Override
-	public void performDfu(final Intent intent) throws DfuException, DeviceDisconnectedException, UploadAbortedException {
+	public void performDfu(@NonNull final Intent intent)
+			throws DfuException, DeviceDisconnectedException, UploadAbortedException {
 		logw("Secure DFU bootloader found");
 		mProgressInfo.setProgress(DfuBaseService.PROGRESS_STARTING);
 
@@ -215,7 +226,8 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 		try {
 			// Enable notifications
 			enableCCCD(mControlPointCharacteristic, NOTIFICATIONS);
-			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Notifications enabled");
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION,
+                    "Notifications enabled");
 
 			// Wait a second here before going further
 			// Related:
@@ -236,7 +248,8 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 					mRemoteErrorOccurred = false;
 
 					logw("Sending SD+BL failed. Trying to send App only");
-					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, "Invalid system components. Trying to send application");
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING,
+                            "Invalid system components. Trying to send application");
 					mFileType = DfuBaseService.TYPE_APPLICATION;
 
 					// Set new content type in the ZIP Input Stream and update sizes of images
@@ -263,7 +276,7 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 
 			// We are ready with DFU, the device is disconnected, let's close it and finalize the operation.
 			finalize(intent, false);
-		} catch (final UploadAbortedException e) {
+		} catch (@SuppressWarnings("CaughtExceptionImmediatelyRethrown") final UploadAbortedException e) {
 			// In secure DFU there is currently not possible to reset the device to application mode, so... do nothing
 			// The connection will be terminated in the DfuBaseService
 			throw e;
@@ -275,14 +288,16 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 		} catch (final RemoteDfuException e) {
 			final int error = DfuBaseService.ERROR_REMOTE_TYPE_SECURE | e.getErrorNumber();
 			loge(e.getMessage() + ": " + SecureDfuError.parse(error));
-			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, String.format(Locale.US, "Remote DFU error: %s", SecureDfuError.parse(error)));
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, String.format(Locale.US,
+                    "Remote DFU error: %s", SecureDfuError.parse(error)));
 
 			// For the Extended Error more details can be obtained on some devices.
 			if (e instanceof RemoteDfuExtendedErrorException) {
 				final RemoteDfuExtendedErrorException ee = (RemoteDfuExtendedErrorException) e;
 				final int extendedError = DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | ee.getExtendedErrorNumber();
 				loge("Extended Error details: " + SecureDfuError.parseExtendedError(extendedError));
-				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, "Details: " + SecureDfuError.parseExtendedError(extendedError) + " (Code = " + ee.getExtendedErrorNumber() + ")");
+				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR,
+                        "Details: " + SecureDfuError.parseExtendedError(extendedError) + " (Code = " + ee.getExtendedErrorNumber() + ")");
 				mService.terminateConnection(gatt, extendedError | DfuBaseService.ERROR_REMOTE_MASK);
 			} else {
 				mService.terminateConnection(gatt, error | DfuBaseService.ERROR_REMOTE_MASK);
@@ -293,29 +308,38 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 	/**
 	 * This method does the following:
 	 * <ol>
-	 *     <li>Selects the Command object - this Op Code returns the maximum acceptable size of a command object, and the offset and CRC32 of the command
-	 *     that is already stored in the device (in case the DFU was started in a previous connection and disconnected before it has finished).</li>
-	 *     <li>If the offset received is greater than 0 and less or equal to the size of the Init file that is to be sent, it will compare the
+	 *     <li>Selects the Command object - this Op Code returns the maximum acceptable size of a
+     *     command object, and the offset and CRC32 of the command that is already stored in the
+     *     device (in case the DFU was started in a previous connection and disconnected before
+     *     it has finished).</li>
+	 *     <li>If the offset received is greater than 0 and less or equal to the size of the
+     *     Init file that is to be sent, it will compare the
 	 *     received CRC with the local one and, if they match:
 	 *     	<ul>
-	 *     	    <li>If offset < init file size - it will continue sending the Init file from the point it stopped before,</li>
-	 *     	    <li>If offset == init file size - it will send Execute command to execute the Init file, as it may have not been executed before.</li>
+	 *     	    <li>If offset < init file size - it will continue sending the Init file from the
+     *     	    point it stopped before,</li>
+	 *     	    <li>If offset == init file size - it will send Execute command to execute the
+     *     	    Init file, as it may have not been executed before.</li>
 	 *     	</ul>
 	 *     </li>
-	 *     <li>If the CRC don't match, or the received offset is greater then init file size, it creates the Command Object and sends the whole
-	 *     Init file as the previous one was different.</li>
+	 *     <li>If the CRC don't match, or the received offset is greater then init file size,
+     *     it creates the Command Object and sends the whole Init file as the previous one was
+     *     different.</li>
 	 * </ol>
-	 * Sending of the Init packet is done without using PRNs (Packet Receipt Notifications), so they are disabled prior to sending the data.
+	 * Sending of the Init packet is done without using PRNs (Packet Receipt Notifications),
+     * so they are disabled prior to sending the data.
 	 *
-	 * @param gatt        the target GATT device
-	 * @param allowResume true to allow resuming sending Init Packet. If false, it will be started again.
+	 * @param gatt        the target GATT device.
+	 * @param allowResume true to allow resuming sending Init Packet. If false, it will be started
+     *                    again.
 	 * @throws RemoteDfuException
 	 * @throws DeviceDisconnectedException
 	 * @throws DfuException
 	 * @throws UploadAbortedException
 	 * @throws UnknownResponseException
 	 */
-	private void sendInitPacket(final BluetoothGatt gatt, final boolean allowResume) throws RemoteDfuException, DeviceDisconnectedException, DfuException, UploadAbortedException, UnknownResponseException {
+	private void sendInitPacket(@NonNull final BluetoothGatt gatt, final boolean allowResume)
+			throws RemoteDfuException, DeviceDisconnectedException, DfuException, UploadAbortedException, UnknownResponseException {
 		final CRC32 crc32 = new CRC32(); // Used to calculate CRC32 of the Init packet
 		ObjectChecksum checksum;
 
@@ -325,6 +349,7 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 		final ObjectInfo info = selectObject(OBJECT_COMMAND);
 		logi(String.format(Locale.US, "Command object info received (Max size = %d, Offset = %d, CRC = %08X)", info.maxSize, info.offset, info.CRC32));
 		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, String.format(Locale.US, "Command object info received (Max size = %d, Offset = %d, CRC = %08X)", info.maxSize, info.offset, info.CRC32));
+		//noinspection StatementWithEmptyBody
 		if (mInitPacketSizeInBytes > info.maxSize) {
 			// Ignore this here. Later, after sending the 'Create object' command, DFU target will send an error if init packet is too large
 		}
@@ -391,8 +416,13 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Command object created");
 				}
 				// Write Init data to the Packet Characteristic
-				logi("Sending " + (mInitPacketSizeInBytes - info.offset) + " bytes of init packet...");
-				writeInitData(mPacketCharacteristic, crc32);
+				try {
+					logi("Sending " + (mInitPacketSizeInBytes - info.offset) + " bytes of init packet...");
+					writeInitData(mPacketCharacteristic, crc32);
+				} catch (final DeviceDisconnectedException e) {
+					loge("Disconnected while sending init packet");
+					throw e;
+				}
 				final int crc = (int) (crc32.getValue() & 0xFFFFFFFFL);
 				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, String.format(Locale.US, "Command object sent (CRC = %08X)", crc));
 
@@ -442,33 +472,41 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 	 * This method does the following:
 	 * <ol>
 	 *     <li>Sets the Packet Receipt Notification to a value specified in the settings.</li>
-	 *     <li>Selects the Data object - this returns maximum single object size and the offset and CRC of the data already saved.</li>
-	 *     <li>If the offset received is greater than 0 it will calculate the CRC of the same number of bytes of the firmware to be sent.
-	 *     If the CRC match it will continue sending data. Otherwise, it will go back to the beginning of the last chunk, or to the beginning
-	 *     of the previous chunk assuming the last one was not executed before, and continue sending data from there.</li>
-	 *     <li>If the CRC and offset received match and the offset is equal to the firmware size, it will only send the Execute command.</li>
+	 *     <li>Selects the Data object - this returns maximum single object size and the offset
+     *     and CRC of the data already saved.</li>
+	 *     <li>If the offset received is greater than 0 it will calculate the CRC of the same
+     *     number of bytes of the firmware to be sent. If the CRC match it will continue sending data.
+     *     Otherwise, it will go back to the beginning of the last chunk, or to the beginning
+	 *     of the previous chunk assuming the last one was not executed before, and continue
+     *     sending data from there.</li>
+	 *     <li>If the CRC and offset received match and the offset is equal to the firmware size,
+     *     it will only send the Execute command.</li>
 	 * </ol>
-	 * @param gatt the target GATT device
+	 * @param gatt the target GATT device.
 	 * @throws RemoteDfuException
 	 * @throws DeviceDisconnectedException
 	 * @throws DfuException
 	 * @throws UploadAbortedException
 	 * @throws UnknownResponseException
 	 */
-	private void sendFirmware(final BluetoothGatt gatt) throws RemoteDfuException, DeviceDisconnectedException, DfuException, UploadAbortedException, UnknownResponseException {
+	private void sendFirmware(final BluetoothGatt gatt) throws RemoteDfuException,
+            DeviceDisconnectedException, DfuException, UploadAbortedException, UnknownResponseException {
 		// Send the number of packets of firmware before receiving a receipt notification
 		int numberOfPacketsBeforeNotification = mPacketsBeforeNotification;
 		if (numberOfPacketsBeforeNotification > 0) {
 			setPacketReceiptNotifications(numberOfPacketsBeforeNotification);
-			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Packet Receipt Notif Req (Op Code = 2) sent (Value = " + numberOfPacketsBeforeNotification + ")");
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION,
+					"Packet Receipt Notif Req (Op Code = 2) sent (Value = " + numberOfPacketsBeforeNotification + ")");
 		}
 
 		// We are ready to start sending the new firmware.
 
 		logi("Setting object to Data (Op Code = 6, Type = 2)");
 		final ObjectInfo info = selectObject(OBJECT_DATA);
-		logi(String.format(Locale.US, "Data object info received (Max size = %d, Offset = %d, CRC = %08X)", info.maxSize, info.offset, info.CRC32));
-		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, String.format(Locale.US, "Data object info received (Max size = %d, Offset = %d, CRC = %08X)", info.maxSize, info.offset, info.CRC32));
+		logi(String.format(Locale.US,
+				"Data object info received (Max size = %d, Offset = %d, CRC = %08X)", info.maxSize, info.offset, info.CRC32));
+		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, String.format(Locale.US,
+				"Data object info received (Max size = %d, Offset = %d, CRC = %08X)", info.maxSize, info.offset, info.CRC32));
 		mProgressInfo.setMaxObjectSizeInBytes(info.maxSize);
 
 		// Number of chunks in which the data will be sent
@@ -503,7 +541,8 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 
 				if (crc == info.CRC32) {
 					logi(info.offset + " bytes of data sent before, CRC match");
-					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, info.offset + " bytes of data sent before, CRC match");
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION,
+							info.offset + " bytes of data sent before, CRC match");
 					mProgressInfo.setBytesSent(info.offset);
 					mProgressInfo.setBytesReceived(info.offset);
 
@@ -517,7 +556,8 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 					}
 				} else {
 					logi(info.offset + " bytes sent before, CRC does not match");
-					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, info.offset + " bytes sent before, CRC does not match");
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING,
+							info.offset + " bytes sent before, CRC does not match");
 					// The CRC of the current object is not correct. If there was another Data object sent before, its CRC must have been correct,
 					// as it has been executed. Either way, we have to create the current object again.
 					mProgressInfo.setBytesSent(bytesSentAndExecuted);
@@ -526,7 +566,8 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 					info.CRC32 = 0; // invalidate
 					mFirmwareStream.reset();
 					logi("Resuming from byte " + info.offset + "...");
-					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Resuming from byte " + info.offset + "...");
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION,
+							"Resuming from byte " + info.offset + "...");
 				}
 			} catch (final IOException e) {
 				loge("Error while reading firmware stream", e);
@@ -549,10 +590,13 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 					final int availableObjectSizeInBytes = mProgressInfo.getAvailableObjectSizeIsBytes();
 					logi("Creating Data object (Op Code = 1, Type = 2, Size = " + availableObjectSizeInBytes + ") (" + (currentChunk + 1) + "/" + chunkCount + ")");
 					writeCreateRequest(OBJECT_DATA, availableObjectSizeInBytes);
-					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Data object (" + (currentChunk + 1) + "/" + chunkCount + ") created");
-					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Uploading firmware...");
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION,
+                            "Data object (" + (currentChunk + 1) + "/" + chunkCount + ") created");
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION,
+                            "Uploading firmware...");
 				} else {
-					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Resuming uploading firmware...");
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION,
+                            "Resuming uploading firmware...");
 					resumeSendingData = false;
 				}
 
@@ -569,13 +613,15 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 				logi("Sending Calculate Checksum command (Op Code = 3)");
 				final ObjectChecksum checksum = readChecksum();
 				logi(String.format(Locale.US, "Checksum received (Offset = %d, CRC = %08X)", checksum.offset, checksum.CRC32));
-				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, String.format(Locale.US, "Checksum received (Offset = %d, CRC = %08X)", checksum.offset, checksum.CRC32));
+				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, String.format(Locale.US,
+                        "Checksum received (Offset = %d, CRC = %08X)", checksum.offset, checksum.CRC32));
 
 				// It may happen, that not all bytes that were sent were received by the remote device
 				final int bytesLost = mProgressInfo.getBytesSent() - checksum.offset;
 				if (bytesLost > 0) {
 					logw(bytesLost + " bytes were lost!");
-					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, bytesLost + " bytes were lost");
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING,
+                            bytesLost + " bytes were lost");
 
 					try {
 						// We have to reset the stream and read 'offset' number of bytes to recalculate the CRC
@@ -590,7 +636,8 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 					// To decrease the chance of loosing data next time let's set PRN to 1. This will make the update very long, but perhaps it will succeed.
 					numberOfPacketsBeforeNotification = mPacketsBeforeNotification = 1;
 					setPacketReceiptNotifications(numberOfPacketsBeforeNotification);
-					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Packet Receipt Notif Req (Op Code = 2) sent (Value = " + numberOfPacketsBeforeNotification + ")");
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION,
+                            "Packet Receipt Notif Req (Op Code = 2) sent (Value = " + numberOfPacketsBeforeNotification + ")");
 				}
 
 				// Calculate the CRC32
@@ -673,9 +720,10 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 	 * Sets number of data packets that will be send before the notification will be received.
 	 *
 	 * @param data  control point data packet
-	 * @param value number of packets before receiving notification. If this value is 0, then the notification of packet receipt will be disabled by the DFU target.
+	 * @param value number of packets before receiving notification. If this value is 0, then the
+     *              notification of packet receipt will be disabled by the DFU target.
 	 */
-	private void setNumberOfPackets(final byte[] data, final int value) {
+	private void setNumberOfPackets(@SuppressWarnings("SameParameterValue") @NonNull final byte[] data, final int value) {
 		data[1] = (byte) (value & 0xFF);
 		data[2] = (byte) ((value >> 8) & 0xFF);
 	}
@@ -686,7 +734,7 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 	 * @param data  control point data packet
 	 * @param value Object size in bytes.
 	 */
-	private void setObjectSize(final byte[] data, final int value) {
+	private void setObjectSize(@NonNull final byte[] data, final int value) {
 		data[2] = (byte) (value & 0xFF);
 		data[3] = (byte) ((value >> 8) & 0xFF);
 		data[4] = (byte) ((value >> 16) & 0xFF);
@@ -694,20 +742,23 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 	}
 
 	/**
-	 * Sets the number of packets that needs to be sent to receive the Packet Receipt Notification. Value 0 disables PRNs.
-	 * By default this is disabled. The PRNs may be used to send both the Data and Command object, but this Secure DFU implementation
-	 * can handle them only during Data transfer.<br/>
-	 * The intention of having PRNs is to make sure the outgoing BLE buffer is not getting overflown. The PRN will be sent after sending all
-	 * packets from the queue.
+	 * Sets the number of packets that needs to be sent to receive the Packet Receipt Notification.
+	 * Value 0 disables PRNs. By default this is disabled. The PRNs may be used to send both the
+	 * Data and Command object, but this Secure DFU implementation can handle them only during Data transfer.
+	 * <p>
+	 * The intention of having PRNs is to make sure the outgoing BLE buffer is not getting overflown.
+	 * The PRN will be sent after sending all packets from the queue.
 	 *
-	 * @param number number of packets required before receiving a Packet Receipt Notification
+	 * @param number number of packets required before receiving a Packet Receipt Notification.
 	 * @throws DfuException
 	 * @throws DeviceDisconnectedException
 	 * @throws UploadAbortedException
 	 * @throws UnknownResponseException
 	 * @throws RemoteDfuException thrown when the returned status code is not equal to {@link #DFU_STATUS_SUCCESS}
 	 */
-	private void setPacketReceiptNotifications(final int number) throws DfuException, DeviceDisconnectedException, UploadAbortedException, UnknownResponseException, RemoteDfuException {
+	private void setPacketReceiptNotifications(final int number)
+			throws DfuException, DeviceDisconnectedException, UploadAbortedException,
+			UnknownResponseException, RemoteDfuException {
 		if (!mConnected)
 			throw new DeviceDisconnectedException("Unable to read Checksum: device disconnected");
 
@@ -731,27 +782,31 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 	 * will be called or the device gets disconnected.
 	 * If connection state will change, or an error will occur, an exception will be thrown.
 	 *
-	 * @param characteristic the characteristic to write to. Should be the DFU CONTROL POINT
-	 * @param value          the value to write to the characteristic
+	 * @param characteristic the characteristic to write to. Should be the DFU CONTROL POINT.
+	 * @param value          the value to write to the characteristic.
 	 * @throws DeviceDisconnectedException
 	 * @throws DfuException
 	 * @throws UploadAbortedException
 	 */
-	private void writeOpCode(final BluetoothGattCharacteristic characteristic, final byte[] value) throws DeviceDisconnectedException, DfuException, UploadAbortedException {
+	private void writeOpCode(@NonNull final BluetoothGattCharacteristic characteristic, @NonNull final byte[] value)
+			throws DeviceDisconnectedException, DfuException, UploadAbortedException {
 		writeOpCode(characteristic, value, false);
 	}
 
 	/**
 	 * Writes Create Object request providing the type and size of the object.
-	 * @param type {@link #OBJECT_COMMAND} or {@link #OBJECT_DATA}
-	 * @param size size of the object or current part of the object
+	 *
+	 * @param type {@link #OBJECT_COMMAND} or {@link #OBJECT_DATA}.
+	 * @param size size of the object or current part of the object.
 	 * @throws DeviceDisconnectedException
 	 * @throws DfuException
 	 * @throws UploadAbortedException
 	 * @throws RemoteDfuException thrown when the returned status code is not equal to {@link #DFU_STATUS_SUCCESS}
 	 * @throws UnknownResponseException
 	 */
-	private void writeCreateRequest(final int type, final int size) throws DeviceDisconnectedException, DfuException, UploadAbortedException, RemoteDfuException, UnknownResponseException {
+	private void writeCreateRequest(final int type, final int size)
+			throws DeviceDisconnectedException, DfuException, UploadAbortedException, RemoteDfuException,
+			UnknownResponseException {
 		if (!mConnected)
 			throw new DeviceDisconnectedException("Unable to create object: device disconnected");
 
@@ -768,15 +823,19 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 	}
 
 	/**
-	 * Selects the current object and reads its metadata. The object info contains the max object size, and the offset and CRC32 of the whole object until now.
+	 * Selects the current object and reads its metadata. The object info contains the max object
+	 * size, and the offset and CRC32 of the whole object until now.
 	 *
-	 * @return object info
+	 * @return object info.
 	 * @throws DeviceDisconnectedException
 	 * @throws DfuException
 	 * @throws UploadAbortedException
-	 * @throws RemoteDfuException thrown when the returned status code is not equal to {@link #DFU_STATUS_SUCCESS}
+	 * @throws RemoteDfuException thrown when the returned status code is not equal to
+	 * {@link #DFU_STATUS_SUCCESS}.
 	 */
-	private ObjectInfo selectObject(final int type) throws DeviceDisconnectedException, DfuException, UploadAbortedException, RemoteDfuException, UnknownResponseException {
+	private ObjectInfo selectObject(final int type)
+			throws DeviceDisconnectedException, DfuException, UploadAbortedException,
+			RemoteDfuException, UnknownResponseException {
 		if (!mConnected)
 			throw new DeviceDisconnectedException("Unable to read object info: device disconnected");
 
@@ -798,15 +857,18 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 	}
 
 	/**
-	 * Sends the Calculate Checksum request. As a response a notification will be sent with current offset and CRC32 of the current object.
+	 * Sends the Calculate Checksum request. As a response a notification will be sent with current
+     * offset and CRC32 of the current object.
 	 *
-	 * @return requested object info
+	 * @return requested object info.
 	 * @throws DeviceDisconnectedException
 	 * @throws DfuException
 	 * @throws UploadAbortedException
-	 * @throws RemoteDfuException thrown when the returned status code is not equal to {@link #DFU_STATUS_SUCCESS}
+	 * @throws RemoteDfuException thrown when the returned status code is not equal to
+     * {@link #DFU_STATUS_SUCCESS}.
 	 */
-	private ObjectChecksum readChecksum() throws DeviceDisconnectedException, DfuException, UploadAbortedException, RemoteDfuException, UnknownResponseException {
+	private ObjectChecksum readChecksum() throws DeviceDisconnectedException, DfuException,
+            UploadAbortedException, RemoteDfuException, UnknownResponseException {
 		if (!mConnected)
 			throw new DeviceDisconnectedException("Unable to read Checksum: device disconnected");
 
@@ -828,15 +890,18 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 	/**
 	 * Sends the Execute operation code and awaits for a return notification containing status code.
 	 * The Execute command will confirm the last chunk of data or the last command that was sent.
-	 * Creating the same object again, instead of executing it allows to retransmitting it in case of a CRC error.
+	 * Creating the same object again, instead of executing it allows to retransmitting it in case
+     * of a CRC error.
 	 *
 	 * @throws DfuException
 	 * @throws DeviceDisconnectedException
 	 * @throws UploadAbortedException
 	 * @throws UnknownResponseException
-	 * @throws RemoteDfuException thrown when the returned status code is not equal to {@link #DFU_STATUS_SUCCESS}
+	 * @throws RemoteDfuException thrown when the returned status code is not equal to
+     * {@link #DFU_STATUS_SUCCESS}.
 	 */
-	private void writeExecute() throws DfuException, DeviceDisconnectedException, UploadAbortedException, UnknownResponseException, RemoteDfuException {
+	private void writeExecute() throws DfuException, DeviceDisconnectedException,
+            UploadAbortedException, UnknownResponseException, RemoteDfuException {
 		if (!mConnected)
 			throw new DeviceDisconnectedException("Unable to read Checksum: device disconnected");
 
@@ -861,14 +926,19 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 	 *         so such update is forbidden as it would brick the device.</li>
 	 * </ol>
 	 * See: <a href="https://github.com/NordicSemiconductor/Android-DFU-Library/issues/86">https://github.com/NordicSemiconductor/Android-DFU-Library/issues/86</a>
-	 * @param allowRetry if true service will retry to send the execute command in case of INVALID_OBJECT error.
+     *
+	 * @param allowRetry if true service will retry to send the execute command in case of
+     *                   INVALID_OBJECT error.
 	 * @throws DfuException
 	 * @throws DeviceDisconnectedException
 	 * @throws UploadAbortedException
 	 * @throws UnknownResponseException
-	 * @throws RemoteDfuException thrown when the returned status code is not equal to {@link #DFU_STATUS_SUCCESS}
+	 * @throws RemoteDfuException thrown when the returned status code is not equal to
+     * {@link #DFU_STATUS_SUCCESS}.
 	 */
-	private void writeExecute(final boolean allowRetry) throws DfuException, DeviceDisconnectedException, UploadAbortedException, UnknownResponseException, RemoteDfuException {
+	private void writeExecute(final boolean allowRetry)
+            throws DfuException, DeviceDisconnectedException, UploadAbortedException,
+            UnknownResponseException, RemoteDfuException {
 		try {
 			writeExecute();
 		} catch (final RemoteDfuException e) {
@@ -890,11 +960,11 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 	}
 
 	private class ObjectInfo extends ObjectChecksum {
-		protected int maxSize;
+		int maxSize;
 	}
 
 	private class ObjectChecksum {
-		protected int offset;
-		protected int CRC32;
+		int offset;
+		int CRC32;
 	}
 }

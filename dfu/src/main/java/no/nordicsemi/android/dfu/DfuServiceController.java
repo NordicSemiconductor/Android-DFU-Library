@@ -24,13 +24,18 @@ package no.nordicsemi.android.dfu;
 
 import android.content.Context;
 import android.content.Intent;
+
+import androidx.annotation.NonNull;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 /**
  * A controller class allows you to pause, resume or abort the DFU operation in a easy way.
- * <p>Keep in mind that there may be only one DFU operation at a time, and other instances of a DfuServiceController (for example obtained with a previous DFU)
- * will work for all DFU processes, but the {@link #isPaused()} and {@link #isAborted()} methods may report incorrect values.</p>
- * <p>Added in DFU Library version 1.0.2.</p>
+ * <p>
+ * Keep in mind that there may be only one DFU operation at a time, and other instances of
+ * a DfuServiceController (for example obtained with a previous DFU) will work for all DFU processes,
+ * but the {@link #isPaused()} and {@link #isAborted()} methods may report incorrect values.
+ * <p>
+ * Added in DFU Library version 1.0.2.
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
 public class DfuServiceController implements DfuController {
@@ -38,7 +43,7 @@ public class DfuServiceController implements DfuController {
 	private boolean mPaused;
 	private boolean mAborted;
 
-	/* package */ DfuServiceController(final Context context) {
+	/* package */ DfuServiceController(@NonNull final Context context) {
 		mBroadcastManager = LocalBroadcastManager.getInstance(context);
 	}
 

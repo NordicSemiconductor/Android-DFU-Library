@@ -31,6 +31,7 @@ import android.preference.PreferenceManager;
 
 import java.util.UUID;
 
+import androidx.annotation.NonNull;
 import no.nordicsemi.android.dfu.internal.exception.DeviceDisconnectedException;
 import no.nordicsemi.android.dfu.internal.exception.DfuException;
 import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
@@ -40,21 +41,23 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
  */
 /* package */ class LegacyButtonlessDfuImpl extends BaseButtonlessDfuImpl {
 	// UUIDs used by the DFU
-	protected static UUID DFU_SERVICE_UUID       = LegacyDfuImpl.DEFAULT_DFU_SERVICE_UUID;
-	protected static UUID DFU_CONTROL_POINT_UUID = LegacyDfuImpl.DEFAULT_DFU_CONTROL_POINT_UUID;
-	protected static UUID DFU_VERSION_UUID       = LegacyDfuImpl.DEFAULT_DFU_VERSION_UUID;
+	static UUID DFU_SERVICE_UUID = LegacyDfuImpl.DEFAULT_DFU_SERVICE_UUID;
+	static UUID DFU_CONTROL_POINT_UUID = LegacyDfuImpl.DEFAULT_DFU_CONTROL_POINT_UUID;
+	static UUID DFU_VERSION_UUID = LegacyDfuImpl.DEFAULT_DFU_VERSION_UUID;
 
-	private static final byte[] OP_CODE_ENTER_BOOTLOADER = new byte[] {0x01, 0x04};
+	private static final byte[] OP_CODE_ENTER_BOOTLOADER = new byte[]{0x01, 0x04};
 
 	private BluetoothGattCharacteristic mControlPointCharacteristic;
 	private int mVersion;
 
-	LegacyButtonlessDfuImpl(final Intent intent, final DfuBaseService service) {
+	LegacyButtonlessDfuImpl(@NonNull final Intent intent, @NonNull final DfuBaseService service) {
 		super(intent, service);
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
-	public boolean isClientCompatible(final Intent intent, final BluetoothGatt gatt) throws DfuException, DeviceDisconnectedException, UploadAbortedException {
+	public boolean isClientCompatible(@NonNull final Intent intent, @NonNull final BluetoothGatt gatt)
+			throws DfuException, DeviceDisconnectedException, UploadAbortedException {
 		final BluetoothGattService dfuService = gatt.getService(DFU_SERVICE_UUID);
 		if (dfuService == null)
 			return false;
@@ -136,7 +139,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	}
 
 	@Override
-	public void performDfu(final Intent intent) throws DfuException, DeviceDisconnectedException, UploadAbortedException {
+	public void performDfu(@NonNull final Intent intent) throws DfuException, DeviceDisconnectedException, UploadAbortedException {
 		logw("Application with legacy buttonless update found");
 
 		// The service is connected to the application, not to the bootloader
@@ -196,14 +199,16 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	/**
 	 * Reads the DFU Version characteristic if such exists. Otherwise it returns 0.
 	 *
-	 * @param gatt the GATT device
-	 * @param characteristic the characteristic to read
-	 * @return a version number or 0 if not present on the bootloader
-	 * @throws DeviceDisconnectedException
-	 * @throws DfuException
-	 * @throws UploadAbortedException
+	 * @param gatt           the GATT device.
+	 * @param characteristic the characteristic to read.
+	 * @return a version number or 0 if not present on the bootloader.
+	 * @throws DeviceDisconnectedException Thrown when the device will disconnect in the middle of
+	 *                                     the transmission.
+	 * @throws DfuException                Thrown if DFU error occur.
+	 * @throws UploadAbortedException      Thrown if DFU operation was aborted by user.
 	 */
-	private int readVersion(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) throws DeviceDisconnectedException, DfuException, UploadAbortedException {
+	private int readVersion(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic)
+            throws DeviceDisconnectedException, DfuException, UploadAbortedException {
 		if (!mConnected)
 			throw new DeviceDisconnectedException("Unable to read version number: device disconnected");
 		if (mAborted)
@@ -225,7 +230,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		// We have to wait until device receives a response or an error occur
 		try {
 			synchronized (mLock) {
-				while (((!mRequestCompleted || characteristic.getValue() == null ) && mConnected && mError == 0 && !mAborted) || mPaused) {
+				while (((!mRequestCompleted || characteristic.getValue() == null) && mConnected && mError == 0 && !mAborted) || mPaused) {
 					mRequestCompleted = false;
 					mLock.wait();
 				}
@@ -233,10 +238,10 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		} catch (final InterruptedException e) {
 			loge("Sleeping interrupted", e);
 		}
-		if (mError != 0)
-			throw new DfuException("Unable to read version number", mError);
 		if (!mConnected)
 			throw new DeviceDisconnectedException("Unable to read version number: device disconnected");
+		if (mError != 0)
+			throw new DfuException("Unable to read version number", mError);
 
 		// The version is a 16-bit unsigned int
 		return characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 0);

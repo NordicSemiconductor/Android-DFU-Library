@@ -29,6 +29,7 @@ import android.content.Intent;
 
 import java.util.UUID;
 
+import androidx.annotation.NonNull;
 import no.nordicsemi.android.dfu.internal.exception.DeviceDisconnectedException;
 import no.nordicsemi.android.dfu.internal.exception.DfuException;
 import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
@@ -41,21 +42,21 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
  */
 /* package */ class ExperimentalButtonlessDfuImpl extends ButtonlessDfuImpl {
 	/** The UUID of the experimental Buttonless DFU service from SDK 12.x. */
-	protected static final UUID DEFAULT_EXPERIMENTAL_BUTTONLESS_DFU_SERVICE_UUID = new UUID(0x8E400001F3154F60L, 0x9FB8838830DAEA50L);
+	static final UUID DEFAULT_EXPERIMENTAL_BUTTONLESS_DFU_SERVICE_UUID = new UUID(0x8E400001F3154F60L, 0x9FB8838830DAEA50L);
 	/** The UUID of the experimental Buttonless DFU characteristic from SDK 12.x. */
-	protected static final UUID DEFAULT_EXPERIMENTAL_BUTTONLESS_DFU_UUID         = new UUID(0x8E400001F3154F60L, 0x9FB8838830DAEA50L); // the same as service
+	static final UUID DEFAULT_EXPERIMENTAL_BUTTONLESS_DFU_UUID         = new UUID(0x8E400001F3154F60L, 0x9FB8838830DAEA50L); // the same as service
 
-	protected static UUID EXPERIMENTAL_BUTTONLESS_DFU_SERVICE_UUID = DEFAULT_EXPERIMENTAL_BUTTONLESS_DFU_SERVICE_UUID;
-	protected static UUID EXPERIMENTAL_BUTTONLESS_DFU_UUID         = DEFAULT_EXPERIMENTAL_BUTTONLESS_DFU_UUID;
+	static UUID EXPERIMENTAL_BUTTONLESS_DFU_SERVICE_UUID = DEFAULT_EXPERIMENTAL_BUTTONLESS_DFU_SERVICE_UUID;
+	static UUID EXPERIMENTAL_BUTTONLESS_DFU_UUID         = DEFAULT_EXPERIMENTAL_BUTTONLESS_DFU_UUID;
 
 	private BluetoothGattCharacteristic mButtonlessDfuCharacteristic;
 
-	ExperimentalButtonlessDfuImpl(final Intent intent, final DfuBaseService service) {
+	ExperimentalButtonlessDfuImpl(@NonNull final Intent intent, @NonNull final DfuBaseService service) {
 		super(intent, service);
 	}
 
 	@Override
-	public boolean isClientCompatible(final Intent intent, final BluetoothGatt gatt) {
+	public boolean isClientCompatible(@NonNull final Intent intent, @NonNull final BluetoothGatt gatt) {
 		final BluetoothGattService dfuService = gatt.getService(EXPERIMENTAL_BUTTONLESS_DFU_SERVICE_UUID);
 		if (dfuService == null)
 			return false;
@@ -82,7 +83,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	}
 
 	@Override
-	public void performDfu(final Intent intent) throws DfuException, DeviceDisconnectedException, UploadAbortedException {
+	public void performDfu(@NonNull final Intent intent) throws DfuException, DeviceDisconnectedException, UploadAbortedException {
 		logi("Experimental buttonless service found -> SDK 12.x");
 		super.performDfu(intent);
 	}

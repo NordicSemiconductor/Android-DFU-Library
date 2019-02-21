@@ -22,7 +22,7 @@
 
 package no.nordicsemi.android.dfu;
 
-/* package */ public interface DfuController {
+public interface DfuController {
 
 	/**
 	 * Pauses the DFU operation. Call {@link #resume()} to resume, or {@link #abort()} to cancel.

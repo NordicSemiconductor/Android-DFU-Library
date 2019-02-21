@@ -24,6 +24,14 @@ package no.nordicsemi.android.dfu;
 
 import android.bluetooth.BluetoothGattCharacteristic;
 
+/**
+ * A collection of constants used for reading DFU constants from
+ * {@link android.preference.PreferenceManager} in previous versions of DFU Library.
+ *
+ * @deprecated Use {@link DfuServiceInitiator} methods instead.
+ */
+@SuppressWarnings("DeprecatedIsStillUsed")
+@Deprecated
 public interface DfuSettingsConstants {
 	/**
 	 * This property must contain a boolean value.
@@ -90,14 +98,11 @@ public interface DfuSettingsConstants {
 	 * If you are using the PC nrf util tool to create a ZIP Distribution Packet with the
 	 * firmware and Init Packet this option does not apply as the nrf tool will convert
 	 * HEX to BIN itself.
+	 *
+	 * @deprecated Use {@link DfuServiceInitiator#setMbrSize(int)} instead.
 	 */
+	@Deprecated
 	String SETTINGS_MBR_SIZE = "settings_mbr_size";
-
-	/**
-	 * The default value of the MBR size.
-	 * @see #SETTINGS_DEFAULT_MBR_SIZE
-	 */
-	int SETTINGS_DEFAULT_MBR_SIZE = 0x1000;
 
 	/**
 	 * This property must contain a boolean value.

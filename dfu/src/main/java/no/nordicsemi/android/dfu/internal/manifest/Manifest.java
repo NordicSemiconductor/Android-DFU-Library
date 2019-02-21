@@ -24,6 +24,7 @@ package no.nordicsemi.android.dfu.internal.manifest;
 
 import com.google.gson.annotations.SerializedName;
 
+@SuppressWarnings("unused")
 public class Manifest {
 	private FileInfo application;
 	private FileInfo bootloader;

@@ -33,8 +33,11 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.ParcelUuid;
 import android.os.Parcelable;
+
+import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RawRes;
 import androidx.annotation.RequiresApi;
 
 import java.security.InvalidParameterException;
@@ -45,14 +48,15 @@ import java.util.UUID;
  * parameters to the service. The DfuServiceInitiator class may be used to make this process easier.
  * It provides simple API that covers all low lever operations.
  */
-@SuppressWarnings({"WeakerAccess", "unused"})
-public class DfuServiceInitiator {
+@SuppressWarnings({"WeakerAccess", "unused", "deprecation"})
+public final class DfuServiceInitiator {
 	public static final int DEFAULT_PRN_VALUE = 12;
+	public static final int DEFAULT_MBR_SIZE = 0x1000;
 
 	/** Constant used to narrow the scope of the update to system components (SD+BL) only. */
-	public static final int SCOPE_SYSTEM_COMPONENTS = 7578;
+	public static final int SCOPE_SYSTEM_COMPONENTS = 1;
 	/** Constant used to narrow the scope of the update to application only. */
-	public static final int SCOPE_APPLICATION = 3542;
+	public static final int SCOPE_APPLICATION = 2;
 
 	private final String deviceAddress;
 	private String deviceName;
@@ -76,6 +80,8 @@ public class DfuServiceInitiator {
 	private boolean forceDfu = false;
 	private boolean enableUnsafeExperimentalButtonlessDfu = false;
 	private boolean disableResume = false;
+	private int numberOfRetries = 0; // 0 to be backwards compatible
+	private int mbrSize = DEFAULT_MBR_SIZE;
 
 	private Boolean packetReceiptNotificationsEnabled;
 	private int numberOfPackets = 12;
@@ -195,13 +201,17 @@ public class DfuServiceInitiator {
 	/**
 	 * If Packet Receipt Notification procedure is enabled, this method sets number of packets to
 	 * be sent before receiving a PRN. A PRN is used to synchronize the transmitter and receiver.
+	 * <p>
+	 * If the value given is equal to 0, the {@link #DEFAULT_PRN_VALUE} will be used instead.
+	 * <p>
+	 * To disable PRNs use {@link #setPacketsReceiptNotificationsEnabled(boolean)}.
 	 *
 	 * @param number number of packets to be sent before receiving a PRN. Defaulted when set to 0.
 	 * @return the builder
 	 * @see #setPacketsReceiptNotificationsEnabled(boolean)
 	 * @see DfuSettingsConstants#SETTINGS_NUMBER_OF_PACKETS
 	 */
-	public DfuServiceInitiator setPacketsReceiptNotificationsValue(final int number) {
+	public DfuServiceInitiator setPacketsReceiptNotificationsValue(@IntRange(from = 0) final int number) {
 		this.numberOfPackets = number > 0 ? number : DEFAULT_PRN_VALUE;
 		return this;
 	}
@@ -263,6 +273,28 @@ public class DfuServiceInitiator {
 	}
 
 	/**
+	 * Sets the number of retries that the DFU service will use to complete DFU. The default
+	 * value is 0, for backwards compatibility reason.
+	 * <p>
+	 * If the given value is greater than 0, the service will restart itself at most {@code max}
+	 * times in case of an undesired disconnection during DFU operation. This attempt counter
+	 * is independent from another counter, for reconnection attempts, which is equal to 3.
+	 * The latter one will be used when connection will fail with an error (possible packet
+	 * collision or any other reason). After successful connection, the reconnection counter is
+	 * reset, while the retry counter is cleared after a DFU finishes with success.
+	 * <p>
+	 * The service will not try to retry DFU in case of any other error, for instance an error
+	 * sent from the target device.
+	 *
+	 * @param max Maximum number of retires to complete DFU. Usually around 2.
+	 * @return the builder
+	 */
+	public DfuServiceInitiator setNumberOfRetries(@IntRange(from = 0) final int max) {
+		this.numberOfRetries = max;
+		return this;
+	}
+
+	/**
 	 * Sets the Maximum Transfer Unit (MTU) value that the Secure DFU service will try to request
 	 * before performing DFU. By default, value 517 will be used, which is the highest supported
 	 * by Android. However, as the highest supported MTU by the Secure DFU from SDK 15
@@ -282,7 +314,7 @@ public class DfuServiceInitiator {
 	 * @param mtu the MTU that wil be requested, 0 to disable MTU request.
 	 * @return the builder
 	 */
-	public DfuServiceInitiator setMtu(final int mtu) {
+	public DfuServiceInitiator setMtu(@IntRange(from = 23, to = 517) final int mtu) {
 		this.mtu = mtu;
 		return this;
 	}
@@ -304,7 +336,7 @@ public class DfuServiceInitiator {
 	 *            {@link android.bluetooth.BluetoothGattServerCallback#onMtuChanged(BluetoothDevice, int)}.
 	 * @return the builder
 	 */
-	public DfuServiceInitiator setCurrentMtu(final int mtu) {
+	public DfuServiceInitiator setCurrentMtu(@IntRange(from = 23, to = 517) final int mtu) {
 		this.currentMtu = mtu;
 		return this;
 	}
@@ -331,14 +363,42 @@ public class DfuServiceInitiator {
 	 *              {@link #SCOPE_APPLICATION}.
 	 * @return the builder
 	 */
-	public DfuServiceInitiator setScope(final int scope) {
+	public DfuServiceInitiator setScope(@DfuScope final int scope) {
 		if (!DfuBaseService.MIME_TYPE_ZIP.equals(mimeType))
 			throw new UnsupportedOperationException("Scope can be set only for a ZIP file");
 		if (scope == SCOPE_APPLICATION)
 			fileType = DfuBaseService.TYPE_APPLICATION;
 		else if (scope == SCOPE_SYSTEM_COMPONENTS)
 			fileType = DfuBaseService.TYPE_SOFT_DEVICE | DfuBaseService.TYPE_BOOTLOADER;
+		else if (scope == (SCOPE_APPLICATION | SCOPE_SYSTEM_COMPONENTS))
+			fileType = DfuBaseService.TYPE_AUTO;
 		else throw new UnsupportedOperationException("Unknown scope");
+		return this;
+	}
+
+	/**
+	 * This method sets the size of an MBR (Master Boot Record). It should be used only
+	 * when updating a file from a HEX file. If you use BIN or ZIP, value set here will
+	 * be ignored.
+	 * <p>
+	 * The MBR size is important for the HEX parser, which has to cut it from the Soft Device's
+	 * HEX before sending it to the DFU target. The MBR can't be updated using DFU, and the
+	 * bootloader expects only the Soft Device bytes. Usually, the Soft Device HEX provided
+	 * by Nordic contains an MBR at addresses 0x0000 to 0x1000.
+	 * 0x1000 is the default size of MBR which will be used.
+	 * <p>
+	 * If you have a HEX file which address start from 0 and want to send the whole BIN content
+	 * from it, you have to set the MBR size to 0, otherwise first 4096 bytes will be cut off.
+	 * <p>
+	 * The value set here will not be used if the {@link DfuSettingsConstants#SETTINGS_MBR_SIZE}
+	 * is set in Shared Preferences.
+	 *
+	 * @param mbrSize the MBR size in bytes. Defaults to 4096 (0x1000) bytes.
+	 * @return the builder
+	 * @see DfuSettingsConstants#SETTINGS_MBR_SIZE
+	 */
+	public DfuServiceInitiator setMbrSize(@IntRange(from = 0) final int mbrSize) {
+		this.mbrSize = mbrSize;
 		return this;
 	}
 
@@ -369,9 +429,11 @@ public class DfuServiceInitiator {
 	 * 0x01 - Success<br>
 	 * The device should disconnect and restart in DFU mode after sending the notification.
 	 * <p>
-	 * In SDK 13 this issue will be fixed by a proper implementation (bonding required,
-	 * passing bond information to the bootloader, encryption, well tested). It is recommended
-	 * to use this new service when SDK 13 (or later) is out. TODO fix the docs when SDK 13 is out.
+	 * The Buttonless service has changed in SDK 13 and later. Indications are used instead of
+	 * notifications. Also, Buttonless service for bonded devices has been added.
+	 * It is recommended to use any of the new services instead.
+	 *
+	 * @return the builder
 	 */
 	public DfuServiceInitiator setUnsafeExperimentalButtonlessServiceInSecureDfuEnabled(final boolean enable) {
 		this.enableUnsafeExperimentalButtonlessDfu = enable;
@@ -526,7 +588,7 @@ public class DfuServiceInitiator {
 	 * @see #setZip(Uri)
 	 * @see #setZip(String)
 	 */
-	public DfuServiceInitiator setZip(final int rawResId) {
+	public DfuServiceInitiator setZip(@RawRes final int rawResId) {
 		return init(null, null, rawResId, DfuBaseService.TYPE_AUTO, DfuBaseService.MIME_TYPE_ZIP);
 	}
 
@@ -558,7 +620,7 @@ public class DfuServiceInitiator {
 	 * @return the builder
 	 */
 	@Deprecated
-	public DfuServiceInitiator setBinOrHex(final int fileType, @NonNull final Uri uri) {
+	public DfuServiceInitiator setBinOrHex(@FileType final int fileType, @NonNull final Uri uri) {
 		if (fileType == DfuBaseService.TYPE_AUTO)
 			throw new UnsupportedOperationException("You must specify the file type");
 		return init(uri, null, 0, fileType, DfuBaseService.MIME_TYPE_OCTET_STREAM);
@@ -574,7 +636,7 @@ public class DfuServiceInitiator {
 	 * @return the builder
 	 */
 	@Deprecated
-	public DfuServiceInitiator setBinOrHex(final int fileType, @NonNull final String path) {
+	public DfuServiceInitiator setBinOrHex(@FileType final int fileType, @NonNull final String path) {
 		if (fileType == DfuBaseService.TYPE_AUTO)
 			throw new UnsupportedOperationException("You must specify the file type");
 		return init(null, path, 0, fileType, DfuBaseService.MIME_TYPE_OCTET_STREAM);
@@ -592,7 +654,7 @@ public class DfuServiceInitiator {
 	 * @deprecated The Distribution packet (ZIP) should be used for DFU Bootloader version 0.5 or newer
 	 */
 	@Deprecated
-	public DfuServiceInitiator setBinOrHex(final int fileType, @Nullable final Uri uri, @Nullable final String path) {
+	public DfuServiceInitiator setBinOrHex(@FileType final int fileType, @Nullable final Uri uri, @Nullable final String path) {
 		if (fileType == DfuBaseService.TYPE_AUTO)
 			throw new UnsupportedOperationException("You must specify the file type");
 		return init(uri, path, 0, fileType, DfuBaseService.MIME_TYPE_OCTET_STREAM);
@@ -608,7 +670,7 @@ public class DfuServiceInitiator {
 	 * @return the builder
 	 */
 	@Deprecated
-	public DfuServiceInitiator setBinOrHex(final int fileType, final int rawResId) {
+	public DfuServiceInitiator setBinOrHex(@FileType final int fileType, @RawRes final int rawResId) {
 		if (fileType == DfuBaseService.TYPE_AUTO)
 			throw new UnsupportedOperationException("You must specify the file type");
 		return init(null, null, rawResId, fileType, DfuBaseService.MIME_TYPE_OCTET_STREAM);
@@ -649,7 +711,7 @@ public class DfuServiceInitiator {
 	 * @return the builder
 	 */
 	@Deprecated
-	public DfuServiceInitiator setInitFile(final int initFileResId) {
+	public DfuServiceInitiator setInitFile(@RawRes final int initFileResId) {
 		return init(null, null, initFileResId);
 	}
 
@@ -695,6 +757,8 @@ public class DfuServiceInitiator {
 		intent.putExtra(DfuBaseService.EXTRA_RESTORE_BOND, restoreBond);
 		intent.putExtra(DfuBaseService.EXTRA_FORCE_DFU, forceDfu);
 		intent.putExtra(DfuBaseService.EXTRA_DISABLE_RESUME, disableResume);
+		intent.putExtra(DfuBaseService.EXTRA_MAX_DFU_ATTEMPTS, numberOfRetries);
+		intent.putExtra(DfuBaseService.EXTRA_MBR_SIZE, mbrSize);
 		if (mtu > 0)
 			intent.putExtra(DfuBaseService.EXTRA_MTU, mtu);
 		intent.putExtra(DfuBaseService.EXTRA_CURRENT_MTU, currentMtu);
@@ -732,7 +796,7 @@ public class DfuServiceInitiator {
 
 	private DfuServiceInitiator init(@Nullable final Uri initFileUri,
 									 @Nullable final String initFilePath,
-									 final int initFileResId) {
+									 @RawRes final int initFileResId) {
 		if (DfuBaseService.MIME_TYPE_ZIP.equals(mimeType))
 			throw new InvalidParameterException("Init file must be located inside the ZIP");
 
@@ -744,7 +808,7 @@ public class DfuServiceInitiator {
 
 	private DfuServiceInitiator init(@Nullable final Uri fileUri,
 									 @Nullable final String filePath,
-									 final int fileResId, final int fileType,
+									 @RawRes final int fileResId, @FileType final int fileType,
 									 @NonNull final String mimeType) {
 		this.fileUri = fileUri;
 		this.filePath = filePath;
