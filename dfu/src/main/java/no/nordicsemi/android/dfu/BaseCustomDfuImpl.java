@@ -273,6 +273,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		}
 	}
 
+	@SuppressWarnings("unused")
 	protected abstract UUID getControlPointCharacteristicUUID();
 
 	protected abstract UUID getPacketCharacteristicUUID();

@@ -9,6 +9,5 @@ import androidx.annotation.IntDef;
             DfuBaseService.TYPE_APPLICATION
         },
         flag = true)
-public @interface FileType {
-}
+public @interface FileType {}
 
