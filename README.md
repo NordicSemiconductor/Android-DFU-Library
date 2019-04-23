@@ -96,6 +96,11 @@ Check platform folders for mode details about compatibility for each library.
 A library for both iOS and Android that is based on this library is available for React Native: 
 [react-native-nordic-dfu](https://github.com/Pilloxa/react-native-nordic-dfu) 
 
+### Flutter
+
+A library for both iOS and Android that is based on this library is available for Flutter: 
+[flutter-nordic-dfu](https://github.com/fengqiangboy/flutter-nordic-dfu) 
+
 ### Resources
 
 - [DFU Introduction](http://infocenter.nordicsemi.com/topic/com.nordic.infocenter.sdk5.v11.0.0/examples_ble_dfu.html?cp=6_0_0_4_3_1 "BLE Bootloader/DFU")
