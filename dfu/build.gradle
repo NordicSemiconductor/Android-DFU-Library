@@ -58,10 +58,10 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.core:core:1.1.0-alpha04'
+    implementation 'androidx.core:core:1.2.0-beta01'
     implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.0.0'
-    implementation 'androidx.annotation:annotation:1.0.1'
-    implementation 'com.google.code.gson:gson:2.8.5'
+    implementation 'androidx.annotation:annotation:1.1.0'
+    implementation 'com.google.code.gson:gson:2.8.6'
 }
 /*
 
