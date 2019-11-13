@@ -579,7 +579,8 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 			mProgressInfo.setBytesSent(0);
 		}
 
-		final long startTime = SystemClock.elapsedRealtime();
+		final long initialDelay = 300; // ms
+		final long startTime = SystemClock.elapsedRealtime() - initialDelay;
 
 		if (info.offset < mImageSizeInBytes) {
 			int attempt = 1;
@@ -592,6 +593,10 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 					writeCreateRequest(OBJECT_DATA, availableObjectSizeInBytes);
 					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION,
                             "Data object (" + (currentChunk + 1) + "/" + chunkCount + ") created");
+					if (currentChunk == 0) {
+						// Waiting until the device is ready to receive first data object.
+						mService.waitFor(initialDelay);
+					}
 					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION,
                             "Uploading firmware...");
 				} else {
@@ -633,11 +638,15 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 						mService.terminateConnection(gatt, DfuBaseService.ERROR_FILE_IO_EXCEPTION);
 						return;
 					}
-					// To decrease the chance of loosing data next time let's set PRN to 1. This will make the update very long, but perhaps it will succeed.
-					numberOfPacketsBeforeNotification = mPacketsBeforeNotification = 1;
-					setPacketReceiptNotifications(numberOfPacketsBeforeNotification);
-					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION,
-                            "Packet Receipt Notif Req (Op Code = 2) sent (Value = " + numberOfPacketsBeforeNotification + ")");
+					// To decrease the chance of loosing data next time let's set PRN to 1.
+					// This will make the update very long, but perhaps it will succeed.
+					final int newPrn = 1;
+					if (mPacketsBeforeNotification == 0 || mPacketsBeforeNotification > newPrn) {
+						numberOfPacketsBeforeNotification = mPacketsBeforeNotification = newPrn;
+						setPacketReceiptNotifications(numberOfPacketsBeforeNotification);
+						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION,
+								"Packet Receipt Notif Req (Op Code = 2) sent (Value = " + newPrn + ")");
+					}
 				}
 
 				// Calculate the CRC32
