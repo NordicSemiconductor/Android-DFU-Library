@@ -1574,7 +1574,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 *
 	 * @param millis waiting period.
 	 */
-	protected void waitFor(final int millis) {
+	protected void waitFor(final long millis) {
 		synchronized (mLock) {
 			try {
 				sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG, "wait(" + millis + ")");
