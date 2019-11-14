@@ -579,7 +579,7 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 			mProgressInfo.setBytesSent(0);
 		}
 
-		final long initialDelay = 300; // ms
+		final long initialDelay = 400; // ms
 		final long startTime = SystemClock.elapsedRealtime() + initialDelay;
 
 		if (info.offset < mImageSizeInBytes) {
