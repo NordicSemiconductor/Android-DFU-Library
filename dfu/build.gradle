@@ -1,52 +1,13 @@
 apply plugin: 'com.android.library'
 
-/*
- * I followed this:
- * http://inthecheesefactory.com/blog/how-to-upload-library-to-jcenter-maven-central-as-dependency/en
- * tutorial to publish the library on jcenter and Maven Central repositories.
- * Some changes needed to be done. See below for details.
- *
- * A newer then described version of maven plugin dependency is required (see project's gradle.build).
- */
-/*
-apply plugin: 'com.github.dcendents.android-maven'
-apply plugin: 'com.jfrog.bintray'
-
-ext {
-    PUBLISH_GROUP_ID = 'no.nordicsemi.android'
-    PUBLISH_ARTIFACT_ID = 'dfu'
-    PUBLISH_VERSION = '1.9.0'
-
-    bintrayRepo = 'android'
-    bintrayName = 'dfu-library'
-
-    publishedGroupId = PUBLISH_GROUP_ID
-    artifact = PUBLISH_ARTIFACT_ID
-    libraryVersion = PUBLISH_VERSION
-    libraryName = 'DFU Library'
-    libraryDescription = 'Device Firmware Update library'
-
-    issuesUrl = 'https://github.com/NordicSemiconductor/Android-DFU-Library/issues'
-    siteUrl = 'https://github.com/NordicSemiconductor/Android-DFU-Library'
-    gitUrl = 'https://github.com/NordicSemiconductor/Android-DFU-Library.git'
-
-    developerId = 'philips77'
-    developerName = 'Aleksander Nowakowski'
-    developerEmail = 'aleksander.nowakowski@nordicsemi.no'
-
-    licenseName = 'The BSD 3-Clause License'
-    licenseUrl = 'http://opensource.org/licenses/BSD-3-Clause'
-    allLicenses = ["BSD 3-Clause"]
-}
-*/
 android {
-    compileSdkVersion 28
+    compileSdkVersion 29
 
     defaultConfig {
         minSdkVersion 18
-        targetSdkVersion 28
-        versionCode 23
-        versionName "1.9.0"
+        targetSdkVersion 29
+        versionCode 24
+        versionName VERSION_NAME
     }
 
     buildTypes {
@@ -58,61 +19,10 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.core:core:1.2.0-beta01'
+    implementation 'androidx.core:core:1.2.0-beta02'
     implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.0.0'
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'com.google.code.gson:gson:2.8.6'
 }
-/*
 
-// The following script creates a POM file required to publish on Maven Central
-apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/installv1.gradle'
-
-// This script creates sources and javadocs. Both are required to publish a library on jcenter and MC.
-apply from: 'https://raw.githubusercontent.com/ArthurHub/release-android-library/master/android-release-aar.gradle'
-
-// The following link publishes the library to jcenter. It does not handle the userOrg, so it has been copied and modified below.
-//apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/bintrayv1.gradle'
-
-// Copied from https://raw.githubusercontent.com/nuuneoi/JCenter/master/bintrayv1.gradle
-version = libraryVersion
-
-// Bintray
-Properties properties = new Properties()
-properties.load(project.rootProject.file('local.properties').newDataInputStream())
-
-bintray {
-    user = properties.getProperty("bintray.user")
-    key = properties.getProperty("bintray.apikey")
-
-    configurations = ['archives']
-    pkg {
-        repo = bintrayRepo
-        name = bintrayName
-        userOrg = properties.getProperty("bintray.userOrg")
-        desc = libraryDescription
-        websiteUrl = siteUrl
-        issueTrackerUrl = issuesUrl
-        vcsUrl = gitUrl
-        licenses = allLicenses
-        publish = true
-        publicDownloadNumbers = true
-        version {
-            desc = libraryDescription
-            gpg {
-                sign = true //Determines whether to GPG sign the files. The default is false
-                passphrase = properties.getProperty("bintray.gpg.password")
-                //Optional. The passphrase for GPG signing'
-            }
-        }
-    }
-}
-
-if (JavaVersion.current().isJava8Compatible()) {
-    allprojects {
-        tasks.withType(Javadoc) {
-            options.addStringOption('Xdoclint:none', '-quiet')
-        }
-    }
-}
-*/
+apply from: rootProject.file('gradle/gradle-bintray-push.gradle')
