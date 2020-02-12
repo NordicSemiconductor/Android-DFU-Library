@@ -266,6 +266,11 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 */
 	public static final String EXTRA_UNSAFE_EXPERIMENTAL_BUTTONLESS_DFU = "no.nordicsemi.android.dfu.extra.EXTRA_UNSAFE_EXPERIMENTAL_BUTTONLESS_DFU";
 	/**
+	 * The duration of a delay that will be added before sending each data packet in Secure DFU,
+	 * in milliseconds. This defaults to 0 for backwards compatibility reason.
+	 */
+	public static final String EXTRA_DATA_OBJECT_DELAY = "no.nordicsemi.android.dfu.extra.EXTRA_DATA_OBJECT_DELAY";
+	/**
 	 * This property must contain a boolean value.
 	 * <p>
 	 * If true the Packet Receipt Notification procedure will be enabled.

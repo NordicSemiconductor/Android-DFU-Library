@@ -82,6 +82,7 @@ public final class DfuServiceInitiator {
 	private boolean disableResume = false;
 	private int numberOfRetries = 0; // 0 to be backwards compatible
 	private int mbrSize = DEFAULT_MBR_SIZE;
+	private long dataObjectDelay = 0; // initially disabled
 
 	private Boolean packetReceiptNotificationsEnabled;
 	private int numberOfPackets = 12;
@@ -180,6 +181,30 @@ public final class DfuServiceInitiator {
 	 */
 	public DfuServiceInitiator setRestoreBond(final boolean restoreBond) {
 		this.restoreBond = restoreBond;
+		return this;
+	}
+
+	/**
+	 * This method sets the duration of a delay, that the service will wait before sending each
+	 * data object in Secure DFU. The delay will be done after a data object is created, and before
+	 * any data byte is sent. The default value is 0, which disables this feature.
+	 * <p>
+	 * It has been found, that a delay of at least 300ms reduces the risk of packet lose (the
+	 * bootloader needs some time to prepare flash memory) on DFU bootloader from SDK 15 and 16.
+	 * The delay does not have to be longer than 400 ms, as according to performed tests, such delay
+	 * is sufficient.
+	 * <p>
+	 * The longer the delay, the more time DFU will take to complete (delay will be repeated for
+	 * each data object (4096 bytes)). However, with too small delay a packet lose may occur,
+	 * causing the service to enable PRN and set them to 1 making DFU process very, very slow
+	 * (but reliable).
+	 *
+	 * @param delay the initial delay that the service will wait before sending each data object.
+	 * @since 1.10
+	 * @return the builder
+	 */
+	public DfuServiceInitiator setPrepareDataObjectDelay(final long delay) {
+		this.dataObjectDelay = delay;
 		return this;
 	}
 
@@ -759,6 +784,7 @@ public final class DfuServiceInitiator {
 		intent.putExtra(DfuBaseService.EXTRA_DISABLE_RESUME, disableResume);
 		intent.putExtra(DfuBaseService.EXTRA_MAX_DFU_ATTEMPTS, numberOfRetries);
 		intent.putExtra(DfuBaseService.EXTRA_MBR_SIZE, mbrSize);
+		intent.putExtra(DfuBaseService.EXTRA_DATA_OBJECT_DELAY, dataObjectDelay);
 		if (mtu > 0)
 			intent.putExtra(DfuBaseService.EXTRA_MTU, mtu);
 		intent.putExtra(DfuBaseService.EXTRA_CURRENT_MTU, currentMtu);

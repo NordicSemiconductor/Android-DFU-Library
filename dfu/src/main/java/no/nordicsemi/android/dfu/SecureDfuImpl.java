@@ -82,6 +82,8 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 	private BluetoothGattCharacteristic mControlPointCharacteristic;
 	private BluetoothGattCharacteristic mPacketCharacteristic;
 
+	private long prepareObjectDelay;
+
 	private final SecureBluetoothCallback mBluetoothCallback = new SecureBluetoothCallback();
 
 	protected class SecureBluetoothCallback extends BaseCustomBluetoothCallback {
@@ -223,6 +225,8 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 			logi("Requesting MTU = " + requiredMtu);
 			requestMtu(requiredMtu);
 		}
+
+		prepareObjectDelay = intent.getLongExtra(DfuBaseService.EXTRA_DATA_OBJECT_DELAY, 0);
 
 		try {
 			// Enable notifications
@@ -580,8 +584,7 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 			mProgressInfo.setBytesSent(0);
 		}
 
-		final long initialDelay = 400; // ms
-		final long startTime = SystemClock.elapsedRealtime() + initialDelay;
+		final long startTime = SystemClock.elapsedRealtime();
 
 		if (info.offset < mImageSizeInBytes) {
 			int attempt = 1;
@@ -594,10 +597,10 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 					writeCreateRequest(OBJECT_DATA, availableObjectSizeInBytes);
 					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION,
                             "Data object (" + (currentChunk + 1) + "/" + chunkCount + ") created");
-					if (currentChunk == 0) {
-						// Waiting until the device is ready to receive first data object.
-						mService.waitFor(initialDelay);
-					}
+					// Waiting until the device is ready to receive the data object.
+					// If prepare data object delay was set in the initiator, the delay will be used
+					// for all data objects.
+					mService.waitFor(prepareObjectDelay > 0 ? prepareObjectDelay : chunkCount == 0 ? 400 : 0);
 					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION,
                             "Uploading firmware...");
 				} else {
