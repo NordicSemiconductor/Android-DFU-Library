@@ -182,6 +182,12 @@ starter.setUnsafeExperimentalButtonlessServiceInSecureDfuEnabled(true);
 // but be aware of this: https://devzone.nordicsemi.com/question/100609/sdk-12-bootloader-erased-after-programming/
 // and other issues related to this experimental service.
 
+// For DFU bootloaders from SDK 15 and 16 it may be required to add a delay before sending each
+// data packet. This delay gives the DFU target more time to perpare flash memory, causing less
+// packets being dropped and more reliable transfer. Detection of packets being lost would cause
+// automatic switch to PRN = 1, making the DFU very slow (but reliable). 
+stater.setPrepareDataObjectDelay(300L);
+
 // Init packet is required by Bootloader/DFU from SDK 7.0+ if HEX or BIN file is given above.
 // In case of a ZIP file, the init packet (a DAT file) must be included inside the ZIP file.
 if (mFileType == DfuService.TYPE_AUTO)
