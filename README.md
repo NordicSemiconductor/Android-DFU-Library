@@ -1,6 +1,6 @@
 # DFU Library
 
-[ ![Download](https://api.bintray.com/packages/nordic/android/dfu-library/images/download.svg) ](https://bintray.com/nordic/android/dfu-library/_latestVersion)
+[ ![Download](https://api.bintray.com/packages/nordic/android/no.nordicsemi.android%3Adfu/images/download.svg?version=1.9.1) ](https://bintray.com/nordic/android/no.nordicsemi.android%3Adfu/1.9.1/link)
 
 ### Usage
 
