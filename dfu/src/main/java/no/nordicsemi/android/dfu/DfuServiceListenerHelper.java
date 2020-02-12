@@ -151,6 +151,8 @@ public class DfuServiceListenerHelper {
 		@Override
 		public void onReceive(final Context context, final Intent intent) {
 			final String address = intent.getStringExtra(DfuBaseService.EXTRA_DEVICE_ADDRESS);
+			if (address == null)
+				return;
 
 			// Find proper listeners
 			final DfuProgressListener globalListener = mGlobalProgressListener;
