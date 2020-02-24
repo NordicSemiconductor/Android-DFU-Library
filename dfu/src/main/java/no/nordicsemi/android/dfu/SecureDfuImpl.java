@@ -600,7 +600,9 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 					// Waiting until the device is ready to receive the data object.
 					// If prepare data object delay was set in the initiator, the delay will be used
 					// for all data objects.
-					mService.waitFor(prepareObjectDelay > 0 ? prepareObjectDelay : chunkCount == 0 ? 400 : 0);
+					if (prepareObjectDelay > 0 || chunkCount == 0) {
+						mService.waitFor(prepareObjectDelay > 0 ? prepareObjectDelay : 400);
+					}
 					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION,
                             "Uploading firmware...");
 				} else {
