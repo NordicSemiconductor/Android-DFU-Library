@@ -4,7 +4,6 @@ apply plugin: 'com.jfrog.bintray'
 version = VERSION_NAME
 group   = GROUP
 
-
 afterEvaluate { project ->
     publishing {
         publications {
