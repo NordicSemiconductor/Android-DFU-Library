@@ -168,7 +168,7 @@ public class NotificationActivity extends Activity {
 }
 ```
 
-Remember to add your service to the *AndroidManifest.xml*.
+Remember to add your activity to the *AndroidManifest.xml*.
 
 Start the DFU service with the following code:
 
