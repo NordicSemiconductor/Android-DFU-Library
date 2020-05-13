@@ -1,16 +1,39 @@
 apply plugin: 'maven-publish'
-apply plugin: 'digital.wup.android-maven-publish'
 apply plugin: 'com.jfrog.bintray'
 
 version = VERSION_NAME
 group   = GROUP
 
+task androidJavadocs(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    android.libraryVariants.all { variant ->
+        if (variant.name == 'release') {
+            owner.classpath += variant.javaCompileProvider.get().classpath
+        }
+    }
+    exclude '**/R.html', '**/R.*.html', '**/index.html'
+}
+
+task androidJavadocsJar(type: Jar, dependsOn: androidJavadocs) {
+    archiveClassifier.set('javadoc')
+    from androidJavadocs.destinationDir
+}
+
+task androidSourcesJar(type: Jar) {
+    archiveClassifier.set('sources')
+    from android.sourceSets.main.java.srcDirs
+}
 
 afterEvaluate { project ->
     publishing {
         publications {
-            library(MavenPublication) {
-                from components.android
+            release(MavenPublication) {
+                from components.release
+                
+                artifact androidSourcesJar
+                artifact androidJavadocsJar
+
                 groupId = GROUP
                 artifactId = POM_ARTIFACT_ID
                 version = VERSION_NAME
@@ -46,44 +69,12 @@ afterEvaluate { project ->
         }
     }
 
-    task javadoc(type: Javadoc) {
-        failOnError false
-        source = android.sourceSets.main.java.sourceFiles
-
-        title = POM_DESCRIPTION
-
-        options.links("https://docs.oracle.com/javase/8/docs/api/")
-        options.linksOffline("https://d.android.com/reference","${android.sdkDirectory}/docs/reference")
-
-        classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
-        classpath += configurations.compile
-
-        // We're excluding these generated files
-        exclude '**/BuildConfig.java'
-        exclude '**/R.java'
-    }
-
-    task androidJavadocsJar(type: Jar, dependsOn: javadoc) {
-        classifier = 'javadoc'
-        from javadoc.destinationDir
-    }
-
-    task androidSourcesJar(type: Jar) {
-        classifier = 'sources'
-        from android.sourceSets.main.java.source
-    }
-
     if (JavaVersion.current().isJava8Compatible()) {
         allprojects {
             tasks.withType(Javadoc) {
                 options.addStringOption('Xdoclint:none', '-quiet')
             }
         }
-    }
-
-    artifacts {
-        archives androidSourcesJar
-        archives androidJavadocsJar
     }
 }
 
@@ -95,7 +86,7 @@ bintray {
     user = properties.getProperty("BINTRAY_USER")
     key  = properties.getProperty("BINTRAY_APIKEY")
 
-    publications = ['library']
+    publications = ['release']
 
     pkg {
         name = GROUP + ":" + POM_ARTIFACT_ID
