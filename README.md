@@ -8,7 +8,7 @@ The DFU library may be found on jcenter and Maven Central repository. Add it to 
 adding the following dependency:
 
 ```Groovy
-implementation 'no.nordicsemi.android:dfu:1.10.2'
+implementation 'no.nordicsemi.android:dfu:1.10.3'
 ```
 
 For projects not migrated to Android Jetpack, use:
