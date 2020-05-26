@@ -22,6 +22,7 @@
 
 package no.nordicsemi.android.dfu.internal;
 
+import android.os.Build;
 import android.util.Log;
 
 import com.google.gson.Gson;
@@ -31,6 +32,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -346,7 +348,12 @@ public class ArchiveInputStream extends InputStream {
 
 			// Save the file content either as a manifest data or by adding it to entries
 			if (MANIFEST.equals(filename))
-				manifestData = new String(source, "UTF-8");
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+					manifestData = new String(source, StandardCharsets.UTF_8);
+				} else {
+					//noinspection CharsetObjectCanBeUsed
+					manifestData = new String(source, "UTF-8");
+				}
 			else
 				entries.put(filename, source);
 		}
@@ -414,7 +421,7 @@ public class ArchiveInputStream extends InputStream {
 
 	private int rawRead(@NonNull final byte[] buffer, final int offset, final int length) {
 		final int maxSize = currentSource.length - bytesReadFromCurrentSource;
-		final int size = length <= maxSize ? length : maxSize;
+		final int size = Math.min(length, maxSize);
 		System.arraycopy(currentSource, bytesReadFromCurrentSource, buffer, offset, size);
 		bytesReadFromCurrentSource += size;
 		bytesRead += size;
