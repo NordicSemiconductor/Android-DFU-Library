@@ -285,7 +285,10 @@ public class ArchiveInputStream extends InputStream {
 	 * @return The validated path to the file.
 	 * @throws java.io.IOException Thrown in case of path traversal issues.
 	 */
-	private String validateFilename(String filename, String intendedDir) throws java.io.IOException {
+	@SuppressWarnings("SameParameterValue")
+	private String validateFilename(@NonNull final String filename,
+									@NonNull final String intendedDir)
+			throws java.io.IOException {
 		File f = new File(filename);
 		String canonicalPath = f.getCanonicalPath();
 
@@ -293,7 +296,7 @@ public class ArchiveInputStream extends InputStream {
 		String canonicalID = iD.getCanonicalPath();
 
 		if (canonicalPath.startsWith(canonicalID)) {
-			return canonicalPath;
+			return canonicalPath.substring(1); // remove leading "/"
 		} else {
 			throw new IllegalStateException("File is outside extraction target directory.");
 		}
