@@ -7,7 +7,6 @@ android {
         minSdkVersion 18
         targetSdkVersion 29
         versionCode 24
-        versionName VERSION_NAME
     }
 
     buildTypes {
@@ -19,7 +18,7 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.core:core:1.4.0-alpha01'
+    implementation 'androidx.core:core:1.5.0-alpha01'
     implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.0.0'
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'com.google.code.gson:gson:2.8.6'
