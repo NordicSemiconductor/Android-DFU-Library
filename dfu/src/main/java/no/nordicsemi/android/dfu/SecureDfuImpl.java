@@ -554,8 +554,18 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 					// If the whole page was sent and CRC match, we have to make sure it was executed
 					if (bytesSentNotExecuted == info.maxSize && info.offset < mImageSizeInBytes) {
 						logi("Executing data object (Op Code = 4)");
-						writeExecute();
-						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Data object executed");
+						try {
+							writeExecute();
+							mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Data object executed");
+						} catch (final RemoteDfuException e) {
+							// In DFU bootloader from SDK 15.x, 16 and 17 there's a bug, which
+							// prevents executing an object that has already been executed.
+							// See: https://github.com/NordicSemiconductor/Android-DFU-Library/issues/252
+							if (e.getErrorNumber() != SecureDfuError.OPERATION_NOT_PERMITTED) {
+								throw e;
+							}
+							mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Data object already executed");
+						}
 					} else {
 						resumeSendingData = true;
 					}
