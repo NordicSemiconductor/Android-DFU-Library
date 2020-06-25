@@ -653,6 +653,12 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 						loge("Error while reading firmware stream", e);
 						mService.terminateConnection(gatt, DfuBaseService.ERROR_FILE_IO_EXCEPTION);
 						return;
+					} catch (final Throwable tr) {
+						// crash fix
+						// Check https://github.com/NordicSemiconductor/Android-DFU-Library/issues/229
+						loge("Progress lost. Bytes sent: " + mProgressInfo.getBytesSent(), tr);
+						mService.terminateConnection(gatt, DfuBaseService.ERROR_PROGRESS_LOST);
+						return;
 					}
 					// To decrease the chance of loosing data next time let's set PRN to 1.
 					// This will make the update very long, but perhaps it will succeed.
