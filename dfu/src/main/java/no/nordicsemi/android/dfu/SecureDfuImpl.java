@@ -989,11 +989,11 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 		}
 	}
 
-	private class ObjectInfo extends ObjectChecksum {
+	private static class ObjectInfo extends ObjectChecksum {
 		int maxSize;
 	}
 
-	private class ObjectChecksum {
+	private static class ObjectChecksum {
 		int offset;
 		int CRC32;
 	}
