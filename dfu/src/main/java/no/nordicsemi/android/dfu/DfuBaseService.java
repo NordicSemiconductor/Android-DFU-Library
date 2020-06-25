@@ -628,12 +628,12 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 */
 	public static final int ERROR_DEVICE_NOT_BONDED = ERROR_MASK | 0x0E;
 	/**
-	 * Thrown when breakpoint resume fw
+	 * Thrown when the DFU library lost track of what is going on. Reported number of bytes is
+	 * not equal to the number of bytes sent and due to some other events the library cannot recover.
 	 * <p>
 	 * Check https://github.com/NordicSemiconductor/Android-DFU-Library/issues/229
-	 * </p>
 	 */
-	public static final int ERROR_BREAKPOINT_RESUME = ERROR_MASK | 0x0F;
+	public static final int ERROR_PROGRESS_LOST = ERROR_MASK | 0x0F;
 	/**
 	 * Flag set when the DFU target returned a DFU error. Look for DFU specification to get error
 	 * codes. The error code is binary OR-ed with one of: {@link #ERROR_REMOTE_TYPE_LEGACY},
