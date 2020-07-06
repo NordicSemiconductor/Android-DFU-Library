@@ -447,7 +447,10 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 				while ((!cccdEnabled && mConnected && mError == 0) || mPaused) {
 					mLock.wait();
 					// Check the value of the CCCD
-					cccdEnabled = descriptor.getValue() != null && descriptor.getValue().length == 2 && descriptor.getValue()[0] > 0 && descriptor.getValue()[1] == 0;
+					cccdEnabled = descriptor.getValue() != null
+							   && descriptor.getValue().length == 2
+							   && descriptor.getValue()[0] > 0
+							   && descriptor.getValue()[1] == 0;
 				}
 			}
 		} catch (final InterruptedException e) {
@@ -570,14 +573,13 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 
 	/**
 	 * Creates bond to the device. Works on all APIs since 18th (Android 4.3).
+	 * This method will only be called in this library after bond information was removed.
 	 *
-	 * @return true if it's already bonded or the bonding has started
+	 * @return true if bonding has started, false otherwise.
 	 */
 	@SuppressWarnings("UnusedReturnValue")
 	boolean createBond() {
 		final BluetoothDevice device = mGatt.getDevice();
-		if (device.getBondState() == BluetoothDevice.BOND_BONDED)
-			return true;
 
 		boolean result;
 		mRequestCompleted = false;
@@ -593,7 +595,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 		// We have to wait until device is bounded
 		try {
 			synchronized (mLock) {
-				while (!mRequestCompleted && !mAborted)
+				while (result && !mRequestCompleted && !mAborted)
 					mLock.wait();
 			}
 		} catch (final InterruptedException e) {
@@ -610,12 +612,14 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 	 */
 	private boolean createBondApi18(@NonNull final BluetoothDevice device) {
 		/*
-		 * There is a createBond() method in BluetoothDevice class but for now it's hidden. We will call it using reflections. It has been revealed in KitKat (Api19)
+		 * There is a createBond() method in BluetoothDevice class but for now it's hidden.
+		 * We will call it using reflections. It has been revealed in KitKat (Api19)
 		 */
 		try {
 			final Method createBond = device.getClass().getMethod("createBond");
             mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG, "gatt.getDevice().createBond() (hidden)");
-            return (Boolean) createBond.invoke(device);
+			//noinspection ConstantConditions
+			return (Boolean) createBond.invoke(device);
 		} catch (final Exception e) {
 			Log.w(TAG, "An exception occurred while creating bond", e);
 		}
@@ -636,14 +640,16 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Removing bond information...");
 		boolean result = false;
 		/*
-		 * There is a removeBond() method in BluetoothDevice class but for now it's hidden. We will call it using reflections.
+		 * There is a removeBond() method in BluetoothDevice class but for now it's hidden.
+		 * We will call it using reflections.
 		 */
 		try {
             //noinspection JavaReflectionMemberAccess
             final Method removeBond = device.getClass().getMethod("removeBond");
             mRequestCompleted = false;
             mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG, "gatt.getDevice().removeBond() (hidden)");
-            result = (Boolean) removeBond.invoke(device);
+			//noinspection ConstantConditions
+			result = (Boolean) removeBond.invoke(device);
 
             // We have to wait until device is unbounded
             try {
