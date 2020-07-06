@@ -464,7 +464,8 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 
 			if (restoreBond && (mFileType & DfuBaseService.TYPE_APPLICATION) > 0) {
 				// Restore pairing when application was updated.
-				createBond();
+				if (!createBond())
+					logw("Creating bond failed");
 				alreadyWaited = false;
 			}
 		}
