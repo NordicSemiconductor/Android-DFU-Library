@@ -152,13 +152,18 @@ public final class DfuServiceInitiator {
 
 	/**
 	 * Sets whether the bond information should be preserver after flashing new application.
-	 * This feature requires DFU Bootloader version 0.6 or newer (SDK 8.0.0+).
+	 * This feature requires Legacy DFU Bootloader version 0.6 or newer (SDK 8.0.0+).
 	 * Please see the {@link DfuBaseService#EXTRA_KEEP_BOND} for more information regarding
-	 * requirements. Remember that currently updating the Soft Device will remove the bond
-	 * information.
+	 * requirements.
 	 * <p>
 	 * This flag is ignored when Secure DFU Buttonless Service is used. It will keep or remove the
 	 * bond depending on the Buttonless service type.
+	 * <p>
+	 * <b>Important:</b> The flag does not ensure that the DFU is performed on an encrypted link.
+	 * If the bond information is present only on Android side, but not on the peripheral side,
+	 * Android (version 4.3-10) will connect without encryption. On those versions it is not possible
+	 * to ensure the link is truly encrypted, as {@link BluetoothDevice#getBondState()} returns
+	 * {@link BluetoothDevice#BOND_BONDED} also if bonding isn't used.
 	 *
 	 * @param keepBond whether the bond information should be preserved in the new application.
 	 * @return the builder
@@ -169,7 +174,8 @@ public final class DfuServiceInitiator {
 	}
 
 	/**
-	 * Sets whether the bond should be created after the DFU is complete.
+	 * Sets whether a new bond should be created after the DFU is complete. The old bond
+	 * information will be removed before.
 	 * Please see the {@link DfuBaseService#EXTRA_RESTORE_BOND} for more information regarding
 	 * requirements.
 	 * <p>
