@@ -1437,8 +1437,8 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 				break;
 			default:
 					// progress is in percents
-					final String title = info.getTotalParts() == 1 ? getString(R.string.dfu_status_uploading) : getString(R.string.dfu_status_uploading_part, info.getCurrentPart(), info.getTotalParts());
-					final String text = getString(R.string.dfu_status_uploading_msg, deviceName);
+					final String title = "Uploading";
+					final String text = "Transmitting firmware to Device";
 					builder.setOngoing(true).setContentTitle(title).setContentText(text).setProgress(100, progress, false);
 		}
 
