@@ -20,9 +20,18 @@ implementation 'no.nordicsemi.android:dfu:1.8.1'
 > Note: This version is not maintained anymore. All new features and bug fixes will be released on 
 the latest version only.
 
-If you use proguard/R8, add the following line to your proguard rules:
+If you use proguard/R8, add the following line to your proguard rules (although this should be added
+automatically):
 ```-keep class no.nordicsemi.android.dfu.** { *; }```
 
+#### Location Permission required
+If your device is using the Nordic Buttonless Service for switching from app mode to 
+DFU bootloader mode, this library will handle switching automatically. In case your bootloader is 
+configured to advertise with incremented MAC address (that is you use Secure DFU and the device 
+is not bonded) this library will need to scan for the new `BluetoothDevice`. Starting from Android 
+Marshmallow, **location permission** is required and has to be granted in runtime before DFU is started. 
+
+#### Retrying
 Starting from version 1.9.0 the library is able to retry a DFU update in case of an unwanted
 disconnection. However, to maintain backward compatibility, this feature is by default disabled.
 Call `initiator.setNumberOfRetries(int)` to set how many attempts the service should perform.
