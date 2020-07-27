@@ -371,6 +371,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 					if (!serviceChangedIndicationsEnabled)
 						enableCCCD(serviceChangedCharacteristic, INDICATIONS);
 
+					logi("Service Changed indications enabled");
 					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Service Changed indications enabled");
 				}
 			}
