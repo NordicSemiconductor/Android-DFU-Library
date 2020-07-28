@@ -1312,6 +1312,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 			if (mError > 0) { // error occurred
 				if ((mError & ERROR_CONNECTION_STATE_MASK) > 0) {
 					final int error = mError & ~ERROR_CONNECTION_STATE_MASK;
+					logi("Connection error after: " + (after - before) + " ms");
 					final boolean timeout = error == 133 && after > before + 25000; // timeout is 30 sec
 					if (timeout) {
 						loge("Device not reachable. Check if the device with address " + deviceAddress + " is in range, is advertising and is connectable");
@@ -1328,6 +1329,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 				// Connection usually fails due to a 133 error (device unreachable, or.. something else went wrong).
 				// Usually trying the same for the second time works. Let's try 2 times.
 				final int attempt = intent.getIntExtra(EXTRA_RECONNECTION_ATTEMPT, 0);
+				logi("Attempt: " + (attempt + 1));
 				if (attempt < 2) {
 					sendLogBroadcast(LOG_LEVEL_WARNING, "Retrying...");
 
