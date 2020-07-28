@@ -1633,6 +1633,10 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 */
 	protected void close(@NonNull final BluetoothGatt gatt) {
 		logi("Cleaning up...");
+		// Call disconnect() to make sure all resources are released. The device should already be
+		// disconnected, but that's OK.
+		sendLogBroadcast(LOG_LEVEL_DEBUG, "gatt.disconnect()");
+		gatt.disconnect();
 		sendLogBroadcast(LOG_LEVEL_DEBUG, "gatt.close()");
 		gatt.close();
 		mConnectionState = STATE_CLOSED;
