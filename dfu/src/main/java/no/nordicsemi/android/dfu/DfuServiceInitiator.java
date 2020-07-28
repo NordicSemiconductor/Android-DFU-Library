@@ -34,14 +34,14 @@ import android.os.Build;
 import android.os.ParcelUuid;
 import android.os.Parcelable;
 
+import java.security.InvalidParameterException;
+import java.util.UUID;
+
 import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RawRes;
 import androidx.annotation.RequiresApi;
-
-import java.security.InvalidParameterException;
-import java.util.UUID;
 
 /**
  * Starting the DfuService service requires a knowledge of some EXTRA_* constants used to pass
@@ -78,6 +78,7 @@ public final class DfuServiceInitiator {
 	private boolean keepBond;
 	private boolean restoreBond;
 	private boolean forceDfu = false;
+	private boolean forceScanningForNewAddressInLegacyDfu = false;
 	private boolean enableUnsafeExperimentalButtonlessDfu = false;
 	private boolean disableResume = false;
 	private int numberOfRetries = 0; // 0 to be backwards compatible
@@ -282,6 +283,29 @@ public final class DfuServiceInitiator {
 	@SuppressWarnings("JavaDoc")
 	public DfuServiceInitiator setForceDfu(final boolean force) {
 		this.forceDfu = force;
+		return this;
+	}
+
+	/**
+	 * When this is set to true, the Legacy Buttonless Service will scan for the device advertising
+	 * with an incremented MAC address, instead of trying to reconnect to the same device.
+	 * <p>
+	 * Setting this to true requires modifying the buttonless service on the device not to share the
+	 * peer data with the bootloader, or modifying the bootloader to always advertise with MAC+1.
+	 * Setting it to true with a default implementation of the buttonless service should work, but
+	 * is pointless.
+	 * <p>
+	 * This is a feature equivalent to
+	 * <a href="https://github.com/NordicSemiconductor/IOS-Pods-DFU-Library/pull/374">PR #374</a>
+	 * in DFU library for iOS.
+	 * @param force set to true when your bootloader is advertising with an incremented MAC address.
+	 *              By default, in Legacy DFU, the bootloader uses the same MAC address and is
+	 *              advertising directly. This does not seen to work on some phones (Samsung) with
+	 *              recent Android versions.
+	 * @return the builder
+	 */
+	public DfuServiceInitiator setForceScanningForNewAddressInLegacyDfu(final boolean force) {
+		this.forceScanningForNewAddressInLegacyDfu = force;
 		return this;
 	}
 
@@ -787,6 +811,7 @@ public final class DfuServiceInitiator {
 		intent.putExtra(DfuBaseService.EXTRA_KEEP_BOND, keepBond);
 		intent.putExtra(DfuBaseService.EXTRA_RESTORE_BOND, restoreBond);
 		intent.putExtra(DfuBaseService.EXTRA_FORCE_DFU, forceDfu);
+		intent.putExtra(DfuBaseService.EXTRA_FORCE_SCANNING_FOR_BOOTLOADER_IN_LEGACY_DFU, forceScanningForNewAddressInLegacyDfu);
 		intent.putExtra(DfuBaseService.EXTRA_DISABLE_RESUME, disableResume);
 		intent.putExtra(DfuBaseService.EXTRA_MAX_DFU_ATTEMPTS, numberOfRetries);
 		intent.putExtra(DfuBaseService.EXTRA_MBR_SIZE, mbrSize);

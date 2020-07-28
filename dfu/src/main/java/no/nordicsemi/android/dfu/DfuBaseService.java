@@ -203,6 +203,12 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 * In such case set the value of this property to true.
 	 */
 	public static final String EXTRA_FORCE_DFU = "no.nordicsemi.android.dfu.extra.EXTRA_FORCE_DFU";
+
+	/**
+	 * This flag indicates whether the service should scan for bootloader in Legacy DFU after
+	 * switching using buttonless service. The default value is false.
+	 */
+	public static final String EXTRA_FORCE_SCANNING_FOR_BOOTLOADER_IN_LEGACY_DFU = "no.nordicsemi.android.dfu.extra.EXTRA_FORCE_SCANNING_FOR_BOOTLOADER_IN_LEGACY_DFU";
 	/**
 	 * This options allows to disable the resume feature in Secure DFU. When the extra value is set
 	 * to true, the DFU will send Init Packet and Data again, despite the firmware might have been

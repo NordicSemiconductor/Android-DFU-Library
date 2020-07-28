@@ -190,10 +190,12 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		// Close the device
 		mService.close(gatt);
 
+		final boolean forceScanning = intent.getBooleanExtra(DfuBaseService.EXTRA_FORCE_SCANNING_FOR_BOOTLOADER_IN_LEGACY_DFU, false);
+
 		logi("Starting service that will connect to the DFU bootloader");
 		final Intent newIntent = new Intent();
 		newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
-		restartService(newIntent, /* scan only for SDK 6.1, see Pull request #45 */ mVersion == 0);
+		restartService(newIntent, /* scan only for SDK 6.1, see Pull request #45 */ forceScanning || mVersion == 0);
 	}
 
 	/**
