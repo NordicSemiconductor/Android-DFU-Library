@@ -1543,7 +1543,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		// Connection error may occur as well.
 		try {
 			synchronized (mLock) {
-				while ((mConnectionState == STATE_CONNECTING || mConnectionState == STATE_CONNECTED) && mError == 0)
+				while ((mConnectionState == STATE_CONNECTING || mConnectionState == STATE_CONNECTED) && mError == 0 && !mAborted)
 					mLock.wait();
 			}
 		} catch (final InterruptedException e) {
