@@ -809,6 +809,11 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 				mConnectionState = STATE_DISCONNECTED;
 				if (mDfuServiceImpl != null)
 					mDfuServiceImpl.getGattCallback().onDisconnected();
+
+				// Notify waiting thread
+				synchronized (mLock) {
+					mLock.notifyAll();
+				}
 			}
 		}
 	};
@@ -1465,7 +1470,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		final String[] projection = {MediaStore.Images.Media.DISPLAY_NAME};
 		final Cursor cursor = getContentResolver().query(stream, projection, null, null, null);
 		try {
-			if (cursor.moveToNext()) {
+			if (cursor != null && cursor.moveToNext()) {
 				final String fileName = cursor.getString(0 /* DISPLAY_NAME*/);
 
 				if (fileName.toLowerCase(Locale.US).endsWith("hex"))
@@ -1517,8 +1522,20 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 
 		logi("Connecting to the device...");
 		final BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
-		sendLogBroadcast(LOG_LEVEL_DEBUG, "gatt = device.connectGatt(autoConnect = false)");
-		final BluetoothGatt gatt = device.connectGatt(this, false, mGattCallback);
+		BluetoothGatt gatt;
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+			sendLogBroadcast(LOG_LEVEL_DEBUG, "gatt = device.connectGatt(autoConnect = false, TRANSPORT_LE, preferredPhy = LE_1M | LE_2M)");
+			gatt = device.connectGatt(this, false, mGattCallback,
+					BluetoothDevice.TRANSPORT_LE,
+					BluetoothDevice.PHY_LE_1M_MASK | BluetoothDevice.PHY_LE_2M_MASK);
+		} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+			sendLogBroadcast(LOG_LEVEL_DEBUG, "gatt = device.connectGatt(autoConnect = false, TRANSPORT_LE)");
+			gatt = device.connectGatt(this, false, mGattCallback,
+					BluetoothDevice.TRANSPORT_LE);
+		} else {
+			sendLogBroadcast(LOG_LEVEL_DEBUG, "gatt = device.connectGatt(autoConnect = false)");
+			gatt = device.connectGatt(this, false, mGattCallback);
+		}
 
 		// We have to wait until the device is connected and services are discovered
 		// Connection error may occur as well.
