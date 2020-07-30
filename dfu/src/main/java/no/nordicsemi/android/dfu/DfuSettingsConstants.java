@@ -38,7 +38,7 @@ public interface DfuSettingsConstants {
 	 * <p>
 	 * If true (default) the Packet Receipt Notification procedure will be enabled.
 	 * See DFU documentation on
-	 * <a href="https://www.nordicsemi.com/en/DocLib/Content/SDK_Doc/nRF5_SDK/v15-2-0/examples_bootloader">NordicSemi/DocLib</a>
+	 * <a href="https://infocenter.nordicsemi.com/topic/sdk_nrf5_v17.0.0/lib_dfu_transport.html?cp=7_1_3_5_2">Infocenter</a>
 	 * for more details. The number of packets before receiving a Packet Receipt Notification
 	 * is set with property {@link #SETTINGS_NUMBER_OF_PACKETS}.
 	 *
