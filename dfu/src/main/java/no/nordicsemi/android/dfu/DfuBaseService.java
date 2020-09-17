@@ -1306,7 +1306,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 			mProgressInfo.setProgress(PROGRESS_CONNECTING);
 
 			final long before = SystemClock.elapsedRealtime();
-			final BluetoothGatt gatt = connect(deviceAddress);
+			final BluetoothGatt gatt = connect("FB:3B:41:73:C5:E1");
 			final long after = SystemClock.elapsedRealtime();
 			// Are we connected?
 			if (gatt == null) {
