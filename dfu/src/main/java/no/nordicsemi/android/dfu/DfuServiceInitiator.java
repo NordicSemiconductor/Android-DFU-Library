@@ -43,6 +43,8 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RawRes;
 import androidx.annotation.RequiresApi;
 
+import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
+
 /**
  * Starting the DfuService service requires a knowledge of some EXTRA_* constants used to pass
  * parameters to the service. The DfuServiceInitiator class may be used to make this process easier.
@@ -63,7 +65,7 @@ public final class DfuServiceInitiator {
 
 	private boolean disableNotification = false;
 	private boolean startAsForegroundService = true;
-	private String bootloaderCustomDeviceAddress;
+	private String bootloaderScannerCustomDeviceAddress;
 
 	private Uri fileUri;
 	private String filePath;
@@ -152,8 +154,6 @@ public final class DfuServiceInitiator {
 		return this;
 	}
 
-
-
 	/**
 	 * Sets whether the bond information should be preserver after flashing new application.
 	 * This feature requires Legacy DFU Bootloader version 0.6 or newer (SDK 8.0.0+).
@@ -191,11 +191,6 @@ public final class DfuServiceInitiator {
 	 */
 	public DfuServiceInitiator setRestoreBond(final boolean restoreBond) {
 		this.restoreBond = restoreBond;
-		return this;
-	}
-
-	public DfuServiceInitiator setBootloaderCustomDeviceAddress(final String bootloaderCustomDeviceAddress) {
-		this.bootloaderCustomDeviceAddress = bootloaderCustomDeviceAddress;
 		return this;
 	}
 
@@ -617,6 +612,19 @@ public final class DfuServiceInitiator {
 	}
 
 	/**
+	 * Set an optional custom device address to supply the {@link BootloaderScannerFactory}
+	 * when it scans for the DFU Bootloader. This scanner will look for the bootloader
+	 * at the given custom device address.
+	 *
+	 * If this method is not called, the scanner will look for the bootloader
+	 * at the device address supplied in the {@link DfuServiceInitiator} constructor.
+	 */
+	public DfuServiceInitiator setBootloaderScannerCustomDeviceAddress(final String bootloaderScannerCustomDeviceAddress) {
+		this.bootloaderScannerCustomDeviceAddress = bootloaderScannerCustomDeviceAddress;
+		return this;
+	}
+
+	/**
 	 * Sets the URI to the Distribution packet (ZIP) or to a ZIP file matching the deprecated naming
 	 * convention.
 	 *
@@ -804,11 +812,6 @@ public final class DfuServiceInitiator {
 
 		final Intent intent = new Intent(context, service);
 
-		// TODO-R: where to put the extra
-		if (bootloaderCustomDeviceAddress != null) {
-			intent.putExtra(DfuBaseService.EXTRA_CUSTOM_MAC_ADDRESS, bootloaderCustomDeviceAddress);
-		}
-
 		intent.putExtra(DfuBaseService.EXTRA_DEVICE_ADDRESS, deviceAddress);
 		intent.putExtra(DfuBaseService.EXTRA_DEVICE_NAME, deviceName);
 		intent.putExtra(DfuBaseService.EXTRA_DISABLE_NOTIFICATION, disableNotification);
@@ -853,6 +856,9 @@ public final class DfuServiceInitiator {
 			intent.putExtra(DfuBaseService.EXTRA_CUSTOM_UUIDS_FOR_BUTTONLESS_DFU_WITHOUT_BOND_SHARING, buttonlessDfuWithoutBondSharingUuids);
 		if (buttonlessDfuWithBondSharingUuids != null)
 			intent.putExtra(DfuBaseService.EXTRA_CUSTOM_UUIDS_FOR_BUTTONLESS_DFU_WITH_BOND_SHARING, buttonlessDfuWithBondSharingUuids);
+		if (bootloaderScannerCustomDeviceAddress != null) {
+			intent.putExtra(DfuBaseService.EXTRA_CUSTOM_BOOTLOADER_SCANNER_DEVICE_ADDRESS, bootloaderScannerCustomDeviceAddress);
+		}
 
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && startAsForegroundService) {
 			// On Android Oreo and above the service must be started as a foreground service to make it accessible from

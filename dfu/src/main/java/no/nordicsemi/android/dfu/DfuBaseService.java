@@ -67,6 +67,7 @@ import no.nordicsemi.android.dfu.internal.exception.DeviceDisconnectedException;
 import no.nordicsemi.android.dfu.internal.exception.DfuException;
 import no.nordicsemi.android.dfu.internal.exception.SizeValidationException;
 import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
+import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 import no.nordicsemi.android.error.GattError;
 
 /**
@@ -738,7 +739,13 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	public static final String EXTRA_CUSTOM_UUIDS_FOR_EXPERIMENTAL_BUTTONLESS_DFU = "no.nordicsemi.android.dfu.extra.EXTRA_CUSTOM_UUIDS_FOR_EXPERIMENTAL_BUTTONLESS_DFU";
 	public static final String EXTRA_CUSTOM_UUIDS_FOR_BUTTONLESS_DFU_WITHOUT_BOND_SHARING = "no.nordicsemi.android.dfu.extra.EXTRA_CUSTOM_UUIDS_FOR_BUTTONLESS_DFU_WITHOUT_BOND_SHARING";
 	public static final String EXTRA_CUSTOM_UUIDS_FOR_BUTTONLESS_DFU_WITH_BOND_SHARING = "no.nordicsemi.android.dfu.extra.EXTRA_CUSTOM_UUIDS_FOR_BUTTONLESS_DFU_WITH_BOND_SHARING";
-	public static final String EXTRA_CUSTOM_MAC_ADDRESS = "no.nordicsemi.android.dfu.extra.EXTRA_CUSTOM_MAC_ADDRESS"; // TODO-R
+	public static final String EXTRA_CUSTOM_BOOTLOADER_SCANNER_DEVICE_ADDRESS = "no.nordicsemi.android.dfu.extra.EXTRA_CUSTOM_BOOTLOADER_SCANNER_DEVICE_ADDRESS";
+
+	/**
+	 * An optional custom device address to supply the {@link BootloaderScannerFactory}
+	 * when it scans for the DFU Bootloader.
+	 */
+	public String bootloaderScannerCustomDeviceAddress;
 
 	/**
 	 * Lock used in synchronization purposes
@@ -776,8 +783,6 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 
 	private DfuCallback mDfuServiceImpl;
 	private InputStream mFirmwareInputStream, mInitFileInputStream;
-
-	public String bootloaderCustomDeviceAddress;
 
 	private final BroadcastReceiver mDfuActionReceiver = new BroadcastReceiver() {
 		@Override
@@ -1172,16 +1177,14 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 				mbrSize = 0;
 		}
 
-		// TODO-R: read parcelable
-		final String bootloaderCustomDeviceAddress = intent.getStringExtra(DfuBaseService.EXTRA_CUSTOM_MAC_ADDRESS); // TODO-R: impleent
+		final String bootloaderScannerCustomDeviceAddress = intent.getStringExtra(DfuBaseService.EXTRA_CUSTOM_BOOTLOADER_SCANNER_DEVICE_ADDRESS);
 
-		if (bootloaderCustomDeviceAddress != null) {
-			this.bootloaderCustomDeviceAddress = bootloaderCustomDeviceAddress;
-		} else {
-			this.bootloaderCustomDeviceAddress = "";
+		if (bootloaderScannerCustomDeviceAddress != null) {
+			this.bootloaderScannerCustomDeviceAddress = bootloaderScannerCustomDeviceAddress;
+			sendLogBroadcast(LOG_LEVEL_VERBOSE, "A custom device address for the DFU bootloader scanner was supplied; deviceAddress=" + this.bootloaderScannerCustomDeviceAddress);
 		}
 
-		sendLogBroadcast(LOG_LEVEL_VERBOSE, "DFU service started; bootloaderCustomAddress:" + this.bootloaderCustomDeviceAddress);
+		sendLogBroadcast(LOG_LEVEL_VERBOSE, "DFU service started");
 
 		/*
 		 * First the service is trying to read the firmware and init packet files.
