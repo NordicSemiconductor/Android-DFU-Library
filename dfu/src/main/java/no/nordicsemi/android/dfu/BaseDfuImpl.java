@@ -750,12 +750,12 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 		String newAddress = null;
 		if (scanForBootloader) {
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Scanning for the DFU Bootloader...");
-			newAddress = BootloaderScannerFactory.getScanner().searchFor(mGatt.getDevice().getAddress());
+			newAddress = BootloaderScannerFactory.getScanner().searchFor("FB:3B:41:73:C5:E1");
 			logi("Scanning for new address finished with: " + newAddress);
 			if (newAddress != null)
 				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "DFU Bootloader found with address " + newAddress);
 			else {
-				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "DFU Bootloader not found. Trying the same address...");
+				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "DFU Bootloader not found. Trying the same address..." + newAddress);
 			}
 		}
 
