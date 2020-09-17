@@ -77,7 +77,7 @@ public final class DfuServiceInitiator {
 
 	private boolean keepBond;
 	private boolean restoreBond;
-	private boolean forceDfu = true;
+	private boolean forceDfu = false;
 	private boolean forceScanningForNewAddressInLegacyDfu = false;
 	private boolean enableUnsafeExperimentalButtonlessDfu = false;
 	private boolean disableResume = false;
