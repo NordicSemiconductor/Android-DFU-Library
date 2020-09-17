@@ -738,6 +738,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	public static final String EXTRA_CUSTOM_UUIDS_FOR_EXPERIMENTAL_BUTTONLESS_DFU = "no.nordicsemi.android.dfu.extra.EXTRA_CUSTOM_UUIDS_FOR_EXPERIMENTAL_BUTTONLESS_DFU";
 	public static final String EXTRA_CUSTOM_UUIDS_FOR_BUTTONLESS_DFU_WITHOUT_BOND_SHARING = "no.nordicsemi.android.dfu.extra.EXTRA_CUSTOM_UUIDS_FOR_BUTTONLESS_DFU_WITHOUT_BOND_SHARING";
 	public static final String EXTRA_CUSTOM_UUIDS_FOR_BUTTONLESS_DFU_WITH_BOND_SHARING = "no.nordicsemi.android.dfu.extra.EXTRA_CUSTOM_UUIDS_FOR_BUTTONLESS_DFU_WITH_BOND_SHARING";
+	public static final String EXTRA_CUSTOM_MAC_ADDRESS = "no.nordicsemi.android.dfu.extra.EXTRA_CUSTOM_MAC_ADDRESS"; // TODO-R
 
 	/**
 	 * Lock used in synchronization purposes
@@ -1169,7 +1170,10 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 				mbrSize = 0;
 		}
 
-		sendLogBroadcast(LOG_LEVEL_VERBOSE, "DFU service started");
+		// TODO-R: read parcelable
+		final boolean hasCustomMacAddress = intent.getBooleanExtra(DfuBaseService.EXTRA_CUSTOM_MAC_ADDRESS, false); // TODO-R: impleent
+
+		sendLogBroadcast(LOG_LEVEL_VERBOSE, "DFU service started; hasCustomMacAddress:" + hasCustomMacAddress);
 
 		/*
 		 * First the service is trying to read the firmware and init packet files.

@@ -796,6 +796,9 @@ public final class DfuServiceInitiator {
 
 		final Intent intent = new Intent(context, service);
 
+		// TODO-R: where to put the extra
+		intent.putExtra(DfuBaseService.EXTRA_CUSTOM_MAC_ADDRESS, true)
+
 		intent.putExtra(DfuBaseService.EXTRA_DEVICE_ADDRESS, deviceAddress);
 		intent.putExtra(DfuBaseService.EXTRA_DEVICE_NAME, deviceName);
 		intent.putExtra(DfuBaseService.EXTRA_DISABLE_NOTIFICATION, disableNotification);
