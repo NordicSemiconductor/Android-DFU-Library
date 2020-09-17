@@ -63,6 +63,7 @@ public final class DfuServiceInitiator {
 
 	private boolean disableNotification = false;
 	private boolean startAsForegroundService = true;
+	private String bootloaderCustomDeviceAddress;
 
 	private Uri fileUri;
 	private String filePath;
@@ -151,6 +152,8 @@ public final class DfuServiceInitiator {
 		return this;
 	}
 
+
+
 	/**
 	 * Sets whether the bond information should be preserver after flashing new application.
 	 * This feature requires Legacy DFU Bootloader version 0.6 or newer (SDK 8.0.0+).
@@ -188,6 +191,11 @@ public final class DfuServiceInitiator {
 	 */
 	public DfuServiceInitiator setRestoreBond(final boolean restoreBond) {
 		this.restoreBond = restoreBond;
+		return this;
+	}
+
+	public DfuServiceInitiator setBootloaderCustomDeviceAddress(final String bootloaderCustomDeviceAddress) {
+		this.bootloaderCustomDeviceAddress = bootloaderCustomDeviceAddress;
 		return this;
 	}
 
@@ -797,7 +805,9 @@ public final class DfuServiceInitiator {
 		final Intent intent = new Intent(context, service);
 
 		// TODO-R: where to put the extra
-		intent.putExtra(DfuBaseService.EXTRA_CUSTOM_MAC_ADDRESS, true);
+		if (bootloaderCustomDeviceAddress != null) {
+			intent.putExtra(DfuBaseService.EXTRA_CUSTOM_MAC_ADDRESS, bootloaderCustomDeviceAddress);
+		}
 
 		intent.putExtra(DfuBaseService.EXTRA_DEVICE_ADDRESS, deviceAddress);
 		intent.putExtra(DfuBaseService.EXTRA_DEVICE_NAME, deviceName);

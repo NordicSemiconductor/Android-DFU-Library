@@ -252,11 +252,14 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 		}
 	}
 
-	private boolean mHasCustomBootloaderDeviceAddress = false;
+	private String mHasCustomBootloaderDeviceAddress;
 
     @SuppressWarnings("unused")
     BaseDfuImpl(@NonNull final Intent intent, @NonNull final DfuBaseService service) {
 		mService = service;
+		mHasCustomBootloaderDeviceAddress = service.bootloaderCustomDeviceAddress;
+		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE,
+				"have custom device address " + mHasCustomBootloaderDeviceAddress);
 //		mHasCustomBootloaderDeviceAddress = service.hasCustomBootloaderDeviceAddress // TODO-R: put the service variable here!
 		mProgressInfo = service.mProgressInfo;
 		mConnected = true; // the device is connected when impl object it created
