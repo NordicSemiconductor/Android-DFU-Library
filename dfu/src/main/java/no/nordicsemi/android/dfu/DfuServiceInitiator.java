@@ -619,7 +619,7 @@ public final class DfuServiceInitiator {
 	 * If this method is not called, the scanner will look for the bootloader
 	 * at the device address supplied in the {@link DfuServiceInitiator} constructor.
 	 */
-	public DfuServiceInitiator setBootloaderScannerCustomDeviceAddress(final String bootloaderScannerCustomDeviceAddress) {
+	public DfuServiceInitiator setScanForBootloaderAtCustomDeviceAddress(final String bootloaderScannerCustomDeviceAddress) {
 		this.bootloaderScannerCustomDeviceAddress = bootloaderScannerCustomDeviceAddress;
 		return this;
 	}
