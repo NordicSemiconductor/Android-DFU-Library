@@ -32,6 +32,7 @@ import androidx.annotation.NonNull;
 
 	/* package */ static void assignCustomUuids(@NonNull final Intent intent) {
 		// Added in SDK 4.3.0. Legacy DFU and Legacy bootloader share the same UUIDs.
+		Parcelable[] uuids = intent.getParcelableArrayExtra(DfuBaseService.EXTRA_CUSTOM_UUIDS_FOR_LEGACY_DFU);
 
 		// TODO-R: here?
 		if (uuids != null && uuids.length == 4) {
