@@ -1181,7 +1181,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 			this.bootloaderCustomDeviceAddress = "";
 		}
 
-		sendLogBroadcast(LOG_LEVEL_VERBOSE, "DFU service started; bootloaderCustomAddress:" + this.bootloaderCustomAddress);
+		sendLogBroadcast(LOG_LEVEL_VERBOSE, "DFU service started; bootloaderCustomAddress:" + this.bootloaderCustomDeviceAddress);
 
 		/*
 		 * First the service is trying to read the firmware and init packet files.
