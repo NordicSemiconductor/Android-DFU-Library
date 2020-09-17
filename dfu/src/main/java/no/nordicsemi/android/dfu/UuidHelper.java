@@ -31,8 +31,6 @@ import androidx.annotation.NonNull;
 /* package */ class UuidHelper {
 
 	/* package */ static void assignCustomUuids(@NonNull final Intent intent) {
-		boolean customAddress = intent.getBoolean(DfuBaseService.EXTRA_CUSTOM_MAC_ADDRESS);
-
 		// Added in SDK 4.3.0. Legacy DFU and Legacy bootloader share the same UUIDs.
 
 		// TODO-R: here?

@@ -1173,7 +1173,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		}
 
 		// TODO-R: read parcelable
-		final boolean bootloaderCustomDeviceAddress = intent.getStringExtra(DfuBaseService.EXTRA_CUSTOM_MAC_ADDRESS); // TODO-R: impleent
+		final String bootloaderCustomDeviceAddress = intent.getStringExtra(DfuBaseService.EXTRA_CUSTOM_MAC_ADDRESS); // TODO-R: impleent
 
 		if (bootloaderCustomDeviceAddress != null) {
 			this.bootloaderCustomDeviceAddress = bootloaderCustomDeviceAddress;
@@ -1181,7 +1181,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 			this.bootloaderCustomDeviceAddress = "";
 		}
 
-		sendLogBroadcast(LOG_LEVEL_VERBOSE, "DFU service started; bootloaderCustomAddress:" + bootloaderCustomAddress);
+		sendLogBroadcast(LOG_LEVEL_VERBOSE, "DFU service started; bootloaderCustomAddress:" + this.bootloaderCustomAddress);
 
 		/*
 		 * First the service is trying to read the firmware and init packet files.
