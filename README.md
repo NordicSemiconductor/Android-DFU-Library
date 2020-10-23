@@ -115,9 +115,8 @@ A library for both iOS and Android that is based on this library is available fo
 
 ### Xamarin
 
-Simple binding libraries for iOS and Android are available on nuget:
+Simple binding library for Android is available on nuget:
 [xamarin.nordic.dfu.android](https://www.nuget.org/packages/xamarin.nordic.dfu.android/)
-[xamarin.nordic.dfu.ios](https://www.nuget.org/packages/Xamarin.Nordic.DFU.iOS/)
 
 ### Resources
 
