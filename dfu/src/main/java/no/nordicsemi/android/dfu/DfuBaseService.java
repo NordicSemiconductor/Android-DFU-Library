@@ -94,7 +94,7 @@ import no.nordicsemi.android.error.GattError;
  * application.
  */
 @SuppressWarnings("deprecation")
-public abstract class DfuBaseService extends IntentService implements DfuProgressInfo.ProgressListener {
+public abstract class DfuBaseService extends IntentService implements DfuProgressVisualizer {
 	private static final String TAG = "DfuBaseService";
 
 	/* package */ static boolean DEBUG = false;
@@ -1685,10 +1685,6 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		}
 	}
 
-	/**
-	 * Creates or updates the notification in the Notification Manager. Sends broadcast with
-	 * given progress state to the activity.
-	 */
 	@Override
 	public void updateProgressNotification() {
 		final DfuProgressInfo info = mProgressInfo;

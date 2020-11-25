@@ -25,12 +25,16 @@ package no.nordicsemi.android.dfu;
 import android.os.SystemClock;
 import androidx.annotation.NonNull;
 
-/* package */ class DfuProgressInfo {
-	interface ProgressListener {
-		void updateProgressNotification();
-	}
-
-	private final ProgressListener mListener;
+// This class has been made public in 1.11.0 to allow Xamarin bindings.
+// See: https://github.com/NordicSemiconductor/Android-DFU-Library/issues/221
+/**
+ * This is an internal DFU class. Applications should not use it.
+ * It has public access modifier to allow Xamarin bindings.
+ * @since 1.11.0
+ */
+@SuppressWarnings("WeakerAccess")
+public class DfuProgressInfo {
+	private final DfuProgressVisualizer progressVisualizer;
 	private int progress;
 	private int bytesSent;
 	private int initialBytesSent;
@@ -42,16 +46,15 @@ import androidx.annotation.NonNull;
 	private int totalParts;
 	private long timeStart, lastProgressTime;
 
-	DfuProgressInfo(final @NonNull ProgressListener listener) {
-		mListener = listener;
+	DfuProgressInfo(final @NonNull DfuProgressVisualizer visualizer) {
+		this.progressVisualizer = visualizer;
 	}
 
-	DfuProgressInfo init(final int imageSizeInBytes, final int currentPart, final int totalParts) {
+	void init(final int imageSizeInBytes, final int currentPart, final int totalParts) {
 		this.imageSizeInBytes = imageSizeInBytes;
 		this.maxObjectSizeInBytes = Integer.MAX_VALUE; // by default the whole firmware will be sent as a single object
 		this.currentPart = currentPart;
 		this.totalParts = totalParts;
-		return this;
 	}
 
 	@SuppressWarnings({"UnusedReturnValue", "SameParameterValue"})
@@ -62,7 +65,7 @@ import androidx.annotation.NonNull;
 
 	void setProgress(final int progress) {
 		this.progress = progress;
-		mListener.updateProgressNotification();
+		progressVisualizer.updateProgressNotification();
 	}
 
 	void setBytesSent(final int bytesSent) {
@@ -72,7 +75,7 @@ import androidx.annotation.NonNull;
 		}
 		this.bytesSent = bytesSent;
 		this.progress = (int) (100.0f * bytesSent / imageSizeInBytes);
-		mListener.updateProgressNotification();
+		progressVisualizer.updateProgressNotification();
 	}
 
 	void addBytesSent(final int increment) {
