@@ -27,6 +27,7 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.preference.PreferenceManager;
 
 import java.util.UUID;
@@ -146,6 +147,13 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_WARNING, "Application with buttonless update found");
 
 		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Jumping to the DFU Bootloader...");
+
+		// Let's request the MTU requested by the user. It may be that a lower MTU will be used.
+		if (intent.hasExtra(DfuBaseService.EXTRA_MTU) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+			final int requiredMtu = intent.getIntExtra(DfuBaseService.EXTRA_MTU, 517);
+			logi("Requesting MTU = " + requiredMtu);
+			requestMtu(requiredMtu);
+		}
 
 		// Enable notifications
 		enableCCCD(mControlPointCharacteristic, NOTIFICATIONS);

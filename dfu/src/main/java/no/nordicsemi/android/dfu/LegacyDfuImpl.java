@@ -26,6 +26,7 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.content.Intent;
+import android.os.Build;
 import android.os.SystemClock;
 
 import java.util.Locale;
@@ -168,6 +169,13 @@ import no.nordicsemi.android.error.LegacyDfuError;
 			throws DfuException, DeviceDisconnectedException, UploadAbortedException {
 		logw("Legacy DFU bootloader found");
 		mProgressInfo.setProgress(DfuBaseService.PROGRESS_STARTING);
+
+		// Let's request the MTU requested by the user. It may be that a lower MTU will be used.
+		if (intent.hasExtra(DfuBaseService.EXTRA_MTU) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+			final int requiredMtu = intent.getIntExtra(DfuBaseService.EXTRA_MTU, 517);
+			logi("Requesting MTU = " + requiredMtu);
+			requestMtu(requiredMtu);
+		}
 
 		// Add one second delay to avoid the traffic jam before the DFU mode is enabled
 		// Related:
