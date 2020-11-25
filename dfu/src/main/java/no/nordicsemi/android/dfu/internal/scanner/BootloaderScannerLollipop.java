@@ -89,10 +89,10 @@ public class BootloaderScannerLollipop extends ScanCallback implements Bootloade
         /*
          * Android 8.1 onwards, stops unfiltered BLE scanning on screen off. Therefore we must add a filter to
          * get scan results in case the device screen is turned off as this may affect users wanting scan/connect to the device in background.
-         * See {@linktourl https://android.googlesource.com/platform/packages/apps/Bluetooth/+/319aeae6f4ebd13678b4f77375d1804978c4a1e1
+         * See {@linktourl https://android.googlesource.com/platform/packages/apps/Bluetooth/+/319aeae6f4ebd13678b4f77375d1804978c4a1e1}
          */
         final ScanSettings settings = new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+        if (adapter.isOffloadedFilteringSupported() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             final List<ScanFilter> filters = new ArrayList<>();
             filters.add(new ScanFilter.Builder().setDeviceAddress(mDeviceAddress).build());
             filters.add(new ScanFilter.Builder().setDeviceAddress(mDeviceAddressIncremented).build());
