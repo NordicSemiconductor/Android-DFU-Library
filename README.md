@@ -34,7 +34,9 @@ Marshmallow, **location permission** is required and has to be granted in runtim
 Starting from Android 8.1.0, all scans done without a scan filter whilst the screen is turned off
 will not return any scan results.
 
->Note: "ACCESS_BACKGROUND_LOCATION" permission would also be required to trigger a successful DFU whilst the device screen is turned off.
+>Note: "ACCESS_BACKGROUND_LOCATION" permission would also be required to trigger a successful DFU
+whilst the device screen is turned off, mainly to receive the scan results when scanning and connecting to the
+peripheral in bootloader mode while the device screen is turned off.
 
 #### Retrying
 Starting from version 1.9.0 the library is able to retry a DFU update in case of an unwanted
