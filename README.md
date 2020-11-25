@@ -29,7 +29,12 @@ If your device is using the Nordic Buttonless Service for switching from app mod
 DFU bootloader mode, this library will handle switching automatically. In case your bootloader is 
 configured to advertise with incremented MAC address (that is you use Secure DFU and the device 
 is not bonded) this library will need to scan for the new `BluetoothDevice`. Starting from Android 
-Marshmallow, **location permission** is required and has to be granted in runtime before DFU is started. 
+Marshmallow, **location permission** is required and has to be granted in runtime before DFU is started.
+
+Starting from Android 8.1.0, all scans done without a scan filter whilst the screen is turned off
+will not return any scan results.
+
+>Note: "ACCESS_BACKGROUND_LOCATION" permission would also be required to trigger a successful DFU whilst the device screen is turned off.
 
 #### Retrying
 Starting from version 1.9.0 the library is able to retry a DFU update in case of an unwanted
