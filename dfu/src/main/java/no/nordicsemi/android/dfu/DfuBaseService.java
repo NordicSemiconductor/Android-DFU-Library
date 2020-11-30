@@ -1471,7 +1471,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 */
 	private InputStream openInputStream(@NonNull final Uri stream, final String mimeType, final int mbrSize, final int types)
 			throws IOException {
-		final InputStream is = getContentResolver().openInputStream(stream);
+		final InputStream is = stream.toString().startsWith("file:///android_asset/") ? getAssets().open(stream.getPath().substring(15)) : getContentResolver().openInputStream(stream);
 		if (MIME_TYPE_ZIP.equals(mimeType))
 			return new ArchiveInputStream(is, mbrSize, types);
 
