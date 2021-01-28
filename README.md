@@ -120,6 +120,11 @@ A library for both iOS and Android that is based on this library is available fo
 A library for both iOS and Android that is based on this library is available for Flutter: 
 [flutter-nordic-dfu](https://github.com/fengqiangboy/flutter-nordic-dfu) 
 
+### Xamarin
+
+Simple binding library for Android is available on nuget:
+[Laerdal.Xamarin.Dfu.Android](https://www.nuget.org/packages/Laerdal.Xamarin.Dfu.Android/)
+
 ### Resources
 
 - [DFU Introduction](http://infocenter.nordicsemi.com/topic/com.nordic.infocenter.sdk5.v11.0.0/examples_ble_dfu.html?cp=6_0_0_4_3_1 "BLE Bootloader/DFU")
