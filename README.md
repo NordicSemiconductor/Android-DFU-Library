@@ -123,7 +123,7 @@ A library for both iOS and Android that is based on this library is available fo
 ### Xamarin
 
 Simple binding library for Android is available on nuget:
-[xamarin.nordic.dfu.android](https://www.nuget.org/packages/xamarin.nordic.dfu.android/)
+[Laerdal.Xamarin.Dfu.Android](https://www.nuget.org/packages/Laerdal.Xamarin.Dfu.Android/)
 
 ### Resources
 
