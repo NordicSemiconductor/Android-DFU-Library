@@ -1764,7 +1764,12 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		intent.putExtra(EXTRA_DEVICE_ADDRESS, deviceAddress);
 		intent.putExtra(EXTRA_DEVICE_NAME, deviceName);
 		intent.putExtra(EXTRA_PROGRESS, progress);
-		final PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+		int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+			flags |= PendingIntent.FLAG_IMMUTABLE;
+		}
+		final PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, flags);
 		builder.setContentIntent(pendingIntent);
 
 		// Any additional configuration?
@@ -1786,7 +1791,13 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		if (progress != PROGRESS_ABORTED && progress != PROGRESS_COMPLETED) {
 			final Intent abortIntent = new Intent(BROADCAST_ACTION);
 			abortIntent.putExtra(EXTRA_ACTION, ACTION_ABORT);
-			final PendingIntent pendingAbortIntent = PendingIntent.getBroadcast(this, 1, abortIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+			int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+				flags |= PendingIntent.FLAG_IMMUTABLE;
+			}
+
+			final PendingIntent pendingAbortIntent = PendingIntent.getBroadcast(this, 1, abortIntent, flags);
 			builder.addAction(R.drawable.ic_action_notify_cancel, getString(R.string.dfu_action_abort), pendingAbortIntent);
 		}
 	}
@@ -1823,7 +1834,13 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		intent.putExtra(EXTRA_DEVICE_ADDRESS, deviceAddress);
 		intent.putExtra(EXTRA_DEVICE_NAME, deviceName);
 		intent.putExtra(EXTRA_PROGRESS, error); // this may contains ERROR_CONNECTION_MASK bit!
-		final PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+		int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+			flags |= PendingIntent.FLAG_IMMUTABLE;
+		}
+
+		final PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, flags);
 		builder.setContentIntent(pendingIntent);
 
 		// Any additional configuration?
@@ -1859,7 +1876,11 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 			targetIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 			targetIntent.putExtra(EXTRA_DEVICE_ADDRESS, mDeviceAddress);
 			targetIntent.putExtra(EXTRA_DEVICE_NAME, mDeviceName);
-			final PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, targetIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+			int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+				flags |= PendingIntent.FLAG_IMMUTABLE;
+			}
+			final PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, targetIntent, flags);
 			builder.setContentIntent(pendingIntent);
 		} else {
 			logw("getNotificationTarget() should not return null if the service is to be started as a foreground service");
