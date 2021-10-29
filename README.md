@@ -12,8 +12,6 @@ instead.
 
 ## Usage
 
-Android DFU library is designed in 
-
 ### Setting up
 
 The DFU library is available on Maven Central repository. Add it to your project by 
@@ -23,7 +21,7 @@ adding the following dependency:
 implementation 'no.nordicsemi.android:dfu:1.12.0'
 ```
 
-Latest version targetting API less than 31 is 1.11.1.
+Latest version targeting API lower than 31 is 1.11.1.
 
 For projects not migrated to Android Jetpack, use version 1.8.1.
 
