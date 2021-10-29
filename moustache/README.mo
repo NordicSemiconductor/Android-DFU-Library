@@ -1,51 +1,81 @@
 # DFU Library
 
-[ ![Download](https://api.bintray.com/packages/nordic/android/no.nordicsemi.android%3Adfu/images/download.svg) ](https://bintray.com/nordic/android/no.nordicsemi.android%3Adfu/_latestVersion)
+[ ![Download](https://maven-badges.herokuapp.com/maven-central/no.nordicsemi.android/dfu/badge.svg?style=plastic) ](https://search.maven.org/artifact/no.nordicsemi.android/dfu)
 
-### Usage
+This is an Android library for perfoming a DFU (Device Firmware Update) on devices running 
+[nRF5 SDK firmware with DFU bootloader](https://infocenter.nordicsemi.com/topic/sdk_nrf5_v17.1.0/lib_bootloader_modules.html?cp=8_1_3_5).
+iOS version of the same library can be found at [IOS-DFU-Library](https://github.com/NordicSemiconductor/IOS-DFU-Library).
 
-The DFU library may be found on jcenter and Maven Central repository. Add it to your project by 
+> Note: For devices running nRF Connect SDK (NCS), please use 
+[nRF Connect Device Manager library](https://github.com/NordicSemiconductor/Android-nRF-Connect-Device-Manager) 
+instead.
+
+## Usage
+
+Android DFU library is designed in 
+
+### Setting up
+
+The DFU library is available on Maven Central repository. Add it to your project by 
 adding the following dependency:
 
 ```Groovy
-implementation 'no.nordicsemi.android:dfu:1.11.0'
+implementation 'no.nordicsemi.android:dfu:{{VERSION}}'
 ```
 
-For projects not migrated to Android Jetpack, use:
+Latest version targetting API less than 31 is 1.11.1.
 
-```Groovy
-implementation 'no.nordicsemi.android:dfu:1.8.1'
-```
+For projects not migrated to Android Jetpack, use version 1.8.1.
 
-> Note: This version is not maintained anymore. All new features and bug fixes will be released on 
+> Note: Those versions are not maintained anymore. All new features and bug fixes will be released on 
 the latest version only.
+
+#### Proguard / R8
 
 If you use proguard/R8, add the following line to your proguard rules (although this should be added
 automatically):
 ```-keep class no.nordicsemi.android.dfu.** { *; }```
 
-#### Location Permission required
+### Required permissions
+
+#### Android 4.3 - 11
+
+To communicate with Bluetooth LE devices on Android version 4.3 until 11 two permissions were
+required: **BLUETOOTH** and **BLUETOOTH_ADMIN**. It is enough to put them in the *AndroidManifest.xml*
+file. If your app targets API 31 or newer set `android:maxSdkVersion="30"` as on API 31 they were 
+replaced by **BLUETOOTH_CONNECT** and **BLUETOOTH_SCAN** runtime permissions (see below).
+
+#### Android 6 - 11
+
 If your device is using the Nordic Buttonless Service for switching from app mode to 
 DFU bootloader mode, this library will handle switching automatically. In case your bootloader is 
 configured to advertise with incremented MAC address (that is you use Secure DFU and the device 
-is not bonded) this library will need to scan for the new `BluetoothDevice`. Starting from Android 
-Marshmallow, **location permission** is required and has to be granted in runtime before DFU is started.
+is not bonded) this library will need to scan for the new `BluetoothDevice`. In Android 6-11, 
+**location permission** is required and has to be granted in runtime before DFU is started.
 
 Starting from Android 8.1.0, all scans done without a scan filter whilst the screen is turned off
 will not return any scan results.
 
 >Note: "ACCESS_BACKGROUND_LOCATION" permission would also be required to trigger a successful DFU
-whilst the device screen is turned off, mainly to receive the scan results when scanning and connecting to the
-peripheral in bootloader mode while the device screen is turned off.
+whilst the device screen is turned off, mainly to receive the scan results when scanning and 
+connecting to the peripheral in bootloader mode while the device screen is turned off.
 
-#### Retrying
+#### Android 12+
+
+Starting from Android 12 location permission is not needed, instead **BLUETOOTH_CONNECT** is required.
+When your device is using buttonless service and changes MAC address, it also requires 
+**BLUETOOTH_SCAN** permission to be granted. This permission can be used with *neverForLocation* flag.
+Read more in [Bluetooth permissions](https://developer.android.com/guide/topics/connectivity/bluetooth/permissions).
+
+### Retrying
+
 Starting from version 1.9.0 the library is able to retry a DFU update in case of an unwanted
 disconnection. However, to maintain backward compatibility, this feature is by default disabled.
 Call `initiator.setNumberOfRetries(int)` to set how many attempts the service should perform.
 Secure DFU will be resumed after it has been interrupted from the point it stopped, while the 
 Legacy DFU will start again. 
 
-### Device Firmware Update (DFU)
+## Device Firmware Update (DFU)
 
 The nRF5x Series chips are flash-based SoCs, and as such they represent the most flexible solution available. 
 A key feature of the nRF5x Series and their associated software architecture and S-Series SoftDevices 
@@ -64,18 +94,18 @@ It is compatible with all Bootloader/DFU versions.
 
 [![Alt text for your video](http://img.youtube.com/vi/LdY2m_bZTgE/0.jpg)](http://youtu.be/LdY2m_bZTgE)
 
-### Documentation
+## Documentation
 
 See the [documentation](documentation) for more information.
 
-### Requirements
+## Requirements
 
 The library is compatible with nRF51 and nRF52 devices with S-Series Soft Device and the 
 DFU Bootloader flashed on. 
 
-### DFU History
+## DFU History
 
-#### Legacy DFU
+### Legacy DFU
 
 * **SDK 4.3.0** - First version of DFU over Bluetooth Smart. DFU supports Application update.
 * **SDK 6.1.0** - DFU Bootloader supports Soft Device and Bootloader update. As the updated 
@@ -91,7 +121,7 @@ DFU Bootloader flashed on.
     - Buttonless update support for bonded devices 
     - sharing the LTK between an app and the bootloader.
     
-#### Secure DFU
+### Secure DFU
 
 * **SDK 12.0.0** - New Secure DFU has been released. Buttonless service is experimental.
 * **SDK 13.0.0** - Buttonless DFU (still experimental) uses different UUIDs. No bond sharing 
@@ -110,6 +140,8 @@ Both are supported since DFU Library 1.3.0.
 
 Check platform folders for mode details about compatibility for each library.
 
+## Related libraries
+
 ### React Native
 
 A library for both iOS and Android that is based on this library is available for React Native: 
@@ -123,12 +155,12 @@ A library for both iOS and Android that is based on this library is available fo
 ### Xamarin
 
 Simple binding library for Android is available on nuget:
-[Laerdal.Xamarin.Dfu.Android](https://www.nuget.org/packages/Laerdal.Xamarin.Dfu.Android/)
+[Laerdal.Dfu.Android](https://www.nuget.org/packages/Laerdal.Dfu.Android/)
 
-### Resources
+## Resources
 
-- [DFU Introduction](http://infocenter.nordicsemi.com/topic/com.nordic.infocenter.sdk5.v11.0.0/examples_ble_dfu.html?cp=6_0_0_4_3_1 "BLE Bootloader/DFU")
-- [Secure DFU Introduction](https://infocenter.nordicsemi.com/topic/sdk_nrf5_v16.0.0/lib_bootloader_modules.html?cp=6_1_3_5 "BLE Secure DFU Bootloader")
+- [Legacy DFU Introduction](http://infocenter.nordicsemi.com/topic/com.nordic.infocenter.sdk5.v11.0.0/examples_ble_dfu.html?cp=6_0_0_4_3_1 "BLE Bootloader/DFU")
+- [Secure DFU Introduction](https://infocenter.nordicsemi.com/topic/sdk_nrf5_v17.1.0/lib_bootloader_modules.html?cp=8_1_3_5 "BLE Secure DFU Bootloader")
 - [nRF51 Development Kit (DK)](https://www.nordicsemi.com/Software-and-tools/Development-Kits/nRF51-DK "nRF51 DK") (compatible with Arduino Uno Revision 3)
 - [nRF52 Development Kit (DK)](https://www.nordicsemi.com/Software-and-tools/Development-Kits/nRF52-DK "nRF52 DK") (compatible with Arduino Uno Revision 3)
 - [nRF52840 Development Kit (DK)](https://www.nordicsemi.com/Software-and-tools/Development-Kits/nRF52840-DK "nRF52840 DK") (compatible with Arduino Uno Revision 3)

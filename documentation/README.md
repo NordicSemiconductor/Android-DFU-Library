@@ -1,11 +1,11 @@
 # DFU Library - Android 4.3+
 
-The DFU Library for Android 4.3+ adds the DFU feature to the Android project. 
+The DFU Library for Android 4.3+ adds the DFU feature to the Android project.
 
 ### Features:
 
 * DFU Library version 1.0.0+ supports **Secure DFU** introduced in SDK 12.0.0 and is fully backwards 
-  compatible with all versions of Legacy DFU.
+  compatible with all versions of Legacy DFU. For projects based on [nRF Connect SDK](https://www.nordicsemi.com/Products/Development-software/nrf-connect-sdk), use [nRF Connect Device Manager library](https://github.com/NordicSemiconductor/Android-nRF-Connect-Device-Manager) instead.
 * Allows to program Application, Soft Device and Bootloader Over-the-Air on the nRF5 Series SoC over 
   Bluetooth Low Energy.
 * Supports ZIP files with Soft Device, Bootloader and Application together.
@@ -25,6 +25,7 @@ The DFU Library for Android 4.3+ adds the DFU feature to the Android project.
     reconnect to the new bootloader and send the Application in the second connection as part two.
 
 #### Error handling
+
 In case of any communication error the peripheral device will never be bricked. When an application 
 or a bootloader is updated, the previous application (or bootloader, in case there was no application) 
 is restored. When a Soft Device is updated, the previous bootloader will be restored as the application 
@@ -35,12 +36,11 @@ repeat the update and flash the Soft Device and the new application again.
 
 * **An Android 4.3+ device.**
 
-    Support for the Bluetooth 4.0 technology is required. Android introduced Bluetooth LE in 
-    version 4.3. Android 4.4.4 or newer is recommended for better user experience.
-* **Android Studio IDE** or **Eclipse ADT**
+    Support for the Bluetooth 4.x or 5.x technology is required. Android introduced Bluetooth LE in 
+    version 4.3.
+* **Android Studio IDE**
 
-    Projects are compatible with Android Studio and the Gradle build engine. It is possible to 
-    convert them to Eclipse ADT projects. See Integration for more details.
+    Projects are compatible with Android Studio and the Gradle build engine.
 * **nRF5 device for testing.**
 
    A nRF5 Series device is required to test the working solution. If your final product is not 
@@ -49,47 +49,39 @@ repeat the update and flash the Soft Device and the new application again.
 
 ### Integration
 
-The DFU Library is compatible as such with Android Studio IDE. If you are using Eclipse ADT, 
-you will have to convert the project to match the Eclipse project structure.
-
-#### Android Studio
-
 The easiest way to include the library to your project is to add the 
 
-```compile 'no.nordicsemi.android:dfu:[Version]'``` 
+```groovy
+implementation 'no.nordicsemi.android:dfu:[Version]'
+``` 
 
-line to your build.gradle file. And that's it.
+line to your *build.gradle* file.
 
 However, if you want to modify the code to your needs you have to clone the project and add it as follows:
 
-1. Clone the project into DFULibrary folder (by default it will be cloned into Android-DFU-Library 
-   folder) to your projects root, for example to *AndroidstudioProjects*.
-2. Add the **dfu** module to your project:
-    1. Add **'..:[Folder Name]:dfu'** to the *settings.gradle* file: 
+1. Clone the project into local folder (by default it will be cloned into Android-DFU-Library 
+   folder), for example to *AndroidstudioProjects*.
+2. Add the following to your **settings.gradle** file:
+    ```groovy    
+    if (file('../Android-DFU-Library').exists()) {
+        includeBuild('../Android-DFU-Library')
+    }
     ```
-    include ':dfu'
-    project(':dfu').projectDir = file('../[Folder Name]/dfu')
-    ```
-    2. Open Project Structure -> Modules -> app -> Dependencies tab and add dfu module dependency. 
-    You may also edit the *build.gradle* file in your app module manually by adding the following 
-    dependency: `implementation project(':dfu')`
-
-#### Eclipse
-
-1. Clone the project into DFULibrary folder to a temporary location.
-2. Create an empty *DFULibrary* project in Eclipse. Make it a library.
-3. Copy the content of *java* code folder to the *src*.
-4. Copy the content of the *res* folder to the *res* in your Eclipse project.
-5. Make sure that *android support library v4* is available in *libs* folders. It should have been 
-   added automatically when creating the project.
-6. In your application project, open Properties->Android and add DFULibrary as a library.
 
 ### Usage
 
-Extend the **DfuBaseService** in your project and implement the 
-`protected Class<? extends Activity> getNotificationTarget()` method. This method should return an 
-activity class that will be open when you press the DFU notification while transferring the firmware. 
-This activity will be started with the 'Intent.FLAG_ACTIVITY_NEW_TASK' flag. 
+The library is designed in a way that it is easy to integrate. Whole logic is performed by an
+`IntentService`, started using `DfuServiceInitiator`. The service reportes progress and errors
+using `LocalBroadcastManager`.
+
+Extend the `DfuBaseService` in your project and implement the following method:
+
+```java
+protected Class<? extends Activity> getNotificationTarget()
+``` 
+This method should return an activity class that will be open when you press the DFU 
+notification while transferring the firmware. 
+This activity will be started with the `Intent.FLAG_ACTIVITY_NEW_TASK` flag. 
 
 ```java
 package com.example.coolproject;
@@ -199,11 +191,7 @@ final DfuServiceController controller = starter.start(this, DfuService.class);
 // You may use the controller to pause, resume or abort the DFU process.
 ```
 
-Please, see 
-[How to create init packet](https://github.com/NordicSemiconductor/Android-nRF-Connect/tree/master/init%20packet%20handling "Init packet handling") 
-document for more information about the init packet.
-
-The service will send local broadcast events using **LocalBroadcastManager**.
+The service will send local broadcast events using `LocalBroadcastManager`.
 
 
 ```java
@@ -237,7 +225,7 @@ protected void onPause() {
 }
 ```
 
-For Android Oreo and above, if you want the DfuService to show a notification with the progress, 
+For Android Oreo and above, if you want the `DfuService` to show a notification with the progress, 
 you have to create a notification channel. The easiest way to do this is to call
 
 ```java
