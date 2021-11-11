@@ -373,8 +373,11 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		mFirmwareUploadInProgress = true;
 		mPacketsSentSinceNotification = 0;
 
-		final byte[] buffer = mBuffer;
 		try {
+			final int available = mProgressInfo.getAvailableObjectSizeIsBytes();
+			byte[] buffer = mBuffer;
+			if (available < buffer.length)
+				buffer = new byte[available];
 			final int size = mFirmwareStream.read(buffer);
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE,
                     "Sending firmware to characteristic " + packetCharacteristic.getUuid() + "...");
