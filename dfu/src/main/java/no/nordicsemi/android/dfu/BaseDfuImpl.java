@@ -110,6 +110,12 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 	int mInitPacketSizeInBytes;
 	private int mCurrentMtu;
 
+	/**
+	 * An optional custom device address to supply the {@link BootloaderScannerFactory}
+	 * when it scans for the DFU Bootloader.
+	 */
+	private String mBootloaderScannerCustomDeviceAddress;
+
 	protected class BaseBluetoothGattCallback extends DfuGattCallback {
 		// The Implementation object is created depending on device services, so after the device
         // is connected and services were scanned.
@@ -255,6 +261,12 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
     @SuppressWarnings("unused")
     BaseDfuImpl(@NonNull final Intent intent, @NonNull final DfuBaseService service) {
 		mService = service;
+		mBootloaderScannerCustomDeviceAddress = service.bootloaderScannerCustomDeviceAddress;
+		if (mBootloaderScannerCustomDeviceAddress != null) {
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE,
+					"Custom device address was supplied for the bootloader scanner; deviceAddress=" + mBootloaderScannerCustomDeviceAddress);
+		}
+
 		mProgressInfo = service.mProgressInfo;
 		mConnected = true; // the device is connected when impl object it created
 	}
@@ -748,14 +760,23 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 	 */
 	void restartService(@NonNull final Intent intent, final boolean scanForBootloader) {
 		String newAddress = null;
+		String bootloaderScannerDeviceAddress;
 		if (scanForBootloader) {
-			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Scanning for the DFU Bootloader...");
-			newAddress = BootloaderScannerFactory.getScanner().searchFor(mGatt.getDevice().getAddress());
+			if (mBootloaderScannerCustomDeviceAddress != null) {
+				bootloaderScannerDeviceAddress = mBootloaderScannerCustomDeviceAddress;
+			} else {
+				bootloaderScannerDeviceAddress = mGatt.getDevice().getAddress();
+			}
+			
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Scanning for the DFU Bootloader...; Looking for bootloader at deviceAddress=" + bootloaderScannerDeviceAddress);
+
+			newAddress = BootloaderScannerFactory.getScanner().searchFor(bootloaderScannerDeviceAddress);
+
 			logi("Scanning for new address finished with: " + newAddress);
 			if (newAddress != null)
 				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "DFU Bootloader found with address " + newAddress);
 			else {
-				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "DFU Bootloader not found. Trying the same address...");
+				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "DFU Bootloader not found. Trying the same address..." + newAddress);
 			}
 		}
 
