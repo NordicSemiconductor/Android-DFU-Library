@@ -145,12 +145,17 @@ import no.nordicsemi.android.error.SecureDfuError;
 				if (status != DFU_STATUS_SUCCESS)
 					throw new RemoteDfuException("Device returned error after sending Enter Bootloader", status);
 				// The device will reset so we don't have to send Disconnect signal.
-				mService.waitUntilDisconnected();
+				// Some devices don't disconnect gracefully. In that case, Android would assume disconnection
+				// after "supervision timeout" seconds, which may be 5 more seconds. There is no
+				// reason to wait for that. The library will immediately start scanning for the
+				// device advertising in bootloader mode and connect to it.
+				// mService.waitUntilDisconnected();
 			} else {
 				logi("Device disconnected before receiving notification");
 			}
 
-			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Disconnected by the remote device");
+			// Commented out, see above comment.
+			// mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Disconnected by the remote device");
 
 			finalize(intent, false, shouldScanForBootloader());
 		} catch (final UnknownResponseException e) {
