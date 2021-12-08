@@ -37,7 +37,6 @@ public class BootloaderScannerJB implements BootloaderScanner, BluetoothAdapter.
 	private String mBootloaderAddress;
 	private boolean mFound;
 
-	@SuppressWarnings("deprecation")
 	@Override
 	public String searchFor(final String deviceAddress) {
 		final String firstBytes = deviceAddress.substring(0, 15);
@@ -50,25 +49,22 @@ public class BootloaderScannerJB implements BootloaderScanner, BluetoothAdapter.
 		mFound = false;
 
 		// Add timeout
-		new Thread(new Runnable() {
-			@Override
-			public void run() {
-				try {
-					Thread.sleep(BootloaderScanner.TIMEOUT);
-				} catch (final InterruptedException e) {
-					// do nothing
-				}
+		new Thread(() -> {
+			try {
+				Thread.sleep(BootloaderScanner.TIMEOUT);
+			} catch (final InterruptedException e) {
+				// do nothing
+			}
 
-				if (mFound)
-					return;
+			if (mFound)
+				return;
 
-				mBootloaderAddress = null;
-				mFound = true;
+			mBootloaderAddress = null;
+			mFound = true;
 
-				// Notify the waiting thread
-				synchronized (mLock) {
-					mLock.notifyAll();
-				}
+			// Notify the waiting thread
+			synchronized (mLock) {
+				mLock.notifyAll();
 			}
 		}, "Scanner timer").start();
 

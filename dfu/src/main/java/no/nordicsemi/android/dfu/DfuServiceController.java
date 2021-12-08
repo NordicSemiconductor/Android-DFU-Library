@@ -39,7 +39,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
 public class DfuServiceController implements DfuController {
-	private LocalBroadcastManager mBroadcastManager;
+	private final LocalBroadcastManager mBroadcastManager;
 	private boolean mPaused;
 	private boolean mAborted;
 

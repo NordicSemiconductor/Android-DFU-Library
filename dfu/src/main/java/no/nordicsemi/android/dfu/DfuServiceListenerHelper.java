@@ -54,8 +54,8 @@ public class DfuServiceListenerHelper {
 	private static ProgressBroadcastsReceiver mProgressBroadcastReceiver;
 
 	private static class LogBroadcastReceiver extends BroadcastReceiver {
+		private final Map<String, DfuLogListener> mListeners = new HashMap<>();
 		private DfuLogListener mGlobalLogListener;
-		private Map<String, DfuLogListener> mListeners = new HashMap<>();
 
 		private void setLogListener(final DfuLogListener globalLogListener) {
 			this.mGlobalLogListener = globalLogListener;
@@ -113,8 +113,8 @@ public class DfuServiceListenerHelper {
 	}
 
 	private static class ProgressBroadcastsReceiver extends BroadcastReceiver {
+		private final Map<String, DfuProgressListener> mListeners = new HashMap<>();
 		private DfuProgressListener mGlobalProgressListener;
-		private Map<String, DfuProgressListener> mListeners = new HashMap<>();
 
 		private void setProgressListener(final DfuProgressListener globalProgressListener) {
 			this.mGlobalProgressListener = globalProgressListener;

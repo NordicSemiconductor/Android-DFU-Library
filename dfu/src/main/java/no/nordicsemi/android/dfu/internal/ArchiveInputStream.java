@@ -81,9 +81,9 @@ public class ArchiveInputStream extends InputStream {
 	 * Contains bytes arrays with BIN files. HEX files are converted to BIN before being
      * added to this map.
 	 */
-	private Map<String, byte[]> entries;
+	private final Map<String, byte[]> entries;
+	private final CRC32 crc32;
 	private Manifest manifest;
-	private CRC32 crc32;
 
 	private byte[] applicationBytes;
 	private byte[] softDeviceBytes;

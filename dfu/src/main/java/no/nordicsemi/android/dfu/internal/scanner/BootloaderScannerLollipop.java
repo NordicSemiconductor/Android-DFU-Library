@@ -58,25 +58,22 @@ public class BootloaderScannerLollipop extends ScanCallback implements Bootloade
         mFound = false;
 
         // Add timeout
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Thread.sleep(BootloaderScanner.TIMEOUT);
-                } catch (final InterruptedException e) {
-                    // do nothing
-                }
+        new Thread(() -> {
+            try {
+                Thread.sleep(BootloaderScanner.TIMEOUT);
+            } catch (final InterruptedException e) {
+                // do nothing
+            }
 
-                if (mFound)
-                    return;
+            if (mFound)
+                return;
 
-                mBootloaderAddress = null;
-                mFound = true;
+            mBootloaderAddress = null;
+            mFound = true;
 
-                // Notify the waiting thread
-                synchronized (mLock) {
-                    mLock.notifyAll();
-                }
+            // Notify the waiting thread
+            synchronized (mLock) {
+                mLock.notifyAll();
             }
         }, "Scanner timer").start();
 
@@ -89,7 +86,7 @@ public class BootloaderScannerLollipop extends ScanCallback implements Bootloade
         /*
          * Android 8.1 onwards, stops unfiltered BLE scanning on screen off. Therefore we must add a filter to
          * get scan results in case the device screen is turned off as this may affect users wanting scan/connect to the device in background.
-         * See {@linktourl https://android.googlesource.com/platform/packages/apps/Bluetooth/+/319aeae6f4ebd13678b4f77375d1804978c4a1e1}
+         * See https://android.googlesource.com/platform/packages/apps/Bluetooth/+/319aeae6f4ebd13678b4f77375d1804978c4a1e1
          */
         final ScanSettings settings = new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build();
         if (adapter.isOffloadedFilteringSupported() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {

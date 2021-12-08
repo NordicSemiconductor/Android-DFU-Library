@@ -46,11 +46,12 @@ public class HexInputStream extends FilterInputStream {
 	private final int LINE_LENGTH = 128;
 
 	private final byte[] localBuf;
+	private final int available;
 	private int localPos;
 	private int pos;
 	private int size;
 	private int lastAddress;
-	private int available, bytesRead;
+	private int bytesRead;
 	private final int MBRSize;
 
 	/**
@@ -99,8 +100,8 @@ public class HexInputStream extends FilterInputStream {
 		this.available = calculateBinSize(mbrSize);
 	}
 
-	@SuppressWarnings("ResultOfMethodCallIgnored")
-	private int calculateBinSize(final int mbrSize) throws IOException {
+	@SuppressWarnings("DuplicateThrows")
+	private int calculateBinSize(final int mbrSize) throws HexFileValidationException, IOException {
 		int binSize = 0;
 		final InputStream in = this.in;
 		in.mark(in.available());
@@ -155,7 +156,7 @@ public class HexInputStream extends FilterInputStream {
 							binSize += lineSize;
 						// no break!
 					default:
-						final long toBeSkipped = lineSize * 2 /* 2 hex per one byte */ + 2 /* check sum */;
+						final long toBeSkipped = lineSize * 2L /* 2 hex per one byte */ + 2 /* check sum */;
 						skip(in, toBeSkipped);
 						break;
 				}
@@ -281,7 +282,7 @@ public class HexInputStream extends FilterInputStream {
 					// data type
 					if (lastAddress + offset < MBRSize) { // skip MBR
 						type = -1; // some other than 0
-						pos += skip(in, lineSize * 2 /* 2 hex per one byte */ + 2 /* check sum */);
+						pos += skip(in, lineSize * 2L /* 2 hex per one byte */ + 2 /* check sum */);
 					}
 					break;
 				case 0x01:
@@ -309,7 +310,7 @@ public class HexInputStream extends FilterInputStream {
 					break;
 				}
 				default:
-					final long toBeSkipped = lineSize * 2 /* 2 hex per one byte */ + 2 /* check sum */;
+					final long toBeSkipped = lineSize * 2L /* 2 hex per one byte */ + 2 /* check sum */;
 					pos += skip(in, toBeSkipped);
 					break;
 			}

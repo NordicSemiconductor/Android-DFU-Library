@@ -123,7 +123,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 							return;
 
 						// In Secure DFU we (usually, depends on the page size and PRN value) do not get any notification after the object is completed,
-						// therefor the lock must be notified here to resume the main process.
+						// therefore the lock must be notified here to resume the main process.
 						if (lastPacketTransferred || lastObjectPacketTransferred) {
 							mFirmwareUploadInProgress = false;
 							notifyLock();
