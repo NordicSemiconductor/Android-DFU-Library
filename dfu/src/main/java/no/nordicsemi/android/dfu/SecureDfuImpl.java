@@ -565,7 +565,7 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 								throw e;
 							}
 							mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Data object already executed");
-							// 到这里应该将错误标记清除，后续的流程才能正常执行。
+							// At this point, the error flag should be cleared, and the subsequent process can be executed normally.
 							mRemoteErrorOccurred = false;
 						}
 					} else {
