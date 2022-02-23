@@ -2,13 +2,23 @@ buildscript {
     // https://plugins.gradle.org/plugin/io.github.gradle-nexus.publish-plugin
     ext.gradle_nexus_publish_plugin = '1.1.0'
 
+    ext {
+        compose_version = '1.1.0-rc01'
+        kotlin_version = '1.6.0'
+        android_api_version = 31
+        android_min_api_version = 21
+    }
+
     repositories {
         google()
         mavenCentral()
         maven { url "https://plugins.gradle.org/m2/" }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.0.3'
+        classpath 'com.android.tools.build:gradle:7.1.1'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "io.spring.gradle:dependency-management-plugin:1.0.11.RELEASE"
+        classpath "com.google.dagger:hilt-android-gradle-plugin:2.40.4"
         classpath "io.github.gradle-nexus:publish-plugin:$gradle_nexus_publish_plugin"
     }
 }
