@@ -5,7 +5,7 @@ android {
     compileSdkVersion 31
 
     defaultConfig {
-        minSdkVersion 18
+        minSdkVersion 21
         targetSdkVersion 31
         versionCode getVersionCodeFromTags()
         versionName getVersionNameFromTags()

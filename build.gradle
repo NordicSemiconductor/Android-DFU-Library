@@ -16,7 +16,7 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:7.1.1'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.6.0"
         classpath "io.spring.gradle:dependency-management-plugin:1.0.11.RELEASE"
         classpath "com.google.dagger:hilt-android-gradle-plugin:2.40.4"
         classpath "io.github.gradle-nexus:publish-plugin:$gradle_nexus_publish_plugin"

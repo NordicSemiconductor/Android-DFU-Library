@@ -21,7 +21,6 @@
  */
 package no.nordicsemi.dfu.repository
 
-import android.app.Activity
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -29,21 +28,12 @@ import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
-import no.nordicsemi.android.dfu.DfuBaseService
-import no.nordicsemi.android.service.BleManagerStatus
-import no.nordicsemi.android.service.CloseableCoroutineScope
-import no.nordicsemi.dfu.R
 import no.nordicsemi.dfu.data.DFURepository
+import no.nordicsemi.dfu.profile.R
 import javax.inject.Inject
 
 @AndroidEntryPoint
-internal class DFUService : DfuBaseService() {
-
-    private val scope = CloseableCoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+internal class DFUService : Nori() {
 
     @Inject
     lateinit var repository: DFURepository
@@ -54,29 +44,6 @@ internal class DFUService : DfuBaseService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             createDfuNotificationChannel(this)
         }
-
-        repository.command.onEach {
-            stopSelf()
-        }.launchIn(scope)
-
-        repository.setNewStatus(BleManagerStatus.OK)
-    }
-
-    override fun getNotificationTarget(): Class<out Activity?>? {
-        /*
-		 * As a target activity the NotificationActivity is returned, not the MainActivity. This is because the notification must create a new task:
-		 * 
-		 * intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-		 * 
-		 * when user press it. Using NotificationActivity we can check whether the new activity is a root activity (that means no other activity was open before)
-		 * or that there is other activity already open. In the later case the notificationActivity will just be closed. System will restore the previous activity.
-		 * However if the application has been closed during upload and user click the notification a NotificationActivity will be launched as a root activity.
-		 * It will create and start the main activity and terminate itself.
-		 * 
-		 * This method may be used to restore the target activity in case the application was closed or is open. It may also be used to recreate an activity
-		 * history (see NotificationActivity).
-		 */
-        return Class.forName("no.nordicsemi.android.nrftoolbox.MainActivity") as Class<out Activity>
     }
 
     override fun isDebug(): Boolean {
@@ -96,12 +63,6 @@ internal class DFUService : DfuBaseService() {
         channel.lockscreenVisibility = Notification.VISIBILITY_PUBLIC
         val notificationManager =
             context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager?.createNotificationChannel(channel)
-    }
-
-    override fun onDestroy() {
-        repository.setNewStatus(BleManagerStatus.DISCONNECTED)
-        super.onDestroy()
-        scope.close()
+        notificationManager.createNotificationChannel(channel)
     }
 }
