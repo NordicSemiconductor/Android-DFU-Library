@@ -54,7 +54,6 @@ android {
 dependencies {
     implementation "no.nordicsemi.android:ble-common:2.4.0.beta02"
     implementation "no.nordicsemi.android.common:theme:1.0.2"
-    implementation "no.nordicsemi.android.common:service:1.0.2"
     implementation "no.nordicsemi.android.common:navigation:1.0.2"
     implementation "no.nordicsemi.android.common:uiscanner:1.0.2"
 

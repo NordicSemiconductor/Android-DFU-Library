@@ -82,7 +82,7 @@ OTA-DFU allows firmware upgrades to be issued and downloaded to products in the 
 and so enables OEMs to fix bugs and introduce new features to products that are already out on the market. 
 This brings added security and flexibility to product development when using the nRF5x Series SoCs.
 
-![Device Firmware Update](resources/dfu.png)
+![Device Firmware Update](profile_dfu/res/drawable/dfu.png)
 
 This repository contains a tested library for Android 4.3+ platform which may be used to perform 
 Device Firmware Update on the nRF5x device using a phone or a tablet.

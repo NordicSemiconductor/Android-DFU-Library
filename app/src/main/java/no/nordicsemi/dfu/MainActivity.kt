@@ -1,4 +1,4 @@
-package no.nordicsemi.android.nrftoolbox
+package no.nordicsemi.dfu
 
 import android.os.Bundle
 import androidx.activity.compose.setContent
@@ -10,7 +10,6 @@ import dagger.hilt.android.AndroidEntryPoint
 import no.nordicsemi.android.material.you.NordicActivity
 import no.nordicsemi.android.material.you.NordicTheme
 import no.nordicsemi.android.navigation.NavigationView
-import no.nordicsemi.dfu.HomeDestinations
 import no.nordicsemi.ui.scanner.ScannerDestinations
 
 @AndroidEntryPoint
@@ -25,7 +24,7 @@ class MainActivity : NordicActivity() {
                     color = MaterialTheme.colorScheme.surface,
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    NavigationView(HomeDestinations + ScannerDestinations )
+                    NavigationView(HomeDestinations + ScannerDestinations)
                 }
             }
         }
