@@ -14,10 +14,10 @@ internal class DFUProgressManager @Inject constructor(
     private val context: Context
 ) : DfuProgressListenerAdapter() {
 
-    val status = MutableStateFlow<DFUData>(ConnectingStatus)
+    val status = MutableStateFlow<DFUData>(IdleStatus)
 
     override fun onDeviceConnecting(deviceAddress: String) {
-        status.value = ConnectingStatus
+        status.value = WorkingStatus(Connecting)
     }
 
     override fun onDeviceConnected(deviceAddress: String) {
@@ -52,11 +52,11 @@ internal class DFUProgressManager @Inject constructor(
     }
 
     override fun onDeviceDisconnecting(deviceAddress: String?) {
-        status.value = DisconnectedStatus
+        status.value = WorkingStatus(Disconnecting)
     }
 
     override fun onDeviceDisconnected(deviceAddress: String) {
-        status.value = DisconnectedStatus
+        status.value = WorkingStatus(Disconnected)
     }
 
     override fun onDfuCompleted(deviceAddress: String) {

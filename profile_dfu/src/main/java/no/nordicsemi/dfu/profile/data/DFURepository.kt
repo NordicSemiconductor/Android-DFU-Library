@@ -30,8 +30,6 @@ internal class DFURepository @Inject constructor(
     }
 
     fun launch(scope: CoroutineScope) {
-        serviceManager.startService(DFUService::class.java, device!!)
-
         progressManager.registerListener()
         dfuManager.install(zipFile!!, device!!)
 

@@ -8,7 +8,7 @@ internal data class OnZipFileSelected(val file: Uri) : DFUViewEvent()
 
 internal object OnInstallButtonClick : DFUViewEvent()
 
-internal object OnPauseButtonClick : DFUViewEvent()
+internal object OnCloseButtonClick : DFUViewEvent()
 
 internal object OnStopButtonClick : DFUViewEvent()
 

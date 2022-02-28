@@ -25,7 +25,7 @@ class DFUManager @Inject constructor(
             .setPrepareDataObjectDelay(400)
             .setUnsafeExperimentalButtonlessServiceInSecureDfuEnabled(true)
 
-        starter.setZip(file.uri, file.path)
+        starter.setZip(file.uri, null)
         starter.start(context, DFUService::class.java)
     }
 }

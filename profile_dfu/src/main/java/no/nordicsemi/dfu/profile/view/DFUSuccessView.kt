@@ -40,7 +40,7 @@ internal fun DFUSuccessView(onEvent: (DFUViewEvent) -> Unit) {
 
         Spacer(modifier = Modifier.size(16.dp))
 
-        Button(onClick = { onEvent(OnPauseButtonClick) }) {
+        Button(onClick = { onEvent(OnCloseButtonClick) }) {
             Text(text = stringResource(id = R.string.dfu_done))
         }
     }
