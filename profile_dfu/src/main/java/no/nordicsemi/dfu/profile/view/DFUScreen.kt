@@ -2,7 +2,9 @@ package no.nordicsemi.dfu.profile.view
 
 import android.util.Log
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -18,6 +20,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import no.nordicsemi.dfu.profile.R
 import no.nordicsemi.dfu.profile.data.*
+import no.nordicsemi.dfu.profile.view.components.DFUSelectDeviceView
+import no.nordicsemi.dfu.profile.view.components.DFUSelectFileView
 import no.nordicsemi.dfu.profile.viewmodel.DFUViewModel
 import no.nordicsemi.ui.scanner.ui.exhaustive
 
@@ -31,30 +35,44 @@ fun DFUScreen() {
 
     Column {
         DFUAppBar()
-
         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
             Column(modifier = Modifier.padding(16.dp)) {
-                when (state) {
-                    is ReadFileState -> DFUSelectMainFileView(state, onEvent)
-                    is FileSummaryState -> DFUSummaryView(state, onEvent)
-                    is WorkingState -> WorkingStateView(state)
-                }.exhaustive
+                DFUSelectFileView(state.fileViewEntity, onEvent)
+
+                Spacer(modifier = Modifier.size(16.dp))
+
+                DFUSelectDeviceView(state.deviceViewEntity, onEvent)
             }
         }
+//        DFUSelectMainFileView(state, onEvent)
     }
+
+//    Column {
+//        DFUAppBar()
+//
+//        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+//            Column(modifier = Modifier.padding(16.dp)) {
+//                when (state) {
+//                    is ReadFileState -> DFUSelectMainFileView(state, onEvent)
+//                    is FileSummaryState -> DFUSummaryView(state, onEvent)
+//                    is WorkingState -> WorkingStateView(state)
+//                }.exhaustive
+//            }
+//        }
+//    }
 }
 
-@Composable
-private fun WorkingStateView(state: WorkingState) {
-    val viewModel: DFUViewModel = hiltViewModel()
-
-    when (state.result) {
-        is WorkingStatus -> WorkingStatusView(state.result)
-        IdleStatus -> {
-            Text(text = "Hello, World!")
-        }
-    }
-}
+//@Composable
+//private fun WorkingStateView(state: WorkingState) {
+//    val viewModel: DFUViewModel = hiltViewModel()
+//
+//    when (state.result) {
+//        is WorkingStatus -> WorkingStatusView(state.result)
+//        IdleStatus -> {
+//            Text(text = "Hello, World!")
+//        }
+//    }
+//}
 
 @Composable
 private fun WorkingStatusView(status: WorkingStatus) {

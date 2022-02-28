@@ -22,8 +22,16 @@
     <string name="dfu_file_type_bootloader">Bootloader</string>
     <string name="dfu_file_type_application">Application</string>
 
-    <string name="dfu_choose_file">Choose file</string>
-    <string name="dfu_choose_info">Please select .zip or .hex file with bootloader, application or soft device.</string>
+    <string name="dfu_choose_not_selected">Not selected</string>
+    <string name="dfu_choose_selected">Selected</string>
+
+    <string name="dfu_device">Device</string>
+    <string name="dfu_select_device">Select device</string>
+    <string name="dfu_select_device_info">Please select device to upload DFU.</string>
+
+    <string name="dfu_select_file">Select file</string>
+    <string name="dfu_choose_file">Upload file</string>
+    <string name="dfu_choose_info">Please select .zip file which will be used to be uploaded to the selected device.</string>
     <string name="dfu_choose_dat_info">Please select .dat file.</string>
 
     <string name="dfu_macro_dialog_title">File managers</string>
@@ -49,8 +57,15 @@
     <string name="dfu_display_status_validating">Validating</string>
     <string name="dfu_display_status">Status: %s</string>
 
+    <string name="dfu_upload_file">Select file</string>
+    <string name="dfu_ic_upload_file">Upload DFU file.</string>
+    <string name="dfu_ic_abort">Abort installing DFU.</string>
+
     <string name="dfu_success">Success!</string>
     <string name="dfu_unknown_error">Unknown error.</string>
+
+    <string name="dfu_device_name">Name: <b>%s</b></string>
+    <string name="dfu_device_address">Address: <b>%s</b></string>
 
     <string name="dfu_file_name">File name: <b>%s</b></string>
     <string name="dfu_file_size">File size: <b>%d</b> bytes</string>

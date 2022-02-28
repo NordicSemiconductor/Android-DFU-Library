@@ -13,6 +13,8 @@ import no.nordicsemi.dfu.profile.data.DFURepository
 import no.nordicsemi.dfu.profile.data.DFU_SERVICE_UUID
 import no.nordicsemi.dfu.profile.data.IdleStatus
 import no.nordicsemi.dfu.profile.view.*
+import no.nordicsemi.dfu.profile.view.components.NotSelectedFileViewEntity
+import no.nordicsemi.dfu.profile.view.components.SelectedFileViewEntity
 import no.nordicsemi.ui.scanner.ScannerDestinationId
 import no.nordicsemi.ui.scanner.ui.exhaustive
 import no.nordicsemi.ui.scanner.ui.getDevice
@@ -24,13 +26,13 @@ internal class DFUViewModel @Inject constructor(
     private val navigationManager: NavigationManager
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow<DFUViewState>(ReadFileState())
+    private val _state = MutableStateFlow(DFUViewState())
     val state = _state.asStateFlow()
 
     init {
         repository.data.onEach {
             if (it !is IdleStatus) {
-                _state.value = WorkingState(it)
+//                _state.value = WorkingState(it)
             }
         }.launchIn(viewModelScope)
     }
@@ -50,7 +52,7 @@ internal class DFUViewModel @Inject constructor(
             is CancelDestinationResult -> { /* do nothing */ }
             is SuccessDestinationResult -> {
                 repository.device = args.getDevice()
-                _state.value = FileSummaryState(repository.zipFile!!, repository.device!!)
+//                _state.value = FileSummaryState(repository.zipFile!!, repository.device!!)
             }
             null -> navigationManager.navigateTo(ScannerDestinationId)
         }.exhaustive
@@ -60,7 +62,7 @@ internal class DFUViewModel @Inject constructor(
         when (event) {
             OnDisconnectButtonClick -> navigationManager.navigateUp()
             OnInstallButtonClick -> repository.launch(viewModelScope)
-            OnStopButtonClick -> repository.stop()
+            OnAbortButtonClick -> repository.abort()
             is OnZipFileSelected -> onZipFileSelected(event.file)
             NavigateUp -> navigationManager.navigateUp()
             OnCloseButtonClick -> navigationManager.navigateUp()
@@ -70,9 +72,10 @@ internal class DFUViewModel @Inject constructor(
     private fun onZipFileSelected(uri: Uri) {
         val zipFile = repository.setZipFile(uri)
         if (zipFile == null) {
-            _state.value = ReadFileState(true)
+            _state.value = _state.value.copy(fileViewEntity = NotSelectedFileViewEntity(true))
         } else {
-            requestBluetoothDevice()
+            _state.value = _state.value.copy(fileViewEntity = SelectedFileViewEntity(zipFile))
+//            requestBluetoothDevice()
         }
     }
 

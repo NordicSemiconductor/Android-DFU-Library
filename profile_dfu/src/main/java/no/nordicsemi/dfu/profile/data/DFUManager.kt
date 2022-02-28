@@ -2,6 +2,7 @@ package no.nordicsemi.dfu.profile.data
 
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
+import no.nordicsemi.android.dfu.DfuServiceController
 import no.nordicsemi.android.dfu.DfuServiceInitiator
 import no.nordicsemi.dfu.profile.repository.DFUService
 import no.nordicsemi.ui.scanner.DiscoveredBluetoothDevice
@@ -15,7 +16,7 @@ class DFUManager @Inject constructor(
     private val context: Context
 ) {
 
-    fun install(file: ZipFile, device: DiscoveredBluetoothDevice) {
+    fun install(file: ZipFile, device: DiscoveredBluetoothDevice): DfuServiceController {
         val starter = DfuServiceInitiator(device.address())
             .setDeviceName(device.displayName())
 //        .setKeepBond(keepBond)
@@ -26,6 +27,6 @@ class DFUManager @Inject constructor(
             .setUnsafeExperimentalButtonlessServiceInSecureDfuEnabled(true)
 
         starter.setZip(file.uri, null)
-        starter.start(context, DFUService::class.java)
+        return starter.start(context, DFUService::class.java)
     }
 }

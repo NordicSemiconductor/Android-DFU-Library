@@ -22,22 +22,22 @@ import no.nordicsemi.dfu.profile.data.ZipFile
 import no.nordicsemi.dfu.profile.R
 import no.nordicsemi.ui.scanner.DiscoveredBluetoothDevice
 
-@Composable
-internal fun DFUSummaryView(state: FileSummaryState, onEvent: (DFUViewEvent) -> Unit) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        DeviceDetailsView(state.device)
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        FileDetailsView(state.file)
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(onClick = { onEvent(OnInstallButtonClick) }) {
-            Text(text = stringResource(id = R.string.dfu_install))
-        }
-    }
-}
+//@Composable
+//internal fun DFUSummaryView(state: FileSummaryState, onEvent: (DFUViewEvent) -> Unit) {
+//    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+//        DeviceDetailsView(state.device)
+//
+//        Spacer(modifier = Modifier.height(16.dp))
+//
+//        FileDetailsView(state.file)
+//
+//        Spacer(modifier = Modifier.height(16.dp))
+//
+//        Button(onClick = { onEvent(OnInstallButtonClick) }) {
+//            Text(text = stringResource(id = R.string.dfu_install))
+//        }
+//    }
+//}
 
 @Composable
 internal fun DeviceDetailsView(device: DiscoveredBluetoothDevice) {

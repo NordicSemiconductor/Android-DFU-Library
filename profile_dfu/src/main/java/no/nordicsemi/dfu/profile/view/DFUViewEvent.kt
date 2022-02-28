@@ -10,7 +10,7 @@ internal object OnInstallButtonClick : DFUViewEvent()
 
 internal object OnCloseButtonClick : DFUViewEvent()
 
-internal object OnStopButtonClick : DFUViewEvent()
+internal object OnAbortButtonClick : DFUViewEvent()
 
 internal object OnDisconnectButtonClick : DFUViewEvent()
 

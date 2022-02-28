@@ -30,15 +30,10 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import dagger.hilt.android.AndroidEntryPoint
 import no.nordicsemi.android.dfu.DfuBaseService
-import no.nordicsemi.dfu.profile.data.DFURepository
 import no.nordicsemi.dfu.profile.R
-import javax.inject.Inject
 
 @AndroidEntryPoint
 internal class DFUService : DfuBaseService() {
-
-    @Inject
-    lateinit var repository: DFURepository
 
     override fun onCreate() {
         super.onCreate()
