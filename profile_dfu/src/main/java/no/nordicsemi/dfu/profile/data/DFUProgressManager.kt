@@ -84,13 +84,4 @@ internal class DFUProgressManager @Inject constructor(
     fun unregisterListener() {
         DfuServiceListenerHelper.unregisterProgressListener(context, this)
     }
-
-    init {
-        Log.d("AAATESTAAA", "init()")
-    }
-
-    protected fun finalize() {
-        // finalization logic
-        Log.d("AAATESTAAA", "finalize()")
-    }
 }

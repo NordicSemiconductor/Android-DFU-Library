@@ -9,12 +9,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import no.nordicsemi.android.navigation.*
-import no.nordicsemi.dfu.profile.data.DFURepository
-import no.nordicsemi.dfu.profile.data.DFU_SERVICE_UUID
-import no.nordicsemi.dfu.profile.data.IdleStatus
+import no.nordicsemi.dfu.profile.data.*
 import no.nordicsemi.dfu.profile.view.*
-import no.nordicsemi.dfu.profile.view.components.NotSelectedFileViewEntity
-import no.nordicsemi.dfu.profile.view.components.SelectedFileViewEntity
+import no.nordicsemi.dfu.profile.view.DFUProgressViewEntity.Companion.createErrorStage
 import no.nordicsemi.ui.scanner.ScannerDestinationId
 import no.nordicsemi.ui.scanner.ui.exhaustive
 import no.nordicsemi.ui.scanner.ui.getDevice
@@ -31,8 +28,26 @@ internal class DFUViewModel @Inject constructor(
 
     init {
         repository.data.onEach {
-            if (it !is IdleStatus) {
-//                _state.value = WorkingState(it)
+            ((it as? WorkingStatus)?.status as? EnablingDfu)?.let {
+                _state.value = _state.value.copy(progressViewEntity = DFUProgressViewEntity.createDfuStage())
+            }
+
+            ((it as? WorkingStatus)?.status as? Completed)?.let {
+                _state.value = _state.value.copy(progressViewEntity = DFUProgressViewEntity.createSuccessStage())
+            }
+
+            ((it as? WorkingStatus)?.status as? ProgressUpdate)?.let {
+                _state.value = _state.value.copy(progressViewEntity = DFUProgressViewEntity.createInstallingStage(it.progress))
+            }
+
+            ((it as? WorkingStatus)?.status as? Aborted)?.let {
+                val newStatus = (_state.value.progressViewEntity as WorkingProgressViewEntity).status.createErrorStage("Aborted")
+                _state.value = _state.value.copy(progressViewEntity = newStatus)
+            }
+
+            ((it as? WorkingStatus)?.status as? Error)?.let {
+                val newStatus = (_state.value.progressViewEntity as WorkingProgressViewEntity).status.createErrorStage(it.message)
+                _state.value = _state.value.copy(progressViewEntity = newStatus)
             }
         }.launchIn(viewModelScope)
     }
@@ -49,10 +64,14 @@ internal class DFUViewModel @Inject constructor(
 
     private fun handleArgs(args: DestinationResult?) {
         when (args) {
-            is CancelDestinationResult -> { /* do nothing */ }
+            is CancelDestinationResult -> { /* do nothing */
+            }
             is SuccessDestinationResult -> {
                 repository.device = args.getDevice()
-//                _state.value = FileSummaryState(repository.zipFile!!, repository.device!!)
+                _state.value = _state.value.copy(
+                    deviceViewEntity = SelectedDeviceViewEntity(args.getDevice()),
+                    progressViewEntity = WorkingProgressViewEntity()
+                )
             }
             null -> navigationManager.navigateTo(ScannerDestinationId)
         }.exhaustive
@@ -61,12 +80,18 @@ internal class DFUViewModel @Inject constructor(
     fun onEvent(event: DFUViewEvent) {
         when (event) {
             OnDisconnectButtonClick -> navigationManager.navigateUp()
-            OnInstallButtonClick -> repository.launch(viewModelScope)
+            OnInstallButtonClick -> onInstallButtonClick()
             OnAbortButtonClick -> repository.abort()
             is OnZipFileSelected -> onZipFileSelected(event.file)
             NavigateUp -> navigationManager.navigateUp()
             OnCloseButtonClick -> navigationManager.navigateUp()
+            OnSelectDeviceButtonClick -> requestBluetoothDevice()
         }.exhaustive
+    }
+
+    private fun onInstallButtonClick() {
+        repository.launch(viewModelScope)
+        _state.value = _state.value.copy(progressViewEntity = DFUProgressViewEntity.createBootloaderStage())
     }
 
     private fun onZipFileSelected(uri: Uri) {
@@ -74,8 +99,10 @@ internal class DFUViewModel @Inject constructor(
         if (zipFile == null) {
             _state.value = _state.value.copy(fileViewEntity = NotSelectedFileViewEntity(true))
         } else {
-            _state.value = _state.value.copy(fileViewEntity = SelectedFileViewEntity(zipFile))
-//            requestBluetoothDevice()
+            _state.value = _state.value.copy(
+                fileViewEntity = SelectedFileViewEntity(zipFile),
+                deviceViewEntity = NotSelectedDeviceViewEntity
+            )
         }
     }
 

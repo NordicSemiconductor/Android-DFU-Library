@@ -1,4 +1,4 @@
-package no.nordicsemi.dfu.profile.view.components
+package no.nordicsemi.dfu.profile.view
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
@@ -13,18 +13,16 @@ import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun CardComponent(
+internal fun DisabledCardComponent(
     @DrawableRes titleIcon: Int,
     title: String,
     description: String,
     primaryButtonTitle: String? = null,
-    primaryButtonAction: (() -> Unit)? = null,
     secondaryButtonTitle: String? = null,
-    secondaryButtonAction: (() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
     OutlinedCard(
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = MaterialTheme.colorScheme.surfaceVariant
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -35,7 +33,7 @@ internal fun CardComponent(
                 modifier = Modifier
                     .size(40.dp)
                     .background(
-                        color = MaterialTheme.colorScheme.secondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         shape = CircleShape
                     )
             ) {
@@ -69,13 +67,19 @@ internal fun CardComponent(
             horizontalArrangement = Arrangement.End
         ) {
             secondaryButtonTitle?.let {
-                OutlinedButton(onClick = { secondaryButtonAction?.invoke() }) {
+                OutlinedButton(
+                    onClick = {  },
+                    enabled = false
+                ) {
                     Text(text = it)
                 }
             }
 
             primaryButtonTitle?.let {
-                Button(onClick = { primaryButtonAction?.invoke() }) {
+                Button(
+                    onClick = {  },
+                    enabled = false
+                ) {
                     Text(text = it)
                 }
             }

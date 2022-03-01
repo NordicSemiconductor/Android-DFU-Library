@@ -19,8 +19,6 @@ class MainActivity : NordicActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        Log.d("AAATESTAAA", "onCreate()")
-
         setContent {
             NordicTheme {
                 Surface(
@@ -31,10 +29,5 @@ class MainActivity : NordicActivity() {
                 }
             }
         }
-    }
-
-    override fun onDestroy() {
-        Log.d("AAATESTAAA", "onDestroy()")
-        super.onDestroy()
     }
 }

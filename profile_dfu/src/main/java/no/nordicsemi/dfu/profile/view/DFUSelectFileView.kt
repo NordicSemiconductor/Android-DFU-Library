@@ -1,4 +1,4 @@
-package no.nordicsemi.dfu.profile.view.components
+package no.nordicsemi.dfu.profile.view
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -14,8 +14,6 @@ import androidx.compose.ui.unit.dp
 import no.nordicsemi.android.dfu.DfuBaseService
 import no.nordicsemi.dfu.profile.R
 import no.nordicsemi.dfu.profile.data.ZipFile
-import no.nordicsemi.dfu.profile.view.DFUViewEvent
-import no.nordicsemi.dfu.profile.view.OnZipFileSelected
 import no.nordicsemi.ui.scanner.ui.exhaustive
 
 internal sealed class DFUSelectFileViewEntity

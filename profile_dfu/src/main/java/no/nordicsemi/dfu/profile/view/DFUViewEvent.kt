@@ -12,6 +12,8 @@ internal object OnCloseButtonClick : DFUViewEvent()
 
 internal object OnAbortButtonClick : DFUViewEvent()
 
+internal object OnSelectDeviceButtonClick : DFUViewEvent()
+
 internal object OnDisconnectButtonClick : DFUViewEvent()
 
 internal object NavigateUp : DFUViewEvent()

@@ -25,12 +25,24 @@
     <string name="dfu_choose_not_selected">Not selected</string>
     <string name="dfu_choose_selected">Selected</string>
 
+    <string name="dfu_abort">Abort</string>
+    <string name="dfu_progress">Progress</string>
+    <string name="dfu_progress_idle">Idle</string>
+    <string name="dfu_progress_running">Running</string>
+    <string name="dfu_progress_run">Run</string>
+    <string name="dfu_progress_stage_bootloader">Enabling bootloader</string>
+    <string name="dfu_progress_stage_dfu">Initializing DFU</string>
+    <string name="dfu_progress_stage_installing">Uploading firmware</string>
+    <string name="dfu_progress_stage_completed">Completed</string>
+    <string name="dfu_progress_stage_error">Error: %s</string>
+    <string name="dfu_progress_icon">Icon indicating progress or result of the selected stage.</string>
+
     <string name="dfu_device">Device</string>
     <string name="dfu_select_device">Select device</string>
     <string name="dfu_select_device_info">Please select device to upload DFU.</string>
 
     <string name="dfu_select_file">Select file</string>
-    <string name="dfu_choose_file">Upload file</string>
+    <string name="dfu_choose_file">File</string>
     <string name="dfu_choose_info">Please select .zip file which will be used to be uploaded to the selected device.</string>
     <string name="dfu_choose_dat_info">Please select .dat file.</string>
 
@@ -63,6 +75,7 @@
 
     <string name="dfu_success">Success!</string>
     <string name="dfu_unknown_error">Unknown error.</string>
+    <string name="dfu_unknown">Unknown</string>
 
     <string name="dfu_device_name">Name: <b>%s</b></string>
     <string name="dfu_device_address">Address: <b>%s</b></string>
