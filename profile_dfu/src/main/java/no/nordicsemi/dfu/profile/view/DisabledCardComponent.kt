@@ -1,15 +1,20 @@
 package no.nordicsemi.dfu.profile.view
 
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import no.nordicsemi.android.material.you.VerticalDivider
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -21,9 +26,7 @@ internal fun DisabledCardComponent(
     secondaryButtonTitle: String? = null,
     content: @Composable () -> Unit
 ) {
-    OutlinedCard(
-        containerColor = MaterialTheme.colorScheme.surfaceVariant
-    ) {
+    Column {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start,
@@ -46,43 +49,48 @@ internal fun DisabledCardComponent(
             }
             Spacer(modifier = Modifier.size(16.dp))
 
-            Column {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge
+            )
         }
 
-        content()
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.End
-        ) {
-            secondaryButtonTitle?.let {
-                OutlinedButton(
-                    onClick = {  },
-                    enabled = false
+        Row {
+            VerticalDivider()
+
+            Spacer(modifier = Modifier.size(16.dp))
+
+            Column {
+                content()
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.End
                 ) {
-                    Text(text = it)
+                    secondaryButtonTitle?.let {
+                        OutlinedButton(
+                            onClick = { },
+                            enabled = false
+                        ) {
+                            Text(text = it)
+                        }
+                    }
+
+                    primaryButtonTitle?.let {
+                        Button(
+                            onClick = { },
+                            enabled = false
+                        ) {
+                            Text(text = it)
+                        }
+                    }
                 }
             }
 
-            primaryButtonTitle?.let {
-                Button(
-                    onClick = {  },
-                    enabled = false
-                ) {
-                    Text(text = it)
-                }
-            }
+            VerticalDivider()
         }
     }
 }
