@@ -21,6 +21,7 @@ internal fun DisabledCardComponent(
     description: String,
     primaryButtonTitle: String? = null,
     secondaryButtonTitle: String? = null,
+    showVerticalDivider: Boolean = true,
     content: @Composable () -> Unit
 ) {
     Column {
@@ -44,58 +45,60 @@ internal fun DisabledCardComponent(
                     modifier = Modifier.align(Alignment.Center)
                 )
             }
+
             Spacer(modifier = Modifier.size(16.dp))
 
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleLarge
             )
+
+            Spacer(modifier = Modifier.size(16.dp))
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(55.dp) //From ButtonDefaults = minHeight + 2*HorizontalPadding
+                    .padding(start = 16.dp),
+                horizontalArrangement = Arrangement.End
+            ) {
+                secondaryButtonTitle?.let {
+                    OutlinedButton(
+                        onClick = { },
+                        enabled = false,
+                    ) {
+                        Text(text = it)
+                    }
+                }
+
+                primaryButtonTitle?.let {
+                    Button(
+                        onClick = { },
+                        enabled = false,
+                    ) {
+                        Text(text = it)
+                    }
+                }
+            }
         }
 
 
         Row(modifier = Modifier.height(IntrinsicSize.Min)) {
-            Box(
-                modifier = Modifier
-                    .padding(start = 34.dp)
-                    .fillMaxHeight()
-                    .width(4.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-            ) { }
-
-            Spacer(modifier = Modifier.size(16.dp))
-
-            Column {
-                content()
-
-                Spacer(modifier = Modifier.size(16.dp))
-
-                Row(
+            if (showVerticalDivider) {
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(55.dp) //From ButtonDefaults = minHeight + 2*HorizontalPadding
-                        .padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    secondaryButtonTitle?.let {
-                        OutlinedButton(
-                            onClick = { },
-                            enabled = false,
-                        ) {
-                            Text(text = it)
-                        }
-                    }
-
-                    primaryButtonTitle?.let {
-                        Button(
-                            onClick = { },
-                            enabled = false,
-                        ) {
-                            Text(text = it)
-                        }
-                    }
-                }
+                        .padding(start = 34.dp)
+                        .fillMaxHeight()
+                        .width(4.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                ) { }
+                Spacer(modifier = Modifier.size(16.dp))
+            } else {
+                Spacer(modifier = Modifier.size(8.dp))
             }
+
+            content()
         }
     }
 }

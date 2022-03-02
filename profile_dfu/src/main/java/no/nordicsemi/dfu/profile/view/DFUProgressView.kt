@@ -3,6 +3,7 @@ package no.nordicsemi.dfu.profile.view
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,6 +39,7 @@ private fun DisabledDFUProgressView(viewEntity: ProgressItemViewEntity = Progres
         title = stringResource(id = R.string.dfu_progress),
         description = stringResource(id = R.string.dfu_progress_idle),
         primaryButtonTitle = stringResource(id = R.string.dfu_progress_run),
+        showVerticalDivider = false
     ) {
         ProgressItem(viewEntity)
     }
@@ -50,7 +52,8 @@ private fun DFUCompletedProgressView(
     CardComponent(
         titleIcon = R.drawable.ic_file_upload,
         title = stringResource(id = R.string.dfu_progress),
-        description = stringResource(id = R.string.dfu_progress_running)
+        description = stringResource(id = R.string.dfu_progress_running),
+        showVerticalDivider = false
     ) {
         ProgressItem(viewEntity)
     }
@@ -66,7 +69,9 @@ private fun DFURunningProgressView(
         title = stringResource(id = R.string.dfu_progress),
         description = stringResource(id = R.string.dfu_progress_running),
         primaryButtonTitle = stringResource(id = R.string.dfu_abort),
-        primaryButtonAction = { onEvent(OnAbortButtonClick) }
+        primaryButtonAction = { onEvent(OnAbortButtonClick) },
+        redButtonColor = true,
+        showVerticalDivider = false
     ) {
         ProgressItem(viewEntity)
     }
@@ -81,7 +86,8 @@ private fun DFUIdleProgressView(
         title = stringResource(id = R.string.dfu_progress),
         description = stringResource(id = R.string.dfu_progress_running),
         primaryButtonTitle = stringResource(id = R.string.dfu_progress_run),
-        primaryButtonAction = { onEvent(OnInstallButtonClick) }
+        primaryButtonAction = { onEvent(OnInstallButtonClick) },
+        showVerticalDivider = false
     ) {
         ProgressItem(ProgressItemViewEntity())
     }
@@ -99,13 +105,19 @@ private fun ProgressItem(viewEntity: ProgressItemViewEntity) {
         Spacer(modifier = Modifier.size(8.dp))
 
         if (viewEntity.installationStatus == ProgressItemStatus.WORKING) {
-            ProgressItem(
-                stringResource(
-                    id = R.string.dfu_display_status_progress_update,
-                    viewEntity.progress
-                ),
-                viewEntity.installationStatus
-            )
+            Column {
+                ProgressItem(
+                    stringResource(
+                        id = R.string.dfu_display_status_progress_update,
+                        viewEntity.progress
+                    ),
+                    viewEntity.installationStatus
+                )
+                LinearProgressIndicator(
+                    progress = viewEntity.progress/100f,
+                    modifier = Modifier.padding(horizontal = 32.dp).fillMaxWidth()
+                )
+            }
         } else {
             ProgressItem(
                 stringResource(id = R.string.dfu_progress_stage_installing),
@@ -127,6 +139,7 @@ private fun ProgressItem(viewEntity: ProgressItemViewEntity) {
                 viewEntity.resultStatus
             )
         }
+        Spacer(modifier = Modifier.size(16.dp))
     }
 }
 
@@ -153,8 +166,8 @@ private fun ProgressItem(text: String, status: ProgressItemStatus) {
 @Composable
 private fun ProgressItemStatus.toColor(): Color {
     return when (this) {
-        ProgressItemStatus.DISABLED -> MaterialTheme.colorScheme.onSurfaceVariant
-        ProgressItemStatus.WORKING -> Color.Unspecified
+        ProgressItemStatus.DISABLED -> MaterialTheme.colorScheme.surfaceVariant
+        ProgressItemStatus.WORKING -> MaterialTheme.colorScheme.onBackground
         ProgressItemStatus.SUCCESS -> colorResource(id = R.color.nordicGrass)
         ProgressItemStatus.ERROR -> MaterialTheme.colorScheme.error
     }
@@ -163,7 +176,7 @@ private fun ProgressItemStatus.toColor(): Color {
 @DrawableRes
 private fun ProgressItemStatus.toImageRes(): Int {
     return when (this) {
-        ProgressItemStatus.DISABLED -> R.drawable.ic_remove
+        ProgressItemStatus.DISABLED -> R.drawable.ic_dot
         ProgressItemStatus.WORKING -> R.drawable.ic_arrow_right
         ProgressItemStatus.SUCCESS -> R.drawable.ic_check
         ProgressItemStatus.ERROR -> R.drawable.ic_cross

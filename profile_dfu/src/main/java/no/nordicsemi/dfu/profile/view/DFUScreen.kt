@@ -9,6 +9,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
@@ -26,15 +27,14 @@ fun DFUScreen() {
 
     Column {
         DFUAppBar()
-        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+        Column(
+            modifier = Modifier.verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             OutlinedCard(modifier = Modifier.padding(16.dp)) {
-                DFUSelectFileView(state.fileViewEntity, onEvent)
+                DFUSelectFileView(state.isRunning(), state.fileViewEntity, onEvent)
 
-                Spacer(modifier = Modifier.size(16.dp))
-
-                DFUSelectDeviceView(state.deviceViewEntity, onEvent)
-
-                Spacer(modifier = Modifier.size(16.dp))
+                DFUSelectedDeviceView(state.isRunning(), state.deviceViewEntity, onEvent)
 
                 DFUProgressView(state.progressViewEntity, onEvent)
 

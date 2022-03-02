@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import no.nordicsemi.dfu.profile.R
+import no.nordicsemi.dfu.profile.util.parseBold
 import no.nordicsemi.ui.scanner.DiscoveredBluetoothDevice
 import no.nordicsemi.ui.scanner.ui.exhaustive
 
@@ -22,11 +23,15 @@ internal object NotSelectedDeviceViewEntity : DFUSelectDeviceViewEntity()
 internal data class SelectedDeviceViewEntity(val device: DiscoveredBluetoothDevice) : DFUSelectDeviceViewEntity()
 
 @Composable
-internal fun DFUSelectDeviceView(viewEntity: DFUSelectDeviceViewEntity, onEvent: (DFUViewEvent) -> Unit) {
+internal fun DFUSelectedDeviceView(isRunning: Boolean, viewEntity: DFUSelectDeviceViewEntity, onEvent: (DFUViewEvent) -> Unit) {
     when (viewEntity) {
         DisabledSelectedDeviceViewEntity -> DFUDisabledSelectedDeviceView()
         is NotSelectedDeviceViewEntity -> DFUNotSelectedDeviceView(onEvent)
-        is SelectedDeviceViewEntity -> DFUSelectDeviceView(viewEntity, onEvent)
+        is SelectedDeviceViewEntity -> if (!isRunning) {
+            DFUSelectedDeviceView(viewEntity, onEvent)
+        } else {
+            DFUSelectedDeviceNoActionView(viewEntity)
+        }
     }.exhaustive
 }
 
@@ -41,7 +46,8 @@ internal fun DFUDisabledSelectedDeviceView() {
         Text(
             text = stringResource(id = R.string.dfu_select_device_info),
             style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(horizontal = 16.dp)
+            modifier = Modifier.padding(horizontal = 16.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant
         )
     }
 }
@@ -63,9 +69,12 @@ internal fun DFUNotSelectedDeviceView(onEvent: (DFUViewEvent) -> Unit) {
     }
 }
 
+private const val DEVICE_NAME = "Name: <b>%s</b>"
+private const val DEVICE_ADDRESS = "Address: <b>%s</b>"
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun DFUSelectDeviceView(viewEntity: SelectedDeviceViewEntity, onEvent: (DFUViewEvent) -> Unit) {
+internal fun DFUSelectedDeviceView(viewEntity: SelectedDeviceViewEntity, onEvent: (DFUViewEvent) -> Unit) {
     CardComponent(
         titleIcon = R.drawable.ic_bluetooth,
         title = stringResource(id = R.string.dfu_device),
@@ -74,18 +83,49 @@ internal fun DFUSelectDeviceView(viewEntity: SelectedDeviceViewEntity, onEvent: 
         secondaryButtonAction = { onEvent(OnSelectDeviceButtonClick) }
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.Start
         ) {
             Text(
-                text = stringResource(id = R.string.dfu_device_name, viewEntity.device.displayName() ?: "No name"),
+                text = String.format(DEVICE_NAME, viewEntity.device.displayName() ?: "No name").parseBold(),
                 style = MaterialTheme.typography.bodyMedium
             )
 
             Spacer(modifier = Modifier.size(4.dp))
 
             Text(
-                text = stringResource(id = R.string.dfu_device_address, viewEntity.device.displayAddress()),
+                text = String.format(DEVICE_ADDRESS, viewEntity.device.displayAddress()).parseBold(),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun DFUSelectedDeviceNoActionView(viewEntity: SelectedDeviceViewEntity) {
+    CardComponent(
+        titleIcon = R.drawable.ic_bluetooth,
+        title = stringResource(id = R.string.dfu_device),
+        description = stringResource(id = R.string.dfu_choose_selected)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalAlignment = Alignment.Start
+        ) {
+            Text(
+                text = String.format(DEVICE_NAME, viewEntity.device.displayName() ?: "No name").parseBold(),
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+            Spacer(modifier = Modifier.size(4.dp))
+
+            Text(
+                text = String.format(DEVICE_ADDRESS, viewEntity.device.displayAddress()).parseBold(),
                 style = MaterialTheme.typography.bodyMedium,
             )
         }

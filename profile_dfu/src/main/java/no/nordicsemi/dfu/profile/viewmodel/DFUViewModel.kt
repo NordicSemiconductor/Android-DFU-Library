@@ -104,6 +104,12 @@ internal class DFUViewModel @Inject constructor(
                 deviceViewEntity = NotSelectedDeviceViewEntity
             )
         }
+        if (repository.device != null) {
+            _state.value = _state.value.copy(
+                progressViewEntity = WorkingProgressViewEntity(),
+                deviceViewEntity = SelectedDeviceViewEntity(repository.device!!)
+            )
+        }
     }
 
     override fun onCleared() {

@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import no.nordicsemi.android.dfu.DfuBaseService
 import no.nordicsemi.dfu.profile.R
 import no.nordicsemi.dfu.profile.data.ZipFile
+import no.nordicsemi.dfu.profile.util.parseBold
 import no.nordicsemi.ui.scanner.ui.exhaustive
 
 internal sealed class DFUSelectFileViewEntity
@@ -23,10 +24,14 @@ internal data class NotSelectedFileViewEntity(val isError: Boolean = false) : DF
 internal data class SelectedFileViewEntity(val zipFile: ZipFile) : DFUSelectFileViewEntity()
 
 @Composable
-internal fun DFUSelectFileView(viewEntity: DFUSelectFileViewEntity, onEvent: (DFUViewEvent) -> Unit) {
+internal fun DFUSelectFileView(isRunning: Boolean, viewEntity: DFUSelectFileViewEntity, onEvent: (DFUViewEvent) -> Unit) {
     when (viewEntity) {
         is NotSelectedFileViewEntity -> DFUNotSelectedFileView(viewEntity, onEvent)
-        is SelectedFileViewEntity -> DFUSelectFileView(viewEntity.zipFile, onEvent)
+        is SelectedFileViewEntity -> if (!isRunning) {
+            DFUSelectFileView(viewEntity.zipFile, onEvent)
+        } else {
+            DFUSelectFileNoActionView(viewEntity.zipFile)
+        }
     }.exhaustive
 }
 
@@ -59,6 +64,9 @@ internal fun DFUNotSelectedFileView(viewEntity: NotSelectedFileViewEntity, onEve
     }
 }
 
+private const val FILE_NAME = "File name: <b>%s</b>"
+private const val FILE_SIZE = "File size: <b>%d</b> bytes"
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun DFUSelectFileView(zipFile: ZipFile, onEvent: (DFUViewEvent) -> Unit) {
@@ -78,14 +86,41 @@ internal fun DFUSelectFileView(zipFile: ZipFile, onEvent: (DFUViewEvent) -> Unit
             horizontalAlignment = Alignment.Start
         ) {
             Text(
-                text = stringResource(id = R.string.dfu_file_name, zipFile.name),
+                text = String.format(FILE_NAME, zipFile.name).parseBold(),
                 style = MaterialTheme.typography.bodyMedium
             )
 
             Spacer(modifier = Modifier.size(4.dp))
 
             Text(
-                text = stringResource(id = R.string.dfu_file_size, zipFile.size),
+                text = String.format(FILE_SIZE, zipFile.size).parseBold(),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun DFUSelectFileNoActionView(zipFile: ZipFile) {
+    CardComponent(
+        titleIcon = R.drawable.ic_upload_file,
+        title = stringResource(id = R.string.dfu_choose_file),
+        description = stringResource(id = R.string.dfu_choose_selected)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            horizontalAlignment = Alignment.Start
+        ) {
+            Text(
+                text = String.format(FILE_NAME, zipFile.name).parseBold(),
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+            Spacer(modifier = Modifier.size(4.dp))
+
+            Text(
+                text = String.format(FILE_SIZE, zipFile.size).parseBold(),
                 style = MaterialTheme.typography.bodyMedium,
             )
         }

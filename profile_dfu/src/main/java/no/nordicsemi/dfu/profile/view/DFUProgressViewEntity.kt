@@ -79,7 +79,7 @@ data class ProgressItemViewEntity(
     fun isRunning(): Boolean {
         return (bootloaderStatus != ProgressItemStatus.DISABLED
                 || dfuStatus != ProgressItemStatus.DISABLED
-                || installationStatus != ProgressItemStatus.DISABLED)
+                || installationStatus == ProgressItemStatus.WORKING)
                 && !isCompleted()
 
     }

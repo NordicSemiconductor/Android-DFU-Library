@@ -39,11 +39,11 @@
 
     <string name="dfu_device">Device</string>
     <string name="dfu_select_device">Select device</string>
-    <string name="dfu_select_device_info">Please select device.</string>
+    <string name="dfu_select_device_info">Select a device.</string>
 
     <string name="dfu_select_file">Select file</string>
     <string name="dfu_choose_file">File</string>
-    <string name="dfu_choose_info">Please select .zip file.</string>
+    <string name="dfu_choose_info">Select a .zip file.</string>
 
     <string name="dfu_macro_dialog_title">File managers</string>
     <string name="dfu_macro_dialog_info">Please select </string>
