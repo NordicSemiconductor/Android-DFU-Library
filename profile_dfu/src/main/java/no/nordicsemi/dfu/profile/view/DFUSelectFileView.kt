@@ -26,7 +26,7 @@ internal data class SelectedFileViewEntity(val zipFile: ZipFile) : DFUSelectFile
 internal fun DFUSelectFileView(viewEntity: DFUSelectFileViewEntity, onEvent: (DFUViewEvent) -> Unit) {
     when (viewEntity) {
         is NotSelectedFileViewEntity -> DFUNotSelectedFileView(viewEntity, onEvent)
-        is SelectedFileViewEntity -> DFUSelectFileView(viewEntity.zipFile)
+        is SelectedFileViewEntity -> DFUSelectFileView(viewEntity.zipFile, onEvent)
     }.exhaustive
 }
 
@@ -61,11 +61,17 @@ internal fun DFUNotSelectedFileView(viewEntity: NotSelectedFileViewEntity, onEve
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun DFUSelectFileView(zipFile: ZipFile) {
+internal fun DFUSelectFileView(zipFile: ZipFile, onEvent: (DFUViewEvent) -> Unit) {
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let { onEvent(OnZipFileSelected(it)) }
+    }
+
     CardComponent(
         titleIcon = R.drawable.ic_upload_file,
         title = stringResource(id = R.string.dfu_choose_file),
         description = stringResource(id = R.string.dfu_choose_selected),
+        secondaryButtonTitle = stringResource(id = R.string.dfu_select_file),
+        secondaryButtonAction = { launcher.launch(DfuBaseService.MIME_TYPE_ZIP) }
     ) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),

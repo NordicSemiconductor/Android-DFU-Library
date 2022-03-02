@@ -26,7 +26,7 @@ internal fun DFUSelectDeviceView(viewEntity: DFUSelectDeviceViewEntity, onEvent:
     when (viewEntity) {
         DisabledSelectedDeviceViewEntity -> DFUDisabledSelectedDeviceView()
         is NotSelectedDeviceViewEntity -> DFUNotSelectedDeviceView(onEvent)
-        is SelectedDeviceViewEntity -> DFUSelectDeviceView(viewEntity)
+        is SelectedDeviceViewEntity -> DFUSelectDeviceView(viewEntity, onEvent)
     }.exhaustive
 }
 
@@ -65,11 +65,13 @@ internal fun DFUNotSelectedDeviceView(onEvent: (DFUViewEvent) -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun DFUSelectDeviceView(viewEntity: SelectedDeviceViewEntity) {
+internal fun DFUSelectDeviceView(viewEntity: SelectedDeviceViewEntity, onEvent: (DFUViewEvent) -> Unit) {
     CardComponent(
         titleIcon = R.drawable.ic_bluetooth,
         title = stringResource(id = R.string.dfu_device),
         description = stringResource(id = R.string.dfu_choose_selected),
+        secondaryButtonTitle = stringResource(id = R.string.dfu_select_device),
+        secondaryButtonAction = { onEvent(OnSelectDeviceButtonClick) }
     ) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),

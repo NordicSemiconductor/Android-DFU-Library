@@ -53,7 +53,7 @@ internal class DFUViewModel @Inject constructor(
     }
 
     private fun requestBluetoothDevice() {
-        navigationManager.navigateTo(ScannerDestinationId, UUIDArgument(DFU_SERVICE_UUID))
+        navigationManager.navigateTo(ScannerDestinationId)
 
         navigationManager.recentResult.onEach {
             if (it.destinationId == ScannerDestinationId) {

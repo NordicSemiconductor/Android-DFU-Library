@@ -6,10 +6,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SmallTopAppBar
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
@@ -20,6 +17,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import no.nordicsemi.dfu.profile.R
 import no.nordicsemi.dfu.profile.viewmodel.DFUViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DFUScreen() {
     val viewModel: DFUViewModel = hiltViewModel()
@@ -29,7 +27,7 @@ fun DFUScreen() {
     Column {
         DFUAppBar()
         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            OutlinedCard(modifier = Modifier.padding(16.dp)) {
                 DFUSelectFileView(state.fileViewEntity, onEvent)
 
                 Spacer(modifier = Modifier.size(16.dp))
@@ -39,6 +37,8 @@ fun DFUScreen() {
                 Spacer(modifier = Modifier.size(16.dp))
 
                 DFUProgressView(state.progressViewEntity, onEvent)
+
+                Spacer(modifier = Modifier.size(16.dp))
             }
         }
     }

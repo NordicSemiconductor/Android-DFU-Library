@@ -1,7 +1,6 @@
 package no.nordicsemi.dfu.profile.view
 
 import androidx.annotation.DrawableRes
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -11,10 +10,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import no.nordicsemi.android.material.you.VerticalDivider
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,24 +53,34 @@ internal fun DisabledCardComponent(
         }
 
 
-        Row {
-            VerticalDivider()
+        Row(modifier = Modifier.height(IntrinsicSize.Min)) {
+            Box(
+                modifier = Modifier
+                    .padding(start = 34.dp)
+                    .fillMaxHeight()
+                    .width(4.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+            ) { }
 
             Spacer(modifier = Modifier.size(16.dp))
 
             Column {
                 content()
 
+                Spacer(modifier = Modifier.size(16.dp))
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .height(55.dp) //From ButtonDefaults = minHeight + 2*HorizontalPadding
+                        .padding(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.End
                 ) {
                     secondaryButtonTitle?.let {
                         OutlinedButton(
                             onClick = { },
-                            enabled = false
+                            enabled = false,
                         ) {
                             Text(text = it)
                         }
@@ -82,15 +89,13 @@ internal fun DisabledCardComponent(
                     primaryButtonTitle?.let {
                         Button(
                             onClick = { },
-                            enabled = false
+                            enabled = false,
                         ) {
                             Text(text = it)
                         }
                     }
                 }
             }
-
-            VerticalDivider()
         }
     }
 }
