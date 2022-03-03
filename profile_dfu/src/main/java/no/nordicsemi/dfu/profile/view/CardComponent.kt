@@ -9,9 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 
@@ -23,9 +21,11 @@ internal fun CardComponent(
     description: String,
     primaryButtonTitle: String? = null,
     primaryButtonAction: (() -> Unit)? = null,
+    primaryButtonEnabled: Boolean = true,
     redButtonColor: Boolean = false,
     secondaryButtonTitle: String? = null,
     secondaryButtonAction: (() -> Unit)? = null,
+    secondaryButtonEnabled: Boolean = true,
     showVerticalDivider: Boolean = true,
     content: @Composable () -> Unit
 ) {
@@ -67,7 +67,10 @@ internal fun CardComponent(
                 horizontalArrangement = Arrangement.End
             ) {
                 secondaryButtonTitle?.let {
-                    OutlinedButton(onClick = { secondaryButtonAction?.invoke() }) {
+                    OutlinedButton(
+                        onClick = { secondaryButtonAction?.invoke() },
+                        enabled = secondaryButtonEnabled
+                    ) {
                         Text(text = it)
                     }
                 }
@@ -83,19 +86,10 @@ internal fun CardComponent(
                     }
                     Button(
                         onClick = { primaryButtonAction?.invoke() },
-                        colors = color
+                        colors = color,
+                        enabled = primaryButtonEnabled
                     ) {
                         Text(text = it)
-                    }
-                }
-
-                //For measurement
-                if (secondaryButtonTitle == null && primaryButtonTitle == null) {
-                    Button(
-                        onClick = {  },
-                        modifier = Modifier.alpha(0f)
-                    ) {
-                        Text(text = "test")
                     }
                 }
             }

@@ -106,7 +106,9 @@ internal fun DFUSelectFileNoActionView(zipFile: ZipFile) {
     CardComponent(
         titleIcon = R.drawable.ic_upload_file,
         title = stringResource(id = R.string.dfu_choose_file),
-        description = stringResource(id = R.string.dfu_choose_selected)
+        description = stringResource(id = R.string.dfu_choose_selected),
+        secondaryButtonTitle = stringResource(id = R.string.dfu_select_file),
+        secondaryButtonEnabled = false
     ) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),

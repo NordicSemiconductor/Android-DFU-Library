@@ -1,5 +1,10 @@
 package no.nordicsemi.dfu.profile.view
 
+import androidx.annotation.StringRes
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import no.nordicsemi.dfu.profile.R
+
 internal sealed class DFUProgressViewEntity {
 
     companion object {
@@ -92,3 +97,41 @@ data class ProgressItemViewEntity(
 enum class ProgressItemStatus {
     DISABLED, WORKING, SUCCESS, ERROR
 }
+
+data class ProgressItemLabel(
+    @StringRes
+    val idleText: Int,
+    @StringRes
+    val workingText: Int,
+    @StringRes
+    val successText: Int,
+) {
+
+    @Composable
+    fun toDisplayString(status: ProgressItemStatus): String {
+        return when (status) {
+            ProgressItemStatus.WORKING -> stringResource(id = workingText)
+            ProgressItemStatus.SUCCESS -> stringResource(id = successText)
+            ProgressItemStatus.DISABLED,
+            ProgressItemStatus.ERROR -> stringResource(id = idleText)
+        }
+    }
+}
+
+val BootloaderItem = ProgressItemLabel(
+    R.string.dfu_bootloader_idle,
+    R.string.dfu_bootloader_working,
+    R.string.dfu_bootloader_success
+)
+
+val DfuItem = ProgressItemLabel(
+    R.string.dfu_process_idle,
+    R.string.dfu_process_working,
+    R.string.dfu_process_success
+)
+
+val FirmwareItem = ProgressItemLabel(
+    R.string.dfu_firmware_idle,
+    R.string.dfu_firmware_working,
+    R.string.dfu_firmware_success
+)

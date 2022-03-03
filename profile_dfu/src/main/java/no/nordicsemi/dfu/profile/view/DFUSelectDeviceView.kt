@@ -109,7 +109,9 @@ internal fun DFUSelectedDeviceNoActionView(viewEntity: SelectedDeviceViewEntity)
     CardComponent(
         titleIcon = R.drawable.ic_bluetooth,
         title = stringResource(id = R.string.dfu_device),
-        description = stringResource(id = R.string.dfu_choose_selected)
+        description = stringResource(id = R.string.dfu_choose_selected),
+        secondaryButtonTitle = stringResource(id = R.string.dfu_select_device),
+        secondaryButtonEnabled = false
     ) {
         Column(
             modifier = Modifier

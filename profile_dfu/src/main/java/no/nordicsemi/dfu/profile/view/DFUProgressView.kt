@@ -97,11 +97,11 @@ private fun DFUIdleProgressView(
 private fun ProgressItem(viewEntity: ProgressItemViewEntity) {
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
         ProgressItem(
-            stringResource(id = R.string.dfu_progress_stage_bootloader),
+            BootloaderItem.toDisplayString(status = viewEntity.bootloaderStatus),
             viewEntity.bootloaderStatus
         )
         Spacer(modifier = Modifier.size(8.dp))
-        ProgressItem(stringResource(id = R.string.dfu_progress_stage_dfu), viewEntity.dfuStatus)
+        ProgressItem(DfuItem.toDisplayString(status = viewEntity.dfuStatus), viewEntity.dfuStatus)
         Spacer(modifier = Modifier.size(8.dp))
 
         if (viewEntity.installationStatus == ProgressItemStatus.WORKING) {
@@ -115,12 +115,14 @@ private fun ProgressItem(viewEntity: ProgressItemViewEntity) {
                 )
                 LinearProgressIndicator(
                     progress = viewEntity.progress/100f,
-                    modifier = Modifier.padding(horizontal = 32.dp).fillMaxWidth()
+                    modifier = Modifier
+                        .padding(horizontal = 32.dp)
+                        .fillMaxWidth()
                 )
             }
         } else {
             ProgressItem(
-                stringResource(id = R.string.dfu_progress_stage_installing),
+                FirmwareItem.toDisplayString(status = viewEntity.installationStatus),
                 viewEntity.installationStatus
             )
         }

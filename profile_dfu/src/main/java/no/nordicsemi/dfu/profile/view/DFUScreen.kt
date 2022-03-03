@@ -31,7 +31,10 @@ fun DFUScreen() {
             modifier = Modifier.verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            OutlinedCard(modifier = Modifier.padding(16.dp)) {
+            OutlinedCard(
+                modifier = Modifier.padding(16.dp),
+                containerColor = MaterialTheme.colorScheme.background
+            ) {
                 DFUSelectFileView(state.isRunning(), state.fileViewEntity, onEvent)
 
                 DFUSelectedDeviceView(state.isRunning(), state.deviceViewEntity, onEvent)

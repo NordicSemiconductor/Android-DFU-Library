@@ -11,7 +11,7 @@ android {
     compileSdk android_api_version
 
     defaultConfig {
-        applicationId "no.nordicsemi.android.nrftoolbox"
+        applicationId "no.nordicsemi.android.dfu"
         minSdk android_min_api_version
         targetSdk android_api_version
         versionCode getVersionCodeFromTags()

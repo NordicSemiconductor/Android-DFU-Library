@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="dfu_title">DFU</string>
+    <string name="dfu_title">Firmware Upgrade</string>
 
     <string name="dfu_done">Done</string>
     <string name="dfu_close">Close</string>
@@ -81,4 +81,16 @@
 
     <string name="dfu_file_name">File name: <b>%s</b></string>
     <string name="dfu_file_size">File size: <b>%d</b> bytes</string>
+
+    <string name="dfu_bootloader_idle">Bootloader enablement</string>
+    <string name="dfu_bootloader_working">Enabling bootloader...</string>
+    <string name="dfu_bootloader_success">Bootloader enabled</string>
+
+    <string name="dfu_process_idle">DFU initialization</string>
+    <string name="dfu_process_working">Initializing DFU...</string>
+    <string name="dfu_process_success">DFU initialized</string>
+
+    <string name="dfu_firmware_idle">Firmware upload</string>
+    <string name="dfu_firmware_working">Uploading firmware...</string>
+    <string name="dfu_firmware_success">Firmware uploaded</string>
 </resources>
