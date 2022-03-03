@@ -1,22 +1,27 @@
-package no.nordicsemi.dfu.profile.view
+package no.nordicsemi.dfu.profile.main.view
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import no.nordicsemi.dfu.profile.R
-import no.nordicsemi.dfu.profile.viewmodel.DFUViewModel
+import no.nordicsemi.dfu.profile.main.viewmodel.DFUViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,7 +31,7 @@ fun DFUScreen() {
     val onEvent: (DFUViewEvent) -> Unit = { viewModel.onEvent(it) }
 
     Column {
-        DFUAppBar()
+        DFUAppBar(onEvent)
         Column(
             modifier = Modifier.verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -48,7 +53,7 @@ fun DFUScreen() {
 }
 
 @Composable
-private fun DFUAppBar() {
+private fun DFUAppBar(onEvent: (DFUViewEvent) -> Unit) {
     SmallTopAppBar(
         title = { Text(stringResource(id = R.string.dfu_title)) },
         colors = TopAppBarDefaults.smallTopAppBarColors(
@@ -57,6 +62,14 @@ private fun DFUAppBar() {
             titleContentColor = MaterialTheme.colorScheme.onPrimary,
             actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
             navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-        )
+        ),
+        actions = {
+            IconButton(onClick = { onEvent(OnSettingsButtonClick) }) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = stringResource(id = R.string.dfu_settings_action)
+                )
+            }
+        }
     )
 }

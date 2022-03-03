@@ -1,4 +1,4 @@
-package no.nordicsemi.dfu.profile.data
+package no.nordicsemi.dfu.profile.main.data
 
 internal sealed class DFUData
 

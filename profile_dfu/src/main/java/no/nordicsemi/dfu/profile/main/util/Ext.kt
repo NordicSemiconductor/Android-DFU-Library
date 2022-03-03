@@ -1,4 +1,4 @@
-package no.nordicsemi.dfu.profile.util
+package no.nordicsemi.dfu.profile.main.util
 
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle

@@ -1,4 +1,4 @@
-package no.nordicsemi.dfu.profile.view
+package no.nordicsemi.dfu.profile.main.view
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.*

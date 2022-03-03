@@ -1,4 +1,4 @@
-package no.nordicsemi.dfu.profile.view
+package no.nordicsemi.dfu.profile.main.view
 
 import android.net.Uri
 
@@ -17,3 +17,5 @@ internal object OnSelectDeviceButtonClick : DFUViewEvent()
 internal object OnDisconnectButtonClick : DFUViewEvent()
 
 internal object NavigateUp : DFUViewEvent()
+
+internal object OnSettingsButtonClick : DFUViewEvent()

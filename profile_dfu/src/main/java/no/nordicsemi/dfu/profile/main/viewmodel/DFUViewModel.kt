@@ -1,4 +1,4 @@
-package no.nordicsemi.dfu.profile.viewmodel
+package no.nordicsemi.dfu.profile.main.viewmodel
 
 import android.net.Uri
 import android.util.Log
@@ -13,9 +13,10 @@ import no.nordicsemi.android.navigation.CancelDestinationResult
 import no.nordicsemi.android.navigation.DestinationResult
 import no.nordicsemi.android.navigation.NavigationManager
 import no.nordicsemi.android.navigation.SuccessDestinationResult
-import no.nordicsemi.dfu.profile.data.*
-import no.nordicsemi.dfu.profile.view.*
-import no.nordicsemi.dfu.profile.view.DFUProgressViewEntity.Companion.createErrorStage
+import no.nordicsemi.dfu.profile.DfuSettingsScreen
+import no.nordicsemi.dfu.profile.main.data.*
+import no.nordicsemi.dfu.profile.main.view.*
+import no.nordicsemi.dfu.profile.main.view.DFUProgressViewEntity.Companion.createErrorStage
 import no.nordicsemi.ui.scanner.ScannerDestinationId
 import no.nordicsemi.ui.scanner.ui.exhaustive
 import no.nordicsemi.ui.scanner.ui.getDevice
@@ -106,6 +107,7 @@ internal class DFUViewModel @Inject constructor(
             NavigateUp -> navigationManager.navigateUp()
             OnCloseButtonClick -> navigationManager.navigateUp()
             OnSelectDeviceButtonClick -> requestBluetoothDevice()
+            OnSettingsButtonClick -> navigationManager.navigateTo(DfuSettingsScreen)
         }.exhaustive
     }
 

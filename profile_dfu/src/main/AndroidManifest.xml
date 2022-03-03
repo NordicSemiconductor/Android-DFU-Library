@@ -7,6 +7,6 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
 
     <application>
-        <service android:name=".repository.DFUService" />
+        <service android:name=".main.repository.DFUService" />
     </application>
 </manifest>

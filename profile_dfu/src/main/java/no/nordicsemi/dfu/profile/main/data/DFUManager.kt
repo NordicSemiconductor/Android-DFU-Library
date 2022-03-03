@@ -1,10 +1,10 @@
-package no.nordicsemi.dfu.profile.data
+package no.nordicsemi.dfu.profile.main.data
 
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
 import no.nordicsemi.android.dfu.DfuServiceController
 import no.nordicsemi.android.dfu.DfuServiceInitiator
-import no.nordicsemi.dfu.profile.repository.DFUService
+import no.nordicsemi.dfu.profile.main.repository.DFUService
 import no.nordicsemi.ui.scanner.DiscoveredBluetoothDevice
 import javax.inject.Inject
 

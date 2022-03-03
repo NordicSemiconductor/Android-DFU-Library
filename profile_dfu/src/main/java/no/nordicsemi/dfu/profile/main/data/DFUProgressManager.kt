@@ -1,4 +1,4 @@
-package no.nordicsemi.dfu.profile.data
+package no.nordicsemi.dfu.profile.main.data
 
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext

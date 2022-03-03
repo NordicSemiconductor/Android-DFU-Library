@@ -1,4 +1,4 @@
-package no.nordicsemi.dfu.profile.view
+package no.nordicsemi.dfu.profile.main.view
 
 import android.os.Parcelable
 import androidx.annotation.StringRes

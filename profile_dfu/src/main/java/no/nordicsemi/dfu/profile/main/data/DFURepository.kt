@@ -1,11 +1,11 @@
-package no.nordicsemi.dfu.profile.data
+package no.nordicsemi.dfu.profile.main.data
 
 import android.net.Uri
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.*
 import no.nordicsemi.android.dfu.DfuServiceController
-import no.nordicsemi.dfu.profile.repository.DFUServiceRunningObserver
+import no.nordicsemi.dfu.profile.main.repository.DFUServiceRunningObserver
 import no.nordicsemi.ui.scanner.DiscoveredBluetoothDevice
 import javax.inject.Inject
 import javax.inject.Singleton

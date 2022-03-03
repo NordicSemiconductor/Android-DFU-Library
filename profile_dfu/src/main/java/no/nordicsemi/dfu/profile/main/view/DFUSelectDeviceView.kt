@@ -1,4 +1,4 @@
-package no.nordicsemi.dfu.profile.view
+package no.nordicsemi.dfu.profile.main.view
 
 import android.os.Parcelable
 import androidx.compose.foundation.layout.*
@@ -12,7 +12,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.parcelize.Parcelize
 import no.nordicsemi.dfu.profile.R
-import no.nordicsemi.dfu.profile.util.parseBold
+import no.nordicsemi.dfu.profile.main.util.parseBold
 import no.nordicsemi.ui.scanner.DiscoveredBluetoothDevice
 import no.nordicsemi.ui.scanner.ui.exhaustive
 

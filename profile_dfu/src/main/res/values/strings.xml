@@ -93,4 +93,11 @@
     <string name="dfu_firmware_idle">Firmware upload</string>
     <string name="dfu_firmware_working">Uploading firmware...</string>
     <string name="dfu_firmware_success">Firmware uploaded</string>
+    <string name="dfu_settings_action">Open settings screen.</string>
+
+    <string name="dfu_navigate_up">Navigate up</string>
+    <string name="dfu_settings">Settings</string>
+    <string name="dfu_settings_packets_receipt_notification">Packets receipt notification procedure</string>
+    <string name="dfu_settings_keep_bond_information">Keep bond information</string>
+    <string name="dfu_settings_external_mcu_dfu">External MCU DFU</string>
 </resources>

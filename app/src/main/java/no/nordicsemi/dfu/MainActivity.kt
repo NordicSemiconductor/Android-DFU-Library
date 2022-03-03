@@ -10,6 +10,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import no.nordicsemi.android.material.you.NordicActivity
 import no.nordicsemi.android.material.you.NordicTheme
 import no.nordicsemi.android.navigation.NavigationView
+import no.nordicsemi.dfu.profile.DFUDestinations
 import no.nordicsemi.ui.scanner.ScannerDestinations
 
 @AndroidEntryPoint
@@ -24,7 +25,7 @@ class MainActivity : NordicActivity() {
                     color = MaterialTheme.colorScheme.surface,
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    NavigationView(HomeDestinations + ScannerDestinations)
+                    NavigationView(DFUDestinations + ScannerDestinations)
                 }
             }
         }
