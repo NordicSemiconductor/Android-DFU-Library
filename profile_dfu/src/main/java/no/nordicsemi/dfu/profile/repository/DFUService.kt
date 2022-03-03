@@ -31,9 +31,19 @@ import androidx.annotation.RequiresApi
 import dagger.hilt.android.AndroidEntryPoint
 import no.nordicsemi.android.dfu.DfuBaseService
 import no.nordicsemi.dfu.profile.R
+import javax.inject.Inject
+import javax.inject.Singleton
+
+@Singleton
+internal class DFUServiceRunningObserver @Inject constructor() {
+    var isRunning: Boolean = false
+}
 
 @AndroidEntryPoint
 internal class DFUService : DfuBaseService() {
+
+    @Inject
+    lateinit var runningObserver: DFUServiceRunningObserver
 
     override fun onCreate() {
         super.onCreate()
@@ -41,6 +51,12 @@ internal class DFUService : DfuBaseService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             createDfuNotificationChannel(this)
         }
+        runningObserver.isRunning = true
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        runningObserver.isRunning = false
     }
 
     override fun getNotificationTarget(): Class<out Activity?>? {

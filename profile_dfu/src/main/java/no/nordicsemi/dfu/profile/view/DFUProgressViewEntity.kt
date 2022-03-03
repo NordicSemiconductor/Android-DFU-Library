@@ -1,11 +1,13 @@
 package no.nordicsemi.dfu.profile.view
 
+import android.os.Parcelable
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
+import kotlinx.parcelize.Parcelize
 import no.nordicsemi.dfu.profile.R
 
-internal sealed class DFUProgressViewEntity {
+internal sealed class DFUProgressViewEntity : Parcelable {
 
     companion object {
 
@@ -66,12 +68,16 @@ internal sealed class DFUProgressViewEntity {
     }
 }
 
+@Parcelize
 internal object DisabledProgressViewEntity : DFUProgressViewEntity()
 
+@Parcelize
 internal data class WorkingProgressViewEntity(
     val status: ProgressItemViewEntity = ProgressItemViewEntity()
 ) : DFUProgressViewEntity()
 
+
+@Parcelize
 data class ProgressItemViewEntity(
     val bootloaderStatus: ProgressItemStatus = ProgressItemStatus.DISABLED,
     val dfuStatus: ProgressItemStatus = ProgressItemStatus.DISABLED,
@@ -79,7 +85,7 @@ data class ProgressItemViewEntity(
     val resultStatus: ProgressItemStatus = ProgressItemStatus.DISABLED,
     val progress: Int = 0,
     val errorMessage: String? = null
-) {
+) : Parcelable {
 
     fun isRunning(): Boolean {
         return (bootloaderStatus != ProgressItemStatus.DISABLED

@@ -2,14 +2,17 @@ package no.nordicsemi.dfu.profile.data
 
 import android.net.Uri
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.*
 import no.nordicsemi.android.dfu.DfuServiceController
+import no.nordicsemi.dfu.profile.repository.DFUServiceRunningObserver
 import no.nordicsemi.ui.scanner.DiscoveredBluetoothDevice
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 internal class DFURepository @Inject constructor(
+    private val runningObserver: DFUServiceRunningObserver,
     private val fileManger: DFUFileManager,
     private val dfuManager: DFUManager,
     private val progressManager: DFUProgressManager,
@@ -34,7 +37,7 @@ internal class DFURepository @Inject constructor(
 
         progressManager.status.onEach {
             _data.value = it
-        }.launchIn(scope)
+        }.launchIn(GlobalScope)
     }
 
     fun hasBeenInitialized(): Boolean {
@@ -45,7 +48,15 @@ internal class DFURepository @Inject constructor(
         dfuServiceController?.abort()
     }
 
+    fun isRunning(): Boolean {
+        return runningObserver.isRunning
+    }
+
     fun release() {
+        device = null
+        zipFile = null
+        dfuServiceController = null
+        progressManager.release()
         progressManager.unregisterListener()
     }
 }

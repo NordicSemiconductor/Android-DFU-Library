@@ -6,10 +6,7 @@ import no.nordicsemi.android.dfu.DfuServiceController
 import no.nordicsemi.android.dfu.DfuServiceInitiator
 import no.nordicsemi.dfu.profile.repository.DFUService
 import no.nordicsemi.ui.scanner.DiscoveredBluetoothDevice
-import java.util.*
 import javax.inject.Inject
-
-val DFU_SERVICE_UUID: UUID = UUID.fromString("8EC9FE59-F315-4F60-9FB8-838830DAEA50")
 
 class DFUManager @Inject constructor(
     @ApplicationContext

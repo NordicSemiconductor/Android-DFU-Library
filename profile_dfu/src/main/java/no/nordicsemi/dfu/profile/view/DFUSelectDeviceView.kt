@@ -1,5 +1,6 @@
 package no.nordicsemi.dfu.profile.view
 
+import android.os.Parcelable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -9,17 +10,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import kotlinx.parcelize.Parcelize
 import no.nordicsemi.dfu.profile.R
 import no.nordicsemi.dfu.profile.util.parseBold
 import no.nordicsemi.ui.scanner.DiscoveredBluetoothDevice
 import no.nordicsemi.ui.scanner.ui.exhaustive
 
-internal sealed class DFUSelectDeviceViewEntity
+internal sealed class DFUSelectDeviceViewEntity : Parcelable
 
+@Parcelize
 internal object DisabledSelectedDeviceViewEntity : DFUSelectDeviceViewEntity()
 
+@Parcelize
 internal object NotSelectedDeviceViewEntity : DFUSelectDeviceViewEntity()
 
+@Parcelize
 internal data class SelectedDeviceViewEntity(val device: DiscoveredBluetoothDevice) : DFUSelectDeviceViewEntity()
 
 @Composable

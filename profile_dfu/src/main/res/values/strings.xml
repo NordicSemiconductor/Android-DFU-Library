@@ -29,7 +29,7 @@
     <string name="dfu_progress">Progress</string>
     <string name="dfu_progress_idle">Idle</string>
     <string name="dfu_progress_running">Running</string>
-    <string name="dfu_progress_run">Run</string>
+    <string name="dfu_progress_run">Start</string>
     <string name="dfu_progress_stage_bootloader">Enabling bootloader</string>
     <string name="dfu_progress_stage_dfu">Initializing DFU</string>
     <string name="dfu_progress_stage_installing">Uploading firmware</string>

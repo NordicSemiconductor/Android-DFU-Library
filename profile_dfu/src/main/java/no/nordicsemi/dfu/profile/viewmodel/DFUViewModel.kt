@@ -1,6 +1,7 @@
 package no.nordicsemi.dfu.profile.viewmodel
 
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -8,7 +9,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import no.nordicsemi.android.navigation.*
+import no.nordicsemi.android.navigation.CancelDestinationResult
+import no.nordicsemi.android.navigation.DestinationResult
+import no.nordicsemi.android.navigation.NavigationManager
+import no.nordicsemi.android.navigation.SuccessDestinationResult
 import no.nordicsemi.dfu.profile.data.*
 import no.nordicsemi.dfu.profile.view.*
 import no.nordicsemi.dfu.profile.view.DFUProgressViewEntity.Companion.createErrorStage
@@ -16,14 +20,25 @@ import no.nordicsemi.ui.scanner.ScannerDestinationId
 import no.nordicsemi.ui.scanner.ui.exhaustive
 import no.nordicsemi.ui.scanner.ui.getDevice
 import javax.inject.Inject
+import javax.inject.Singleton
+
+@Singleton
+class StateHolder @Inject constructor() {
+    internal val state = MutableStateFlow(DFUViewState())
+
+    fun clear() {
+        state.value = DFUViewState()
+    }
+}
 
 @HiltViewModel
 internal class DFUViewModel @Inject constructor(
+    private val stateHolder: StateHolder,
     private val repository: DFURepository,
     private val navigationManager: NavigationManager
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(DFUViewState())
+    private val _state: MutableStateFlow<DFUViewState> = stateHolder.state
     val state = _state.asStateFlow()
 
     init {
@@ -41,13 +56,17 @@ internal class DFUViewModel @Inject constructor(
             }
 
             ((it as? WorkingStatus)?.status as? Aborted)?.let {
-                val newStatus = (_state.value.progressViewEntity as WorkingProgressViewEntity).status.createErrorStage("Aborted")
-                _state.value = _state.value.copy(progressViewEntity = newStatus)
+                val newStatus = (_state.value.progressViewEntity as? WorkingProgressViewEntity)?.status?.createErrorStage("Aborted")
+                newStatus?.let {
+                    _state.value = _state.value.copy(progressViewEntity = newStatus)
+                }
             }
 
             ((it as? WorkingStatus)?.status as? Error)?.let {
-                val newStatus = (_state.value.progressViewEntity as WorkingProgressViewEntity).status.createErrorStage(it.message)
-                _state.value = _state.value.copy(progressViewEntity = newStatus)
+                val newStatus = (_state.value.progressViewEntity as? WorkingProgressViewEntity)?.status?.createErrorStage(it.message)
+                newStatus?.let {
+                    _state.value = _state.value.copy(progressViewEntity = newStatus)
+                }
             }
         }.launchIn(viewModelScope)
     }
@@ -56,6 +75,7 @@ internal class DFUViewModel @Inject constructor(
         navigationManager.navigateTo(ScannerDestinationId)
 
         navigationManager.recentResult.onEach {
+            Log.d("AAATESTAAA", "result: $it")
             if (it.destinationId == ScannerDestinationId) {
                 handleArgs(it)
             }
@@ -114,6 +134,10 @@ internal class DFUViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        repository.release()
+
+        if (!repository.isRunning()) {
+            stateHolder.clear()
+            repository.release()
+        }
     }
 }

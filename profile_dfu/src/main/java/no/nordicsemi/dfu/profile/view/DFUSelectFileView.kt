@@ -1,5 +1,6 @@
 package no.nordicsemi.dfu.profile.view
 
+import android.os.Parcelable
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -11,16 +12,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import kotlinx.parcelize.Parcelize
 import no.nordicsemi.android.dfu.DfuBaseService
 import no.nordicsemi.dfu.profile.R
 import no.nordicsemi.dfu.profile.data.ZipFile
 import no.nordicsemi.dfu.profile.util.parseBold
 import no.nordicsemi.ui.scanner.ui.exhaustive
 
-internal sealed class DFUSelectFileViewEntity
+internal sealed class DFUSelectFileViewEntity : Parcelable
 
+@Parcelize
 internal data class NotSelectedFileViewEntity(val isError: Boolean = false) : DFUSelectFileViewEntity()
 
+@Parcelize
 internal data class SelectedFileViewEntity(val zipFile: ZipFile) : DFUSelectFileViewEntity()
 
 @Composable

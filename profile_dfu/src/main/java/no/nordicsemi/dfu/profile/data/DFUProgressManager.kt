@@ -1,7 +1,6 @@
 package no.nordicsemi.dfu.profile.data
 
 import android.content.Context
-import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import no.nordicsemi.android.dfu.DfuProgressListenerAdapter
@@ -83,5 +82,9 @@ internal class DFUProgressManager @Inject constructor(
 
     fun unregisterListener() {
         DfuServiceListenerHelper.unregisterProgressListener(context, this)
+    }
+
+    fun release() {
+        status.value = IdleStatus
     }
 }
