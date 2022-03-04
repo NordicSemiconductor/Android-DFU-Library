@@ -19,15 +19,26 @@ class DFUManager @Inject constructor(
         device: DiscoveredBluetoothDevice,
         settings: DFUSettings
     ): DfuServiceController {
-        val starter = DfuServiceInitiator(device.address())
-            .setDeviceName(device.displayName())
-            .setKeepBond(settings.keepBondInformation)
-//        .setForceDfu(forceDfu)
-            .setPacketsReceiptNotificationsEnabled(settings.packetsReceiptNotification)
-            .setForceDfu(settings.externalMcuDfu)
-//        .setPacketsReceiptNotificationsValue(numberOfPackets)
-            .setPrepareDataObjectDelay(400)
-            .setUnsafeExperimentalButtonlessServiceInSecureDfuEnabled(true)
+
+        val starter = DfuServiceInitiator(device.address()).apply {
+            setDeviceName(device.displayName())
+
+            // Legacy only
+            setKeepBond(settings.keepBondInformation)
+            setForceDfu(settings.externalMcuDfu)
+
+            // Secure DFU only
+            if (settings.disableResume) {
+                disableResume() // zaifować
+            }
+//            disableMtuRequest() // wywalić albo zaifować
+            setForceScanningForNewAddressInLegacyDfu(settings.forceScanningInLegacyDfu)// zaifować
+            setPrepareDataObjectDelay(400) // OK
+            setUnsafeExperimentalButtonlessServiceInSecureDfuEnabled(true) // OK
+
+            setPacketsReceiptNotificationsEnabled(settings.packetsReceiptNotification) // OK
+            setPacketsReceiptNotificationsValue(settings.numberOfPackets) // opcja ustawienia
+        }
 
         starter.setZip(file.uri, null)
         return starter.start(context, DFUService::class.java)

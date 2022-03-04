@@ -1,22 +1,26 @@
 package no.nordicsemi.dfu.profile.settings.view
 
-import android.widget.Space
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import no.nordicsemi.android.dfu.BuildConfig.VERSION_NAME
 import no.nordicsemi.android.material.you.CheckboxFallback
+import no.nordicsemi.android.material.you.TextField
 import no.nordicsemi.dfu.profile.R
 import no.nordicsemi.dfu.profile.settings.viewmodel.SettingsViewModel
 
@@ -25,19 +29,59 @@ internal fun SettingsScreen() {
     val viewModel = hiltViewModel<SettingsViewModel>()
     val state = viewModel.state.collectAsState().value
     val onEvent: (SettingsScreenViewEvent) -> Unit = { viewModel.onEvent(it) }
+    val showDialog = rememberSaveable { mutableStateOf(false) }
 
-    Column {
+    if (showDialog.value) {
+        NumberOfPocketsDialog(state.numberOfPackets, onDismiss = { showDialog.value = false }) {
+            onEvent(it)
+        }
+    }
+
+    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
         SettingsAppBar(onEvent)
 
         SwitchSettingsComponent(
             stringResource(id = R.string.dfu_settings_packets_receipt_notification),
+            stringResource(id = R.string.dfu_settings_packets_receipt_notification_info),
             state.packetsReceiptNotification
         ) {
             onEvent(OnPacketsReceiptNotificationSwitchClick)
         }
 
+        SettingsButton(
+            stringResource(id = R.string.dfu_settings_number_of_pockets),
+            state.numberOfPackets.toString()
+        ) {
+            showDialog.value = true
+        }
+
+        Spacer(modifier = Modifier.size(16.dp))
+
+        Headline(stringResource(id = R.string.dfu_settings_headline_secure_dfu))
+
+        SwitchSettingsComponent(
+            stringResource(id = R.string.dfu_settings_disable_resume),
+            stringResource(id = R.string.dfu_settings_disable_resume_info),
+            state.disableResume
+        ) {
+            onEvent(OnDisableResumeSwitchClick)
+        }
+
+        SwitchSettingsComponent(
+            stringResource(id = R.string.dfu_settings_force_scanning),
+            stringResource(id = R.string.dfu_settings_force_scanning_info),
+            state.forceScanningInLegacyDfu
+        ) {
+            onEvent(OnForceScanningAddressesSwitchClick)
+        }
+
+        Spacer(modifier = Modifier.size(32.dp))
+
+        Headline(stringResource(id = R.string.dfu_settings_headline_legacy_dfu))
+
         SwitchSettingsComponent(
             stringResource(id = R.string.dfu_settings_keep_bond_information),
+            stringResource(id = R.string.dfu_settings_keep_bond_information_info),
             state.keepBondInformation
         ) {
             onEvent(OnKeepBondInformationSwitchClick)
@@ -45,10 +89,15 @@ internal fun SettingsScreen() {
 
         SwitchSettingsComponent(
             stringResource(id = R.string.dfu_settings_external_mcu_dfu),
+            stringResource(id = R.string.dfu_settings_external_mcu_dfu_info),
             state.externalMcuDfu
         ) {
             onEvent(OnExternalMcuDfuSwitchClick)
         }
+
+        Spacer(modifier = Modifier.size(16.dp))
+
+        Headline(stringResource(id = R.string.dfu_settings_other))
 
         SettingsButton(
             stringResource(id = R.string.dfu_about_app),
@@ -56,6 +105,21 @@ internal fun SettingsScreen() {
         ) {
             onEvent(OnAboutAppClick)
         }
+
+        SettingsButton(
+            stringResource(id = R.string.dfu_show_welcome_screen),
+        ) {
+            onEvent(OnShowWelcomeClick)
+        }
+
+        Text(
+            text = stringResource(id = R.string.dfu_version, VERSION_NAME),
+            modifier = Modifier.fillMaxWidth(),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
+        Spacer(modifier = Modifier.size(16.dp))
     }
 }
 
@@ -82,40 +146,120 @@ private fun SettingsAppBar(onEvent: (SettingsScreenViewEvent) -> Unit) {
 }
 
 @Composable
-private fun SwitchSettingsComponent(text: String, isChecked: Boolean, onClick: () -> Unit) {
+private fun Headline(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleSmall,
+        modifier = Modifier.padding(horizontal = 16.dp),
+        color = MaterialTheme.colorScheme.secondary
+    )
+}
+
+@Composable
+private fun SwitchSettingsComponent(
+    text: String,
+    description: String?,
+    isChecked: Boolean,
+    onClick: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+            .clickable { onClick() }
+            .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = text,
-            modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.bodyLarge
-        )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+        ) {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.titleLarge,
+            )
+
+            description?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        }
 
         CheckboxFallback(checked = isChecked, onCheckedChange = { onClick() })
     }
 }
 
 @Composable
-private fun SettingsButton(title: String, description: String, onClick: () -> Unit) {
+private fun SettingsButton(title: String, description: String? = null, onClick: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .clip(RoundedCornerShape(10.dp))
+            .padding(16.dp)
     ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.titleLarge,
         )
 
-        Text(
-            text = description,
-            style = MaterialTheme.typography.bodySmall,
-        )
+        description?.let {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
     }
+}
+
+@Composable
+private fun NumberOfPocketsDialog(
+    numberOfPockets: Int,
+    onDismiss: () -> Unit,
+    onEvent: (SettingsScreenViewEvent) -> Unit
+) {
+    val numberOfPocketsState = rememberSaveable { mutableStateOf(numberOfPockets) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(text = stringResource(id = R.string.dfu_settings_number_of_pockets))
+        },
+        text = {
+            val showError = rememberSaveable { mutableStateOf(false) }
+
+            Column {
+                TextField(
+                    text = numberOfPocketsState.value.toString(),
+                    onlyDigits = true,
+                    hint = stringResource(id = R.string.dfu_settings_number_of_pockets)
+                ) {
+                    val value = it.toIntOrNull()
+                    if (value != null) {
+                        numberOfPocketsState.value = value
+                        showError.value = false
+                    } else {
+                        showError.value = true
+                    }
+                }
+                if (showError.value) {
+                    Text(text = stringResource(id = R.string.dfu_parse_int_error))
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = {
+                onDismiss()
+                onEvent(OnNumberOfPocketsChange(numberOfPocketsState.value))
+            }) {
+                Text(text = stringResource(id = R.string.dfu_macro_dialog_confirm))
+            }
+        },
+        dismissButton = {
+            Button(onClick = { onDismiss() }) {
+                Text(text = stringResource(id = R.string.dfu_macro_dialog_dismiss))
+            }
+        }
+    )
 }
