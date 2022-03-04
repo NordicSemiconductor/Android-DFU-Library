@@ -100,4 +100,15 @@
     <string name="dfu_settings_packets_receipt_notification">Packets receipt notification procedure</string>
     <string name="dfu_settings_keep_bond_information">Keep bond information</string>
     <string name="dfu_settings_external_mcu_dfu">External MCU DFU</string>
+
+    <string name="dfu_about_app">About DFU</string>
+    <string name="dfu_about_app_desc">DFU documentation on Nordic\'s Developer Zone</string>
+    <string name="dfu_welcome">Welcome</string>
+    <string name="dfu_start">Start</string>
+    <string name="dfu_explanation_image">Image describing firmware update flow.</string>
+
+    <string name="dfu_about_text">The Device Firmware Update (DFU) app allows you to update the
+		firmware of your Bluetooth LE device over-the-air (OTA). It is compatible with Nordic
+		Semiconductor nRF5 devices with DFU bootloader enabled.
+		\n\nFor more information about the DFU, see the About DFU section in Settings.</string>
 </resources>

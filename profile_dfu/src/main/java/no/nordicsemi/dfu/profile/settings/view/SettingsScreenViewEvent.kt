@@ -8,4 +8,6 @@ object OnKeepBondInformationSwitchClick : SettingsScreenViewEvent
 
 object OnExternalMcuDfuSwitchClick : SettingsScreenViewEvent
 
+object OnAboutAppClick : SettingsScreenViewEvent
+
 object NavigateUp : SettingsScreenViewEvent

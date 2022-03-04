@@ -16,6 +16,7 @@ import javax.inject.Singleton
 private val PACKETS_RECEIPT_NOTIFICATION_KEY = booleanPreferencesKey("packets_receipt")
 private val KEEP_BOND_KEY = booleanPreferencesKey("keep_bond")
 private val EXTERNAL_MCU_KEY = booleanPreferencesKey("external_mcu")
+private val SHOW_WELCOME_KEY = booleanPreferencesKey("show_welcome")
 
 @Singleton
 class SettingsDataSource @Inject constructor(
@@ -31,6 +32,7 @@ class SettingsDataSource @Inject constructor(
             it[PACKETS_RECEIPT_NOTIFICATION_KEY] = settings.packetsReceiptNotification
             it[KEEP_BOND_KEY] = settings.keepBondInformation
             it[EXTERNAL_MCU_KEY] = settings.externalMcuDfu
+            it[SHOW_WELCOME_KEY] = settings.showWelcomeScreen
         }
     }
 
@@ -39,6 +41,7 @@ class SettingsDataSource @Inject constructor(
             this[PACKETS_RECEIPT_NOTIFICATION_KEY] ?: false,
             this[KEEP_BOND_KEY] ?: false,
             this[EXTERNAL_MCU_KEY] ?: false,
+            this[SHOW_WELCOME_KEY] ?: true,
         )
     }
 }

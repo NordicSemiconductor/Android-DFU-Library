@@ -6,6 +6,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.*
 import no.nordicsemi.android.dfu.DfuServiceController
 import no.nordicsemi.dfu.profile.main.repository.DFUServiceRunningObserver
+import no.nordicsemi.dfu.profile.settings.domain.DFUSettings
 import no.nordicsemi.ui.scanner.DiscoveredBluetoothDevice
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -31,9 +32,9 @@ internal class DFURepository @Inject constructor(
         }
     }
 
-    fun launch(scope: CoroutineScope) {
+    fun launch(settings: DFUSettings) {
         progressManager.registerListener()
-        dfuServiceController = dfuManager.install(zipFile!!, device!!)
+        dfuServiceController = dfuManager.install(zipFile!!, device!!, settings)
 
         progressManager.status.onEach {
             _data.value = it

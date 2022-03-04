@@ -13,6 +13,8 @@ import no.nordicsemi.dfu.profile.settings.view.*
 import no.nordicsemi.ui.scanner.ui.exhaustive
 import javax.inject.Inject
 
+private const val INFOCENTER_LINK = "https://infocenter.nordicsemi.com/topic/sdk_nrf5_v16.0.0/examples_bootloader.html?cp=7_1_4_4"
+
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val repository: SettingsRepository,
@@ -27,6 +29,7 @@ class SettingsViewModel @Inject constructor(
             OnExternalMcuDfuSwitchClick -> onExternalMcuDfuSwitchClick()
             OnKeepBondInformationSwitchClick -> onKeepBondSwitchClick()
             OnPacketsReceiptNotificationSwitchClick -> onPacketsReceiptNotificationSwitchClick()
+            OnAboutAppClick -> navigationManager.openLink(INFOCENTER_LINK)
         }.exhaustive
     }
 

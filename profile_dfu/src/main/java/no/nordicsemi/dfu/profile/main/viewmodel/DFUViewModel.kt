@@ -1,7 +1,6 @@
 package no.nordicsemi.dfu.profile.main.viewmodel
 
 import android.net.Uri
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -9,14 +8,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import no.nordicsemi.android.navigation.CancelDestinationResult
-import no.nordicsemi.android.navigation.DestinationResult
-import no.nordicsemi.android.navigation.NavigationManager
-import no.nordicsemi.android.navigation.SuccessDestinationResult
+import no.nordicsemi.android.navigation.*
 import no.nordicsemi.dfu.profile.DfuSettingsScreen
+import no.nordicsemi.dfu.profile.DfuWelcomeScreen
 import no.nordicsemi.dfu.profile.main.data.*
 import no.nordicsemi.dfu.profile.main.view.*
 import no.nordicsemi.dfu.profile.main.view.DFUProgressViewEntity.Companion.createErrorStage
+import no.nordicsemi.dfu.profile.settings.repository.SettingsRepository
 import no.nordicsemi.ui.scanner.ScannerDestinationId
 import no.nordicsemi.ui.scanner.ui.exhaustive
 import no.nordicsemi.ui.scanner.ui.getDevice
@@ -36,7 +34,8 @@ class StateHolder @Inject constructor() {
 internal class DFUViewModel @Inject constructor(
     private val stateHolder: StateHolder,
     private val repository: DFURepository,
-    private val navigationManager: NavigationManager
+    private val navigationManager: NavigationManager,
+    private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
     private val _state: MutableStateFlow<DFUViewState> = stateHolder.state
@@ -70,13 +69,21 @@ internal class DFUViewModel @Inject constructor(
                 }
             }
         }.launchIn(viewModelScope)
+
+        settingsRepository.settings.onEach {
+            _state.value = _state.value.copy(settings = it)
+
+            if (it.showWelcomeScreen) {
+                navigationManager.navigateTo(DfuWelcomeScreen)
+                settingsRepository.storeSettings(it.copy(showWelcomeScreen = false))
+            }
+        }.launchIn(viewModelScope)
     }
 
     private fun requestBluetoothDevice() {
         navigationManager.navigateTo(ScannerDestinationId)
 
         navigationManager.recentResult.onEach {
-            Log.d("AAATESTAAA", "result: $it")
             if (it.destinationId == ScannerDestinationId) {
                 handleArgs(it)
             }
@@ -85,8 +92,7 @@ internal class DFUViewModel @Inject constructor(
 
     private fun handleArgs(args: DestinationResult?) {
         when (args) {
-            is CancelDestinationResult -> { /* do nothing */
-            }
+            is CancelDestinationResult -> doNothing()
             is SuccessDestinationResult -> {
                 repository.device = args.getDevice()
                 _state.value = _state.value.copy(
@@ -111,8 +117,8 @@ internal class DFUViewModel @Inject constructor(
         }.exhaustive
     }
 
-    private fun onInstallButtonClick() {
-        repository.launch(viewModelScope)
+    private fun onInstallButtonClick() = _state.value.settings?.let {
+        repository.launch(it)
         _state.value = _state.value.copy(progressViewEntity = DFUProgressViewEntity.createBootloaderStage())
     }
 
