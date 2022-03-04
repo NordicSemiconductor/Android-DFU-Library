@@ -38,10 +38,10 @@
     <string name="dfu_progress_icon">Icon indicating progress or result of the selected stage.</string>
 
     <string name="dfu_device">Device</string>
-    <string name="dfu_select_device">Select device</string>
-    <string name="dfu_select_device_info">Select a device.</string>
+    <string name="dfu_select_device">Select</string>
+    <string name="dfu_select_device_info">Select device</string>
 
-    <string name="dfu_select_file">Select file</string>
+    <string name="dfu_select_file">Select</string>
     <string name="dfu_choose_file">File</string>
     <string name="dfu_choose_info">Select a .zip file.</string>
 
@@ -72,7 +72,6 @@
     <string name="dfu_ic_upload_file">Upload DFU file.</string>
     <string name="dfu_ic_abort">Abort installing DFU.</string>
 
-    <string name="dfu_success">Success!</string>
     <string name="dfu_unknown_error">Unknown error.</string>
     <string name="dfu_unknown">Unknown</string>
 
@@ -83,15 +82,15 @@
     <string name="dfu_file_size">File size: <b>%d</b> bytes</string>
 
     <string name="dfu_bootloader_idle">Bootloader enablement</string>
-    <string name="dfu_bootloader_working">Enabling bootloader...</string>
+    <string name="dfu_bootloader_working">Enabling bootloader…</string>
     <string name="dfu_bootloader_success">Bootloader enabled</string>
 
     <string name="dfu_process_idle">DFU initialization</string>
-    <string name="dfu_process_working">Initializing DFU...</string>
+    <string name="dfu_process_working">Initializing DFU…</string>
     <string name="dfu_process_success">DFU initialized</string>
 
     <string name="dfu_firmware_idle">Firmware upload</string>
-    <string name="dfu_firmware_working">Uploading firmware...</string>
+    <string name="dfu_firmware_working">Uploading firmware…</string>
     <string name="dfu_firmware_success">Firmware uploaded</string>
     <string name="dfu_settings_action">Open settings screen.</string>
 
@@ -99,7 +98,7 @@
     <string name="dfu_settings">Settings</string>
     <string name="dfu_settings_other">Other</string>
     <string name="dfu_settings_force_scanning">Force scanning</string>
-    <string name="dfu_settings_force_scanning_info">Set force scanning for new address in legacy DFU.</string>
+    <string name="dfu_settings_force_scanning_info">Forces scanning for DFU bootloader.</string>
     <string name="dfu_settings_disable_resume">Disable resume</string>
     <string name="dfu_settings_disable_resume_info">This options allows to disable the resume feature in Secure DFU.</string>
     <string name="dfu_settings_number_of_pockets">Number of packets</string>
@@ -110,14 +109,14 @@
     <string name="dfu_settings_packets_receipt_notification_info">Enables or disables the Packet Receipt Notification (PRN) procedure.</string>
 
     <string name="dfu_settings_keep_bond_information">Keep bond</string>
-    <string name="dfu_settings_keep_bond_information_info">Sets whether the bond information should be preserver after flashing new application.</string>
+    <string name="dfu_settings_keep_bond_information_info">Sets whether the bond information should be preserved after flashing new application.</string>
     <string name="dfu_settings_external_mcu_dfu">External MCU DFU</string>
-    <string name="dfu_settings_external_mcu_dfu_info">Setting force DFU to true will prevent from jumping to the DFU Bootloader mode in case there is no DFU Version characteristic (Legacy DFU only!).</string>
+    <string name="dfu_settings_external_mcu_dfu_info">Enabling this option will prevent from jumping to the DFU Bootloader mode in case there is no DFU Version characteristic.</string>
 
     <string name="dfu_parse_int_error">Please provide integer value.</string>
     <string name="dfu_show_welcome_screen">Show welcome screen</string>
     <string name="dfu_about_app">About DFU</string>
-    <string name="dfu_about_app_desc">DFU documentation on Nordic\'s Developer Zone</string>
+    <string name="dfu_about_app_desc">DFU documentation on Nordic\'s Infocenter.</string>
     <string name="dfu_welcome">Welcome</string>
     <string name="dfu_start">Start</string>
     <string name="dfu_explanation_image">Image describing firmware update flow.</string>

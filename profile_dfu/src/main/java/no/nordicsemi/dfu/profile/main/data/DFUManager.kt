@@ -23,21 +23,19 @@ class DFUManager @Inject constructor(
         val starter = DfuServiceInitiator(device.address()).apply {
             setDeviceName(device.displayName())
 
-            // Legacy only
             setKeepBond(settings.keepBondInformation)
             setForceDfu(settings.externalMcuDfu)
 
-            // Secure DFU only
             if (settings.disableResume) {
-                disableResume() // zaifować
+                disableResume()
             }
-//            disableMtuRequest() // wywalić albo zaifować
-            setForceScanningForNewAddressInLegacyDfu(settings.forceScanningInLegacyDfu)// zaifować
-            setPrepareDataObjectDelay(400) // OK
-            setUnsafeExperimentalButtonlessServiceInSecureDfuEnabled(true) // OK
 
-            setPacketsReceiptNotificationsEnabled(settings.packetsReceiptNotification) // OK
-            setPacketsReceiptNotificationsValue(settings.numberOfPackets) // opcja ustawienia
+            setForceScanningForNewAddressInLegacyDfu(settings.forceScanningInLegacyDfu)
+            setPrepareDataObjectDelay(400)
+            setUnsafeExperimentalButtonlessServiceInSecureDfuEnabled(true)
+
+            setPacketsReceiptNotificationsEnabled(settings.packetsReceiptNotification)
+            setPacketsReceiptNotificationsValue(settings.numberOfPackets)
         }
 
         starter.setZip(file.uri, null)
