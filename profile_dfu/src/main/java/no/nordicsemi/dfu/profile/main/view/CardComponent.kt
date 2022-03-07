@@ -58,8 +58,6 @@ internal fun CardComponent(
                 style = MaterialTheme.typography.titleLarge
             )
 
-            Spacer(modifier = Modifier.size(16.dp))
-
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
