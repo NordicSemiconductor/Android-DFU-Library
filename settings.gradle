@@ -1,5 +1,6 @@
 include ':app'
 include ':lib_dfu'
+include ':lib_storage'
 include ':profile_dfu'
 
 if (file('../Android-Common-Libraries').exists()) {

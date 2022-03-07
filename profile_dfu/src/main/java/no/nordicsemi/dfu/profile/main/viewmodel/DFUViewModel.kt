@@ -15,6 +15,7 @@ import no.nordicsemi.dfu.profile.main.data.*
 import no.nordicsemi.dfu.profile.main.view.*
 import no.nordicsemi.dfu.profile.main.view.DFUProgressViewEntity.Companion.createErrorStage
 import no.nordicsemi.dfu.profile.settings.repository.SettingsRepository
+import no.nordicsemi.dfu.storage.ExternalFileDataSource
 import no.nordicsemi.ui.scanner.ScannerDestinationId
 import no.nordicsemi.ui.scanner.ui.exhaustive
 import no.nordicsemi.ui.scanner.ui.getDevice
@@ -35,7 +36,8 @@ internal class DFUViewModel @Inject constructor(
     private val stateHolder: StateHolder,
     private val repository: DFURepository,
     private val navigationManager: NavigationManager,
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private val externalFileDataSource: ExternalFileDataSource
 ) : ViewModel() {
 
     private val _state: MutableStateFlow<DFUViewState> = stateHolder.state
@@ -77,6 +79,10 @@ internal class DFUViewModel @Inject constructor(
                 navigationManager.navigateTo(DfuWelcomeScreen)
                 settingsRepository.storeSettings(it.copy(showWelcomeScreen = false))
             }
+        }.launchIn(viewModelScope)
+
+        externalFileDataSource.uri.onEach {
+            it?.let { onZipFileSelected(it) }
         }.launchIn(viewModelScope)
     }
 

@@ -1,5 +1,6 @@
 package no.nordicsemi.dfu
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,13 +12,20 @@ import no.nordicsemi.android.material.you.NordicActivity
 import no.nordicsemi.android.material.you.NordicTheme
 import no.nordicsemi.android.navigation.NavigationView
 import no.nordicsemi.dfu.profile.DFUDestinations
+import no.nordicsemi.dfu.storage.DeepLinkHandler
 import no.nordicsemi.ui.scanner.ScannerDestinations
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : NordicActivity() {
 
+    @Inject
+    lateinit var linkHandler: DeepLinkHandler
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        linkHandler.handleDeepLink(intent)
 
         setContent {
             NordicTheme {
@@ -29,5 +37,11 @@ class MainActivity : NordicActivity() {
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+
+        linkHandler.handleDeepLink(intent)
     }
 }

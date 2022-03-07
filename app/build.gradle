@@ -62,6 +62,7 @@ android {
 
 dependencies {
     implementation project(":lib_dfu")
+    implementation project(":lib_storage")
     implementation project(":profile_dfu")
 
     implementation "no.nordicsemi.android:ble-common:2.4.0.beta02"
