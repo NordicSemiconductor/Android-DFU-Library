@@ -27,6 +27,7 @@ internal fun CardComponent(
     secondaryButtonAction: (() -> Unit)? = null,
     secondaryButtonEnabled: Boolean = true,
     showVerticalDivider: Boolean = true,
+    isRunning: Boolean = false,
     content: @Composable () -> Unit
 ) {
     Column {
@@ -64,30 +65,34 @@ internal fun CardComponent(
                     .padding(start = 16.dp),
                 horizontalArrangement = Arrangement.End
             ) {
-                secondaryButtonTitle?.let {
-                    OutlinedButton(
-                        onClick = { secondaryButtonAction?.invoke() },
-                        enabled = secondaryButtonEnabled
-                    ) {
-                        Text(text = it)
+                if (isRunning) {
+                    CircularProgressIndicator(modifier = Modifier.size(48.dp).padding(8.dp))
+                } else {
+                    secondaryButtonTitle?.let {
+                        OutlinedButton(
+                            onClick = { secondaryButtonAction?.invoke() },
+                            enabled = secondaryButtonEnabled
+                        ) {
+                            Text(text = it)
+                        }
                     }
-                }
 
-                primaryButtonTitle?.let {
-                    val color = if (redButtonColor) {
-                        ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error,
-                            contentColor = MaterialTheme.colorScheme.onError
-                        )
-                    } else {
-                        ButtonDefaults.buttonColors()
-                    }
-                    Button(
-                        onClick = { primaryButtonAction?.invoke() },
-                        colors = color,
-                        enabled = primaryButtonEnabled
-                    ) {
-                        Text(text = it)
+                    primaryButtonTitle?.let {
+                        val color = if (redButtonColor) {
+                            ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error,
+                                contentColor = MaterialTheme.colorScheme.onError
+                            )
+                        } else {
+                            ButtonDefaults.buttonColors()
+                        }
+                        Button(
+                            onClick = { primaryButtonAction?.invoke() },
+                            colors = color,
+                            enabled = primaryButtonEnabled
+                        ) {
+                            Text(text = it)
+                        }
                     }
                 }
             }

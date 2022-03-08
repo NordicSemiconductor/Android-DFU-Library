@@ -16,6 +16,9 @@ import no.nordicsemi.dfu.profile.main.view.*
 import no.nordicsemi.dfu.profile.main.view.DFUProgressViewEntity.Companion.createErrorStage
 import no.nordicsemi.dfu.profile.settings.repository.SettingsRepository
 import no.nordicsemi.dfu.storage.ExternalFileDataSource
+import no.nordicsemi.dfu.storage.FileDownloaded
+import no.nordicsemi.dfu.storage.FileError
+import no.nordicsemi.dfu.storage.LoadingFile
 import no.nordicsemi.ui.scanner.ScannerDestinationId
 import no.nordicsemi.ui.scanner.ui.exhaustive
 import no.nordicsemi.ui.scanner.ui.getDevice
@@ -81,8 +84,17 @@ internal class DFUViewModel @Inject constructor(
             }
         }.launchIn(viewModelScope)
 
-        externalFileDataSource.uri.onEach {
-            it?.let { onZipFileSelected(it) }
+        externalFileDataSource.fileResource.onEach {
+            when (it) {
+                is FileDownloaded -> onZipFileSelected(it.uri)
+                FileError -> _state.value = _state.value.copy(
+                    fileViewEntity = NotSelectedFileViewEntity(isRunning = false, isError = true),
+                )
+                LoadingFile -> _state.value = _state.value.copy(
+                    fileViewEntity = NotSelectedFileViewEntity(isRunning = true, isError = false),
+                )
+                null -> doNothing()
+            }.exhaustive
         }.launchIn(viewModelScope)
     }
 

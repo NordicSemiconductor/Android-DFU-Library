@@ -22,7 +22,10 @@ import no.nordicsemi.ui.scanner.ui.exhaustive
 internal sealed class DFUSelectFileViewEntity : Parcelable
 
 @Parcelize
-internal data class NotSelectedFileViewEntity(val isError: Boolean = false) : DFUSelectFileViewEntity()
+internal data class NotSelectedFileViewEntity(
+    val isError: Boolean = false,
+    val isRunning: Boolean = false
+) : DFUSelectFileViewEntity()
 
 @Parcelize
 internal data class SelectedFileViewEntity(val zipFile: ZipFile) : DFUSelectFileViewEntity()
@@ -50,20 +53,24 @@ internal fun DFUNotSelectedFileView(viewEntity: NotSelectedFileViewEntity, onEve
         title = stringResource(id = R.string.dfu_choose_file),
         description = stringResource(id = R.string.dfu_choose_not_selected),
         primaryButtonTitle = stringResource(id = R.string.dfu_select_file),
-        primaryButtonAction = { launcher.launch(DfuBaseService.MIME_TYPE_ZIP) }
+        primaryButtonAction = { launcher.launch(DfuBaseService.MIME_TYPE_ZIP) },
+        isRunning = viewEntity.isRunning
     ) {
-        Text(
-            text = stringResource(id = R.string.dfu_choose_info),
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(horizontal = 16.dp)
-        )
-        if (viewEntity.isError) {
-            Spacer(modifier = Modifier.size(8.dp))
+        Column {
             Text(
-                text = stringResource(id = R.string.dfu_load_file_error),
-                style = MaterialTheme.typography.labelMedium,
+                text = stringResource(id = R.string.dfu_choose_info),
+                style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
+            if (viewEntity.isError) {
+                Spacer(modifier = Modifier.size(8.dp))
+                Text(
+                    text = stringResource(id = R.string.dfu_load_file_error),
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
         }
     }
 }
@@ -86,7 +93,9 @@ internal fun DFUSelectFileView(zipFile: ZipFile, onEvent: (DFUViewEvent) -> Unit
         secondaryButtonAction = { launcher.launch(DfuBaseService.MIME_TYPE_ZIP) }
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.Start
         ) {
             Text(
@@ -115,7 +124,9 @@ internal fun DFUSelectFileNoActionView(zipFile: ZipFile) {
         secondaryButtonEnabled = false
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.Start
         ) {
             Text(

@@ -20,8 +20,8 @@ class ExternalFileDataSource @Inject internal constructor(
     private val parser: FileNameParser
 ) {
 
-    private val _uri = MutableStateFlow<Uri?>(null)
-    val uri = _uri.asStateFlow()
+    private val _fileResource = MutableStateFlow<FileResource?>(null)
+    val fileResource = _fileResource.asStateFlow()
 
     private val downloadManger = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
 
@@ -33,9 +33,9 @@ class ExternalFileDataSource @Inject internal constructor(
             val id: Long = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
 
             if (downloadID == id) {
-                val uri = downloadManger.getUriForDownloadedFile(id)
-                _uri.value = uri
-                downloadID = null
+                _fileResource.value = downloadManger.getUriForDownloadedFile(id)?.let {
+                    FileDownloaded(it)
+                } ?: FileError
             }
         }
     }
@@ -51,17 +51,20 @@ class ExternalFileDataSource @Inject internal constructor(
         if (isRunning()) {
             return
         }
+        _fileResource.value = LoadingFile
 
         val request: DownloadManager.Request = DownloadManager.Request(Uri.parse(url))
         request.setTitle(parser.parseName(url))
         request.setDescription(context.getString(R.string.storage_notification_description))
 
         request.allowScanningByMediaScanner()
-        request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+        request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
         request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, parser.parseName(url))
 
         downloadID = downloadManger.enqueue(request)
     }
 
-    private fun isRunning() = downloadID != null
+    private fun isRunning(): Boolean {
+        return fileResource.value is LoadingFile
+    }
 }
