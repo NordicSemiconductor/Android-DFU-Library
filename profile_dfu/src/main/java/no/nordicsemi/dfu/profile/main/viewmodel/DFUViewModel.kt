@@ -12,6 +12,7 @@ import no.nordicsemi.android.navigation.*
 import no.nordicsemi.dfu.profile.DfuSettingsScreen
 import no.nordicsemi.dfu.profile.DfuWelcomeScreen
 import no.nordicsemi.dfu.profile.main.data.*
+import no.nordicsemi.dfu.profile.main.repository.DFURepository
 import no.nordicsemi.dfu.profile.main.view.*
 import no.nordicsemi.dfu.profile.main.view.DFUProgressViewEntity.Companion.createErrorStage
 import no.nordicsemi.dfu.profile.settings.repository.SettingsRepository
