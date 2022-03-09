@@ -1,6 +1,7 @@
 package no.nordicsemi.dfu.profile.main.view
 
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -10,8 +11,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import no.nordicsemi.dfu.profile.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,6 +39,7 @@ internal fun CardComponent(
             horizontalArrangement = Arrangement.Start,
             modifier = Modifier.padding(16.dp)
         ) {
+
             Box(
                 modifier = Modifier
                     .size(40.dp)
@@ -44,6 +48,14 @@ internal fun CardComponent(
                         shape = CircleShape
                     )
             ) {
+                Image(
+                    painter = painterResource(R.drawable.ic_ukraine_flag),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                )
                 Icon(
                     painter = painterResource(id = titleIcon),
                     contentDescription = null,
