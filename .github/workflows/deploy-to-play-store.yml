@@ -2,7 +2,7 @@ name: Deploy to Play Store Internal
 on:
   workflow_dispatch:
 jobs:
-  restorePassword:
+  deployInternal:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
