@@ -1,3 +1,23 @@
+# DFU Application
+
+[ ![Download](https://maven-badges.herokuapp.com/maven-central/no.nordicsemi.android/dfu/badge.svg?style=plastic) ](https://search.maven.org/artifact/no.nordicsemi.android/dfu)
+
+This is a standalone Android application which utilizes DFU library. It allows for selecting a .zip file which can be uploaded to nRF5 devices with nRF5 DFU bootloader.
+
+> Note: To update a devices running Zephyr or NCS-based firmware use [nRF Connect Device Manager](https://github.com/NordicSemiconductor/Android-nRF-Connect-Device-Manager) app instead.
+
+### Deep links
+Application opens links with the provided format for both http and https. 
+`link_to_file` should be replaced with a valid link.
+Clicking on the link automatically opens app which starts downloading to Download folder on the phone. Downlaoded file is displayed in the app and ready to use.
+
+Link format: ```https://www.nordicsemi.com/dfu/?file=link_to_file```
+
+> Note: Keep in mind to replace '&' with '%26' in the `link_to_file`.
+
+### Zip file extension support
+Application can handle opening .zip files from system level. Selected file will be used as an upload source.
+
 # DFU Library
 
 [ ![Download](https://maven-badges.herokuapp.com/maven-central/no.nordicsemi.android/dfu/badge.svg?style=plastic) ](https://search.maven.org/artifact/no.nordicsemi.android/dfu)
@@ -18,7 +38,7 @@ The DFU library is available on Maven Central repository. Add it to your project
 adding the following dependency:
 
 ```Groovy
-implementation 'no.nordicsemi.android:dfu:1.12.1-beta01'
+implementation 'no.nordicsemi.android:dfu:{{VERSION}}'
 ```
 
 Latest version targeting API lower than 31 is 1.11.1.
@@ -82,7 +102,7 @@ OTA-DFU allows firmware upgrades to be issued and downloaded to products in the 
 and so enables OEMs to fix bugs and introduce new features to products that are already out on the market. 
 This brings added security and flexibility to product development when using the nRF5x Series SoCs.
 
-![Device Firmware Update](profile_dfu/res/drawable/dfu.png)
+![Device Firmware Update](resources/dfu.png)
 
 This repository contains a tested library for Android 4.3+ platform which may be used to perform 
 Device Firmware Update on the nRF5x device using a phone or a tablet.
