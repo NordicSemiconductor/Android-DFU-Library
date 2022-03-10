@@ -1,3 +1,23 @@
+# DFU Application
+
+[ ![Download](https://maven-badges.herokuapp.com/maven-central/no.nordicsemi.android/dfu/badge.svg?style=plastic) ](https://search.maven.org/artifact/no.nordicsemi.android/dfu)
+
+This is a standalone Android application which utilizes DFU library. It allows for selecting a .zip file which can be uploaded to nRF5 devices with nRF5 DFU bootloader.
+
+> Note: To update a devices running Zephyr or NCS-based firmware use [nRF Connect Device Manager](https://github.com/NordicSemiconductor/Android-nRF-Connect-Device-Manager) app instead.
+
+### Deep links
+Application opens links with the provided format for both http and https.
+`link_to_file` should be replaced with a valid link.
+Clicking on the link automatically opens app which starts downloading to Download folder on the phone. Downlaoded file is displayed in the app and ready to use.
+
+Link format: ```https://www.nordicsemi.com/dfu/?file=link_to_file```
+
+> Note: Keep in mind to replace '&' with '%26' in the `link_to_file`.
+
+### Zip file extension support
+Application can handle opening .zip files from system level. Selected file will be used as an upload source.
+
 # DFU Library
 
 [ ![Download](https://maven-badges.herokuapp.com/maven-central/no.nordicsemi.android/dfu/badge.svg?style=plastic) ](https://search.maven.org/artifact/no.nordicsemi.android/dfu)
