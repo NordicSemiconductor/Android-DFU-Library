@@ -62,7 +62,9 @@
     <string name="dfu_display_status_enabling">Enabling DFU</string>
     <string name="dfu_display_status_error">Error</string>
     <string name="dfu_display_status_idle">Idle</string>
+    <string name="dfu_display_status_progress_update_parts">Progress part %d/%d: %d\%%</string>
     <string name="dfu_display_status_progress_update">Progress: %d\%%</string>
+    <string name="dfu_display_status_progress_speed">Speed: %.1fkB/s</string>
     <string name="dfu_display_status_started">Started</string>
     <string name="dfu_display_status_starting">Starting</string>
     <string name="dfu_display_status_validating">Validating</string>

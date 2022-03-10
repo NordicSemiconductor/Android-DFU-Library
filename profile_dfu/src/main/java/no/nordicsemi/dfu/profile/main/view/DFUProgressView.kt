@@ -13,8 +13,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import no.nordicsemi.dfu.profile.R
+import no.nordicsemi.dfu.profile.main.data.ProgressUpdate
 import no.nordicsemi.ui.scanner.ui.exhaustive
 
 @Composable
@@ -107,17 +109,20 @@ private fun ProgressItem(viewEntity: ProgressItemViewEntity) {
         if (viewEntity.installationStatus == ProgressItemStatus.WORKING) {
             Column {
                 ProgressItem(
-                    stringResource(
-                        id = R.string.dfu_display_status_progress_update,
-                        viewEntity.progress
-                    ),
+                    viewEntity.progress.toLabel(),
                     viewEntity.installationStatus
                 )
                 LinearProgressIndicator(
-                    progress = viewEntity.progress/100f,
+                    progress = viewEntity.progress.progress/100f,
                     modifier = Modifier
-                        .padding(horizontal = 32.dp)
+                        .padding(horizontal = 32.dp + 16.dp)
                         .fillMaxWidth()
+                )
+                Text(
+                    text = stringResource(id = R.string.dfu_display_status_progress_speed, viewEntity.progress.avgSpeed),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp + 16.dp),
+                    textAlign = TextAlign.End
                 )
             }
         } else {
@@ -154,24 +159,35 @@ private fun ProgressItem(text: String, status: ProgressItemStatus) {
         Icon(
             painter = painterResource(status.toImageRes()),
             contentDescription = stringResource(id = R.string.dfu_progress_icon),
-            tint = status.toColor()
+            tint = status.toIconColor()
         )
         Spacer(modifier = Modifier.size(8.dp))
         Text(
             text = text,
             style = MaterialTheme.typography.bodyMedium,
-            color = status.toColor()
+            color = status.toTextColor(),
+            modifier = Modifier.padding(start = 16.dp)
         )
     }
 }
 
 @Composable
-private fun ProgressItemStatus.toColor(): Color {
+private fun ProgressItemStatus.toIconColor(): Color {
     return when (this) {
         ProgressItemStatus.DISABLED -> MaterialTheme.colorScheme.surfaceVariant
         ProgressItemStatus.WORKING -> MaterialTheme.colorScheme.onBackground
         ProgressItemStatus.SUCCESS -> colorResource(id = R.color.nordicGrass)
         ProgressItemStatus.ERROR -> MaterialTheme.colorScheme.error
+    }
+}
+
+@Composable
+private fun ProgressItemStatus.toTextColor(): Color {
+    return when (this) {
+        ProgressItemStatus.DISABLED -> MaterialTheme.colorScheme.surfaceVariant
+        ProgressItemStatus.WORKING,
+        ProgressItemStatus.SUCCESS,
+        ProgressItemStatus.ERROR -> MaterialTheme.colorScheme.onBackground
     }
 }
 
@@ -182,5 +198,14 @@ private fun ProgressItemStatus.toImageRes(): Int {
         ProgressItemStatus.WORKING -> R.drawable.ic_arrow_right
         ProgressItemStatus.SUCCESS -> R.drawable.ic_check
         ProgressItemStatus.ERROR -> R.drawable.ic_cross
+    }
+}
+
+@Composable
+private fun ProgressUpdate.toLabel(): String {
+    return if (partsTotal > 1) {
+        stringResource(id = R.string.dfu_display_status_progress_update_parts, currentPart, partsTotal, progress)
+    } else {
+        stringResource(id = R.string.dfu_display_status_progress_update, progress)
     }
 }

@@ -1,5 +1,8 @@
 package no.nordicsemi.dfu.profile.main.data
 
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
+
 internal sealed class DFUData
 
 internal object IdleStatus : DFUData()
@@ -12,7 +15,15 @@ internal object Connected : WorkingBasedStatus()
 internal object Starting : WorkingBasedStatus()
 internal object Started : WorkingBasedStatus()
 internal object EnablingDfu : WorkingBasedStatus()
-internal data class ProgressUpdate(val progress: Int) : WorkingBasedStatus()
+
+@Parcelize
+internal data class ProgressUpdate(
+    val progress: Int = 0,
+    val avgSpeed: Float = 0f,
+    val currentPart: Int = 0,
+    val partsTotal: Int = 0
+) : WorkingBasedStatus(), Parcelable
+
 internal object Validating : WorkingBasedStatus()
 internal object Completed : WorkingBasedStatus()
 internal object Aborted : WorkingBasedStatus()

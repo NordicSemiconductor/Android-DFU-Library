@@ -44,7 +44,7 @@ internal class DFUProgressManager @Inject constructor(
         currentPart: Int,
         partsTotal: Int
     ) {
-        status.value = WorkingStatus(ProgressUpdate(percent))
+        status.value = WorkingStatus(ProgressUpdate(percent, avgSpeed, currentPart, partsTotal))
     }
 
     override fun onFirmwareValidating(deviceAddress: String) {

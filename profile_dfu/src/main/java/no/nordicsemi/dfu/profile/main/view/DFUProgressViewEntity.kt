@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import kotlinx.parcelize.Parcelize
 import no.nordicsemi.dfu.profile.R
+import no.nordicsemi.dfu.profile.main.data.ProgressUpdate
 
 internal sealed class DFUProgressViewEntity : Parcelable {
 
@@ -24,7 +25,7 @@ internal sealed class DFUProgressViewEntity : Parcelable {
             )
         }
 
-        fun createInstallingStage(progress: Int): WorkingProgressViewEntity {
+        fun createInstallingStage(progress: ProgressUpdate): WorkingProgressViewEntity {
             return WorkingProgressViewEntity(
                 ProgressItemViewEntity(
                     bootloaderStatus = ProgressItemStatus.SUCCESS,
@@ -78,12 +79,12 @@ internal data class WorkingProgressViewEntity(
 
 
 @Parcelize
-data class ProgressItemViewEntity(
+internal data class ProgressItemViewEntity(
     val bootloaderStatus: ProgressItemStatus = ProgressItemStatus.DISABLED,
     val dfuStatus: ProgressItemStatus = ProgressItemStatus.DISABLED,
     val installationStatus: ProgressItemStatus = ProgressItemStatus.DISABLED,
     val resultStatus: ProgressItemStatus = ProgressItemStatus.DISABLED,
-    val progress: Int = 0,
+    val progress: ProgressUpdate = ProgressUpdate(),
     val errorMessage: String? = null
 ) : Parcelable {
 

@@ -16,10 +16,7 @@ import no.nordicsemi.dfu.profile.main.repository.DFURepository
 import no.nordicsemi.dfu.profile.main.view.*
 import no.nordicsemi.dfu.profile.main.view.DFUProgressViewEntity.Companion.createErrorStage
 import no.nordicsemi.dfu.profile.settings.repository.SettingsRepository
-import no.nordicsemi.dfu.storage.ExternalFileDataSource
-import no.nordicsemi.dfu.storage.FileDownloaded
-import no.nordicsemi.dfu.storage.FileError
-import no.nordicsemi.dfu.storage.LoadingFile
+import no.nordicsemi.dfu.storage.*
 import no.nordicsemi.ui.scanner.ScannerDestinationId
 import no.nordicsemi.ui.scanner.ui.exhaustive
 import no.nordicsemi.ui.scanner.ui.getDevice
@@ -41,7 +38,8 @@ internal class DFUViewModel @Inject constructor(
     private val repository: DFURepository,
     private val navigationManager: NavigationManager,
     private val settingsRepository: SettingsRepository,
-    private val externalFileDataSource: ExternalFileDataSource
+    private val externalFileDataSource: ExternalFileDataSource,
+    private val deepLinkHandler: DeepLinkHandler
 ) : ViewModel() {
 
     private val _state: MutableStateFlow<DFUViewState> = stateHolder.state
@@ -58,7 +56,7 @@ internal class DFUViewModel @Inject constructor(
             }
 
             ((it as? WorkingStatus)?.status as? ProgressUpdate)?.let {
-                _state.value = _state.value.copy(progressViewEntity = DFUProgressViewEntity.createInstallingStage(it.progress))
+                _state.value = _state.value.copy(progressViewEntity = DFUProgressViewEntity.createInstallingStage(it))
             }
 
             ((it as? WorkingStatus)?.status as? Aborted)?.let {
@@ -96,6 +94,10 @@ internal class DFUViewModel @Inject constructor(
                 )
                 null -> doNothing()
             }.exhaustive
+        }.launchIn(viewModelScope)
+
+        deepLinkHandler.zipFile.onEach {
+            it?.let { onZipFileSelected(it) }
         }.launchIn(viewModelScope)
     }
 
