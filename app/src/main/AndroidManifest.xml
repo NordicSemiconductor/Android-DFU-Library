@@ -37,8 +37,6 @@
                     android:host="www.nordicsemi.com"
                     android:pathPrefix="/dfu"
                     android:scheme="https" />
-
-                <data android:mimeType="application/zip" />
             </intent-filter>
 
             <intent-filter>
