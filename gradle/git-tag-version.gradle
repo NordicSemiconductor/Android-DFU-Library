@@ -2,7 +2,7 @@ ext.getVersionCodeFromTags = { ->
     try {
         def code = new ByteArrayOutputStream()
         exec {
-            commandLine 'git', 'tag', '--list'
+            commandLine 'git', 'log'
             standardOutput = code
         }
         return code.toString().split("\n").size()
