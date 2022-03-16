@@ -37,15 +37,3 @@ dependencies {
 
     implementation 'com.google.code.gson:gson:2.8.8'
 }
-
-// === Maven Central configuration ===
-// The following file exists only when Android DFU Library project is opened, but not
-// when the module is loaded to a different project.
-if (rootProject.file('gradle/publish-module.gradle').exists()) {
-    ext {
-        POM_ARTIFACT_ID = 'dfu'
-        POM_NAME = 'DFU Library for Android'
-        POM_PACKAGING = 'aar'
-    }
-    apply from: rootProject.file('gradle/publish-module.gradle')
-}
