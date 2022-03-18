@@ -9,7 +9,7 @@ This is a standalone Android application which utilizes DFU library. It allows f
 ### Play store
 Application is available in [Play Store](https://play.google.com/store/apps/details?id=no.nordicsemi.android.dfu).
 
-![Play store main](resources/app_main.png) ![Play store settings](resources/app_settings.png)
+<img src="resources/app_main.png" width="300"> <img src="resources/app_settings.png" width="300">
 
 ### Deep links
 Application opens links with the provided format for both http and https.
