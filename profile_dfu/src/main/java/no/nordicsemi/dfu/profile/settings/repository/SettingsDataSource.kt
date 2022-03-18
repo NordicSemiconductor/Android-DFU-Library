@@ -31,6 +31,12 @@ class SettingsDataSource @Inject constructor(
 
     val settings = context.dataStore.data.map { it.toSettings() }
 
+    suspend fun tickWelcomeScreenShown() {
+        context.dataStore.edit {
+            it[SHOW_WELCOME_KEY] = false
+        }
+    }
+
     suspend fun storeSettings(settings: DFUSettings) {
         context.dataStore.edit {
             it[PACKETS_RECEIPT_NOTIFICATION_KEY] = settings.packetsReceiptNotification

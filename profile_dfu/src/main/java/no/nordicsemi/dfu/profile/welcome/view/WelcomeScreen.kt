@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,13 +27,22 @@ import no.nordicsemi.dfu.profile.welcome.viewmodel.WelcomeViewModel
 @Composable
 fun WelcomeScreen() {
     val viewModel = hiltViewModel<WelcomeViewModel>()
+    val firstRun = viewModel.firstRun.collectAsState().value
+
     Box {
         Column {
-            WelcomeAppBar { viewModel.navigateUp() }
+
+            if (firstRun) {
+                WelcomeAppBar()
+            } else {
+                WelcomeAppBar { viewModel.navigateUp() }
+            }
 
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.verticalScroll(rememberScrollState()).padding(16.dp)
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp)
             ) {
 
                 Image(
@@ -67,6 +77,20 @@ fun WelcomeScreen() {
                 .align(Alignment.BottomEnd)
         )
     }
+}
+
+@Composable
+private fun WelcomeAppBar() {
+    SmallTopAppBar(
+        title = { Text(stringResource(id = R.string.dfu_welcome)) },
+        colors = TopAppBarDefaults.smallTopAppBarColors(
+            scrolledContainerColor = MaterialTheme.colorScheme.primary,
+            containerColor = colorResource(id = R.color.appBarColor),
+            titleContentColor = MaterialTheme.colorScheme.onPrimary,
+            actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
+            navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+        )
+    )
 }
 
 @Composable

@@ -79,7 +79,6 @@ internal class DFUViewModel @Inject constructor(
 
             if (it.showWelcomeScreen) {
                 navigationManager.navigateTo(DfuWelcomeScreen)
-                settingsRepository.storeSettings(it.copy(showWelcomeScreen = false))
             }
         }.launchIn(viewModelScope)
 

@@ -14,4 +14,8 @@ class SettingsRepository @Inject constructor(
     suspend fun storeSettings(settings: DFUSettings) {
         settingsDataSource.storeSettings(settings)
     }
+
+    suspend fun tickWelcomeScreenShown() {
+        settingsDataSource.tickWelcomeScreenShown()
+    }
 }
