@@ -21,6 +21,7 @@ buildscript {
         classpath "io.spring.gradle:dependency-management-plugin:1.0.11.RELEASE"
         classpath "com.google.dagger:hilt-android-gradle-plugin:2.40.4"
         classpath "io.github.gradle-nexus:publish-plugin:$gradle_nexus_publish_plugin"
+        classpath "com.autonomousapps:dependency-analysis-gradle-plugin:0.78.0"
     }
 }
 
@@ -39,3 +40,4 @@ task clean(type: Delete) {
 // Maven Central publishing
 apply plugin: 'io.github.gradle-nexus.publish-plugin'
 apply from: rootProject.file('gradle/publish-root.gradle')
+apply plugin: "com.autonomousapps.dependency-analysis"
