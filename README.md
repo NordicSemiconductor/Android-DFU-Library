@@ -6,6 +6,11 @@ This is a standalone Android application which utilizes DFU library. It allows f
 
 > Note: To update a devices running Zephyr or NCS-based firmware use [nRF Connect Device Manager](https://github.com/NordicSemiconductor/Android-nRF-Connect-Device-Manager) app instead.
 
+### Play store
+Application is available in [Play Store](https://play.google.com/store/apps/details?id=no.nordicsemi.android.dfu).
+
+![Play store main](resources/app_main.png) ![Play store settings](resources/app_settings.png)
+
 ### Deep links
 Application opens links with the provided format for both http and https.
 `link_to_file` should be replaced with a valid link.
