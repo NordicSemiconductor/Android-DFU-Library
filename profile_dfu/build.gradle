@@ -56,9 +56,9 @@ dependencies {
     implementation project(":lib_dfu")
     implementation project(":lib_storage")
 
-    implementation "no.nordicsemi.android.common:theme:1.0.3"
-    implementation "no.nordicsemi.android.common:navigation:1.0.3"
-    implementation "no.nordicsemi.android.common:uiscanner:1.0.3"
+    implementation "no.nordicsemi.android.common:theme:1.0.4"
+    implementation "no.nordicsemi.android.common:navigation:1.0.4"
+    implementation "no.nordicsemi.android.common:uiscanner:1.0.4"
 
     implementation "androidx.compose.material3:material3:1.0.0-alpha07"
     implementation "androidx.compose.ui:ui:1.1.1"

@@ -22,7 +22,7 @@
 
     <string name="dfu_select_file">Select</string>
     <string name="dfu_choose_file">File</string>
-    <string name="dfu_choose_info">Select a .zip file.</string>
+    <string name="dfu_choose_info">Select a .zip file</string>
 
     <string name="dfu_macro_dialog_confirm">Confirm</string>
     <string name="dfu_macro_dialog_dismiss">Dismiss</string>
