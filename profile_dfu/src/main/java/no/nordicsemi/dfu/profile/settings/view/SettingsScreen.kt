@@ -67,6 +67,10 @@ internal fun SettingsScreen() {
             onEvent(OnDisableResumeSwitchClick)
         }
 
+        Spacer(modifier = Modifier.size(32.dp))
+
+        Headline(stringResource(id = R.string.dfu_settings_headline_legacy_dfu))
+
         SwitchSettingsComponent(
             stringResource(id = R.string.dfu_settings_force_scanning),
             stringResource(id = R.string.dfu_settings_force_scanning_info),
@@ -74,10 +78,6 @@ internal fun SettingsScreen() {
         ) {
             onEvent(OnForceScanningAddressesSwitchClick)
         }
-
-        Spacer(modifier = Modifier.size(32.dp))
-
-        Headline(stringResource(id = R.string.dfu_settings_headline_legacy_dfu))
 
         SwitchSettingsComponent(
             stringResource(id = R.string.dfu_settings_keep_bond_information),
