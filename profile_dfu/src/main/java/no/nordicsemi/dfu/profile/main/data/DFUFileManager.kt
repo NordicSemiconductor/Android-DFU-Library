@@ -19,11 +19,10 @@ class DFUFileManager @Inject constructor(
         return try {
             createFromFile(uri)
         } catch (e: Exception) {
-            Log.e(TAG, "Error during creation file from uri.", e)
             try {
                 createFromContentResolver(uri)
             } catch (e: Exception) {
-                Log.e(TAG, "Error during loading file from content resolver.", e)
+                Log.e(TAG, "Error loading file from content resolver.", e)
                 null
             }
         }
