@@ -69,10 +69,11 @@ fun WelcomeScreen() {
 
         ElevatedButton(
             onClick = { viewModel.navigateUp() },
+            colors = ButtonDefaults.buttonColors(),
             modifier = Modifier
                 .padding(16.dp)
                 .width(150.dp)
-                .align(Alignment.BottomCenter)
+                .align(Alignment.BottomCenter),
         ) {
             Text(text = stringResource(id = R.string.dfu_start))
         }
