@@ -48,11 +48,18 @@ internal fun SettingsScreen() {
             onEvent(OnPacketsReceiptNotificationSwitchClick)
         }
 
-        SettingsButton(
-            stringResource(id = R.string.dfu_settings_number_of_pockets),
-            state.numberOfPackets.toString()
-        ) {
-            showDialog.value = true
+        if (state.packetsReceiptNotification) {
+            SettingsButton(
+                stringResource(id = R.string.dfu_settings_number_of_pockets),
+                state.numberOfPackets.toString()
+            ) {
+                showDialog.value = true
+            }
+        } else {
+            DisabledSettingsButton(
+                stringResource(id = R.string.dfu_settings_number_of_pockets),
+                state.numberOfPackets.toString()
+            )
         }
 
         Spacer(modifier = Modifier.size(16.dp))
@@ -208,6 +215,29 @@ private fun SettingsButton(title: String, description: String? = null, onClick: 
             Text(
                 text = it,
                 style = MaterialTheme.typography.bodySmall,
+            )
+        }
+    }
+}
+
+@Composable
+private fun DisabledSettingsButton(title: String, description: String? = null) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.surfaceVariant
+        )
+
+        description?.let {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.surfaceVariant
             )
         }
     }
