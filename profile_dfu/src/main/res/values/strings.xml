@@ -18,7 +18,7 @@
 
     <string name="dfu_device">Device</string>
     <string name="dfu_select_device">Select</string>
-    <string name="dfu_select_device_info">Select device</string>
+    <string name="dfu_select_device_info">Select a device</string>
 
     <string name="dfu_select_file">Select</string>
     <string name="dfu_choose_file">File</string>
