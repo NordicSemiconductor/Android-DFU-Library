@@ -67,15 +67,15 @@ fun WelcomeScreen() {
             }
         }
 
-
-        ExtendedFloatingActionButton(
-            text = { Text(text = stringResource(id = R.string.dfu_start)) },
-            icon = { Icon(painter = painterResource(id = R.drawable.ic_start), contentDescription = stringResource(id = R.string.dfu_start)) },
+        ElevatedButton(
             onClick = { viewModel.navigateUp() },
             modifier = Modifier
                 .padding(16.dp)
-                .align(Alignment.BottomEnd)
-        )
+                .width(150.dp)
+                .align(Alignment.BottomCenter)
+        ) {
+            Text(text = stringResource(id = R.string.dfu_start))
+        }
     }
 }
 
