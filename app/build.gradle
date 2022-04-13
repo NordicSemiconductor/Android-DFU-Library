@@ -7,6 +7,11 @@ plugins {
 }
 apply from: rootProject.file("gradle/git-tag-version.gradle")
 
+if (getGradle().getStartParameter().getTaskRequests().toString().contains("Release")){
+    apply plugin: 'com.google.gms.google-services'
+    apply plugin: 'com.google.firebase.crashlytics'
+}
+
 android {
     compileSdk android_api_version
 
@@ -61,6 +66,7 @@ android {
 }
 
 dependencies {
+    implementation project(":lib_analytics")
     implementation project(":lib_storage")
     implementation project(":profile_dfu")
 

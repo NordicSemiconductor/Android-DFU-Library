@@ -53,6 +53,7 @@ android {
 }
 
 dependencies {
+    implementation project(":lib_analytics")
     implementation project(":lib_dfu")
     implementation project(":lib_storage")
 

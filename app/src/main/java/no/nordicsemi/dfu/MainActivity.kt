@@ -3,6 +3,7 @@ package no.nordicsemi.dfu
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -22,10 +23,13 @@ class MainActivity : NordicActivity() {
     @Inject
     lateinit var linkHandler: DeepLinkHandler
 
+    private val viewModel: MainViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        linkHandler.handleDeepLink(intent)
+        val isDeepLink = linkHandler.handleDeepLink(intent)
+        viewModel.logEvent(isDeepLink)
 
         setContent {
             NordicTheme {

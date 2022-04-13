@@ -8,6 +8,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import no.nordicsemi.android.analytics.AppAnalytics
+import no.nordicsemi.android.analytics.DFUErrorEvent
+import no.nordicsemi.android.analytics.DFUSuccessEvent
 import no.nordicsemi.android.navigation.*
 import no.nordicsemi.dfu.profile.DfuSettingsScreen
 import no.nordicsemi.dfu.profile.DfuWelcomeScreen
@@ -39,7 +42,8 @@ internal class DFUViewModel @Inject constructor(
     private val navigationManager: NavigationManager,
     private val settingsRepository: SettingsRepository,
     private val externalFileDataSource: ExternalFileDataSource,
-    private val deepLinkHandler: DeepLinkHandler
+    private val deepLinkHandler: DeepLinkHandler,
+    private val analytics: AppAnalytics
 ) : ViewModel() {
 
     private val _state: MutableStateFlow<DFUViewState> = stateHolder.state
@@ -53,6 +57,7 @@ internal class DFUViewModel @Inject constructor(
 
             ((it as? WorkingStatus)?.status as? Completed)?.let {
                 _state.value = _state.value.copy(progressViewEntity = DFUProgressViewEntity.createSuccessStage())
+                analytics.logEvent(DFUSuccessEvent)
             }
 
             ((it as? WorkingStatus)?.status as? ProgressUpdate)?.let {
@@ -71,6 +76,7 @@ internal class DFUViewModel @Inject constructor(
                 newStatus?.let {
                     _state.value = _state.value.copy(progressViewEntity = newStatus)
                 }
+                analytics.logEvent(DFUErrorEvent(it.message))
             }
         }.launchIn(viewModelScope)
 

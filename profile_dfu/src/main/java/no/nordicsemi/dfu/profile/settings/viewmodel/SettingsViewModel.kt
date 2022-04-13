@@ -6,6 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import no.nordicsemi.android.analytics.*
 import no.nordicsemi.android.navigation.NavigationManager
 import no.nordicsemi.dfu.profile.DfuWelcomeScreen
 import no.nordicsemi.dfu.profile.settings.domain.DFUSettings
@@ -19,7 +20,8 @@ private const val INFOCENTER_LINK = "https://infocenter.nordicsemi.com/topic/sdk
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val repository: SettingsRepository,
-    private val navigationManager: NavigationManager
+    private val navigationManager: NavigationManager,
+    private val analytics: AppAnalytics
 ) : ViewModel() {
 
     val state = repository.settings.stateIn(viewModelScope, SharingStarted.Eagerly, DFUSettings())
@@ -44,6 +46,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             repository.storeSettings(newSettings)
         }
+        analytics.logEvent(ExternalMCUSettingsEvent(newSettings.externalMcuDfu))
     }
 
     private fun onKeepBondSwitchClick() {
@@ -52,6 +55,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             repository.storeSettings(newSettings)
         }
+        analytics.logEvent(KeepBondSettingsEvent(newSettings.keepBondInformation))
     }
 
     private fun onPacketsReceiptNotificationSwitchClick() {
@@ -60,6 +64,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             repository.storeSettings(newSettings)
         }
+        analytics.logEvent(PacketsReceiptNotificationSettingsEvent(newSettings.packetsReceiptNotification))
     }
 
     private fun onDisableResumeSwitchClick() {
@@ -68,6 +73,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             repository.storeSettings(newSettings)
         }
+        analytics.logEvent(DisableResumeSettingsEvent(newSettings.disableResume))
     }
 
     private fun onForceScanningAddressesSwitchClick() {
@@ -76,6 +82,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             repository.storeSettings(newSettings)
         }
+        analytics.logEvent(ForceScanningSettingsEvent(newSettings.forceScanningInLegacyDfu))
     }
 
     private fun onNumberOfPocketsChange(numberOfPockets: Int) {
@@ -83,5 +90,6 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             repository.storeSettings(newSettings)
         }
+        analytics.logEvent(NumberOfPacketsSettingsEvent(newSettings.numberOfPackets))
     }
 }

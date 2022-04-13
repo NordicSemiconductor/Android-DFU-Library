@@ -16,19 +16,25 @@ private const val PARAM_KEY = "file"
 
 @Singleton
 class DeepLinkHandler @Inject internal constructor(
-    private val downloadManagerWrapper: ExternalFileDataSource
+    private val downloadManagerWrapper: ExternalFileDataSource,
 ) {
 
     private val _zipFile = MutableStateFlow<Uri?>(null)
     val zipFile = _zipFile.asStateFlow()
 
-    fun handleDeepLink(intent: Intent?) {
+    /**
+     * @return true if deep link was handled
+     */
+    fun handleDeepLink(intent: Intent?): Boolean {
         val data = intent?.data
         val deeplinkParam = data?.getQueryParameter(PARAM_KEY)
         if (deeplinkParam != null) {
             downloadManagerWrapper.download(deeplinkParam)
+            return true
         } else if (data != null) {
             _zipFile.value = data
+            return true
         }
+        return false
     }
 }
