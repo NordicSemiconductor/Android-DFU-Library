@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:dist="http://schemas.android.com/apk/distribution"
     xmlns:tools="http://schemas.android.com/tools"
-    package="no.nordicsemi.dfu">
+    package="no.nordicsemi.dfu"
+    android:targetSandboxVersion="2"
+    tools:targetApi="o">
+
+    <dist:module dist:instant="true" />
 
     <application
         android:name=".DFUApplication"
@@ -11,6 +16,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
