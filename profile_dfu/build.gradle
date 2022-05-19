@@ -10,27 +10,15 @@ android {
     defaultConfig {
         minSdk android_min_api_version
         targetSdk android_api_version
-        versionCode 1
-        versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles "consumer-rules.pro"
     }
 
     buildTypes {
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            consumerProguardFiles "profile-proguard-rules.pro"
         }
-    }
-
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
-    }
-
-    kotlinOptions {
-        jvmTarget = '1.8'
     }
 
     /**
@@ -57,12 +45,12 @@ dependencies {
     implementation project(":lib_dfu")
     implementation project(":lib_storage")
 
-    implementation "no.nordicsemi.android.common:theme:1.0.4"
-    implementation "no.nordicsemi.android.common:navigation:1.0.4"
-    implementation "no.nordicsemi.android.common:uiscanner:1.0.4"
+    implementation "no.nordicsemi.android.common:theme:1.0.6"
+    implementation "no.nordicsemi.android.common:navigation:1.0.6"
+    implementation "no.nordicsemi.android.common:uiscanner:1.0.6"
 
-    implementation "androidx.compose.material3:material3:1.0.0-alpha07"
-    implementation "androidx.compose.ui:ui:1.1.1"
+    implementation "androidx.compose.material3:material3:1.0.0-alpha12"
+    implementation "androidx.compose.ui:ui:$compose_version"
     implementation "androidx.core:core-ktx:1.7.0"
     implementation "androidx.activity:activity-compose:1.4.0"
     implementation "androidx.lifecycle:lifecycle-viewmodel-compose:2.4.1"

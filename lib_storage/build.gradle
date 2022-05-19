@@ -10,27 +10,15 @@ android {
     defaultConfig {
         minSdk android_min_api_version
         targetSdk android_api_version
-        versionCode 1
-        versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles "consumer-rules.pro"
     }
 
     buildTypes {
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            consumerProguardFiles "storage-proguard-rules.pro"
         }
-    }
-
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
-    }
-
-    kotlinOptions {
-        jvmTarget = '1.8'
     }
 
     /**
@@ -44,12 +32,12 @@ android {
     }
 
     hilt {
-        enableExperimentalClasspathAggregation = true
+            enableExperimentalClasspathAggregation = true
     }
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1"
 
     implementation "com.google.dagger:hilt-android:2.40.4"
     kapt "com.google.dagger:hilt-compiler:2.40.4"
