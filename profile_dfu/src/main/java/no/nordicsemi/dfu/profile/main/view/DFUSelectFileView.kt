@@ -1,5 +1,6 @@
 package no.nordicsemi.dfu.profile.main.view
 
+import android.content.ActivityNotFoundException
 import android.os.Parcelable
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -53,7 +54,17 @@ internal fun DFUNotSelectedFileView(viewEntity: NotSelectedFileViewEntity, onEve
         title = stringResource(id = R.string.dfu_choose_file),
         description = stringResource(id = R.string.dfu_choose_not_selected),
         primaryButtonTitle = stringResource(id = R.string.dfu_select_file),
-        primaryButtonAction = { launcher.launch(DfuBaseService.MIME_TYPE_ZIP) },
+        primaryButtonAction = {
+            try {
+                launcher.launch(DfuBaseService.MIME_TYPE_ZIP)
+            } catch (e: ActivityNotFoundException) {
+                try {
+                    launcher.launch("*/*")
+                } catch (e1: ActivityNotFoundException) {
+                    // Handle
+                }
+            }
+        },
         isRunning = viewEntity.isRunning
     ) {
         Column {
