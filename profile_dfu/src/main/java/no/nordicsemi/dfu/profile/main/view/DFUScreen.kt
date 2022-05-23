@@ -35,7 +35,6 @@ fun DFUScreen() {
         ) {
             OutlinedCard(
                 modifier = Modifier.padding(16.dp),
-                containerColor = MaterialTheme.colorScheme.background
             ) {
                 DFUSelectFileView(state.isRunning(), state.fileViewEntity, onEvent)
 

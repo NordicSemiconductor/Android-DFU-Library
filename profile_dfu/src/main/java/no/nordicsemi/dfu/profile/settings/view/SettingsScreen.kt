@@ -3,6 +3,7 @@ package no.nordicsemi.dfu.profile.settings.view
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -10,17 +11,19 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import no.nordicsemi.android.dfu.BuildConfig.VERSION_NAME
 import no.nordicsemi.android.material.you.CheckboxFallback
-import no.nordicsemi.android.material.you.TextField
 import no.nordicsemi.dfu.profile.R
 import no.nordicsemi.dfu.profile.settings.viewmodel.SettingsViewModel
 
@@ -249,7 +252,8 @@ private fun NumberOfPocketsDialog(
     onDismiss: () -> Unit,
     onEvent: (SettingsScreenViewEvent) -> Unit
 ) {
-    val numberOfPocketsState = rememberSaveable { mutableStateOf(numberOfPockets) }
+    var numberOfPocketsState by rememberSaveable { mutableStateOf("$numberOfPockets") }
+    var showError by rememberSaveable { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -257,32 +261,35 @@ private fun NumberOfPocketsDialog(
             Text(text = stringResource(id = R.string.dfu_settings_number_of_pockets))
         },
         text = {
-            val showError = rememberSaveable { mutableStateOf(false) }
-
             Column {
-                TextField(
-                    text = numberOfPocketsState.value.toString(),
-                    onlyDigits = true,
-                    hint = stringResource(id = R.string.dfu_settings_number_of_pockets)
-                ) {
-                    val value = it.toIntOrNull()
-                    if (value != null) {
-                        numberOfPocketsState.value = value
-                        showError.value = false
-                    } else {
-                        showError.value = true
-                    }
-                }
-                if (showError.value) {
+                OutlinedTextField(
+                    value = numberOfPocketsState,
+                    onValueChange = { newValue ->
+                        val value = newValue.toIntOrNull()
+                        if (value != null) {
+                            numberOfPocketsState = "$value"
+                            showError = false
+                        } else {
+                            numberOfPocketsState = ""
+                            showError = true
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    label = { Text(text = stringResource(id = R.string.dfu_settings_number_of_pockets)) },
+                )
+                if (showError) {
                     Text(text = stringResource(id = R.string.dfu_parse_int_error))
                 }
             }
         },
         confirmButton = {
-            Button(onClick = {
-                onDismiss()
-                onEvent(OnNumberOfPocketsChange(numberOfPocketsState.value))
-            }) {
+            Button(
+                onClick = {
+                    onDismiss()
+                    onEvent(OnNumberOfPocketsChange(numberOfPocketsState.toInt()))
+                },
+                enabled = !showError
+            ) {
                 Text(text = stringResource(id = R.string.dfu_macro_dialog_confirm))
             }
         },

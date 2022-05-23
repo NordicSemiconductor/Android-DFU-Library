@@ -1,10 +1,10 @@
 package no.nordicsemi.dfu.profile.main.view
 
+import android.content.ActivityNotFoundException
 import android.os.Parcelable
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -53,7 +53,17 @@ internal fun DFUNotSelectedFileView(viewEntity: NotSelectedFileViewEntity, onEve
         title = stringResource(id = R.string.dfu_choose_file),
         description = stringResource(id = R.string.dfu_choose_not_selected),
         primaryButtonTitle = stringResource(id = R.string.dfu_select_file),
-        primaryButtonAction = { launcher.launch(DfuBaseService.MIME_TYPE_ZIP) },
+        primaryButtonAction = {
+            try {
+                launcher.launch(DfuBaseService.MIME_TYPE_ZIP)
+            } catch (e: ActivityNotFoundException) {
+                try {
+                    launcher.launch("*/*")
+                } catch (e1: ActivityNotFoundException) {
+                    // Handle
+                }
+            }
+        },
         isRunning = viewEntity.isRunning
     ) {
         Column {
@@ -78,7 +88,6 @@ internal fun DFUNotSelectedFileView(viewEntity: NotSelectedFileViewEntity, onEve
 private const val FILE_NAME = "File name: <b>%s</b>"
 private const val FILE_SIZE = "File size: <b>%d</b> bytes"
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun DFUSelectFileView(zipFile: ZipFile, onEvent: (DFUViewEvent) -> Unit) {
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -113,7 +122,6 @@ internal fun DFUSelectFileView(zipFile: ZipFile, onEvent: (DFUViewEvent) -> Unit
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun DFUSelectFileNoActionView(zipFile: ZipFile) {
     CardComponent(

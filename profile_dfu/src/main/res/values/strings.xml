@@ -27,13 +27,13 @@
     <string name="dfu_macro_dialog_confirm">Confirm</string>
     <string name="dfu_macro_dialog_dismiss">Dismiss</string>
 
-    <string name="dfu_display_status_progress_update_parts">Progress part %d/%d: %d\%%</string>
-    <string name="dfu_display_status_progress_update">Progress: %d\%%</string>
-    <string name="dfu_display_status_progress_speed">Speed: %.1fkB/s</string>
+    <string name="dfu_display_status_progress_update_parts">Uploading part %d/%d… %d\%%</string>
+    <string name="dfu_display_status_progress_update">Uploading… %d\%%</string>
+    <string name="dfu_display_status_progress_speed">%.1fkB/s</string>
 
     <string name="dfu_unknown">Unknown</string>
 
-    <string name="dfu_bootloader_idle">Bootloader enablement</string>
+    <string name="dfu_bootloader_idle">Enabling bootloader</string>
     <string name="dfu_bootloader_working">Enabling bootloader…</string>
     <string name="dfu_bootloader_success">Bootloader enabled</string>
 

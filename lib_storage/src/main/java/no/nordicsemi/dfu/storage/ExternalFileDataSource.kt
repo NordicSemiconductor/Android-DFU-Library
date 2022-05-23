@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -57,7 +58,10 @@ class ExternalFileDataSource @Inject internal constructor(
         request.setTitle(parser.parseName(url))
         request.setDescription(context.getString(R.string.storage_notification_description))
 
-        request.allowScanningByMediaScanner()
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            @Suppress("DEPRECATION")
+            request.allowScanningByMediaScanner()
+        }
         request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
         request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, parser.parseName(url))
 
