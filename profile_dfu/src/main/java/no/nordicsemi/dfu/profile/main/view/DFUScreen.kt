@@ -14,6 +14,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -60,6 +61,14 @@ private fun DFUAppBar(onEvent: (DFUViewEvent) -> Unit) {
             navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
         ),
         actions = {
+            IconButton(onClick = { onEvent(OnLoggerButtonClick) }) {
+                Icon(
+                    painterResource(id = R.drawable.ic_logger),
+                    contentDescription = stringResource(id = R.string.open_logger),
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
             IconButton(onClick = { onEvent(OnSettingsButtonClick) }) {
                 Icon(
                     imageVector = Icons.Default.Settings,
