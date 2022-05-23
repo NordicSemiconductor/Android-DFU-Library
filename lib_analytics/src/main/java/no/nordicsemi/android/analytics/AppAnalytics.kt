@@ -21,7 +21,16 @@ class AppAnalytics @Inject constructor(
             AppOpenEvent,
             HandleDeepLinkEvent,
             DFUSuccessEvent -> firebase.logEvent(event.eventName, null)
+            DeviceSelectedEvent -> firebase.logEvent(event.eventName, null)
+            FileSelectedEvent -> firebase.logEvent(event.eventName, null)
+            InstallationStartedEvent -> firebase.logEvent(event.eventName, null)
             is DFUErrorEvent -> firebase.logEvent(event.eventName, event.createBundle())
+            is DisableResumeSettingsEvent -> firebase.logEvent(event.eventName, event.createBundle())
+            is ExternalMCUSettingsEvent -> firebase.logEvent(event.eventName, event.createBundle())
+            is ForceScanningSettingsEvent -> firebase.logEvent(event.eventName, event.createBundle())
+            is KeepBondSettingsEvent -> firebase.logEvent(event.eventName, event.createBundle())
+            is NumberOfPacketsSettingsEvent -> firebase.logEvent(event.eventName, event.createBundle())
+            is PacketsReceiptNotificationSettingsEvent -> firebase.logEvent(event.eventName, event.createBundle())
         }
     }
 }

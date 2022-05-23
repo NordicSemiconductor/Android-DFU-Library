@@ -16,6 +16,18 @@ object AppOpenEvent : AppEvent {
     override val eventName: String = "APP_OPEN_EVENT"
 }
 
+object FileSelectedEvent : AppEvent {
+    override val eventName: String = "FILE_SELECTED"
+}
+
+object DeviceSelectedEvent : AppEvent {
+    override val eventName: String = "DEVICE_SELECTED"
+}
+
+object InstallationStartedEvent : AppEvent {
+    override val eventName: String = "INSTALLATION_STARTED"
+}
+
 object HandleDeepLinkEvent : AppEvent {
     override val eventName: String = "HANDLE_DEEP_LINK_EVENT"
 }
