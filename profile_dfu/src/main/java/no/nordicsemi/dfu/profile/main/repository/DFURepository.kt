@@ -52,6 +52,10 @@ internal class DFURepository @Inject constructor(
         return runningObserver.isRunning
     }
 
+    fun openLogger() {
+        dfuManager.openLogger()
+    }
+
     fun release() {
         device = null
         zipFile = null

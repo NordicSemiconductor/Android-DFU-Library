@@ -19,3 +19,5 @@ internal object OnDisconnectButtonClick : DFUViewEvent()
 internal object NavigateUp : DFUViewEvent()
 
 internal object OnSettingsButtonClick : DFUViewEvent()
+
+internal object OnLoggerButtonClick : DFUViewEvent()
