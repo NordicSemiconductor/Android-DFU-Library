@@ -32,7 +32,7 @@ android {
     }
 
     hilt {
-            enableExperimentalClasspathAggregation = true
+        enableExperimentalClasspathAggregation = true
     }
 }
 
