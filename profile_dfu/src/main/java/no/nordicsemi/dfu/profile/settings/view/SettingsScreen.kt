@@ -23,7 +23,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import no.nordicsemi.android.dfu.BuildConfig.VERSION_NAME
-import no.nordicsemi.android.material.you.CheckboxFallback
+import no.nordicsemi.android.theme.CheckboxFallback
 import no.nordicsemi.dfu.profile.R
 import no.nordicsemi.dfu.profile.settings.viewmodel.SettingsViewModel
 

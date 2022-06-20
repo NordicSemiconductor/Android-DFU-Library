@@ -9,8 +9,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import dagger.hilt.android.AndroidEntryPoint
-import no.nordicsemi.android.material.you.NordicActivity
-import no.nordicsemi.android.material.you.NordicTheme
+import no.nordicsemi.android.theme.NordicActivity
+import no.nordicsemi.android.theme.NordicTheme
 import no.nordicsemi.android.navigation.NavigationView
 import no.nordicsemi.dfu.profile.DFUDestinations
 import no.nordicsemi.dfu.storage.DeepLinkHandler

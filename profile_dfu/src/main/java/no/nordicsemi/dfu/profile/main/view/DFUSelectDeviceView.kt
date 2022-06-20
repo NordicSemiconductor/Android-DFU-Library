@@ -11,8 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.parcelize.Parcelize
+import no.nordicsemi.android.theme.parseBold
 import no.nordicsemi.dfu.profile.R
-import no.nordicsemi.dfu.profile.main.util.parseBold
 import no.nordicsemi.ui.scanner.DiscoveredBluetoothDevice
 import no.nordicsemi.ui.scanner.ui.exhaustive
 

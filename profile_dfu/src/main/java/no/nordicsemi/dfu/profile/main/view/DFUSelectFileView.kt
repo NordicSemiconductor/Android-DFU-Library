@@ -14,9 +14,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.parcelize.Parcelize
 import no.nordicsemi.android.dfu.DfuBaseService
+import no.nordicsemi.android.theme.parseBold
 import no.nordicsemi.dfu.profile.R
 import no.nordicsemi.dfu.profile.main.data.ZipFile
-import no.nordicsemi.dfu.profile.main.util.parseBold
 import no.nordicsemi.ui.scanner.ui.exhaustive
 
 internal sealed class DFUSelectFileViewEntity : Parcelable
