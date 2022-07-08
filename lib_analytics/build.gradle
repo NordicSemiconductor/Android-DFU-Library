@@ -1,0 +1,40 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: 'dagger.hilt.android.plugin'
+apply plugin: 'kotlin-kapt'
+
+android {
+    compileSdk android_api_version
+
+    defaultConfig {
+        namespace 'no.nordicsemi.android.analytics'
+
+        minSdk android_min_api_version
+        targetSdk android_api_version
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            consumerProguardFiles 'analytics-proguard-rules.pro'
+        }
+    }
+
+    hilt {
+        enableExperimentalClasspathAggregation = true
+    }
+}
+
+dependencies {
+    implementation platform('com.google.firebase:firebase-bom:29.2.1')
+    implementation 'com.google.firebase:firebase-analytics'
+    implementation 'com.google.firebase:firebase-crashlytics'
+
+    implementation 'com.google.dagger:hilt-android:2.40.4'
+    kapt 'com.google.dagger:hilt-compiler:2.40.4'
+    implementation 'androidx.hilt:hilt-navigation-compose:1.0.0'
+    implementation 'androidx.hilt:hilt-lifecycle-viewmodel:1.0.0-alpha03'
+    kapt 'androidx.hilt:hilt-compiler:1.0.0'
+}

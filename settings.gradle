@@ -1,1 +1,9 @@
-include ':dfu'
+include ':app'
+include ':lib_analytics'
+include ':lib_dfu'
+include ':lib_storage'
+include ':profile_dfu'
+
+if (file('../Android-Common-Libraries').exists()) {
+    includeBuild('../Android-Common-Libraries')
+}

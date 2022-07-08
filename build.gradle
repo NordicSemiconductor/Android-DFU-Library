@@ -2,20 +2,35 @@ buildscript {
     // https://plugins.gradle.org/plugin/io.github.gradle-nexus.publish-plugin
     ext.gradle_nexus_publish_plugin = '1.1.0'
 
+    ext {
+        compose_version = '1.2.0-beta02'
+        kotlin_version = '1.6.21'
+        android_api_version = 32
+        android_min_api_version = 21
+    }
+
     repositories {
         google()
+        mavenLocal()
         mavenCentral()
         maven { url "https://plugins.gradle.org/m2/" }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.0.3'
+        classpath 'com.android.tools.build:gradle:7.4.0-alpha05'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'com.google.gms:google-services:4.3.10'
+        classpath 'com.google.firebase:firebase-crashlytics-gradle:2.8.1'
+        classpath "io.spring.gradle:dependency-management-plugin:1.0.11.RELEASE"
+        classpath "com.google.dagger:hilt-android-gradle-plugin:2.40.4"
         classpath "io.github.gradle-nexus:publish-plugin:$gradle_nexus_publish_plugin"
+        classpath "com.autonomousapps:dependency-analysis-gradle-plugin:0.78.0"
     }
 }
 
 allprojects {
     repositories {
         google()
+        mavenLocal()
         mavenCentral()
     }
 }
@@ -27,3 +42,4 @@ task clean(type: Delete) {
 // Maven Central publishing
 apply plugin: 'io.github.gradle-nexus.publish-plugin'
 apply from: rootProject.file('gradle/publish-root.gradle')
+apply plugin: "com.autonomousapps.dependency-analysis"

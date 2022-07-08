@@ -1,0 +1,47 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+	package="no.nordicsemi.android.dfu">
+
+	<!--
+         Bluetooth permission is required on Android 4.3 - 11 in order to communicate with
+         Bluetooth LE devices.
+        -->
+	<uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+
+	<!--
+	 Bluetooth Admin permission is required on Android 4.3 - 11 in order to scan for
+	 Bluetooth LE devices, create and remove pairing.
+	-->
+	<uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+
+	<!--
+     On Android 12 new set of Bluetooth permissions were added. BLUETOOTH_SCAN permission is
+     needed to scan for Bluetooth LE devices.
+
+     This permission is not added here, as scanning is only required in some cases. If needed,
+     add this permission to your app's Android Manifest.
+
+     Also, consider adding "neverForLocation" flag if scanning for beacons is nor required.
+     With this flag set, the Fine Location permission will not be required.
+    -->
+	<!--
+     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+    -->
+
+	<!--
+	 This permission is required in order to connect to a Bluetooth LE device on Android 12
+	 onwards.
+	-->
+	<uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+	<!--
+	Apps that target Android 9 (API level 28) or higher and use foreground services must request
+	the FOREGROUND_SERVICE permission, as shown in the following code snippet.
+	This is a normal permission, so the system automatically grants it to the requesting app.
+
+	As foreground service may be disabled, this permission is commented out. Add it to your app
+	if needed.
+	-->
+	<!--
+	<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+	-->
+
+</manifest>

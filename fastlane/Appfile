@@ -1,0 +1,2 @@
+json_key_file("fastlane-api.json")
+package_name("no.nordicsemi.android.dfu")

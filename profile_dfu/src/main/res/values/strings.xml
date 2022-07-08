@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (c) 2022, Nordic Semiconductor
+  ~ All rights reserved.
+  ~
+  ~ Redistribution and use in source and binary forms, with or without modification, are
+  ~ permitted provided that the following conditions are met:
+  ~
+  ~ 1. Redistributions of source code must retain the above copyright notice, this list of
+  ~ conditions and the following disclaimer.
+  ~
+  ~ 2. Redistributions in binary form must reproduce the above copyright notice, this list
+  ~ of conditions and the following disclaimer in the documentation and/or other materials
+  ~ provided with the distribution.
+  ~
+  ~ 3. Neither the name of the copyright holder nor the names of its contributors may be
+  ~ used to endorse or promote products derived from this software without specific prior
+  ~ written permission.
+  ~
+  ~ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  ~ "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+  ~ TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+  ~ PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+  ~ HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+  ~ SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+  ~ LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+  ~ OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+  ~ OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+  ~ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+  ~ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  -->
+
+<resources>
+    <string name="dfu_title">Firmware Upgrade</string>
+
+    <string name="dfu_load_file_error">An error occurred during loading the file. Please try with another file.</string>
+
+    <string name="dfu_choose_not_selected">Not selected</string>
+    <string name="dfu_choose_selected">Selected</string>
+
+    <string name="dfu_abort">Abort</string>
+    <string name="dfu_progress">Progress</string>
+    <string name="dfu_progress_idle">Idle</string>
+    <string name="dfu_progress_running">Running</string>
+    <string name="dfu_progress_run">Start</string>
+    <string name="dfu_progress_stage_completed">Completed</string>
+    <string name="dfu_progress_stage_error">Error: %s</string>
+    <string name="dfu_progress_icon">Icon indicating progress or result of the selected stage.</string>
+
+    <string name="dfu_device">Device</string>
+    <string name="dfu_select_device">Select</string>
+    <string name="dfu_select_device_info">Select a device</string>
+
+    <string name="dfu_select_file">Select</string>
+    <string name="dfu_choose_file">File</string>
+    <string name="dfu_choose_info">Select a .zip file</string>
+
+    <string name="dfu_macro_dialog_confirm">Confirm</string>
+    <string name="dfu_macro_dialog_dismiss">Dismiss</string>
+
+    <string name="dfu_display_status_progress_update_parts">Uploading part %d/%d… %d\%%</string>
+    <string name="dfu_display_status_progress_update">Uploading… %d\%%</string>
+    <string name="dfu_display_status_progress_speed">%.1fkB/s</string>
+
+    <string name="dfu_unknown">Unknown</string>
+
+    <string name="dfu_bootloader_idle">Enabling bootloader</string>
+    <string name="dfu_bootloader_working">Enabling bootloader…</string>
+    <string name="dfu_bootloader_success">Bootloader enabled</string>
+
+    <string name="dfu_process_idle">DFU initialization</string>
+    <string name="dfu_process_working">Initializing DFU…</string>
+    <string name="dfu_process_success">DFU initialized</string>
+
+    <string name="dfu_firmware_idle">Firmware upload</string>
+    <string name="dfu_firmware_working">Uploading firmware…</string>
+    <string name="dfu_firmware_success">Firmware uploaded</string>
+    <string name="dfu_settings_action">Open settings screen.</string>
+
+    <string name="dfu_navigate_up">Navigate up</string>
+    <string name="dfu_settings">Settings</string>
+    <string name="dfu_settings_other">Other</string>
+    <string name="dfu_settings_force_scanning">Force scanning</string>
+    <string name="dfu_settings_force_scanning_info">Forces scanning for DFU bootloader. By default, the DFU bootloader advertises directly with the same
+    MAC address.\n\nChanging this requires modifying the DFU bootloader or the Buttonless Service implementation on the device.</string>
+    <string name="dfu_settings_disable_resume">Disable resume</string>
+    <string name="dfu_settings_disable_resume_info">This options allows to disable the resume feature in Secure DFU.</string>
+    <string name="dfu_settings_number_of_pockets">Number of packets</string>
+    <string name="dfu_settings_headline_secure_dfu">Secure DFU option</string>
+    <string name="dfu_settings_headline_legacy_dfu">Legacy DFU</string>
+
+    <string name="dfu_settings_packets_receipt_notification">Packets receipt notification</string>
+    <string name="dfu_settings_packets_receipt_notification_info">Enables or disables the Packet Receipt Notification (PRN) procedure.
+    \n\nPRNs are used to synchronize the transmitter with the receiver and ensure data correctness. They are enabled by default on
+    Android Lollipop and earlier.</string>
+
+    <string name="dfu_settings_keep_bond_information">Keep bond</string>
+    <string name="dfu_settings_keep_bond_information_info">Sets whether the bond information should be preserved after flashing new application.</string>
+    <string name="dfu_settings_external_mcu_dfu">External MCU DFU</string>
+    <string name="dfu_settings_external_mcu_dfu_info">Enabling this option will prevent from jumping to the DFU Bootloader mode in case there is no DFU Version characteristic.</string>
+
+    <string name="dfu_parse_int_error">Please provide integer value.</string>
+    <string name="dfu_show_welcome_screen">Show Welcome Screen</string>
+    <string name="dfu_about_app">About DFU</string>
+    <string name="dfu_about_app_desc">DFU documentation on Nordic\'s Infocenter.</string>
+    <string name="dfu_welcome">Welcome</string>
+    <string name="dfu_start">Start</string>
+    <string name="dfu_explanation_image">Image describing firmware update flow.</string>
+    <string name="dfu_version">Version: %s</string>
+
+    <string name="dfu_about_text">The Device Firmware Update (DFU) app allows updating the
+		firmware of Bluetooth LE devices over-the-air (OTA). It is compatible with nRF51 and nRF52
+        devices from Nordic Semiconductor running nRF5 SDK based applications with DFU bootloader enabled.
+		\n\nFor more information about the DFU, see the About DFU section in Settings.
+        \n\nTo update a nRF Connect SDK (NCS) based device, use nRF Connect Device Manager app instead.
+    </string>
+</resources>
