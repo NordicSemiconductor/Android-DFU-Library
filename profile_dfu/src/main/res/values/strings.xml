@@ -45,7 +45,6 @@
     <string name="dfu_progress_run">Start</string>
     <string name="dfu_progress_stage_completed">Completed</string>
     <string name="dfu_progress_stage_error">Error: %s</string>
-    <string name="dfu_progress_icon">Icon indicating progress or result of the selected stage.</string>
 
     <string name="dfu_device">Device</string>
     <string name="dfu_select_device">Select</string>

@@ -36,6 +36,7 @@ import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import kotlinx.parcelize.Parcelize
+import no.nordicsemi.android.theme.view.ProgressItemStatus
 import no.nordicsemi.dfu.profile.R
 import no.nordicsemi.dfu.profile.main.data.ProgressUpdate
 
@@ -130,10 +131,6 @@ internal data class ProgressItemViewEntity(
     fun isCompleted(): Boolean {
         return resultStatus == ProgressItemStatus.SUCCESS || resultStatus == ProgressItemStatus.ERROR
     }
-}
-
-enum class ProgressItemStatus {
-    DISABLED, WORKING, SUCCESS, ERROR
 }
 
 data class ProgressItemLabel(
