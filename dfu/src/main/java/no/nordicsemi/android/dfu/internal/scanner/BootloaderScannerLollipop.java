@@ -30,8 +30,10 @@ import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.os.Build;
+import android.util.Log;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
@@ -40,6 +42,7 @@ import java.util.Locale;
  */
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
 public class BootloaderScannerLollipop extends ScanCallback implements BootloaderScanner {
+    private static final String TAG = "BootloaderScannerL";
     private final Object mLock = new Object();
     private String mDeviceAddress;
     private String mDeviceAddressIncremented;
@@ -81,11 +84,19 @@ public class BootloaderScannerLollipop extends ScanCallback implements Bootloade
         }, "Scanner timer").start();
 
         final BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
-        if (adapter == null || adapter.getState() != BluetoothAdapter.STATE_ON)
+        if (adapter == null) {
+            Log.e(TAG, "Failed to get adapter");
             return null;
+        }
+        if (adapter.getState() != BluetoothAdapter.STATE_ON) {
+            Log.e(TAG, "BluetoothAdapter state is not on; state=" + adapter.getState());
+            return null;
+        }
         final BluetoothLeScanner scanner = adapter.getBluetoothLeScanner();
-        if (scanner == null)
+        if (scanner == null) {
+            Log.e(TAG, "Failed to get scanner");
             return null;
+        }
         /*
          * Android 8.1 onwards, stops unfiltered BLE scanning on screen off. Therefore we must add a filter to
          * get scan results in case the device screen is turned off as this may affect users wanting scan/connect to the device in background.
@@ -93,10 +104,11 @@ public class BootloaderScannerLollipop extends ScanCallback implements Bootloade
          */
         final ScanSettings settings = new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build();
         if (adapter.isOffloadedFilteringSupported() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-            final List<ScanFilter> filters = new ArrayList<>();
-            filters.add(new ScanFilter.Builder().setDeviceAddress(mDeviceAddress).build());
-            filters.add(new ScanFilter.Builder().setDeviceAddress(mDeviceAddressIncremented).build());
-            scanner.startScan(filters, settings, this);
+            // SW: Remove filters since it's a problem on some devices: https://github.com/NordicSemiconductor/Android-DFU-Library/issues/303
+//            final List<ScanFilter> filters = new ArrayList<>();
+//            filters.add(new ScanFilter.Builder().setDeviceAddress(mDeviceAddress).build());
+//            filters.add(new ScanFilter.Builder().setDeviceAddress(mDeviceAddressIncremented).build());
+            scanner.startScan(Collections.singletonList(new ScanFilter.Builder().build()), settings, this);
         } else {
             /*
              * Scanning with filters does not work on Nexus 9 (Android 5.1). No devices are found and scanner terminates on timeout.
