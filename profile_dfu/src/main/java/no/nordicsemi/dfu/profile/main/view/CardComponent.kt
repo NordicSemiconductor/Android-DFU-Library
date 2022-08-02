@@ -32,6 +32,7 @@
 package no.nordicsemi.dfu.profile.main.view
 
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -41,6 +42,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 
@@ -48,7 +50,6 @@ import androidx.compose.ui.unit.dp
 internal fun CardComponent(
     @DrawableRes titleIcon: Int,
     title: String,
-    description: String,
     primaryButtonTitle: String? = null,
     primaryButtonAction: (() -> Unit)? = null,
     primaryButtonEnabled: Boolean = true,
@@ -66,21 +67,17 @@ internal fun CardComponent(
             horizontalArrangement = Arrangement.Start,
             modifier = Modifier.padding(16.dp)
         ) {
-            Box(
+            Image(
+                painter = painterResource(id = titleIcon),
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSecondary),
                 modifier = Modifier
-                    .size(40.dp)
                     .background(
                         color = MaterialTheme.colorScheme.secondary,
                         shape = CircleShape
                     )
-            ) {
-                Icon(
-                    painter = painterResource(id = titleIcon),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSecondary,
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
+                    .padding(8.dp)
+            )
 
             Spacer(modifier = Modifier.size(16.dp))
 

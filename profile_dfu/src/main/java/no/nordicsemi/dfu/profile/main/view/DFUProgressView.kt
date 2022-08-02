@@ -31,18 +31,12 @@
 
 package no.nordicsemi.dfu.profile.main.view
 
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -72,7 +66,6 @@ private fun DisabledDFUProgressView(viewEntity: ProgressItemViewEntity = Progres
     DisabledCardComponent(
         titleIcon = R.drawable.ic_file_upload,
         title = stringResource(id = R.string.dfu_progress),
-        description = stringResource(id = R.string.dfu_progress_idle),
         primaryButtonTitle = stringResource(id = R.string.dfu_progress_run),
         showVerticalDivider = false
     ) {
@@ -87,7 +80,6 @@ private fun DFUCompletedProgressView(
     CardComponent(
         titleIcon = R.drawable.ic_file_upload,
         title = stringResource(id = R.string.dfu_progress),
-        description = stringResource(id = R.string.dfu_progress_running),
         showVerticalDivider = false
     ) {
         ProgressItem(viewEntity)
@@ -102,7 +94,6 @@ private fun DFURunningProgressView(
     CardComponent(
         titleIcon = R.drawable.ic_file_upload,
         title = stringResource(id = R.string.dfu_progress),
-        description = stringResource(id = R.string.dfu_progress_running),
         primaryButtonTitle = stringResource(id = R.string.dfu_abort),
         primaryButtonAction = { onEvent(OnAbortButtonClick) },
         redButtonColor = true,
@@ -119,7 +110,6 @@ private fun DFUIdleProgressView(
     CardComponent(
         titleIcon = R.drawable.ic_file_upload,
         title = stringResource(id = R.string.dfu_progress),
-        description = stringResource(id = R.string.dfu_progress_running),
         primaryButtonTitle = stringResource(id = R.string.dfu_progress_run),
         primaryButtonAction = { onEvent(OnInstallButtonClick) },
         showVerticalDivider = false

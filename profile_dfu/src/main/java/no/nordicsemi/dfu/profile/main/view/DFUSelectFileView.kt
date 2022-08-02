@@ -82,7 +82,6 @@ internal fun DFUNotSelectedFileView(viewEntity: NotSelectedFileViewEntity, onEve
     CardComponent(
         titleIcon = R.drawable.ic_upload_file,
         title = stringResource(id = R.string.dfu_choose_file),
-        description = stringResource(id = R.string.dfu_choose_not_selected),
         primaryButtonTitle = stringResource(id = R.string.dfu_select_file),
         primaryButtonAction = {
             try {
@@ -128,7 +127,6 @@ internal fun DFUSelectFileView(zipFile: ZipFile, onEvent: (DFUViewEvent) -> Unit
     CardComponent(
         titleIcon = R.drawable.ic_upload_file,
         title = stringResource(id = R.string.dfu_choose_file),
-        description = stringResource(id = R.string.dfu_choose_selected),
         secondaryButtonTitle = stringResource(id = R.string.dfu_select_file),
         secondaryButtonAction = { launcher.launch(DfuBaseService.MIME_TYPE_ZIP) }
     ) {
@@ -158,7 +156,6 @@ internal fun DFUSelectFileNoActionView(zipFile: ZipFile) {
     CardComponent(
         titleIcon = R.drawable.ic_upload_file,
         title = stringResource(id = R.string.dfu_choose_file),
-        description = stringResource(id = R.string.dfu_choose_selected),
         secondaryButtonTitle = stringResource(id = R.string.dfu_select_file),
         secondaryButtonEnabled = false
     ) {

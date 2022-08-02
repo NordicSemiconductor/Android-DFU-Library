@@ -48,7 +48,6 @@ import androidx.compose.ui.unit.dp
 internal fun DisabledCardComponent(
     @DrawableRes titleIcon: Int,
     title: String,
-    description: String,
     primaryButtonTitle: String? = null,
     secondaryButtonTitle: String? = null,
     showVerticalDivider: Boolean = true,

@@ -75,7 +75,6 @@ internal fun DFUDisabledSelectedDeviceView() {
     DisabledCardComponent(
         titleIcon = R.drawable.ic_bluetooth,
         title = stringResource(id = R.string.dfu_device),
-        description = stringResource(id = R.string.dfu_choose_not_selected),
         primaryButtonTitle = stringResource(id = R.string.dfu_select_device),
     ) {
         Text(
@@ -92,7 +91,6 @@ internal fun DFUNotSelectedDeviceView(onEvent: (DFUViewEvent) -> Unit) {
     CardComponent(
         titleIcon = R.drawable.ic_bluetooth,
         title = stringResource(id = R.string.dfu_device),
-        description = stringResource(id = R.string.dfu_choose_not_selected),
         primaryButtonTitle = stringResource(id = R.string.dfu_select_device),
         primaryButtonAction = { onEvent(OnSelectDeviceButtonClick) }
     ) {
@@ -112,7 +110,6 @@ internal fun DFUSelectedDeviceView(viewEntity: SelectedDeviceViewEntity, onEvent
     CardComponent(
         titleIcon = R.drawable.ic_bluetooth,
         title = stringResource(id = R.string.dfu_device),
-        description = stringResource(id = R.string.dfu_choose_selected),
         secondaryButtonTitle = stringResource(id = R.string.dfu_select_device),
         secondaryButtonAction = { onEvent(OnSelectDeviceButtonClick) }
     ) {
@@ -143,7 +140,6 @@ internal fun DFUSelectedDeviceNoActionView(viewEntity: SelectedDeviceViewEntity)
     CardComponent(
         titleIcon = R.drawable.ic_bluetooth,
         title = stringResource(id = R.string.dfu_device),
-        description = stringResource(id = R.string.dfu_choose_selected),
         secondaryButtonTitle = stringResource(id = R.string.dfu_select_device),
         secondaryButtonEnabled = false
     ) {
