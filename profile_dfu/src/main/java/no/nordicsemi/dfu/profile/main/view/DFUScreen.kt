@@ -52,7 +52,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import no.nordicsemi.dfu.profile.R
 import no.nordicsemi.dfu.profile.main.viewmodel.DFUViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DFUScreen() {
     val viewModel: DFUViewModel = hiltViewModel()
@@ -80,6 +79,7 @@ fun DFUScreen() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DFUAppBar(onEvent: (DFUViewEvent) -> Unit) {
     SmallTopAppBar(
