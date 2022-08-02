@@ -164,6 +164,7 @@ internal fun SettingsScreen() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SettingsAppBar(onEvent: (SettingsScreenViewEvent) -> Unit) {
     SmallTopAppBar(
@@ -277,6 +278,7 @@ private fun DisabledSettingsButton(title: String, description: String? = null) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun NumberOfPocketsDialog(
     numberOfPockets: Int,

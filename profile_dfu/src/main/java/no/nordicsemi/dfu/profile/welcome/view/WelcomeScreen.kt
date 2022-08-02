@@ -111,6 +111,7 @@ fun WelcomeScreen() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun WelcomeAppBar() {
     SmallTopAppBar(
@@ -125,6 +126,7 @@ private fun WelcomeAppBar() {
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun WelcomeAppBar(onNavigateUpClick: () -> Unit) {
     SmallTopAppBar(

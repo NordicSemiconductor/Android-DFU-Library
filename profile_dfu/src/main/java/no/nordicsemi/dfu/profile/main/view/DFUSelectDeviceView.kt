@@ -134,7 +134,6 @@ internal fun DFUSelectedDeviceView(viewEntity: SelectedDeviceViewEntity, onEvent
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun DFUSelectedDeviceNoActionView(viewEntity: SelectedDeviceViewEntity) {
     CardComponent(
