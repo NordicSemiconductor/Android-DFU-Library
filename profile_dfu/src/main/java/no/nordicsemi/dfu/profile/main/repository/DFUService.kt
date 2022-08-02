@@ -54,6 +54,7 @@ internal class DFUService : DfuBaseService() {
     @Inject
     lateinit var runningObserver: DFUServiceRunningObserver
 
+    @Deprecated("Deprecated in Java")
     override fun onCreate() {
         super.onCreate()
 
@@ -63,12 +64,13 @@ internal class DFUService : DfuBaseService() {
         runningObserver.isRunning = true
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onDestroy() {
         super.onDestroy()
         runningObserver.isRunning = false
     }
 
-    override fun getNotificationTarget(): Class<out Activity?>? {
+    override fun getNotificationTarget(): Class<out Activity?> {
         /*
 		 * As a target activity the NotificationActivity is returned, not the MainActivity. This is because the notification must create a new task:
 		 *
@@ -100,7 +102,7 @@ internal class DFUService : DfuBaseService() {
         channel.description = context.getString(R.string.dfu_channel_description)
         channel.setShowBadge(false)
         channel.lockscreenVisibility = Notification.VISIBILITY_PUBLIC
-        val notificationManager = context.getSystemService(DfuBaseService.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager = context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(channel)
     }
 }
