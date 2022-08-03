@@ -75,7 +75,9 @@ internal fun SettingsScreen() {
         SettingsAppBar(onEvent)
 
         // Scrollable Column
-        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+        Column(
+            modifier = Modifier.verticalScroll(rememberScrollState())
+        ) {
             SwitchSettingsComponent(
                 stringResource(id = R.string.dfu_settings_packets_receipt_notification),
                 stringResource(id = R.string.dfu_settings_packets_receipt_notification_info),
