@@ -5,7 +5,8 @@ apply plugin: 'kotlin-kapt'
 apply plugin: 'kotlin-parcelize'
 
 android {
-    compileSdk android_api_version
+    namespace 'no.nordicsemi.android.dfu.storage'
+    compileSdkVersion android_api_version
 
     defaultConfig {
         minSdk android_min_api_version

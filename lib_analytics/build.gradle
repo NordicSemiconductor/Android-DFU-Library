@@ -4,13 +4,12 @@ apply plugin: 'dagger.hilt.android.plugin'
 apply plugin: 'kotlin-kapt'
 
 android {
-    compileSdk android_api_version
+    namespace 'no.nordicsemi.android.dfu.analytics'
+    compileSdkVersion android_api_version
 
     defaultConfig {
-        namespace 'no.nordicsemi.android.analytics'
-
-        minSdk android_min_api_version
-        targetSdk android_api_version
+        minSdkVersion android_min_api_version
+        targetSdkVersion android_api_version
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

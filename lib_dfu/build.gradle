@@ -2,11 +2,12 @@ apply plugin: 'com.android.library'
 apply from: rootProject.file("gradle/git-tag-version.gradle")
 
 android {
-    compileSdkVersion 32
+    namespace 'no.nordicsemi.android.dfu'
+    compileSdkVersion android_api_version
 
     defaultConfig {
-        minSdkVersion 18
-        targetSdkVersion 32
+        minSdkVersion android_min_api_version_dfu
+        targetSdkVersion android_api_version
     }
 
     buildTypes {
