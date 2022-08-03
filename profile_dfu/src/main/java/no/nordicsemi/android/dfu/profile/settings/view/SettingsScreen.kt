@@ -71,96 +71,99 @@ internal fun SettingsScreen() {
         }
     }
 
-    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+    Column {
         SettingsAppBar(onEvent)
 
-        SwitchSettingsComponent(
-            stringResource(id = R.string.dfu_settings_packets_receipt_notification),
-            stringResource(id = R.string.dfu_settings_packets_receipt_notification_info),
-            state.packetsReceiptNotification
-        ) {
-            onEvent(OnPacketsReceiptNotificationSwitchClick)
-        }
-
-        if (state.packetsReceiptNotification) {
-            SettingsButton(
-                stringResource(id = R.string.dfu_settings_number_of_pockets),
-                state.numberOfPackets.toString()
+        // Scrollable Column
+        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+            SwitchSettingsComponent(
+                stringResource(id = R.string.dfu_settings_packets_receipt_notification),
+                stringResource(id = R.string.dfu_settings_packets_receipt_notification_info),
+                state.packetsReceiptNotification
             ) {
-                showDialog.value = true
+                onEvent(OnPacketsReceiptNotificationSwitchClick)
             }
-        } else {
-            DisabledSettingsButton(
-                stringResource(id = R.string.dfu_settings_number_of_pockets),
-                state.numberOfPackets.toString()
+
+            if (state.packetsReceiptNotification) {
+                SettingsButton(
+                    stringResource(id = R.string.dfu_settings_number_of_pockets),
+                    state.numberOfPackets.toString()
+                ) {
+                    showDialog.value = true
+                }
+            } else {
+                DisabledSettingsButton(
+                    stringResource(id = R.string.dfu_settings_number_of_pockets),
+                    state.numberOfPackets.toString()
+                )
+            }
+
+            Spacer(modifier = Modifier.size(16.dp))
+
+            Headline(stringResource(id = R.string.dfu_settings_headline_secure_dfu))
+
+            SwitchSettingsComponent(
+                stringResource(id = R.string.dfu_settings_disable_resume),
+                stringResource(id = R.string.dfu_settings_disable_resume_info),
+                state.disableResume
+            ) {
+                onEvent(OnDisableResumeSwitchClick)
+            }
+
+            Spacer(modifier = Modifier.size(32.dp))
+
+            Headline(stringResource(id = R.string.dfu_settings_headline_legacy_dfu))
+
+            SwitchSettingsComponent(
+                stringResource(id = R.string.dfu_settings_force_scanning),
+                stringResource(id = R.string.dfu_settings_force_scanning_info),
+                state.forceScanningInLegacyDfu
+            ) {
+                onEvent(OnForceScanningAddressesSwitchClick)
+            }
+
+            SwitchSettingsComponent(
+                stringResource(id = R.string.dfu_settings_keep_bond_information),
+                stringResource(id = R.string.dfu_settings_keep_bond_information_info),
+                state.keepBondInformation
+            ) {
+                onEvent(OnKeepBondInformationSwitchClick)
+            }
+
+            SwitchSettingsComponent(
+                stringResource(id = R.string.dfu_settings_external_mcu_dfu),
+                stringResource(id = R.string.dfu_settings_external_mcu_dfu_info),
+                state.externalMcuDfu
+            ) {
+                onEvent(OnExternalMcuDfuSwitchClick)
+            }
+
+            Spacer(modifier = Modifier.size(16.dp))
+
+            Headline(stringResource(id = R.string.dfu_settings_other))
+
+            SettingsButton(
+                stringResource(id = R.string.dfu_about_app),
+                stringResource(id = R.string.dfu_about_app_desc)
+            ) {
+                onEvent(OnAboutAppClick)
+            }
+
+            SettingsButton(
+                stringResource(id = R.string.dfu_show_welcome_screen),
+            ) {
+                onEvent(OnShowWelcomeClick)
+            }
+
+            Text(
+                text = stringResource(id = R.string.dfu_version, VERSION_NAME),
+                modifier = Modifier.fillMaxWidth(),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
             )
+            Spacer(modifier = Modifier.size(16.dp))
         }
-
-        Spacer(modifier = Modifier.size(16.dp))
-
-        Headline(stringResource(id = R.string.dfu_settings_headline_secure_dfu))
-
-        SwitchSettingsComponent(
-            stringResource(id = R.string.dfu_settings_disable_resume),
-            stringResource(id = R.string.dfu_settings_disable_resume_info),
-            state.disableResume
-        ) {
-            onEvent(OnDisableResumeSwitchClick)
-        }
-
-        Spacer(modifier = Modifier.size(32.dp))
-
-        Headline(stringResource(id = R.string.dfu_settings_headline_legacy_dfu))
-
-        SwitchSettingsComponent(
-            stringResource(id = R.string.dfu_settings_force_scanning),
-            stringResource(id = R.string.dfu_settings_force_scanning_info),
-            state.forceScanningInLegacyDfu
-        ) {
-            onEvent(OnForceScanningAddressesSwitchClick)
-        }
-
-        SwitchSettingsComponent(
-            stringResource(id = R.string.dfu_settings_keep_bond_information),
-            stringResource(id = R.string.dfu_settings_keep_bond_information_info),
-            state.keepBondInformation
-        ) {
-            onEvent(OnKeepBondInformationSwitchClick)
-        }
-
-        SwitchSettingsComponent(
-            stringResource(id = R.string.dfu_settings_external_mcu_dfu),
-            stringResource(id = R.string.dfu_settings_external_mcu_dfu_info),
-            state.externalMcuDfu
-        ) {
-            onEvent(OnExternalMcuDfuSwitchClick)
-        }
-
-        Spacer(modifier = Modifier.size(16.dp))
-
-        Headline(stringResource(id = R.string.dfu_settings_other))
-
-        SettingsButton(
-            stringResource(id = R.string.dfu_about_app),
-            stringResource(id = R.string.dfu_about_app_desc)
-        ) {
-            onEvent(OnAboutAppClick)
-        }
-
-        SettingsButton(
-            stringResource(id = R.string.dfu_show_welcome_screen),
-        ) {
-            onEvent(OnShowWelcomeClick)
-        }
-
-        Text(
-            text = stringResource(id = R.string.dfu_version, VERSION_NAME),
-            modifier = Modifier.fillMaxWidth(),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
-        Spacer(modifier = Modifier.size(16.dp))
     }
 }
 
