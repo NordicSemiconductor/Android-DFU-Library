@@ -31,34 +31,29 @@
 
 package no.nordicsemi.android.dfu.profile.main.view
 
-import android.os.Parcelable
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
-import kotlinx.parcelize.Parcelize
 import no.nordicsemi.android.common.theme.view.ProgressItemStatus
 import no.nordicsemi.android.dfu.profile.R
 import no.nordicsemi.android.dfu.profile.main.data.ProgressUpdate
 
-internal sealed class DFUProgressViewEntity : Parcelable {
+internal sealed class DFUProgressViewEntity {
 
     companion object {
 
-        fun createBootloaderStage(): WorkingProgressViewEntity {
-            return WorkingProgressViewEntity(ProgressItemViewEntity(bootloaderStatus = ProgressItemStatus.WORKING))
-        }
+        fun createBootloaderStage() = WorkingProgressViewEntity(
+            ProgressItemViewEntity(bootloaderStatus = ProgressItemStatus.WORKING)
+        )
 
-        fun createDfuStage(): WorkingProgressViewEntity {
-            return WorkingProgressViewEntity(
-                ProgressItemViewEntity(
-                    bootloaderStatus = ProgressItemStatus.SUCCESS,
-                    dfuStatus = ProgressItemStatus.WORKING,
-                )
+        fun createDfuStage() = WorkingProgressViewEntity(
+            ProgressItemViewEntity(
+                bootloaderStatus = ProgressItemStatus.SUCCESS,
+                dfuStatus = ProgressItemStatus.WORKING,
             )
-        }
+        )
 
-        fun createInstallingStage(progress: ProgressUpdate): WorkingProgressViewEntity {
-            return WorkingProgressViewEntity(
+        fun createInstallingStage(progress: ProgressUpdate) = WorkingProgressViewEntity(
                 ProgressItemViewEntity(
                     bootloaderStatus = ProgressItemStatus.SUCCESS,
                     dfuStatus = ProgressItemStatus.SUCCESS,
@@ -66,21 +61,17 @@ internal sealed class DFUProgressViewEntity : Parcelable {
                     progress = progress
                 )
             )
-        }
 
-        fun createSuccessStage(): WorkingProgressViewEntity {
-            return WorkingProgressViewEntity(
-                ProgressItemViewEntity(
-                    bootloaderStatus = ProgressItemStatus.SUCCESS,
-                    dfuStatus = ProgressItemStatus.SUCCESS,
-                    installationStatus = ProgressItemStatus.SUCCESS,
-                    resultStatus = ProgressItemStatus.SUCCESS
-                )
+        fun createSuccessStage() = WorkingProgressViewEntity(
+            ProgressItemViewEntity(
+                bootloaderStatus = ProgressItemStatus.SUCCESS,
+                dfuStatus = ProgressItemStatus.SUCCESS,
+                installationStatus = ProgressItemStatus.SUCCESS,
+                resultStatus = ProgressItemStatus.SUCCESS
             )
-        }
+        )
 
-        fun ProgressItemViewEntity.createErrorStage(errorMessage: String?): WorkingProgressViewEntity {
-            return WorkingProgressViewEntity(
+        fun ProgressItemViewEntity.createErrorStage(errorMessage: String?) = WorkingProgressViewEntity(
                 ProgressItemViewEntity(
                     bootloaderStatus = bootloaderStatus.createErrorStatus(),
                     dfuStatus = dfuStatus.createErrorStatus(),
@@ -89,28 +80,20 @@ internal sealed class DFUProgressViewEntity : Parcelable {
                     errorMessage = errorMessage
                 )
             )
-        }
 
-        private fun ProgressItemStatus.createErrorStatus(): ProgressItemStatus {
-            return if (this != ProgressItemStatus.SUCCESS) {
-                ProgressItemStatus.ERROR
-            } else {
-                ProgressItemStatus.SUCCESS
-            }
+        private fun ProgressItemStatus.createErrorStatus(): ProgressItemStatus = when (this) {
+            ProgressItemStatus.SUCCESS -> ProgressItemStatus.SUCCESS
+            else -> ProgressItemStatus.ERROR
         }
     }
 }
 
-@Parcelize
 internal object DisabledProgressViewEntity : DFUProgressViewEntity()
 
-@Parcelize
 internal data class WorkingProgressViewEntity(
     val status: ProgressItemViewEntity = ProgressItemViewEntity()
 ) : DFUProgressViewEntity()
 
-
-@Parcelize
 internal data class ProgressItemViewEntity(
     val bootloaderStatus: ProgressItemStatus = ProgressItemStatus.DISABLED,
     val dfuStatus: ProgressItemStatus = ProgressItemStatus.DISABLED,
@@ -118,38 +101,28 @@ internal data class ProgressItemViewEntity(
     val resultStatus: ProgressItemStatus = ProgressItemStatus.DISABLED,
     val progress: ProgressUpdate = ProgressUpdate(),
     val errorMessage: String? = null
-) : Parcelable {
+) {
+    fun isRunning() = !isCompleted() && (
+           bootloaderStatus != ProgressItemStatus.DISABLED ||
+           dfuStatus != ProgressItemStatus.DISABLED ||
+           installationStatus == ProgressItemStatus.WORKING
+    )
 
-    fun isRunning(): Boolean {
-        return (bootloaderStatus != ProgressItemStatus.DISABLED
-                || dfuStatus != ProgressItemStatus.DISABLED
-                || installationStatus == ProgressItemStatus.WORKING)
-                && !isCompleted()
-
-    }
-
-    fun isCompleted(): Boolean {
-        return resultStatus == ProgressItemStatus.SUCCESS || resultStatus == ProgressItemStatus.ERROR
-    }
+    fun isCompleted() =
+       resultStatus == ProgressItemStatus.SUCCESS || resultStatus == ProgressItemStatus.ERROR
 }
 
 data class ProgressItemLabel(
-    @StringRes
-    val idleText: Int,
-    @StringRes
-    val workingText: Int,
-    @StringRes
-    val successText: Int,
+    @StringRes val idleText: Int,
+    @StringRes val workingText: Int,
+    @StringRes val successText: Int,
 ) {
-
     @Composable
-    fun toDisplayString(status: ProgressItemStatus): String {
-        return when (status) {
-            ProgressItemStatus.WORKING -> stringResource(id = workingText)
-            ProgressItemStatus.SUCCESS -> stringResource(id = successText)
-            ProgressItemStatus.DISABLED,
-            ProgressItemStatus.ERROR -> stringResource(id = idleText)
-        }
+    fun toDisplayString(status: ProgressItemStatus) = when (status) {
+        ProgressItemStatus.WORKING -> stringResource(id = workingText)
+        ProgressItemStatus.SUCCESS -> stringResource(id = successText)
+        ProgressItemStatus.DISABLED,
+        ProgressItemStatus.ERROR -> stringResource(id = idleText)
     }
 }
 

@@ -31,7 +31,6 @@
 
 package no.nordicsemi.android.dfu.profile.main.view
 
-import android.os.Parcelable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -40,25 +39,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import kotlinx.parcelize.Parcelize
 import no.nordicsemi.android.common.theme.parseBold
 import no.nordicsemi.android.common.ui.scanner.DiscoveredBluetoothDevice
 import no.nordicsemi.android.common.ui.scanner.ui.exhaustive
 import no.nordicsemi.android.dfu.profile.R
 
-internal sealed class DFUSelectDeviceViewEntity : Parcelable
+internal sealed class DFUSelectDeviceViewEntity
 
-@Parcelize
 internal object DisabledSelectedDeviceViewEntity : DFUSelectDeviceViewEntity()
 
-@Parcelize
 internal object NotSelectedDeviceViewEntity : DFUSelectDeviceViewEntity()
 
-@Parcelize
 internal data class SelectedDeviceViewEntity(val device: DiscoveredBluetoothDevice) : DFUSelectDeviceViewEntity()
 
 @Composable
-internal fun DFUSelectedDeviceView(isRunning: Boolean, viewEntity: DFUSelectDeviceViewEntity, onEvent: (DFUViewEvent) -> Unit) {
+internal fun DFUSelectedDeviceView(
+    isRunning: Boolean,
+    viewEntity: DFUSelectDeviceViewEntity,
+    onEvent: (DFUViewEvent) -> Unit
+) {
     when (viewEntity) {
         DisabledSelectedDeviceViewEntity -> DFUDisabledSelectedDeviceView()
         is NotSelectedDeviceViewEntity -> DFUNotSelectedDeviceView(onEvent)
@@ -106,7 +105,10 @@ private const val DEVICE_NAME = "Name: <b>%s</b>"
 private const val DEVICE_ADDRESS = "Address: <b>%s</b>"
 
 @Composable
-internal fun DFUSelectedDeviceView(viewEntity: SelectedDeviceViewEntity, onEvent: (DFUViewEvent) -> Unit) {
+internal fun DFUSelectedDeviceView(
+    viewEntity: SelectedDeviceViewEntity,
+    onEvent: (DFUViewEvent) -> Unit
+) {
     CardComponent(
         titleIcon = R.drawable.ic_bluetooth,
         title = stringResource(id = R.string.dfu_device),
@@ -120,14 +122,14 @@ internal fun DFUSelectedDeviceView(viewEntity: SelectedDeviceViewEntity, onEvent
             horizontalAlignment = Alignment.Start
         ) {
             Text(
-                text = String.format(DEVICE_NAME, viewEntity.device.displayName() ?: "No name").parseBold(),
+                text = String.format(DEVICE_NAME, viewEntity.device.displayName ?: "No name").parseBold(),
                 style = MaterialTheme.typography.bodyMedium
             )
 
             Spacer(modifier = Modifier.size(4.dp))
 
             Text(
-                text = String.format(DEVICE_ADDRESS, viewEntity.device.displayAddress()).parseBold(),
+                text = String.format(DEVICE_ADDRESS, viewEntity.device.address).parseBold(),
                 style = MaterialTheme.typography.bodyMedium,
             )
         }
@@ -149,14 +151,14 @@ internal fun DFUSelectedDeviceNoActionView(viewEntity: SelectedDeviceViewEntity)
             horizontalAlignment = Alignment.Start
         ) {
             Text(
-                text = String.format(DEVICE_NAME, viewEntity.device.displayName() ?: "No name").parseBold(),
+                text = String.format(DEVICE_NAME, viewEntity.device.displayName ?: "No name").parseBold(),
                 style = MaterialTheme.typography.bodyMedium
             )
 
             Spacer(modifier = Modifier.size(4.dp))
 
             Text(
-                text = String.format(DEVICE_ADDRESS, viewEntity.device.displayAddress()).parseBold(),
+                text = String.format(DEVICE_ADDRESS, viewEntity.device.address).parseBold(),
                 style = MaterialTheme.typography.bodyMedium,
             )
         }

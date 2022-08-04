@@ -59,15 +59,15 @@ class DFUManager @Inject constructor(
         settings: DFUSettings
     ): DfuServiceController {
 
-        val logger = loggerFactory.create("DFU", null, device.address()).also {
+        val logger = loggerFactory.create("DFU", null, device.address).also {
             _logger = it
         }
         DfuServiceListenerHelper.registerLogListener(context) { _, level, message ->
             logger.log(level, message)
         }
 
-        val starter = DfuServiceInitiator(device.address()).apply {
-            setDeviceName(device.displayName())
+        val starter = DfuServiceInitiator(device.address).apply {
+            setDeviceName(device.displayName)
 
             setKeepBond(settings.keepBondInformation)
             setForceDfu(settings.externalMcuDfu)
