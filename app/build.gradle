@@ -14,12 +14,12 @@ if (getGradle().getStartParameter().getTaskRequests().toString().contains("Relea
 
 android {
     namespace 'no.nordicsemi.android.dfu.app'
-    compileSdkVersion android_api_version
+    compileSdk android_api_version
 
     defaultConfig {
         applicationId "no.nordicsemi.android.dfu"
-        minSdkVersion android_min_api_version
-        targetSdkVersion android_api_version
+        minSdk android_min_api_version
+        targetSdk android_api_version
         versionCode getVersionCodeFromTags()
         versionName getVersionNameFromTags()
 

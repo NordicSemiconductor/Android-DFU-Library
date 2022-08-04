@@ -3,11 +3,11 @@ apply from: rootProject.file("gradle/git-tag-version.gradle")
 
 android {
     namespace 'no.nordicsemi.android.dfu'
-    compileSdkVersion android_api_version
+    compileSdk android_api_version
 
     defaultConfig {
-        minSdkVersion android_min_api_version_dfu
-        targetSdkVersion android_api_version
+        minSdk android_min_api_version_dfu
+        targetSdk android_api_version
     }
 
     buildTypes {

@@ -6,7 +6,7 @@ apply plugin: 'kotlin-parcelize'
 
 android {
     namespace 'no.nordicsemi.android.dfu.storage'
-    compileSdkVersion android_api_version
+    compileSdk android_api_version
 
     defaultConfig {
         minSdk android_min_api_version
