@@ -39,8 +39,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import no.nordicsemi.android.dfu.analytics.*
 import no.nordicsemi.android.common.navigation.*
+import no.nordicsemi.android.common.ui.scanner.ScannerDestinationId
+import no.nordicsemi.android.common.ui.scanner.model.getDevice
+import no.nordicsemi.android.dfu.analytics.*
 import no.nordicsemi.android.dfu.profile.DfuSettingsScreen
 import no.nordicsemi.android.dfu.profile.DfuWelcomeScreen
 import no.nordicsemi.android.dfu.profile.main.data.*
@@ -49,9 +51,6 @@ import no.nordicsemi.android.dfu.profile.main.view.*
 import no.nordicsemi.android.dfu.profile.main.view.DFUProgressViewEntity.Companion.createErrorStage
 import no.nordicsemi.android.dfu.profile.settings.repository.SettingsRepository
 import no.nordicsemi.android.dfu.storage.*
-import no.nordicsemi.android.common.ui.scanner.ScannerDestinationId
-import no.nordicsemi.android.common.ui.scanner.ui.exhaustive
-import no.nordicsemi.android.common.ui.scanner.ui.getDevice
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -127,7 +126,7 @@ internal class DFUViewModel @Inject constructor(
                     fileViewEntity = NotSelectedFileViewEntity(isRunning = true, isError = false),
                 )
                 null -> doNothing()
-            }.exhaustive
+            }
         }.launchIn(viewModelScope)
 
         deepLinkHandler.zipFile.onEach {
@@ -157,7 +156,7 @@ internal class DFUViewModel @Inject constructor(
                 analytics.logEvent(DeviceSelectedEvent)
             }
             null -> navigationManager.navigateTo(ScannerDestinationId)
-        }.exhaustive
+        }
     }
 
     fun onEvent(event: DFUViewEvent) {
@@ -171,7 +170,7 @@ internal class DFUViewModel @Inject constructor(
             OnSelectDeviceButtonClick -> requestBluetoothDevice()
             OnSettingsButtonClick -> navigationManager.navigateTo(DfuSettingsScreen)
             OnLoggerButtonClick -> repository.openLogger()
-        }.exhaustive
+        }
     }
 
     private fun onInstallButtonClick() = _state.value.settings?.let {

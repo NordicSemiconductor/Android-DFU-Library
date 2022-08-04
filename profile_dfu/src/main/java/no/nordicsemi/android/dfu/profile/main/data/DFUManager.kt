@@ -33,15 +33,15 @@ package no.nordicsemi.android.dfu.profile.main.data
 
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
-import no.nordicsemi.android.dfu.DfuServiceController
-import no.nordicsemi.android.dfu.DfuServiceInitiator
-import no.nordicsemi.android.dfu.DfuServiceListenerHelper
 import no.nordicsemi.android.common.logger.LoggerAppRunner
 import no.nordicsemi.android.common.logger.NordicLogger
 import no.nordicsemi.android.common.logger.NordicLoggerFactory
+import no.nordicsemi.android.common.ui.scanner.model.DiscoveredBluetoothDevice
+import no.nordicsemi.android.dfu.DfuServiceController
+import no.nordicsemi.android.dfu.DfuServiceInitiator
+import no.nordicsemi.android.dfu.DfuServiceListenerHelper
 import no.nordicsemi.android.dfu.profile.main.repository.DFUService
 import no.nordicsemi.android.dfu.profile.settings.domain.DFUSettings
-import no.nordicsemi.android.common.ui.scanner.DiscoveredBluetoothDevice
 import javax.inject.Inject
 
 class DFUManager @Inject constructor(

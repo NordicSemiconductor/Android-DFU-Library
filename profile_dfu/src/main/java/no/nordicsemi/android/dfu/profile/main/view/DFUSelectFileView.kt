@@ -45,7 +45,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.parcelize.Parcelize
 import no.nordicsemi.android.common.theme.parseBold
-import no.nordicsemi.android.common.ui.scanner.ui.exhaustive
 import no.nordicsemi.android.dfu.DfuBaseService
 import no.nordicsemi.android.dfu.profile.R
 import no.nordicsemi.android.dfu.profile.main.data.ZipFile
@@ -70,7 +69,7 @@ internal fun DFUSelectFileView(isRunning: Boolean, viewEntity: DFUSelectFileView
         } else {
             DFUSelectFileNoActionView(viewEntity.zipFile)
         }
-    }.exhaustive
+    }
 }
 
 @Composable

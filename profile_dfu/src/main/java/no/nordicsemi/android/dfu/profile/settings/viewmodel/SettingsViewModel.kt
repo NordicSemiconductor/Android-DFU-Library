@@ -43,7 +43,6 @@ import no.nordicsemi.android.dfu.profile.DfuWelcomeScreen
 import no.nordicsemi.android.dfu.profile.settings.domain.DFUSettings
 import no.nordicsemi.android.dfu.profile.settings.repository.SettingsRepository
 import no.nordicsemi.android.dfu.profile.settings.view.*
-import no.nordicsemi.android.common.ui.scanner.ui.exhaustive
 import javax.inject.Inject
 
 private const val INFOCENTER_LINK = "https://infocenter.nordicsemi.com/topic/sdk_nrf5_v17.1.0/examples_bootloader.html"
@@ -68,7 +67,7 @@ class SettingsViewModel @Inject constructor(
             OnForceScanningAddressesSwitchClick -> onForceScanningAddressesSwitchClick()
             OnShowWelcomeClick -> navigationManager.navigateTo(DfuWelcomeScreen)
             is OnNumberOfPocketsChange -> onNumberOfPocketsChange(event.numberOfPockets)
-        }.exhaustive
+        }
     }
 
     private fun onExternalMcuDfuSwitchClick() {

@@ -42,7 +42,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import no.nordicsemi.android.common.theme.view.ProgressItem
 import no.nordicsemi.android.common.theme.view.ProgressItemStatus
-import no.nordicsemi.android.common.ui.scanner.ui.exhaustive
 import no.nordicsemi.android.dfu.profile.R
 import no.nordicsemi.android.dfu.profile.main.data.ProgressUpdate
 
@@ -58,7 +57,7 @@ internal fun DFUProgressView(viewEntity: DFUProgressViewEntity, onEvent: (DFUVie
             } else {
                 DFUIdleProgressView(onEvent)
             }
-    }.exhaustive
+    }
 }
 
 @Composable

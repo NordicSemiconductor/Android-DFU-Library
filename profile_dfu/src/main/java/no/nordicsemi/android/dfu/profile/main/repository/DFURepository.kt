@@ -37,7 +37,7 @@ import kotlinx.coroutines.flow.*
 import no.nordicsemi.android.dfu.DfuServiceController
 import no.nordicsemi.android.dfu.profile.main.data.*
 import no.nordicsemi.android.dfu.profile.settings.domain.DFUSettings
-import no.nordicsemi.android.common.ui.scanner.DiscoveredBluetoothDevice
+import no.nordicsemi.android.common.ui.scanner.model.DiscoveredBluetoothDevice
 import javax.inject.Inject
 import javax.inject.Singleton
 

@@ -40,8 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import no.nordicsemi.android.common.theme.parseBold
-import no.nordicsemi.android.common.ui.scanner.DiscoveredBluetoothDevice
-import no.nordicsemi.android.common.ui.scanner.ui.exhaustive
+import no.nordicsemi.android.common.ui.scanner.model.DiscoveredBluetoothDevice
 import no.nordicsemi.android.dfu.profile.R
 
 internal sealed class DFUSelectDeviceViewEntity
@@ -66,7 +65,7 @@ internal fun DFUSelectedDeviceView(
         } else {
             DFUSelectedDeviceNoActionView(viewEntity)
         }
-    }.exhaustive
+    }
 }
 
 @Composable
