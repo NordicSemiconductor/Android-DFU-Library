@@ -14,7 +14,7 @@ Application is available in [Play Store](https://play.google.com/store/apps/deta
 ### Deep links
 Application opens links with the provided format for both http and https.
 `link_to_file` should be replaced with a valid link.
-Clicking on the link automatically opens app which starts downloading to Download folder on the phone. Downlaoded file is displayed in the app and ready to use.
+Clicking on the link automatically opens app which starts downloading to Download folder on the phone. Downloaded file is displayed in the app and ready to use.
 
 Link format: ```https://www.nordicsemi.com/dfu/?file=link_to_file```
 
