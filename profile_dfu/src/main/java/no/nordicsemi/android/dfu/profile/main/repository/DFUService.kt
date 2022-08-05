@@ -39,6 +39,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import dagger.hilt.android.AndroidEntryPoint
 import no.nordicsemi.android.dfu.DfuBaseService
+import no.nordicsemi.android.dfu.profile.BuildConfig
 import javax.inject.Inject
 import javax.inject.Singleton
 import no.nordicsemi.android.dfu.profile.R
@@ -84,7 +85,7 @@ internal class DFUService : DfuBaseService() {
 		 * This method may be used to restore the target activity in case the application was closed or is open. It may also be used to recreate an activity
 		 * history (see NotificationActivity).
 		 */
-        return Class.forName("no.nordicsemi.android.dfu.MainActivity") as Class<out Activity>
+        return Class.forName("no.nordicsemi.android.dfu.app.MainActivity") as Class<out Activity>
     }
 
     override fun isDebug(): Boolean {
