@@ -45,12 +45,10 @@ import no.nordicsemi.android.dfu.profile.settings.domain.DFUSettings
 import javax.inject.Inject
 
 class DFUManager @Inject constructor(
-    @ApplicationContext
-    private val context: Context,
+    @ApplicationContext private val context: Context,
     private val appRunner: LoggerAppRunner,
     private val loggerFactory: NordicLoggerFactory
 ) {
-
     private var _logger: NordicLogger? = null
 
     fun install(
@@ -58,10 +56,10 @@ class DFUManager @Inject constructor(
         device: DiscoveredBluetoothDevice,
         settings: DFUSettings
     ): DfuServiceController {
+        val logger = loggerFactory
+            .create("DFU", null, device.address)
+            .also { _logger = it}
 
-        val logger = loggerFactory.create("DFU", null, device.address).also {
-            _logger = it
-        }
         DfuServiceListenerHelper.registerLogListener(context) { _, level, message ->
             logger.log(level, message)
         }
