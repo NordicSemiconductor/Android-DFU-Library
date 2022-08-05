@@ -28,12 +28,11 @@ import android.content.Intent;
 import android.content.IntentFilter;
 
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 
 import androidx.annotation.NonNull;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-import no.nordicsemi.android.dfu.internal.scanner.BootloaderScanner;
+import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 import no.nordicsemi.android.error.GattError;
 
 /**
@@ -67,7 +66,7 @@ public class DfuServiceListenerHelper {
 			// The new bootloader will afterwards advertise with the address incremented by 1.
 			// We need to make sure that the listener will receive also events from this device.
 			mListeners.put(deviceAddress, listener);
-			mListeners.put(getIncrementedAddress(deviceAddress), listener); // assuming the address is a valid BLE address
+			mListeners.put(BootloaderScannerFactory.getIncrementedAddress(deviceAddress), listener); // assuming the address is a valid BLE address
 		}
 
 		private boolean removeLogListener(final DfuLogListener listener) {
@@ -124,7 +123,7 @@ public class DfuServiceListenerHelper {
 			// When using the buttonless update and updating the SoftDevice the application will be removed to make space for the new SoftDevice.
 			// The new bootloader will afterwards advertise with the address incremented by 1. We need to make sure that the listener will receive also events from this device.
 			mListeners.put(deviceAddress, listener);
-			mListeners.put(getIncrementedAddress(deviceAddress), listener); // assuming the address is a valid BLE address
+			mListeners.put(BootloaderScannerFactory.getIncrementedAddress(deviceAddress), listener); // assuming the address is a valid BLE address
 		}
 
 		private boolean removeProgressListener(final DfuProgressListener listener) {
@@ -392,12 +391,5 @@ public class DfuServiceListenerHelper {
 				mLogBroadcastReceiver = null;
 			}
 		}
-	}
-
-	private static String getIncrementedAddress(@NonNull final String deviceAddress) {
-		final String firstBytes = deviceAddress.substring(0, 15);
-		final String lastByte = deviceAddress.substring(15); // assuming that the device address is correct
-		final String lastByteIncremented = String.format(Locale.US, "%02X", (Integer.valueOf(lastByte, 16) + BootloaderScanner.ADDRESS_DIFF) & 0xFF);
-		return firstBytes + lastByteIncremented;
 	}
 }

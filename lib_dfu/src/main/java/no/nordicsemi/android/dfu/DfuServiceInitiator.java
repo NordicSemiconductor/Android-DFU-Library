@@ -84,6 +84,8 @@ public final class DfuServiceInitiator {
 	private int numberOfRetries = 0; // 0 to be backwards compatible
 	private int mbrSize = DEFAULT_MBR_SIZE;
 	private long dataObjectDelay = 0; // initially disabled
+	private long rebootTime = 0; // ms
+	private long scanTimeout = 5000; // ms
 
 	private Boolean packetReceiptNotificationsEnabled;
 	private int numberOfPackets = 12;
@@ -133,6 +135,8 @@ public final class DfuServiceInitiator {
 		this.disableNotification = disableNotification;
 		return this;
 	}
+
+
 
 	/**
 	 * Sets whether the DFU service should be started as a foreground service. By default it's
@@ -283,6 +287,29 @@ public final class DfuServiceInitiator {
 	@SuppressWarnings("JavaDoc")
 	public DfuServiceInitiator setForceDfu(final boolean force) {
 		this.forceDfu = force;
+		return this;
+	}
+
+	/**
+	 * Sets the time required by the device to reboot. The library will wait for this time before
+	 * scanning for the device in bootloader mode.
+	 *
+	 * @param rebootTime the reboot time in milliseconds, default 0.
+	 * @return the builder
+	 */
+	public DfuServiceInitiator setRebootTime(final long rebootTime) {
+		this.rebootTime = rebootTime;
+		return this;
+	}
+
+	/**
+	 * Sets the scan duration (in milliseconds) when scanning for DFU Bootloader.
+	 *
+	 * @param scanTimeout the scan duration in milliseconds, default 5 seconds.
+	 * @return the builder
+	 */
+	public DfuServiceInitiator setScanTimeout(final long scanTimeout) {
+		this.scanTimeout = scanTimeout;
 		return this;
 	}
 
@@ -816,6 +843,8 @@ public final class DfuServiceInitiator {
 		intent.putExtra(DfuBaseService.EXTRA_MAX_DFU_ATTEMPTS, numberOfRetries);
 		intent.putExtra(DfuBaseService.EXTRA_MBR_SIZE, mbrSize);
 		intent.putExtra(DfuBaseService.EXTRA_DATA_OBJECT_DELAY, dataObjectDelay);
+		intent.putExtra(DfuBaseService.EXTRA_SCAN_TIMEOUT, scanTimeout);
+		intent.putExtra(DfuBaseService.EXTRA_SCAN_DELAY, rebootTime);
 		if (mtu > 0)
 			intent.putExtra(DfuBaseService.EXTRA_MTU, mtu);
 		intent.putExtra(DfuBaseService.EXTRA_CURRENT_MTU, currentMtu);

@@ -734,6 +734,9 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 */
 	public static final int ACTION_ABORT = 2;
 
+	public static final String EXTRA_SCAN_DELAY = "no.nordicsemi.android.dfu.extra.EXTRA_SCAN_DELAY";
+	public static final String EXTRA_SCAN_TIMEOUT = "no.nordicsemi.android.dfu.extra.EXTRA_SCAN_TIMEOUT";
+
 	public static final String EXTRA_CUSTOM_UUIDS_FOR_LEGACY_DFU = "no.nordicsemi.android.dfu.extra.EXTRA_CUSTOM_UUIDS_FOR_LEGACY_DFU";
 	public static final String EXTRA_CUSTOM_UUIDS_FOR_SECURE_DFU = "no.nordicsemi.android.dfu.extra.EXTRA_CUSTOM_UUIDS_FOR_SECURE_DFU";
 	public static final String EXTRA_CUSTOM_UUIDS_FOR_EXPERIMENTAL_BUTTONLESS_DFU = "no.nordicsemi.android.dfu.extra.EXTRA_CUSTOM_UUIDS_FOR_EXPERIMENTAL_BUTTONLESS_DFU";
@@ -1941,6 +1944,17 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 */
 	@Nullable
 	protected abstract Class<? extends Activity> getNotificationTarget();
+
+	/**
+	 * This method should return the device selector, which is to be used to find the bootloader.
+	 * The default selector will look for a device with the same, or incremented device address.
+	 *
+	 * @return The device selector instance.
+	 */
+	@NonNull
+	protected DfuDeviceSelector getDeviceSelector() {
+		return new DfuDefaultDeviceSelector();
+	}
 
 	/**
 	 * Override this method to enable detailed debug LogCat logs with DFU events.

@@ -24,20 +24,40 @@ package no.nordicsemi.android.dfu.internal.scanner;
 
 import android.os.Build;
 
+import java.util.Locale;
+
+import androidx.annotation.NonNull;
+
 /**
  * The factory should be used to create the {@link BootloaderScanner} instance appropriate
  * for the Android version.
  */
-public class BootloaderScannerFactory {
+public final class BootloaderScannerFactory {
+	/**
+	 * The bootloader may advertise with the same address or one with the last byte incremented
+	 * by this value. I.e. 00:11:22:33:44:55 -&gt; 00:11:22:33:44:56. FF changes to 00.
+	 */
+	private final static int ADDRESS_DIFF = 1;
+
+	private BootloaderScannerFactory() {}
+
+	public static String getIncrementedAddress(@NonNull final String deviceAddress) {
+		final String firstBytes = deviceAddress.substring(0, 15);
+		final String lastByte = deviceAddress.substring(15); // assuming that the device address is correct
+		final String lastByteIncremented = String.format(Locale.US, "%02X", (Integer.valueOf(lastByte, 16) + ADDRESS_DIFF) & 0xFF);
+		return firstBytes + lastByteIncremented;
+	}
 
 	/**
 	 * Returns the scanner implementation.
 	 *
 	 * @return the bootloader scanner
 	 */
-	public static BootloaderScanner getScanner() {
+	public static BootloaderScanner getScanner(@NonNull final String deviceAddress) {
+		final String deviceAddressIncremented = getIncrementedAddress(deviceAddress);
+
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-			return new BootloaderScannerLollipop();
-		return new BootloaderScannerJB();
+			return new BootloaderScannerLollipop(deviceAddress, deviceAddressIncremented);
+		return new BootloaderScannerJB(deviceAddress, deviceAddressIncremented);
 	}
 }
