@@ -14,7 +14,7 @@ Application is available in [Play Store](https://play.google.com/store/apps/deta
 ### Deep links
 Application opens links with the provided format for both http and https.
 `link_to_file` should be replaced with a valid link.
-Clicking on the link automatically opens app which starts downloading to Download folder on the phone. Downlaoded file is displayed in the app and ready to use.
+Clicking on the link automatically opens app which starts downloading to Download folder on the phone. Downloaded file is displayed in the app and ready to use.
 
 Link format: ```https://www.nordicsemi.com/dfu/?file=link_to_file```
 
@@ -27,7 +27,7 @@ Application can handle opening .zip files from system level. Selected file will 
 
 [ ![Download](https://maven-badges.herokuapp.com/maven-central/no.nordicsemi.android/dfu/badge.svg?style=plastic) ](https://search.maven.org/artifact/no.nordicsemi.android/dfu)
 
-This is an Android library for perfoming a DFU (Device Firmware Update) on devices running 
+This is an Android library for performing a DFU (Device Firmware Update) on devices running
 [nRF5 SDK firmware with DFU bootloader](https://infocenter.nordicsemi.com/topic/sdk_nrf5_v17.1.0/lib_bootloader_modules.html?cp=8_1_3_5).
 iOS version of the same library can be found at [IOS-DFU-Library](https://github.com/NordicSemiconductor/IOS-DFU-Library).
 
