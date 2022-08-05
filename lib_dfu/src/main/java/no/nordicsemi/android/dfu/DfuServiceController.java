@@ -39,11 +39,13 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
 public class DfuServiceController implements DfuController {
+	@SuppressWarnings("deprecation")
 	private final LocalBroadcastManager mBroadcastManager;
 	private boolean mPaused;
 	private boolean mAborted;
 
 	/* package */ DfuServiceController(@NonNull final Context context) {
+		//noinspection deprecation
 		mBroadcastManager = LocalBroadcastManager.getInstance(context);
 	}
 

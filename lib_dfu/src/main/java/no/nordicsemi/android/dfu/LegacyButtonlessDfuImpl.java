@@ -22,6 +22,7 @@
 
 package no.nordicsemi.android.dfu;
 
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
@@ -40,6 +41,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 /**
  * Implementations of the legacy buttonless service introduced in SDK 6.1.
  */
+@SuppressLint("MissingPermission")
 /* package */ class LegacyButtonlessDfuImpl extends BaseButtonlessDfuImpl {
 	// UUIDs used by the DFU
 	static UUID DFU_SERVICE_UUID = LegacyDfuImpl.DEFAULT_DFU_SERVICE_UUID;

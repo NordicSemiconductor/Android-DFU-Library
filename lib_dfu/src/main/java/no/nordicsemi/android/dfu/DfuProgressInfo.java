@@ -46,12 +46,11 @@ import androidx.annotation.NonNull;
 		mListener = listener;
 	}
 
-	DfuProgressInfo init(final int imageSizeInBytes, final int currentPart, final int totalParts) {
+	void init(final int imageSizeInBytes, final int currentPart, final int totalParts) {
 		this.imageSizeInBytes = imageSizeInBytes;
 		this.maxObjectSizeInBytes = Integer.MAX_VALUE; // by default the whole firmware will be sent as a single object
 		this.currentPart = currentPart;
 		this.totalParts = totalParts;
-		return this;
 	}
 
 	@SuppressWarnings({"UnusedReturnValue", "SameParameterValue"})

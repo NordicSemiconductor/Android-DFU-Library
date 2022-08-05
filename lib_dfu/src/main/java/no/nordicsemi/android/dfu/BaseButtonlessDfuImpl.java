@@ -22,6 +22,7 @@
 
 package no.nordicsemi.android.dfu;
 
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
@@ -33,6 +34,7 @@ import androidx.annotation.NonNull;
  * A base implementation of a buttonless service. The purpose of a buttonless service is to
  * switch a device into the DFU bootloader mode.
  */
+@SuppressLint("MissingPermission")
 /* package */ abstract class BaseButtonlessDfuImpl extends BaseDfuImpl {
 
 	private final BaseButtonlessDfuImpl.ButtonlessBluetoothCallback mBluetoothCallback = new BaseButtonlessDfuImpl.ButtonlessBluetoothCallback();

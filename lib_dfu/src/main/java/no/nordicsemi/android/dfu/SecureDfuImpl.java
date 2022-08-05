@@ -367,6 +367,7 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 			try {
 				// Read the same number of bytes from the current init packet to calculate local CRC32
 				final byte[] buffer = new byte[info.offset];
+				//noinspection ResultOfMethodCallIgnored
 				mInitPacketStream.read(buffer);
 				// Calculate the CRC32
 				crc32.update(buffer);
@@ -535,10 +536,12 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 
 				// Read the same number of bytes from the current init packet to calculate local CRC32
 				if (bytesSentAndExecuted > 0) {
+					//noinspection ResultOfMethodCallIgnored
 					mFirmwareStream.read(new byte[bytesSentAndExecuted]); // Read executed bytes
 					mFirmwareStream.mark(info.maxSize); // Mark here
 				}
 				// Here the bytesSentNotExecuted is for sure greater then 0
+				//noinspection ResultOfMethodCallIgnored
 				mFirmwareStream.read(new byte[bytesSentNotExecuted]); // Read the rest
 
 				// Calculate the CRC32
@@ -649,6 +652,7 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 					try {
 						// We have to reset the stream and read 'offset' number of bytes to recalculate the CRC
 						mFirmwareStream.reset(); // Resets to the beginning of current object
+						//noinspection ResultOfMethodCallIgnored
 						mFirmwareStream.read(new byte[info.maxSize - bytesLost]); // Reads additional bytes that were sent and received in this object
 						mProgressInfo.setBytesSent(checksum.offset);
 					} catch (final IOException e) {

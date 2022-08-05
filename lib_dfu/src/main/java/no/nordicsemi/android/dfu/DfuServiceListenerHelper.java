@@ -291,6 +291,7 @@ public class DfuServiceListenerHelper {
 			final IntentFilter filter = new IntentFilter();
 			filter.addAction(DfuBaseService.BROADCAST_PROGRESS);
 			filter.addAction(DfuBaseService.BROADCAST_ERROR);
+			//noinspection deprecation
 			LocalBroadcastManager.getInstance(context).registerReceiver(mProgressBroadcastReceiver, filter);
 		}
 		mProgressBroadcastReceiver.setProgressListener(listener);
@@ -312,6 +313,7 @@ public class DfuServiceListenerHelper {
 			final IntentFilter filter = new IntentFilter();
 			filter.addAction(DfuBaseService.BROADCAST_PROGRESS);
 			filter.addAction(DfuBaseService.BROADCAST_ERROR);
+			//noinspection deprecation
 			LocalBroadcastManager.getInstance(context).registerReceiver(mProgressBroadcastReceiver, filter);
 		}
 		mProgressBroadcastReceiver.setProgressListener(deviceAddress, listener);
@@ -328,6 +330,7 @@ public class DfuServiceListenerHelper {
 			final boolean empty = mProgressBroadcastReceiver.removeProgressListener(listener);
 
 			if (empty) {
+				//noinspection deprecation
 				LocalBroadcastManager.getInstance(context).unregisterReceiver(mProgressBroadcastReceiver);
 				mProgressBroadcastReceiver = null;
 			}
@@ -346,6 +349,7 @@ public class DfuServiceListenerHelper {
 
 			final IntentFilter filter = new IntentFilter();
 			filter.addAction(DfuBaseService.BROADCAST_LOG);
+			//noinspection deprecation
 			LocalBroadcastManager.getInstance(context).registerReceiver(mLogBroadcastReceiver, filter);
 		}
 		mLogBroadcastReceiver.setLogListener(listener);
@@ -366,6 +370,7 @@ public class DfuServiceListenerHelper {
 
 			final IntentFilter filter = new IntentFilter();
 			filter.addAction(DfuBaseService.BROADCAST_LOG);
+			//noinspection deprecation
 			LocalBroadcastManager.getInstance(context).registerReceiver(mLogBroadcastReceiver, filter);
 		}
 		mLogBroadcastReceiver.setLogListener(deviceAddress, listener);
@@ -382,6 +387,7 @@ public class DfuServiceListenerHelper {
 			final boolean empty = mLogBroadcastReceiver.removeLogListener(listener);
 
 			if (empty) {
+				//noinspection deprecation
 				LocalBroadcastManager.getInstance(context).unregisterReceiver(mLogBroadcastReceiver);
 				mLogBroadcastReceiver = null;
 			}

@@ -22,6 +22,7 @@
 
 package no.nordicsemi.android.dfu;
 
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
@@ -45,6 +46,7 @@ import no.nordicsemi.android.dfu.internal.exception.DfuException;
 import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 
+@SuppressLint("MissingPermission")
 /* package */ abstract class BaseDfuImpl implements DfuService {
 	private static final String TAG = "DfuImpl";
 

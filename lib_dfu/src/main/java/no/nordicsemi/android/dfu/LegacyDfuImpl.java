@@ -22,6 +22,7 @@
 
 package no.nordicsemi.android.dfu;
 
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
@@ -42,6 +43,7 @@ import no.nordicsemi.android.dfu.internal.exception.UnknownResponseException;
 import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 import no.nordicsemi.android.error.LegacyDfuError;
 
+@SuppressLint("MissingPermission")
 /* package */ class LegacyDfuImpl extends BaseCustomDfuImpl {
 	// UUIDs used by the DFU
 	static final UUID DEFAULT_DFU_SERVICE_UUID       = new UUID(0x000015301212EFDEL, 0x1523785FEABCD123L);
