@@ -26,9 +26,12 @@ import androidx.annotation.Nullable;
 
 /**
  * <p>
- * The DFU Bootloader may advertise with the same address as an application (in case of the
- * buttonless update) or one incremented by 1 (in case of jumping to the DFU mode with a button,
- * or after flashing the new Soft Device (flashing new SD removes the old application)).
+ * The DFU Bootloader may advertise with the same address as an application or one incremented by 1.
+ * This depends on the bootloader configuration. If buttonless service is used and the device is
+ * bonded, the address is usually preserved, otherwise it is incremented by 1.
+ * Check out <code>NRF_DFU_BLE_REQUIRES_BONDS</code> define in the sdk_config.
+ * Also, when the SD is updated, the bootloader will use the incremented address, as bond info
+ * were erased together with the old application.
  * <p>
  * The DFU service always connects to the address given as a parameter. However, when flashing
  * SD+BL+App it will first send the SD+BL as part one followed by the App in the second connection.
