@@ -39,7 +39,6 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import dagger.hilt.android.AndroidEntryPoint
 import no.nordicsemi.android.dfu.DfuBaseService
-import no.nordicsemi.android.dfu.profile.BuildConfig
 import javax.inject.Inject
 import javax.inject.Singleton
 import no.nordicsemi.android.dfu.profile.R
