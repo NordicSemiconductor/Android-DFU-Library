@@ -30,8 +30,7 @@
   ~ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   -->
 
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="no.nordicsemi.dfu.profile">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!-- BLUETOOTH permissions are added by lib_dfu module. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
