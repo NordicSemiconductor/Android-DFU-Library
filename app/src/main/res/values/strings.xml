@@ -32,4 +32,7 @@
 
 <resources>
     <string name="app_name">DFU</string>
+
+    <string name="dfu_channel_name">Progress</string>
+    <string name="dfu_channel_description">DFU operation progress.</string>
 </resources>

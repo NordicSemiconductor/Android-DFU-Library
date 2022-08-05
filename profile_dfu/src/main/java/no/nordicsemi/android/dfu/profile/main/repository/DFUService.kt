@@ -59,9 +59,6 @@ internal class DFUService : DfuBaseService() {
     override fun onCreate() {
         super.onCreate()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            createDfuNotificationChannel(this)
-        }
         runningObserver.isRunning = true
     }
 

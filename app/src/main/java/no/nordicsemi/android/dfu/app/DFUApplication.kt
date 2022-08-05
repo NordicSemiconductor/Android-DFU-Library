@@ -32,6 +32,12 @@
 package no.nordicsemi.android.dfu.app
 
 import android.app.Application
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.os.Build
+import androidx.annotation.RequiresApi
 import dagger.hilt.android.HiltAndroidApp
 import no.nordicsemi.android.dfu.analytics.AppAnalytics
 import no.nordicsemi.android.dfu.analytics.AppOpenEvent
@@ -47,5 +53,26 @@ class DFUApplication : Application() {
         super.onCreate()
 
         analytics.logEvent(AppOpenEvent)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            createDfuNotificationChannel(this)
+        }
+    }
+
+    /*
+       Note: The same method is available in DFUServiceInitializer.
+     */
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private fun createDfuNotificationChannel(context: Context) {
+        val channel = NotificationChannel(
+            "dfu",
+            context.getString(R.string.dfu_channel_name),
+            NotificationManager.IMPORTANCE_LOW
+        )
+        channel.description = context.getString(R.string.dfu_channel_description)
+        channel.setShowBadge(false)
+        channel.lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+        val notificationManager = context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(channel)
     }
 }

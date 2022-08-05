@@ -32,7 +32,12 @@
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-
+    <!--
+    This permission allows displaying foreground service notification.
+    On Android 13 by default notifications are disabled, but that's OK for us.
+    The app will not request this permission in runtime.
+    -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <application
         android:name=".DFUApplication"
