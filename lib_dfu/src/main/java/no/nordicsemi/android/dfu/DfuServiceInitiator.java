@@ -865,7 +865,8 @@ public final class DfuServiceInitiator {
 
 	private DfuServiceInitiator init(@Nullable final Uri fileUri,
 									 @Nullable final String filePath,
-									 @RawRes final int fileResId, @FileType final int fileType,
+									 @RawRes final int fileResId,
+									 final int fileType,
 									 @NonNull final String mimeType) {
 		this.fileUri = fileUri;
 		this.filePath = filePath;

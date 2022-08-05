@@ -22,6 +22,7 @@
 
 package no.nordicsemi.android.dfu;
 
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
@@ -40,6 +41,7 @@ import no.nordicsemi.android.dfu.internal.exception.DfuException;
 import no.nordicsemi.android.dfu.internal.exception.HexFileValidationException;
 import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 
+@SuppressLint("MissingPermission")
 /* package */ abstract class BaseCustomDfuImpl extends BaseDfuImpl {
 	/**
 	 * Flag indicating whether the init packet has been already transferred or not.
@@ -74,7 +76,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	 * Those notifications should be ignored. This flag will prevent from logging
 	 * "Notification received..." more than once.
 	 * <p>
-	 * Additionally, sometimes after writing the command 6 ({@link LegacyDfuImpl#OP_CODE_RESET}),
+	 * Additionally, sometimes after writing the command 6 (OP_CODE_RESET),
 	 * Android will receive a notification and update the characteristic value with 10-03-02 and
 	 * the callback for write reset command will log
 	 * "[DFU] Data written to ..., value (0x): 10-03-02" instead of "...(x0): 06".

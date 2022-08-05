@@ -93,6 +93,7 @@ import no.nordicsemi.android.error.GattError;
  * The service will show its progress on the notification bar and will send local broadcasts to the
  * application.
  */
+@SuppressLint("MissingPermission")
 @SuppressWarnings("deprecation")
 public abstract class DfuBaseService extends IntentService implements DfuProgressInfo.ProgressListener {
 	private static final String TAG = "DfuBaseService";
@@ -1091,7 +1092,9 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	}
 
 	@Override
-	protected void onHandleIntent(final Intent intent) {
+	protected void onHandleIntent(@Nullable final Intent intent) {
+		if (intent == null)
+			return;
 		// Read input parameters
 		final String deviceAddress = intent.getStringExtra(EXTRA_DEVICE_ADDRESS);
 		final String deviceName = intent.getStringExtra(EXTRA_DEVICE_NAME);
@@ -1196,6 +1199,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 					} else if (fileResId > 0) {
 						is = openInputStream(fileResId, mimeType, mbrSize, fileType);
 					}
+					assert is != null;
 
 					// The Init file Input Stream is kept global only in case it was provided
 					// as an argument (separate file for HEX/BIN and DAT files).
@@ -1472,20 +1476,18 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	private InputStream openInputStream(@NonNull final Uri stream, final String mimeType, final int mbrSize, final int types)
 			throws IOException {
 		final InputStream is = getContentResolver().openInputStream(stream);
+		assert is != null;
 		if (MIME_TYPE_ZIP.equals(mimeType))
 			return new ArchiveInputStream(is, mbrSize, types);
 
 		final String[] projection = {MediaStore.Images.Media.DISPLAY_NAME};
-		final Cursor cursor = getContentResolver().query(stream, projection, null, null, null);
-		try {
+		try (Cursor cursor = getContentResolver().query(stream, projection, null, null, null)) {
 			if (cursor != null && cursor.moveToNext()) {
 				final String fileName = cursor.getString(0 /* DISPLAY_NAME*/);
 
 				if (fileName.toLowerCase(Locale.US).endsWith("hex"))
 					return new HexInputStream(is, mbrSize);
 			}
-		} finally {
-			cursor.close();
 		}
 		return is;
 	}
