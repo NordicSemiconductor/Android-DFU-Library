@@ -1950,6 +1950,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 * The default selector will look for a device with the same, or incremented device address.
 	 *
 	 * @return The device selector instance.
+	 * @since 2.1
 	 */
 	@NonNull
 	protected DfuDeviceSelector getDeviceSelector() {

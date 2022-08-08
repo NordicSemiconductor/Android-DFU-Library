@@ -4,6 +4,13 @@ import android.bluetooth.BluetoothDevice;
 
 import androidx.annotation.NonNull;
 
+/**
+ * The default device selector looks for a device advertising an incremented address
+ * (the original address + 1). By returning a custom selector from
+ * {@link DfuBaseService#getDeviceSelector()} the app can override this behavior.
+ *
+ * @since 2.1
+ */
 class DfuDefaultDeviceSelector implements DfuDeviceSelector {
     @Override
     public boolean matches(

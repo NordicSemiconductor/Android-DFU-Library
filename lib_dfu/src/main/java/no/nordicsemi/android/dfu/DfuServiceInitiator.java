@@ -52,6 +52,7 @@ import androidx.annotation.RequiresApi;
 public final class DfuServiceInitiator {
 	public static final int DEFAULT_PRN_VALUE = 12;
 	public static final int DEFAULT_MBR_SIZE = 0x1000;
+	public static final long DEFAULT_SCAN_TIMEOUT = 5000; // ms
 
 	/** Constant used to narrow the scope of the update to system components (SD+BL) only. */
 	public static final int SCOPE_SYSTEM_COMPONENTS = 1;
@@ -85,7 +86,7 @@ public final class DfuServiceInitiator {
 	private int mbrSize = DEFAULT_MBR_SIZE;
 	private long dataObjectDelay = 0; // initially disabled
 	private long rebootTime = 0; // ms
-	private long scanTimeout = 5000; // ms
+	private long scanTimeout = DEFAULT_SCAN_TIMEOUT; // ms
 
 	private Boolean packetReceiptNotificationsEnabled;
 	private int numberOfPackets = 12;
@@ -135,8 +136,6 @@ public final class DfuServiceInitiator {
 		this.disableNotification = disableNotification;
 		return this;
 	}
-
-
 
 	/**
 	 * Sets whether the DFU service should be started as a foreground service. By default it's
@@ -274,8 +273,8 @@ public final class DfuServiceInitiator {
 	 * (except General Access and General Attribute services) - it assumes it is in DFU Bootloader
 	 * mode and may start DFU immediately, if there is at least one service except DFU Service -
 	 * the device is in application mode and supports buttonless jump. In the last case, if you
-	 * want to perform DFU operation without jumping - call the {@link #setForceDfu(boolean)}
-	 * method with parameter equal to true.
+	 * want to perform DFU operation without jumping - call the this method with parameter equal
+	 * to true.
 	 * <p>
 	 * This method is ignored in Secure DFU.
 	 *
@@ -284,7 +283,6 @@ public final class DfuServiceInitiator {
 	 * @return the builder
 	 * @see DfuSettingsConstants#SETTINGS_ASSUME_DFU_NODE
 	 */
-	@SuppressWarnings("JavaDoc")
 	public DfuServiceInitiator setForceDfu(final boolean force) {
 		this.forceDfu = force;
 		return this;
@@ -296,6 +294,7 @@ public final class DfuServiceInitiator {
 	 *
 	 * @param rebootTime the reboot time in milliseconds, default 0.
 	 * @return the builder
+	 * @since 2.1
 	 */
 	public DfuServiceInitiator setRebootTime(final long rebootTime) {
 		this.rebootTime = rebootTime;
@@ -305,8 +304,9 @@ public final class DfuServiceInitiator {
 	/**
 	 * Sets the scan duration (in milliseconds) when scanning for DFU Bootloader.
 	 *
-	 * @param scanTimeout the scan duration in milliseconds, default 5 seconds.
+	 * @param scanTimeout the scan duration in milliseconds, default {@value #DEFAULT_SCAN_TIMEOUT} ms.
 	 * @return the builder
+	 * @since 2.1
 	 */
 	public DfuServiceInitiator setScanTimeout(final long scanTimeout) {
 		this.scanTimeout = scanTimeout;
