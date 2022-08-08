@@ -751,8 +751,8 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 	void restartService(@NonNull final Intent intent, final boolean scanForBootloader) {
 		String newAddress = null;
 		if (scanForBootloader) {
-			final long delay = intent.getIntExtra(DfuBaseService.EXTRA_SCAN_DELAY, 0);
-			final long timeout = intent.getIntExtra(DfuBaseService.EXTRA_SCAN_TIMEOUT, 5000);
+			final long delay = intent.getLongExtra(DfuBaseService.EXTRA_SCAN_DELAY, 0);
+			final long timeout = intent.getLongExtra(DfuBaseService.EXTRA_SCAN_TIMEOUT, 5000);
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Scanning for the DFU Bootloader... (timeout " + timeout + " ms)");
 			if (delay > 0)
 				mService.waitFor(delay);
