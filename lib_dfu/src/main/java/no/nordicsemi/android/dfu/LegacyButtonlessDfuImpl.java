@@ -180,7 +180,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		// The library will immediately start scanning for the device advertising in
 		// bootloader mode and connect to it.
 		final boolean forceScanning = intent.getBooleanExtra(DfuBaseService.EXTRA_FORCE_SCANNING_FOR_BOOTLOADER_IN_LEGACY_DFU, false);
-		if (/* scan only for SDK 6.1, see Pull request #45 */ forceScanning || mVersion == 0) {
+		if (/* Bootloader from SDK 6.1 may use incremented address, see Pull request #45 */ !forceScanning && mVersion > 0) {
 			mService.waitUntilDisconnected();
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Disconnected by the remote device");
 		}
