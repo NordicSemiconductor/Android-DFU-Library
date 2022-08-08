@@ -179,13 +179,6 @@ import no.nordicsemi.android.error.LegacyDfuError;
 			requestMtu(requiredMtu);
 		}
 
-		// Add one second delay to avoid the traffic jam before the DFU mode is enabled
-		// Related:
-		//   issue:        https://github.com/NordicSemiconductor/Android-DFU-Library/issues/10
-		//   pull request: https://github.com/NordicSemiconductor/Android-DFU-Library/pull/12
-		mService.waitFor(1000);
-		// End
-
 		final BluetoothGatt gatt = mGatt;
 
 		/*
@@ -211,12 +204,6 @@ import no.nordicsemi.android.error.LegacyDfuError;
 			// Enable notifications
 			enableCCCD(mControlPointCharacteristic, NOTIFICATIONS);
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Notifications enabled");
-
-			// Wait a second here before going further
-			// Related:
-			//   pull request: https://github.com/NordicSemiconductor/Android-DFU-Library/pull/11
-			mService.waitFor(1000);
-			// End
 
 			// Set up the temporary variable that will hold the responses
 			byte[] response;
