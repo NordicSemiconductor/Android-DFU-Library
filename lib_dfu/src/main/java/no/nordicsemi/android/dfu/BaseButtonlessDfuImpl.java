@@ -86,22 +86,6 @@ import androidx.annotation.NonNull;
 		mService.close(mGatt);
 
 		/*
-		 * During the update the bonding information on the target device may have been removed.
-		 * To create bond with the new application set the EXTRA_RESTORE_BOND extra to true.
-		 * In case the bond information is copied to the new application the new bonding is not required.
-		 */
-		if (mGatt.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
-			final boolean restoreBond = intent.getBooleanExtra(DfuBaseService.EXTRA_RESTORE_BOND, false);
-			if (restoreBond || !keepBond) {
-				// The bond information was lost.
-				removeBond();
-
-				// Give some time for removing the bond information. 300ms was to short, let's set it to 2 seconds just to be sure.
-				mService.waitFor(2000);
-			}
-		}
-
-		/*
 		 * The experimental buttonless service from SDK 12.x does not support sharing bond information
 		 * from the app to the bootloader. That means, that the DFU bootloader must advertise with advertise
 		 * with address +1 and must not be paired.
