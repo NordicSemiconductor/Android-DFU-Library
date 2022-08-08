@@ -27,7 +27,7 @@ Application can handle opening .zip files from system level. Selected file will 
 
 [ ![Download](https://maven-badges.herokuapp.com/maven-central/no.nordicsemi.android/dfu/badge.svg?style=plastic) ](https://search.maven.org/artifact/no.nordicsemi.android/dfu)
 
-This is an Android library for performing a DFU (Device Firmware Update) on devices running 
+This is an Android library for performing a DFU (Device Firmware Update) on devices running
 [nRF5 SDK firmware with DFU bootloader](https://infocenter.nordicsemi.com/topic/sdk_nrf5_v17.1.0/lib_bootloader_modules.html?cp=8_1_3_5).
 iOS version of the same library can be found at [IOS-DFU-Library](https://github.com/NordicSemiconductor/IOS-DFU-Library).
 
@@ -43,7 +43,7 @@ The DFU library is available on Maven Central repository. Add it to your project
 adding the following dependency:
 
 ```Groovy
-implementation 'no.nordicsemi.android:dfu:2.0.3'
+implementation 'no.nordicsemi.android:dfu:2.1.0'
 ```
 
 Latest version targeting API lower than 31 is 1.11.1.
