@@ -173,13 +173,17 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		writeOpCode(mControlPointCharacteristic, OP_CODE_ENTER_BOOTLOADER, true);
 		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Jump to bootloader sent (Op Code = 1, Upload Mode = 4)");
 
-		// The device will reset so we don't have to send Disconnect signal.
-		// Some devices don't disconnect gracefully. In that case, Android would assume disconnection
-		// after "supervision timeout" seconds, which may be 5 more seconds. There is no
-		// reason to wait for that. The library will immediately start scanning for the
-		// device advertising in bootloader mode and connect to it.
-		// mService.waitUntilDisconnected();
-		// mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Disconnected by the remote device");
+		// The device will disconnect and now reset. Some devices don't disconnect gracefully,
+		// but reset instead. In that case, Android would assume disconnection after
+		// "supervision timeout" seconds, which may be 5 more seconds. If the device will
+		// use a different address in bootloader mode, there is no reason to wait for that.
+		// The library will immediately start scanning for the device advertising in
+		// bootloader mode and connect to it.
+		final boolean forceScanning = intent.getBooleanExtra(DfuBaseService.EXTRA_FORCE_SCANNING_FOR_BOOTLOADER_IN_LEGACY_DFU, false);
+		if (/* scan only for SDK 6.1, see Pull request #45 */ forceScanning || mVersion == 0) {
+			mService.waitUntilDisconnected();
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Disconnected by the remote device");
+		}
 
 		/*
 		 * We would like to avoid using the hack with refreshing the device (refresh method is not in the public API). The refresh method clears the cached services and causes a
@@ -203,8 +207,6 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 
 		// Close the device
 		mService.close(gatt);
-
-		final boolean forceScanning = intent.getBooleanExtra(DfuBaseService.EXTRA_FORCE_SCANNING_FOR_BOOTLOADER_IN_LEGACY_DFU, false);
 
 		logi("Starting service that will connect to the DFU bootloader");
 		final Intent newIntent = new Intent();

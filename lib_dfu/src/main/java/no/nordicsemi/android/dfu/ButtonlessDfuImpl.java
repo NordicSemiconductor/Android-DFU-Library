@@ -144,19 +144,25 @@ import no.nordicsemi.android.error.SecureDfuError;
                         "Response received (Op Code = " + response[1] + ", Status = " + status + ")");
 				if (status != DFU_STATUS_SUCCESS)
 					throw new RemoteDfuException("Device returned error after sending Enter Bootloader", status);
-				// The device will reset so we don't have to send Disconnect signal.
-				// Some devices don't disconnect gracefully. In that case, Android would assume disconnection
-				// after "supervision timeout" seconds, which may be 5 more seconds. There is no
-				// reason to wait for that. The library will immediately start scanning for the
-				// device advertising in bootloader mode and connect to it.
-				// mService.waitUntilDisconnected();
+				// The device will disconnect and now reset. Some devices don't disconnect gracefully,
+				// but reset instead. In that case, Android would assume disconnection after
+				// "supervision timeout" seconds, which may be 5 more seconds. If the device will
+				// use a different address in bootloader mode, there is no reason to wait for that.
+				// The library will immediately start scanning for the device advertising in
+				// bootloader mode and connect to it.
+				if (!shouldScanForBootloader()) {
+					// However, if the device is expected to use the same address, we need to wait
+					// for the disconnection. Otherwise, a new connectGatt would reconnect before
+					// disconnection and subsequent operations would fail.
+					mService.waitUntilDisconnected();
+				}
 			} else {
 				logi("Device disconnected before receiving notification");
 			}
 
-			// Commented out, see above comment.
-			// mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Disconnected by the remote device");
-
+			if (!shouldScanForBootloader()) {
+				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Disconnected by the remote device");
+			}
 			finalize(intent, false, shouldScanForBootloader());
 		} catch (final UnknownResponseException e) {
 			final int error = DfuBaseService.ERROR_INVALID_RESPONSE;
