@@ -31,17 +31,10 @@
 package no.nordicsemi.android.dfu.profile.main.repository
 
 import android.app.Activity
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.content.Context
-import android.os.Build
-import androidx.annotation.RequiresApi
 import dagger.hilt.android.AndroidEntryPoint
 import no.nordicsemi.android.dfu.DfuBaseService
 import javax.inject.Inject
 import javax.inject.Singleton
-import no.nordicsemi.android.dfu.profile.R
 
 @Singleton
 internal class DFUServiceRunningObserver @Inject constructor() {
@@ -87,19 +80,5 @@ internal class DFUService : DfuBaseService() {
     override fun isDebug(): Boolean {
         // return BuildConfig.DEBUG;
         return true
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.O)
-    private fun createDfuNotificationChannel(context: Context) {
-        val channel = NotificationChannel(
-            NOTIFICATION_CHANNEL_DFU,
-            context.getString(R.string.dfu_channel_name),
-            NotificationManager.IMPORTANCE_LOW
-        )
-        channel.description = context.getString(R.string.dfu_channel_description)
-        channel.setShowBadge(false)
-        channel.lockscreenVisibility = Notification.VISIBILITY_PUBLIC
-        val notificationManager = context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.createNotificationChannel(channel)
     }
 }

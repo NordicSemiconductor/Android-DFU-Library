@@ -22,36 +22,42 @@
 
 package no.nordicsemi.android.dfu.internal.scanner;
 
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 
-import java.util.Locale;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import no.nordicsemi.android.dfu.DfuDeviceSelector;
 
 /**
  * @see BootloaderScanner
  */
+@SuppressLint("MissingPermission")
 public class BootloaderScannerJB implements BootloaderScanner, BluetoothAdapter.LeScanCallback {
 	private final Object mLock = new Object();
-	private String mDeviceAddress;
-	private String mDeviceAddressIncremented;
+	private final String mDeviceAddress;
+	private final String mDeviceAddressIncremented;
+	private DfuDeviceSelector mSelector;
 	private String mBootloaderAddress;
 	private boolean mFound;
 
-	@Override
-	public String searchFor(final String deviceAddress) {
-		final String firstBytes = deviceAddress.substring(0, 15);
-		final String lastByte = deviceAddress.substring(15); // assuming that the device address is correct
-		final String lastByteIncremented = String.format(Locale.US, "%02X", (Integer.valueOf(lastByte, 16) + ADDRESS_DIFF) & 0xFF);
-
+	BootloaderScannerJB(final String deviceAddress, final String deviceAddressIncremented) {
 		mDeviceAddress = deviceAddress;
-		mDeviceAddressIncremented = firstBytes + lastByteIncremented;
+		mDeviceAddressIncremented = deviceAddressIncremented;
+	}
+
+	@Nullable
+	@Override
+	public String searchUsing(@NonNull DfuDeviceSelector selector, long timeout) {
+		mSelector = selector;
 		mBootloaderAddress = null;
 		mFound = false;
 
 		// Add timeout
 		new Thread(() -> {
 			try {
-				Thread.sleep(BootloaderScanner.TIMEOUT);
+				Thread.sleep(timeout);
 			} catch (final InterruptedException e) {
 				// do nothing
 			}
@@ -87,10 +93,14 @@ public class BootloaderScannerJB implements BootloaderScanner, BluetoothAdapter.
 	}
 
 	@Override
-	public void onLeScan(final BluetoothDevice device, final int rssi, final byte[] scanRecord) {
+	public void onLeScan(@NonNull final BluetoothDevice device, final int rssi, final byte[] scanRecord) {
 		final String address = device.getAddress();
 
-		if (mDeviceAddress.equals(address) || mDeviceAddressIncremented.equals(address)) {
+		if (!mFound && mSelector.matches(
+				device, rssi,
+				scanRecord,
+				mDeviceAddress, mDeviceAddressIncremented
+		)) {
 			mBootloaderAddress = address;
 			mFound = true;
 

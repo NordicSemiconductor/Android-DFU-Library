@@ -22,6 +22,7 @@
 
 package no.nordicsemi.android.dfu.internal.scanner;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.le.BluetoothLeScanner;
@@ -33,34 +34,40 @@ import android.os.Build;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import no.nordicsemi.android.dfu.DfuDeviceSelector;
 
 /**
  * @see BootloaderScanner
  */
+@SuppressLint("MissingPermission")
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-public class BootloaderScannerLollipop extends ScanCallback implements BootloaderScanner {
+class BootloaderScannerLollipop extends ScanCallback implements BootloaderScanner {
     private final Object mLock = new Object();
-    private String mDeviceAddress;
-    private String mDeviceAddressIncremented;
+    private final String mDeviceAddress;
+    private final String mDeviceAddressIncremented;
+    private DfuDeviceSelector mSelector;
     private String mBootloaderAddress;
     private boolean mFound;
 
-    @Override
-    public String searchFor(final String deviceAddress) {
-        final String firstBytes = deviceAddress.substring(0, 15);
-        final String lastByte = deviceAddress.substring(15); // assuming that the device address is correct
-        final String lastByteIncremented = String.format(Locale.US, "%02X", (Integer.valueOf(lastByte, 16) + ADDRESS_DIFF) & 0xFF);
-
+    BootloaderScannerLollipop(final String deviceAddress, final String deviceAddressIncremented) {
         mDeviceAddress = deviceAddress;
-        mDeviceAddressIncremented = firstBytes + lastByteIncremented;
+        mDeviceAddressIncremented = deviceAddressIncremented;
+    }
+
+    @Nullable
+    @Override
+    public String searchUsing(@NonNull DfuDeviceSelector selector, long timeout) {
+        mSelector = selector;
         mBootloaderAddress = null;
         mFound = false;
 
         // Add timeout
         new Thread(() -> {
             try {
-                Thread.sleep(BootloaderScanner.TIMEOUT);
+                Thread.sleep(timeout);
             } catch (final InterruptedException e) {
                 // do nothing
             }
@@ -91,8 +98,9 @@ public class BootloaderScannerLollipop extends ScanCallback implements Bootloade
         final ScanSettings settings = new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build();
         if (adapter.isOffloadedFilteringSupported() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             final List<ScanFilter> filters = new ArrayList<>();
-            filters.add(new ScanFilter.Builder().setDeviceAddress(mDeviceAddress).build());
-            filters.add(new ScanFilter.Builder().setDeviceAddress(mDeviceAddressIncremented).build());
+            // Some Android devices fail to scan with offloaded address filters.
+            // Instead, we will add an empty filter, just to allow background scanning, and will
+            // filter below using the device selector.
             scanner.startScan(filters, settings, this);
         } else {
             /*
@@ -119,7 +127,11 @@ public class BootloaderScannerLollipop extends ScanCallback implements Bootloade
     public void onScanResult(final int callbackType, final ScanResult result) {
         final String address = result.getDevice().getAddress();
 
-        if (mDeviceAddress.equals(address) || mDeviceAddressIncremented.equals(address)) {
+        if (!mFound && mSelector.matches(
+                result.getDevice(), result.getRssi(),
+                result.getScanRecord().getBytes(),
+                mDeviceAddress, mDeviceAddressIncremented
+        )) {
             mBootloaderAddress = address;
             mFound = true;
 
