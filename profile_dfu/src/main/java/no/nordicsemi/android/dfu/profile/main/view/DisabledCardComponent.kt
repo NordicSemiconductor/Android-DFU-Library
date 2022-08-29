@@ -32,6 +32,7 @@
 package no.nordicsemi.android.dfu.profile.main.view
 
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -41,6 +42,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 
@@ -59,21 +61,20 @@ internal fun DisabledCardComponent(
             horizontalArrangement = Arrangement.Start,
             modifier = Modifier.padding(16.dp)
         ) {
-            Box(
+            Image(
+                painter = painterResource(id = titleIcon),
+                contentDescription = null,
+                colorFilter = ColorFilter
+                    .tint(MaterialTheme.colorScheme.onSurface
+                    .copy(alpha = 0.38f)),
                 modifier = Modifier
-                    .size(40.dp)
                     .background(
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = MaterialTheme.colorScheme.onSurface
+                            .copy(alpha = 0.12f),
                         shape = CircleShape
                     )
-            ) {
-                Icon(
-                    painter = painterResource(id = titleIcon),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSecondary,
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
+                    .padding(8.dp)
+            )
 
             Spacer(modifier = Modifier.size(16.dp))
 
@@ -87,7 +88,6 @@ internal fun DisabledCardComponent(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(55.dp) //From ButtonDefaults = minHeight + 2*HorizontalPadding
                     .padding(start = 16.dp),
                 horizontalArrangement = Arrangement.End
             ) {
@@ -110,7 +110,6 @@ internal fun DisabledCardComponent(
                 }
             }
         }
-
 
         Row(modifier = Modifier.height(IntrinsicSize.Min)) {
             if (showVerticalDivider) {

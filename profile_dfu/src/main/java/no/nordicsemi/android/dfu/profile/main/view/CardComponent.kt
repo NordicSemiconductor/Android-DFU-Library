@@ -73,7 +73,7 @@ internal fun CardComponent(
                 colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSecondary),
                 modifier = Modifier
                     .background(
-                        color = MaterialTheme.colorScheme.secondary,
+                        color = MaterialTheme.colorScheme.secondaryContainer,
                         shape = CircleShape
                     )
                     .padding(8.dp)
@@ -85,6 +85,8 @@ internal fun CardComponent(
                 text = title,
                 style = MaterialTheme.typography.titleLarge
             )
+
+            Spacer(modifier = Modifier.size(16.dp))
 
             Row(
                 modifier = Modifier
@@ -135,7 +137,6 @@ internal fun CardComponent(
                         .clip(RoundedCornerShape(10.dp))
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                 ) { }
-
                 Spacer(modifier = Modifier.size(16.dp))
             } else {
                 Spacer(modifier = Modifier.size(8.dp))
