@@ -79,7 +79,7 @@ internal class DFUViewModel @Inject constructor(
     val state = _state.asStateFlow()
 
     init {
-        navigationManager.gerResultForIds(ScannerDestinationId).onEach { result ->
+        navigationManager.getResultForIds(ScannerDestinationId).onEach { result ->
             ((result as? ScannerResult)?.device)?.let { device ->
                 repository.device = device
                 _state.value = _state.value.copy(
