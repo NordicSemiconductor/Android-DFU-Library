@@ -39,9 +39,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import no.nordicsemi.android.common.navigation.*
-import no.nordicsemi.android.common.ui.scanner.ScannerDestinationId
-import no.nordicsemi.android.common.ui.scanner.model.getDevice
+import no.nordicsemi.android.common.navigation.NavigationManager
+import no.nordicsemi.android.common.navigation.doNothing
 import no.nordicsemi.android.dfu.analytics.*
 import no.nordicsemi.android.dfu.profile.DfuSettingsScreen
 import no.nordicsemi.android.dfu.profile.DfuWelcomeScreen
@@ -49,6 +48,8 @@ import no.nordicsemi.android.dfu.profile.main.data.*
 import no.nordicsemi.android.dfu.profile.main.repository.DFURepository
 import no.nordicsemi.android.dfu.profile.main.view.*
 import no.nordicsemi.android.dfu.profile.main.view.DFUProgressViewEntity.Companion.createErrorStage
+import no.nordicsemi.android.dfu.profile.scanner.ScannerDestinationId
+import no.nordicsemi.android.dfu.profile.scanner.ScannerResult
 import no.nordicsemi.android.dfu.profile.settings.repository.SettingsRepository
 import no.nordicsemi.android.dfu.storage.*
 import javax.inject.Inject
@@ -71,35 +72,46 @@ internal class DFUViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val externalFileDataSource: ExternalFileDataSource,
     private val deepLinkHandler: DeepLinkHandler,
-    private val analytics: AppAnalytics
+    private val analytics: AppAnalytics,
 ) : ViewModel() {
 
     private val _state: MutableStateFlow<DFUViewState> = stateHolder.state
     val state = _state.asStateFlow()
 
     init {
-        repository.data.onEach {
-            ((it as? WorkingStatus)?.status as? EnablingDfu)?.let {
+        navigationManager.gerResultForIds(ScannerDestinationId).onEach { result ->
+            ((result as? ScannerResult)?.device)?.let { device ->
+                repository.device = device
+                _state.value = _state.value.copy(
+                    deviceViewEntity = SelectedDeviceViewEntity(device),
+                    progressViewEntity = WorkingProgressViewEntity()
+                )
+                analytics.logEvent(DeviceSelectedEvent)
+            }
+        }.launchIn(viewModelScope)
+
+        repository.data.onEach { data ->
+            ((data as? WorkingStatus)?.status as? EnablingDfu)?.let {
                 _state.value = _state.value.copy(progressViewEntity = DFUProgressViewEntity.createDfuStage())
             }
 
-            ((it as? WorkingStatus)?.status as? Completed)?.let {
+            ((data as? WorkingStatus)?.status as? Completed)?.let {
                 _state.value = _state.value.copy(progressViewEntity = DFUProgressViewEntity.createSuccessStage())
                 analytics.logEvent(DFUSuccessEvent)
             }
 
-            ((it as? WorkingStatus)?.status as? ProgressUpdate)?.let {
+            ((data as? WorkingStatus)?.status as? ProgressUpdate)?.let {
                 _state.value = _state.value.copy(progressViewEntity = DFUProgressViewEntity.createInstallingStage(it))
             }
 
-            ((it as? WorkingStatus)?.status as? Aborted)?.let {
+            ((data as? WorkingStatus)?.status as? Aborted)?.let {
                 val newStatus = (_state.value.progressViewEntity as? WorkingProgressViewEntity)?.status?.createErrorStage("Aborted")
                 newStatus?.let {
                     _state.value = _state.value.copy(progressViewEntity = newStatus)
                 }
             }
 
-            ((it as? WorkingStatus)?.status as? Error)?.let {
+            ((data as? WorkingStatus)?.status as? Error)?.let {
                 val newStatus = (_state.value.progressViewEntity as? WorkingProgressViewEntity)?.status?.createErrorStage(it.message)
                 newStatus?.let {
                     _state.value = _state.value.copy(progressViewEntity = newStatus)
@@ -136,27 +148,6 @@ internal class DFUViewModel @Inject constructor(
 
     private fun requestBluetoothDevice() {
         navigationManager.navigateTo(ScannerDestinationId)
-
-        navigationManager.recentResult.onEach {
-            if (it.destinationId == ScannerDestinationId) {
-                handleArgs(it)
-            }
-        }.launchIn(viewModelScope)
-    }
-
-    private fun handleArgs(args: DestinationResult?) {
-        when (args) {
-            is CancelDestinationResult -> doNothing()
-            is SuccessDestinationResult -> {
-                repository.device = args.getDevice()
-                _state.value = _state.value.copy(
-                    deviceViewEntity = SelectedDeviceViewEntity(args.getDevice()),
-                    progressViewEntity = WorkingProgressViewEntity()
-                )
-                analytics.logEvent(DeviceSelectedEvent)
-            }
-            null -> navigationManager.navigateTo(ScannerDestinationId)
-        }
     }
 
     fun onEvent(event: DFUViewEvent) {

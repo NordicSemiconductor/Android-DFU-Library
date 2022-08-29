@@ -38,7 +38,7 @@ import no.nordicsemi.android.dfu.profile.main.view.DFUScreen
 import no.nordicsemi.android.dfu.profile.settings.view.SettingsScreen
 import no.nordicsemi.android.dfu.profile.welcome.view.WelcomeScreen
 
-val DfuMainScreen = DestinationId("dfu-main-screen")
+internal val DfuMainScreen = DestinationId("dfu-main-screen")
 internal val DfuSettingsScreen = DestinationId("dfu-settings-screen")
 internal val DfuWelcomeScreen = DestinationId("dfu-welcome-screen")
 

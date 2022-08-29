@@ -40,8 +40,8 @@ import dagger.hilt.android.AndroidEntryPoint
 import no.nordicsemi.android.common.navigation.NavigationView
 import no.nordicsemi.android.common.theme.NordicActivity
 import no.nordicsemi.android.common.theme.NordicTheme
-import no.nordicsemi.android.common.ui.scanner.ScannerDestinations
 import no.nordicsemi.android.dfu.profile.DFUDestinations
+import no.nordicsemi.android.dfu.profile.scanner.ScannerDestinations
 import no.nordicsemi.android.dfu.storage.DeepLinkHandler
 import javax.inject.Inject
 
