@@ -36,6 +36,8 @@ import android.os.Parcelable
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.FolderZip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -45,6 +47,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.parcelize.Parcelize
 import no.nordicsemi.android.common.theme.parseBold
+import no.nordicsemi.android.common.theme.view.WizardStepComponent
+import no.nordicsemi.android.common.theme.view.WizardStepAction
+import no.nordicsemi.android.common.theme.view.WizardStepState
 import no.nordicsemi.android.dfu.DfuBaseService
 import no.nordicsemi.android.dfu.profile.R
 import no.nordicsemi.android.dfu.profile.main.data.ZipFile
@@ -60,15 +65,17 @@ internal data class NotSelectedFileViewEntity(
 @Parcelize
 internal data class SelectedFileViewEntity(val zipFile: ZipFile) : DFUSelectFileViewEntity()
 
+private val icon = Icons.Outlined.FolderZip
+
 @Composable
-internal fun DFUSelectFileView(isRunning: Boolean, viewEntity: DFUSelectFileViewEntity, onEvent: (DFUViewEvent) -> Unit) {
+internal fun DFUSelectFileView(
+    isRunning: Boolean,
+    viewEntity: DFUSelectFileViewEntity,
+    onEvent: (DFUViewEvent) -> Unit
+) {
     when (viewEntity) {
         is NotSelectedFileViewEntity -> DFUNotSelectedFileView(viewEntity, onEvent)
-        is SelectedFileViewEntity -> if (!isRunning) {
-            DFUSelectFileView(viewEntity.zipFile, onEvent)
-        } else {
-            DFUSelectFileNoActionView(viewEntity.zipFile)
-        }
+        is SelectedFileViewEntity -> DFUSelectFileView(viewEntity.zipFile, onEvent, isRunning)
     }
 }
 
@@ -78,28 +85,29 @@ internal fun DFUNotSelectedFileView(viewEntity: NotSelectedFileViewEntity, onEve
         uri?.let { onEvent(OnZipFileSelected(it)) }
     }
 
-    CardComponent(
-        titleIcon = R.drawable.ic_upload_file,
+    WizardStepComponent(
+        icon = icon,
         title = stringResource(id = R.string.dfu_choose_file),
-        primaryButtonTitle = stringResource(id = R.string.dfu_select_file),
-        primaryButtonAction = {
-            try {
-                launcher.launch(DfuBaseService.MIME_TYPE_ZIP)
-            } catch (e: ActivityNotFoundException) {
+        decor = WizardStepAction.Action(
+            text = stringResource(id = R.string.dfu_select_file),
+            onClick = {
                 try {
-                    launcher.launch("*/*")
-                } catch (e1: ActivityNotFoundException) {
-                    // Handle
+                    launcher.launch(DfuBaseService.MIME_TYPE_ZIP)
+                } catch (e: ActivityNotFoundException) {
+                    try {
+                        launcher.launch("*/*")
+                    } catch (e1: ActivityNotFoundException) {
+                        // Handle
+                    }
                 }
             }
-        },
-        isRunning = viewEntity.isRunning
+        ),
+        state = WizardStepState.CURRENT,
     ) {
         Column {
             Text(
                 text = stringResource(id = R.string.dfu_choose_info),
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(horizontal = 16.dp)
             )
             if (viewEntity.isError) {
                 Spacer(modifier = Modifier.size(8.dp))
@@ -114,54 +122,40 @@ internal fun DFUNotSelectedFileView(viewEntity: NotSelectedFileViewEntity, onEve
     }
 }
 
-private const val FILE_NAME = "File name: <b>%s</b>"
-private const val FILE_SIZE = "File size: <b>%d</b> bytes"
+private const val FILE_NAME = "Name: <b>%s</b>"
+private const val FILE_SIZE = "Size: <b>%d</b> bytes"
 
 @Composable
-internal fun DFUSelectFileView(zipFile: ZipFile, onEvent: (DFUViewEvent) -> Unit) {
+internal fun DFUSelectFileView(
+    zipFile: ZipFile,
+    onEvent: (DFUViewEvent) -> Unit,
+    isRunning: Boolean,
+) {
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let { onEvent(OnZipFileSelected(it)) }
     }
 
-    CardComponent(
-        titleIcon = R.drawable.ic_upload_file,
+    WizardStepComponent(
+        icon = icon,
         title = stringResource(id = R.string.dfu_choose_file),
-        secondaryButtonTitle = stringResource(id = R.string.dfu_select_file),
-        secondaryButtonAction = { launcher.launch(DfuBaseService.MIME_TYPE_ZIP) }
+        decor = WizardStepAction.Action(
+            text = stringResource(id = R.string.dfu_select_file),
+            onClick = {
+                try {
+                    launcher.launch(DfuBaseService.MIME_TYPE_ZIP)
+                } catch (e: ActivityNotFoundException) {
+                    try {
+                        launcher.launch("*/*")
+                    } catch (e1: ActivityNotFoundException) {
+                        // Handle
+                    }
+                }
+            },
+            enabled = !isRunning,
+        ),
+        state = WizardStepState.COMPLETED,
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalAlignment = Alignment.Start
-        ) {
-            Text(
-                text = String.format(FILE_NAME, zipFile.name).parseBold(),
-                style = MaterialTheme.typography.bodyMedium
-            )
-
-            Spacer(modifier = Modifier.size(4.dp))
-
-            Text(
-                text = String.format(FILE_SIZE, zipFile.size).parseBold(),
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        }
-    }
-}
-
-@Composable
-internal fun DFUSelectFileNoActionView(zipFile: ZipFile) {
-    CardComponent(
-        titleIcon = R.drawable.ic_upload_file,
-        title = stringResource(id = R.string.dfu_choose_file),
-        secondaryButtonTitle = stringResource(id = R.string.dfu_select_file),
-        secondaryButtonEnabled = false
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.Start
         ) {
             Text(

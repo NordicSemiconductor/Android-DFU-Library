@@ -31,7 +31,12 @@
 
 package no.nordicsemi.android.dfu.profile.main.view
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -40,10 +45,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import no.nordicsemi.android.common.theme.view.ProgressItem
-import no.nordicsemi.android.common.theme.view.ProgressItemStatus
+import no.nordicsemi.android.common.theme.view.*
 import no.nordicsemi.android.dfu.profile.R
 import no.nordicsemi.android.dfu.profile.main.data.ProgressUpdate
+
+private val icon = Icons.Default.Upload
 
 @Composable
 internal fun DFUProgressView(viewEntity: DFUProgressViewEntity, onEvent: (DFUViewEvent) -> Unit) {
@@ -62,11 +68,12 @@ internal fun DFUProgressView(viewEntity: DFUProgressViewEntity, onEvent: (DFUVie
 
 @Composable
 private fun DisabledDFUProgressView(viewEntity: ProgressItemViewEntity = ProgressItemViewEntity()) {
-    DisabledCardComponent(
-        titleIcon = R.drawable.ic_file_upload,
+    WizardStepComponent(
+        icon = icon,
         title = stringResource(id = R.string.dfu_progress),
-        primaryButtonTitle = stringResource(id = R.string.dfu_progress_run),
-        showVerticalDivider = false
+        decor = WizardStepAction.Action(stringResource(id = R.string.dfu_progress_run), enabled = false),
+        state = WizardStepState.INACTIVE,
+        showVerticalDivider = false,
     ) {
         ProgressItem(viewEntity)
     }
@@ -76,10 +83,11 @@ private fun DisabledDFUProgressView(viewEntity: ProgressItemViewEntity = Progres
 private fun DFUCompletedProgressView(
     viewEntity: ProgressItemViewEntity = ProgressItemViewEntity()
 ) {
-    CardComponent(
-        titleIcon = R.drawable.ic_file_upload,
+    WizardStepComponent(
+        icon = icon,
         title = stringResource(id = R.string.dfu_progress),
-        showVerticalDivider = false
+        state = WizardStepState.COMPLETED,
+        showVerticalDivider = false,
     ) {
         ProgressItem(viewEntity)
     }
@@ -90,13 +98,16 @@ private fun DFURunningProgressView(
     viewEntity: ProgressItemViewEntity = ProgressItemViewEntity(),
     onEvent: (DFUViewEvent) -> Unit
 ) {
-    CardComponent(
-        titleIcon = R.drawable.ic_file_upload,
+    WizardStepComponent(
+        icon = icon,
         title = stringResource(id = R.string.dfu_progress),
-        primaryButtonTitle = stringResource(id = R.string.dfu_abort),
-        primaryButtonAction = { onEvent(OnAbortButtonClick) },
-        redButtonColor = true,
-        showVerticalDivider = false
+        decor = WizardStepAction.Action(
+            text = stringResource(id = R.string.dfu_abort),
+            onClick = { onEvent(OnAbortButtonClick) },
+            dangerous = true
+        ),
+        state = WizardStepState.CURRENT,
+        showVerticalDivider = false,
     ) {
         ProgressItem(viewEntity)
     }
@@ -106,12 +117,15 @@ private fun DFURunningProgressView(
 private fun DFUIdleProgressView(
     onEvent: (DFUViewEvent) -> Unit
 ) {
-    CardComponent(
-        titleIcon = R.drawable.ic_file_upload,
+    WizardStepComponent(
+        icon = icon,
         title = stringResource(id = R.string.dfu_progress),
-        primaryButtonTitle = stringResource(id = R.string.dfu_progress_run),
-        primaryButtonAction = { onEvent(OnInstallButtonClick) },
-        showVerticalDivider = false
+        decor = WizardStepAction.Action(
+            text = stringResource(id = R.string.dfu_progress_run),
+            onClick = { onEvent(OnInstallButtonClick) }
+        ),
+        state = WizardStepState.CURRENT,
+        showVerticalDivider = false,
     ) {
         ProgressItem(ProgressItemViewEntity())
     }
@@ -119,33 +133,38 @@ private fun DFUIdleProgressView(
 
 @Composable
 private fun ProgressItem(viewEntity: ProgressItemViewEntity) {
-    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+    Column {
         ProgressItem(
             BootloaderItem.toDisplayString(status = viewEntity.bootloaderStatus),
             viewEntity.bootloaderStatus
         )
         Spacer(modifier = Modifier.size(8.dp))
-        ProgressItem(DfuItem.toDisplayString(status = viewEntity.dfuStatus), viewEntity.dfuStatus)
+        ProgressItem(
+            DfuItem.toDisplayString(status = viewEntity.dfuStatus),
+            viewEntity.dfuStatus
+        )
         Spacer(modifier = Modifier.size(8.dp))
 
         if (viewEntity.installationStatus == ProgressItemStatus.WORKING) {
             Column {
                 ProgressItem(
                     viewEntity.progress.toLabel(),
-                    viewEntity.installationStatus
-                )
-                LinearProgressIndicator(
-                    progress = viewEntity.progress.progress/100f,
-                    modifier = Modifier
-                        .padding(horizontal = 32.dp + 16.dp)
-                        .fillMaxWidth()
-                )
-                Text(
-                    text = stringResource(id = R.string.dfu_display_status_progress_speed, viewEntity.progress.avgSpeed),
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp + 16.dp),
-                    textAlign = TextAlign.End
-                )
+                    viewEntity.installationStatus,
+                ) {
+                    LinearProgressIndicator(
+                        progress = viewEntity.progress.progress / 100f,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text(
+                        text = stringResource(
+                            id = R.string.dfu_display_status_progress_speed,
+                            viewEntity.progress.avgSpeed
+                        ),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.End
+                    )
+                }
             }
         } else {
             ProgressItem(
@@ -168,7 +187,6 @@ private fun ProgressItem(viewEntity: ProgressItemViewEntity) {
                 viewEntity.resultStatus
             )
         }
-        Spacer(modifier = Modifier.size(16.dp))
     }
 }
 

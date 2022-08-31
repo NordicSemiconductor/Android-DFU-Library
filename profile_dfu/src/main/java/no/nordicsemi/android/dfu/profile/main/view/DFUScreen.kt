@@ -39,16 +39,19 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material3.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import no.nordicsemi.android.common.theme.view.NordicAppBar
 import no.nordicsemi.android.dfu.profile.R
 import no.nordicsemi.android.dfu.profile.main.viewmodel.DFUViewModel
 
@@ -59,56 +62,42 @@ fun DFUScreen() {
     val onEvent: (DFUViewEvent) -> Unit = { viewModel.onEvent(it) }
 
     Column {
-        DFUAppBar(onEvent)
+        NordicAppBar(
+            text = stringResource(R.string.dfu_title),
+            actions = {
+                IconButton(onClick = { onEvent(OnLoggerButtonClick) }) {
+                    Icon(
+                        painterResource(id = R.drawable.ic_logger),
+                        contentDescription = stringResource(id = R.string.open_logger),
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+                IconButton(onClick = { onEvent(OnSettingsButtonClick) }) {
+                    Icon(
+                        imageVector = Icons.Outlined.Settings,
+                        contentDescription = stringResource(id = R.string.dfu_settings_action)
+                    )
+                }
+            }
+        )
         Column(
             modifier = Modifier.verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             OutlinedCard(
-                modifier = Modifier.padding(16.dp),
-                colors = CardDefaults.outlinedCardColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
+                modifier = Modifier.padding(16.dp)
             ) {
-                DFUSelectFileView(state.isRunning(), state.fileViewEntity, onEvent)
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    DFUSelectFileView(state.isRunning(), state.fileViewEntity, onEvent)
 
-                DFUSelectedDeviceView(state.isRunning(), state.deviceViewEntity, onEvent)
+                    DFUSelectedDeviceView(state.isRunning(), state.deviceViewEntity, onEvent)
 
-                DFUProgressView(state.progressViewEntity, onEvent)
-
-                Spacer(modifier = Modifier.size(16.dp))
+                    DFUProgressView(state.progressViewEntity, onEvent)
+                }
             }
         }
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun DFUAppBar(onEvent: (DFUViewEvent) -> Unit) {
-    SmallTopAppBar(
-        title = { Text(stringResource(id = R.string.dfu_title)) },
-        colors = TopAppBarDefaults.smallTopAppBarColors(
-            scrolledContainerColor = MaterialTheme.colorScheme.primary,
-            containerColor = colorResource(id = R.color.appBarColor),
-            titleContentColor = MaterialTheme.colorScheme.onPrimary,
-            actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
-            navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-        ),
-        actions = {
-            IconButton(onClick = { onEvent(OnLoggerButtonClick) }) {
-                Icon(
-                    painterResource(id = R.drawable.ic_logger),
-                    contentDescription = stringResource(id = R.string.open_logger),
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-            IconButton(onClick = { onEvent(OnSettingsButtonClick) }) {
-                Icon(
-                    imageVector = Icons.Outlined.Settings,
-                    contentDescription = stringResource(id = R.string.dfu_settings_action)
-                )
-            }
-        }
-    )
 }

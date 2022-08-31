@@ -32,14 +32,18 @@
 package no.nordicsemi.android.dfu.profile.main.view
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Bluetooth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import no.nordicsemi.android.common.theme.parseBold
+import no.nordicsemi.android.common.theme.view.WizardStepComponent
+import no.nordicsemi.android.common.theme.view.WizardStepAction
+import no.nordicsemi.android.common.theme.view.WizardStepState
 import no.nordicsemi.android.common.ui.scanner.model.DiscoveredBluetoothDevice
 import no.nordicsemi.android.dfu.profile.R
 
@@ -51,6 +55,8 @@ internal object NotSelectedDeviceViewEntity : DFUSelectDeviceViewEntity()
 
 internal data class SelectedDeviceViewEntity(val device: DiscoveredBluetoothDevice) : DFUSelectDeviceViewEntity()
 
+private val icon = Icons.Outlined.Bluetooth
+
 @Composable
 internal fun DFUSelectedDeviceView(
     isRunning: Boolean,
@@ -59,43 +65,40 @@ internal fun DFUSelectedDeviceView(
 ) {
     when (viewEntity) {
         DisabledSelectedDeviceViewEntity -> DFUDisabledSelectedDeviceView()
-        is NotSelectedDeviceViewEntity -> DFUNotSelectedDeviceView(onEvent)
-        is SelectedDeviceViewEntity -> if (!isRunning) {
-            DFUSelectedDeviceView(viewEntity, onEvent)
-        } else {
-            DFUSelectedDeviceNoActionView(viewEntity)
-        }
+        NotSelectedDeviceViewEntity -> DFUNotSelectedDeviceView(onEvent)
+        is SelectedDeviceViewEntity -> DFUSelectedDeviceView(viewEntity, onEvent, isRunning)
     }
 }
 
 @Composable
 internal fun DFUDisabledSelectedDeviceView() {
-    DisabledCardComponent(
-        titleIcon = R.drawable.ic_bluetooth,
+    WizardStepComponent(
+        icon = icon,
         title = stringResource(id = R.string.dfu_device),
-        primaryButtonTitle = stringResource(id = R.string.dfu_select_device),
+        decor = WizardStepAction.Action(stringResource(id = R.string.dfu_select_device), enabled = false),
+        state = WizardStepState.INACTIVE,
     ) {
         Text(
             text = stringResource(id = R.string.dfu_select_device_info),
             style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(horizontal = 16.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant
         )
     }
 }
 
 @Composable
 internal fun DFUNotSelectedDeviceView(onEvent: (DFUViewEvent) -> Unit) {
-    CardComponent(
-        titleIcon = R.drawable.ic_bluetooth,
+    WizardStepComponent(
+        icon = icon,
         title = stringResource(id = R.string.dfu_device),
-        primaryButtonTitle = stringResource(id = R.string.dfu_select_device),
-        primaryButtonAction = { onEvent(OnSelectDeviceButtonClick) }
+        decor = WizardStepAction.Action(
+            text = stringResource(id = R.string.dfu_select_device),
+            onClick = { onEvent(OnSelectDeviceButtonClick) }
+        ),
+        state = WizardStepState.CURRENT,
     ) {
         Text(
             text = stringResource(id = R.string.dfu_select_device_info),
             style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(horizontal = 16.dp)
         )
     }
 }
@@ -106,49 +109,20 @@ private const val DEVICE_ADDRESS = "Address: <b>%s</b>"
 @Composable
 internal fun DFUSelectedDeviceView(
     viewEntity: SelectedDeviceViewEntity,
-    onEvent: (DFUViewEvent) -> Unit
+    onEvent: (DFUViewEvent) -> Unit,
+    isRunning: Boolean,
 ) {
-    CardComponent(
-        titleIcon = R.drawable.ic_bluetooth,
+    WizardStepComponent(
+        icon = icon,
         title = stringResource(id = R.string.dfu_device),
-        secondaryButtonTitle = stringResource(id = R.string.dfu_select_device),
-        secondaryButtonAction = { onEvent(OnSelectDeviceButtonClick) }
+        decor = WizardStepAction.Action(
+            text = stringResource(id = R.string.dfu_select_device),
+            onClick = { onEvent(OnSelectDeviceButtonClick) },
+            enabled = !isRunning,
+        ),
+        state = WizardStepState.COMPLETED,
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalAlignment = Alignment.Start
-        ) {
-            Text(
-                text = String.format(DEVICE_NAME, viewEntity.device.displayName ?: "No name").parseBold(),
-                style = MaterialTheme.typography.bodyMedium
-            )
-
-            Spacer(modifier = Modifier.size(4.dp))
-
-            Text(
-                text = String.format(DEVICE_ADDRESS, viewEntity.device.address).parseBold(),
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        }
-    }
-}
-
-@Composable
-internal fun DFUSelectedDeviceNoActionView(viewEntity: SelectedDeviceViewEntity) {
-    CardComponent(
-        titleIcon = R.drawable.ic_bluetooth,
-        title = stringResource(id = R.string.dfu_device),
-        secondaryButtonTitle = stringResource(id = R.string.dfu_select_device),
-        secondaryButtonEnabled = false
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalAlignment = Alignment.Start
-        ) {
+        Column {
             Text(
                 text = String.format(DEVICE_NAME, viewEntity.device.displayName ?: "No name").parseBold(),
                 style = MaterialTheme.typography.bodyMedium

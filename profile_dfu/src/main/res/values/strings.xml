@@ -59,7 +59,7 @@
 
     <string name="dfu_display_status_progress_update_parts">Uploading part %d/%d… %d\%%</string>
     <string name="dfu_display_status_progress_update">Uploading… %d\%%</string>
-    <string name="dfu_display_status_progress_speed">%.1fkB/s</string>
+    <string name="dfu_display_status_progress_speed">%.1f kB/s</string>
 
     <string name="dfu_unknown">Unknown</string>
 
