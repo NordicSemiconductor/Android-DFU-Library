@@ -36,25 +36,18 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import no.nordicsemi.android.common.theme.view.NordicAppBar
 import no.nordicsemi.android.dfu.BuildConfig.VERSION_NAME
-import no.nordicsemi.android.common.theme.CheckboxFallback
 import no.nordicsemi.android.dfu.profile.R
 import no.nordicsemi.android.dfu.profile.settings.viewmodel.SettingsViewModel
 
@@ -63,16 +56,20 @@ internal fun SettingsScreen() {
     val viewModel = hiltViewModel<SettingsViewModel>()
     val state = viewModel.state.collectAsState().value
     val onEvent: (SettingsScreenViewEvent) -> Unit = { viewModel.onEvent(it) }
-    val showDialog = rememberSaveable { mutableStateOf(false) }
+    var showDialog by rememberSaveable { mutableStateOf(false) }
 
-    if (showDialog.value) {
-        NumberOfPocketsDialog(state.numberOfPackets, onDismiss = { showDialog.value = false }) {
-            onEvent(it)
-        }
+    if (showDialog) {
+        NumberOfPocketsDialog(state.numberOfPackets,
+            onDismiss = { showDialog = false },
+            onNumberOfPocketsChange = { onEvent(OnNumberOfPocketsChange(it)) }
+        )
     }
 
     Column {
-        SettingsAppBar(onEvent)
+        NordicAppBar(
+            text = stringResource(R.string.dfu_settings),
+            onNavigationButtonClick = { onEvent(NavigateUp) },
+        )
 
         // Scrollable Column
         Column(
@@ -81,18 +78,16 @@ internal fun SettingsScreen() {
             SwitchSettingsComponent(
                 stringResource(id = R.string.dfu_settings_packets_receipt_notification),
                 stringResource(id = R.string.dfu_settings_packets_receipt_notification_info),
-                state.packetsReceiptNotification
-            ) {
-                onEvent(OnPacketsReceiptNotificationSwitchClick)
-            }
+                state.packetsReceiptNotification,
+                onClick = { onEvent(OnPacketsReceiptNotificationSwitchClick) }
+            )
 
             if (state.packetsReceiptNotification) {
                 SettingsButton(
                     stringResource(id = R.string.dfu_settings_number_of_pockets),
-                    state.numberOfPackets.toString()
-                ) {
-                    showDialog.value = true
-                }
+                    state.numberOfPackets.toString(),
+                    onClick = { showDialog = true }
+                )
             } else {
                 DisabledSettingsButton(
                     stringResource(id = R.string.dfu_settings_number_of_pockets),
@@ -107,10 +102,9 @@ internal fun SettingsScreen() {
             SwitchSettingsComponent(
                 stringResource(id = R.string.dfu_settings_disable_resume),
                 stringResource(id = R.string.dfu_settings_disable_resume_info),
-                state.disableResume
-            ) {
-                onEvent(OnDisableResumeSwitchClick)
-            }
+                state.disableResume,
+                onClick = { onEvent(OnDisableResumeSwitchClick) }
+            )
 
             Spacer(modifier = Modifier.size(32.dp))
 
@@ -119,26 +113,23 @@ internal fun SettingsScreen() {
             SwitchSettingsComponent(
                 stringResource(id = R.string.dfu_settings_force_scanning),
                 stringResource(id = R.string.dfu_settings_force_scanning_info),
-                state.forceScanningInLegacyDfu
-            ) {
-                onEvent(OnForceScanningAddressesSwitchClick)
-            }
+                state.forceScanningInLegacyDfu,
+                onClick = { onEvent(OnForceScanningAddressesSwitchClick) }
+            )
 
             SwitchSettingsComponent(
                 stringResource(id = R.string.dfu_settings_keep_bond_information),
                 stringResource(id = R.string.dfu_settings_keep_bond_information_info),
-                state.keepBondInformation
-            ) {
-                onEvent(OnKeepBondInformationSwitchClick)
-            }
+                state.keepBondInformation,
+                onClick = { onEvent(OnKeepBondInformationSwitchClick) }
+            )
 
             SwitchSettingsComponent(
                 stringResource(id = R.string.dfu_settings_external_mcu_dfu),
                 stringResource(id = R.string.dfu_settings_external_mcu_dfu_info),
-                state.externalMcuDfu
-            ) {
-                onEvent(OnExternalMcuDfuSwitchClick)
-            }
+                state.externalMcuDfu,
+                onClick = { onEvent(OnExternalMcuDfuSwitchClick) }
+            )
 
             Spacer(modifier = Modifier.size(16.dp))
 
@@ -146,50 +137,26 @@ internal fun SettingsScreen() {
 
             SettingsButton(
                 stringResource(id = R.string.dfu_about_app),
-                stringResource(id = R.string.dfu_about_app_desc)
-            ) {
-                onEvent(OnAboutAppClick)
-            }
+                stringResource(id = R.string.dfu_about_app_desc),
+                onClick = { onEvent(OnAboutAppClick) }
+            )
 
             SettingsButton(
                 stringResource(id = R.string.dfu_show_welcome_screen),
-            ) {
-                onEvent(OnShowWelcomeClick)
-            }
+                onClick = { onEvent(OnShowWelcomeClick) }
+            )
 
             Text(
                 text = stringResource(id = R.string.dfu_version, VERSION_NAME),
                 modifier = Modifier.fillMaxWidth(),
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = LocalContentColor.current.copy(alpha = 0.38f),
                 textAlign = TextAlign.Center
             )
+
             Spacer(modifier = Modifier.size(16.dp))
         }
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SettingsAppBar(onEvent: (SettingsScreenViewEvent) -> Unit) {
-    SmallTopAppBar(
-        title = { Text(stringResource(id = R.string.dfu_settings)) },
-        colors = TopAppBarDefaults.smallTopAppBarColors(
-            scrolledContainerColor = MaterialTheme.colorScheme.primary,
-            containerColor = colorResource(id = R.color.appBarColor),
-            titleContentColor = MaterialTheme.colorScheme.onPrimary,
-            actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
-            navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-        ),
-        navigationIcon = {
-            IconButton(onClick = { onEvent(NavigateUp) }) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = stringResource(id = R.string.dfu_navigate_up)
-                )
-            }
-        }
-    )
 }
 
 @Composable
@@ -234,12 +201,16 @@ private fun SwitchSettingsComponent(
             }
         }
 
-        CheckboxFallback(checked = isChecked, onCheckedChange = { onClick() })
+        Checkbox(checked = isChecked, onCheckedChange = { onClick() })
     }
 }
 
 @Composable
-private fun SettingsButton(title: String, description: String? = null, onClick: () -> Unit) {
+private fun SettingsButton(
+    title: String,
+    description: String? = null,
+    onClick: () -> Unit,
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -270,14 +241,14 @@ private fun DisabledSettingsButton(title: String, description: String? = null) {
         Text(
             text = title,
             style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.surfaceVariant
+            color = LocalContentColor.current.copy(alpha = 0.38f)
         )
 
         description?.let {
             Text(
                 text = it,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.surfaceVariant
+                color = LocalContentColor.current.copy(alpha = 0.38f)
             )
         }
     }
@@ -288,7 +259,7 @@ private fun DisabledSettingsButton(title: String, description: String? = null) {
 private fun NumberOfPocketsDialog(
     numberOfPockets: Int,
     onDismiss: () -> Unit,
-    onEvent: (SettingsScreenViewEvent) -> Unit
+    onNumberOfPocketsChange: (Int) -> Unit
 ) {
     var numberOfPocketsState by rememberSaveable { mutableStateOf("$numberOfPockets") }
     var showError by rememberSaveable { mutableStateOf(false) }
@@ -324,7 +295,7 @@ private fun NumberOfPocketsDialog(
             Button(
                 onClick = {
                     onDismiss()
-                    onEvent(OnNumberOfPocketsChange(numberOfPocketsState.toInt()))
+                    onNumberOfPocketsChange(numberOfPocketsState.toInt())
                 },
                 enabled = !showError
             ) {
@@ -332,7 +303,7 @@ private fun NumberOfPocketsDialog(
             }
         },
         dismissButton = {
-            Button(onClick = { onDismiss() }) {
+            Button(onClick = onDismiss) {
                 Text(text = stringResource(id = R.string.dfu_macro_dialog_dismiss))
             }
         }
