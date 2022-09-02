@@ -39,7 +39,6 @@ import javax.inject.Inject
 class SettingsRepository @Inject constructor(
     private val settingsDataSource: SettingsDataSource
 ) {
-
     val settings = settingsDataSource.settings
 
     suspend fun storeSettings(settings: DFUSettings) {
