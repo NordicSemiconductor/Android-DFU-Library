@@ -55,8 +55,7 @@ private val NUMBER_OF_POCKETS_KEY = intPreferencesKey("number_of_pockets")
 
 @Singleton
 class SettingsDataSource @Inject constructor(
-    @ApplicationContext
-    private val context: Context
+    @ApplicationContext private val context: Context
 ) {
     private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
