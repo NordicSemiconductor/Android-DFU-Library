@@ -31,10 +31,7 @@
 
 package no.nordicsemi.android.dfu.profile.main.view
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.LinearProgressIndicator
@@ -133,23 +130,28 @@ private fun DFUIdleProgressView(
 
 @Composable
 private fun ProgressItem(viewEntity: ProgressItemViewEntity) {
-    Column {
+    Column(
+        modifier = Modifier.padding(start = 8.dp)
+    ) {
         ProgressItem(
-            BootloaderItem.toDisplayString(status = viewEntity.bootloaderStatus),
-            viewEntity.bootloaderStatus
+            text = BootloaderItem.toDisplayString(status = viewEntity.bootloaderStatus),
+            status = viewEntity.bootloaderStatus,
+            iconRightPadding = 24.dp,
         )
         Spacer(modifier = Modifier.size(8.dp))
         ProgressItem(
-            DfuItem.toDisplayString(status = viewEntity.dfuStatus),
-            viewEntity.dfuStatus
+            text = DfuItem.toDisplayString(status = viewEntity.dfuStatus),
+            status = viewEntity.dfuStatus,
+            iconRightPadding = 24.dp,
         )
         Spacer(modifier = Modifier.size(8.dp))
 
         if (viewEntity.installationStatus == ProgressItemStatus.WORKING) {
             Column {
                 ProgressItem(
-                    viewEntity.progress.toLabel(),
-                    viewEntity.installationStatus,
+                    text = viewEntity.progress.toLabel(),
+                    status = viewEntity.installationStatus,
+                    iconRightPadding = 24.dp,
                 ) {
                     LinearProgressIndicator(
                         progress = viewEntity.progress.progress / 100f,
@@ -168,23 +170,26 @@ private fun ProgressItem(viewEntity: ProgressItemViewEntity) {
             }
         } else {
             ProgressItem(
-                FirmwareItem.toDisplayString(status = viewEntity.installationStatus),
-                viewEntity.installationStatus
+                text = FirmwareItem.toDisplayString(status = viewEntity.installationStatus),
+                status = viewEntity.installationStatus,
+                iconRightPadding = 24.dp,
             )
         }
         Spacer(modifier = Modifier.size(8.dp))
         if (viewEntity.resultStatus != ProgressItemStatus.ERROR) {
             ProgressItem(
-                stringResource(id = R.string.dfu_progress_stage_completed),
-                viewEntity.resultStatus
+                text = stringResource(id = R.string.dfu_progress_stage_completed),
+                status = viewEntity.resultStatus,
+                iconRightPadding = 24.dp,
             )
         } else {
             ProgressItem(
-                stringResource(
+                text = stringResource(
                     id = R.string.dfu_progress_stage_error,
                     viewEntity.errorMessage ?: stringResource(id = R.string.dfu_unknown)
                 ),
-                viewEntity.resultStatus
+                status = viewEntity.resultStatus,
+                iconRightPadding = 24.dp,
             )
         }
     }
