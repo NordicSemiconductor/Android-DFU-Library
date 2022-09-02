@@ -40,7 +40,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import no.nordicsemi.android.common.theme.parseBold
+import no.nordicsemi.android.common.core.parseBold
 import no.nordicsemi.android.common.theme.view.WizardStepComponent
 import no.nordicsemi.android.common.theme.view.WizardStepAction
 import no.nordicsemi.android.common.theme.view.WizardStepState
