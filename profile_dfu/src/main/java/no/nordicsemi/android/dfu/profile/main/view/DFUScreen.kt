@@ -51,6 +51,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import no.nordicsemi.android.common.analytics.view.AnalyticsPermissionRequestDialog
 import no.nordicsemi.android.common.theme.view.NordicAppBar
 import no.nordicsemi.android.dfu.profile.R
 import no.nordicsemi.android.dfu.profile.main.viewmodel.DFUViewModel
@@ -99,5 +100,8 @@ fun DFUScreen() {
                 }
             }
         }
+
+        // Allow user to Opt-In to analytics collection.
+        AnalyticsPermissionRequestDialog()
     }
 }

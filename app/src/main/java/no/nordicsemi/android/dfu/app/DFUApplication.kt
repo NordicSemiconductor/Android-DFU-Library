@@ -39,7 +39,7 @@ import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
 import dagger.hilt.android.HiltAndroidApp
-import no.nordicsemi.android.dfu.analytics.AppAnalytics
+import no.nordicsemi.android.dfu.analytics.DfuAnalytics
 import no.nordicsemi.android.dfu.analytics.AppOpenEvent
 import javax.inject.Inject
 
@@ -47,7 +47,7 @@ import javax.inject.Inject
 class DFUApplication : Application() {
 
     @Inject
-    lateinit var analytics: AppAnalytics
+    lateinit var analytics: DfuAnalytics
 
     override fun onCreate() {
         super.onCreate()

@@ -51,6 +51,7 @@ dependencies {
     implementation "no.nordicsemi.android.common:uiscanner:1.0.21"
     implementation "no.nordicsemi.android.common:uilogger:1.0.21"
     implementation "no.nordicsemi.android.common:permission:1.0.21"
+    implementation "no.nordicsemi.android.common:analytics:1.0.21"
 
     implementation "androidx.compose.material3:material3:1.0.0-beta01"
     implementation "androidx.compose.material:material-icons-core:$compose_version"

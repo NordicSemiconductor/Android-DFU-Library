@@ -51,7 +51,7 @@ private const val INFOCENTER_LINK = "https://infocenter.nordicsemi.com/topic/sdk
 class SettingsViewModel @Inject constructor(
     private val repository: SettingsRepository,
     private val navigationManager: NavigationManager,
-    private val analytics: AppAnalytics
+    private val analytics: DfuAnalytics
 ) : ViewModel() {
 
     val state = repository.settings.stateIn(viewModelScope, SharingStarted.Eagerly, DFUSettings())

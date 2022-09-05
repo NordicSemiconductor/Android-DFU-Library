@@ -46,6 +46,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import no.nordicsemi.android.common.analytics.view.AnalyticsPermissionSwitch
 import no.nordicsemi.android.common.theme.view.NordicAppBar
 import no.nordicsemi.android.dfu.BuildConfig.VERSION_NAME
 import no.nordicsemi.android.dfu.profile.R
@@ -75,31 +76,25 @@ internal fun SettingsScreen() {
         Column(
             modifier = Modifier.verticalScroll(rememberScrollState())
         ) {
-            SwitchSettingsComponent(
+            SettingsSwitch(
                 stringResource(id = R.string.dfu_settings_packets_receipt_notification),
                 stringResource(id = R.string.dfu_settings_packets_receipt_notification_info),
                 state.packetsReceiptNotification,
                 onClick = { onEvent(OnPacketsReceiptNotificationSwitchClick) }
             )
 
-            if (state.packetsReceiptNotification) {
-                SettingsButton(
-                    stringResource(id = R.string.dfu_settings_number_of_pockets),
-                    state.numberOfPackets.toString(),
-                    onClick = { showDialog = true }
-                )
-            } else {
-                DisabledSettingsButton(
-                    stringResource(id = R.string.dfu_settings_number_of_pockets),
-                    state.numberOfPackets.toString()
-                )
-            }
+            SettingsButton(
+                stringResource(id = R.string.dfu_settings_number_of_pockets),
+                state.numberOfPackets.toString(),
+                onClick = { showDialog = true },
+                enabled = state.packetsReceiptNotification,
+            )
 
             Spacer(modifier = Modifier.size(16.dp))
 
             Headline(stringResource(id = R.string.dfu_settings_headline_secure_dfu))
 
-            SwitchSettingsComponent(
+            SettingsSwitch(
                 stringResource(id = R.string.dfu_settings_disable_resume),
                 stringResource(id = R.string.dfu_settings_disable_resume_info),
                 state.disableResume,
@@ -110,21 +105,21 @@ internal fun SettingsScreen() {
 
             Headline(stringResource(id = R.string.dfu_settings_headline_legacy_dfu))
 
-            SwitchSettingsComponent(
+            SettingsSwitch(
                 stringResource(id = R.string.dfu_settings_force_scanning),
                 stringResource(id = R.string.dfu_settings_force_scanning_info),
                 state.forceScanningInLegacyDfu,
                 onClick = { onEvent(OnForceScanningAddressesSwitchClick) }
             )
 
-            SwitchSettingsComponent(
+            SettingsSwitch(
                 stringResource(id = R.string.dfu_settings_keep_bond_information),
                 stringResource(id = R.string.dfu_settings_keep_bond_information_info),
                 state.keepBondInformation,
                 onClick = { onEvent(OnKeepBondInformationSwitchClick) }
             )
 
-            SwitchSettingsComponent(
+            SettingsSwitch(
                 stringResource(id = R.string.dfu_settings_external_mcu_dfu),
                 stringResource(id = R.string.dfu_settings_external_mcu_dfu_info),
                 state.externalMcuDfu,
@@ -140,6 +135,8 @@ internal fun SettingsScreen() {
                 stringResource(id = R.string.dfu_about_app_desc),
                 onClick = { onEvent(OnAboutAppClick) }
             )
+
+            AnalyticsPermissionSwitch()
 
             SettingsButton(
                 stringResource(id = R.string.dfu_show_welcome_screen),
@@ -170,7 +167,7 @@ private fun Headline(text: String) {
 }
 
 @Composable
-private fun SwitchSettingsComponent(
+private fun SettingsSwitch(
     text: String,
     description: String?,
     isChecked: Boolean,
@@ -185,7 +182,6 @@ private fun SwitchSettingsComponent(
     ) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
                 .weight(1f)
         ) {
             Text(
@@ -210,45 +206,30 @@ private fun SettingsButton(
     title: String,
     description: String? = null,
     onClick: () -> Unit,
+    enabled: Boolean = true,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(16.dp)
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-        )
-
-        description?.let {
-            Text(
-                text = it,
-                style = MaterialTheme.typography.bodySmall,
-            )
-        }
+    val color = if (enabled) {
+        LocalContentColor.current
+    } else {
+        LocalContentColor.current.copy(alpha = 0.38f)
     }
-}
-
-@Composable
-private fun DisabledSettingsButton(title: String, description: String? = null) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable(enabled = enabled) { onClick() }
             .padding(16.dp)
     ) {
         Text(
             text = title,
             style = MaterialTheme.typography.titleLarge,
-            color = LocalContentColor.current.copy(alpha = 0.38f)
+            color = color,
         )
 
         description?.let {
             Text(
                 text = it,
                 style = MaterialTheme.typography.bodySmall,
-                color = LocalContentColor.current.copy(alpha = 0.38f)
+                color = color,
             )
         }
     }

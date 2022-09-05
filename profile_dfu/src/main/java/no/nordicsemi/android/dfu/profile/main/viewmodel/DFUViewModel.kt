@@ -72,78 +72,86 @@ internal class DFUViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val externalFileDataSource: ExternalFileDataSource,
     private val deepLinkHandler: DeepLinkHandler,
-    private val analytics: AppAnalytics,
+    private val analytics: DfuAnalytics,
 ) : ViewModel() {
 
     private val _state: MutableStateFlow<DFUViewState> = stateHolder.state
     val state = _state.asStateFlow()
 
     init {
-        navigationManager.getResultForIds(ScannerDestinationId).onEach { result ->
-            ((result as? ScannerResult)?.device)?.let { device ->
-                repository.device = device
-                _state.value = _state.value.copy(
-                    deviceViewEntity = SelectedDeviceViewEntity(device),
-                    progressViewEntity = WorkingProgressViewEntity()
-                )
-                analytics.logEvent(DeviceSelectedEvent)
-            }
-        }.launchIn(viewModelScope)
-
-        repository.data.onEach { data ->
-            ((data as? WorkingStatus)?.status as? EnablingDfu)?.let {
-                _state.value = _state.value.copy(progressViewEntity = DFUProgressViewEntity.createDfuStage())
-            }
-
-            ((data as? WorkingStatus)?.status as? Completed)?.let {
-                _state.value = _state.value.copy(progressViewEntity = DFUProgressViewEntity.createSuccessStage())
-                analytics.logEvent(DFUSuccessEvent)
-            }
-
-            ((data as? WorkingStatus)?.status as? ProgressUpdate)?.let {
-                _state.value = _state.value.copy(progressViewEntity = DFUProgressViewEntity.createInstallingStage(it))
-            }
-
-            ((data as? WorkingStatus)?.status as? Aborted)?.let {
-                val newStatus = (_state.value.progressViewEntity as? WorkingProgressViewEntity)?.status?.createErrorStage("Aborted")
-                newStatus?.let {
-                    _state.value = _state.value.copy(progressViewEntity = newStatus)
+        navigationManager.getResultForIds(ScannerDestinationId)
+            .onEach { result ->
+                ((result as? ScannerResult)?.device)?.let { device ->
+                    repository.device = device
+                    _state.value = _state.value.copy(
+                        deviceViewEntity = SelectedDeviceViewEntity(device),
+                        progressViewEntity = WorkingProgressViewEntity()
+                    )
+                    analytics.logEvent(DeviceSelectedEvent)
                 }
             }
+            .launchIn(viewModelScope)
 
-            ((data as? WorkingStatus)?.status as? Error)?.let {
-                val newStatus = (_state.value.progressViewEntity as? WorkingProgressViewEntity)?.status?.createErrorStage(it.message)
-                newStatus?.let {
-                    _state.value = _state.value.copy(progressViewEntity = newStatus)
+        repository.data
+            .onEach { data ->
+                ((data as? WorkingStatus)?.status as? EnablingDfu)?.let {
+                    _state.value = _state.value.copy(progressViewEntity = DFUProgressViewEntity.createDfuStage())
                 }
-                analytics.logEvent(DFUErrorEvent(it.message))
+
+                ((data as? WorkingStatus)?.status as? Completed)?.let {
+                    _state.value = _state.value.copy(progressViewEntity = DFUProgressViewEntity.createSuccessStage())
+                    analytics.logEvent(DFUSuccessEvent)
+                }
+
+                ((data as? WorkingStatus)?.status as? ProgressUpdate)?.let {
+                    _state.value = _state.value.copy(progressViewEntity = DFUProgressViewEntity.createInstallingStage(it))
+                }
+
+                ((data as? WorkingStatus)?.status as? Aborted)?.let {
+                    val newStatus = (_state.value.progressViewEntity as? WorkingProgressViewEntity)?.status?.createErrorStage("Aborted")
+                    newStatus?.let {
+                        _state.value = _state.value.copy(progressViewEntity = newStatus)
+                    }
+                }
+
+                ((data as? WorkingStatus)?.status as? Error)?.let {
+                    val newStatus = (_state.value.progressViewEntity as? WorkingProgressViewEntity)?.status?.createErrorStage(it.message)
+                    newStatus?.let {
+                        _state.value = _state.value.copy(progressViewEntity = newStatus)
+                    }
+                    analytics.logEvent(DFUErrorEvent(it.message))
+                }
             }
-        }.launchIn(viewModelScope)
+            .launchIn(viewModelScope)
 
-        settingsRepository.settings.onEach {
-            _state.value = _state.value.copy(settings = it)
+        settingsRepository.settings
+            .onEach {
+                _state.value = _state.value.copy(settings = it)
 
-            if (it.showWelcomeScreen) {
-                navigationManager.navigateTo(DfuWelcomeScreen)
+                if (it.showWelcomeScreen) {
+                    navigationManager.navigateTo(DfuWelcomeScreen)
+                }
             }
-        }.launchIn(viewModelScope)
+            .launchIn(viewModelScope)
 
-        externalFileDataSource.fileResource.onEach {
-            when (it) {
-                is FileDownloaded -> onZipFileSelected(it.uri)
-                FileError -> _state.value = _state.value.copy(
-                    fileViewEntity = NotSelectedFileViewEntity(isRunning = false, isError = true),
-                )
-                LoadingFile -> _state.value = _state.value.copy(
-                    fileViewEntity = NotSelectedFileViewEntity(isRunning = true, isError = false),
-                )
-                null -> doNothing()
+        externalFileDataSource.fileResource
+            .onEach {
+                when (it) {
+                    is FileDownloaded -> onZipFileSelected(it.uri)
+                    FileError -> _state.value = _state.value.copy(
+                        fileViewEntity = NotSelectedFileViewEntity(isRunning = false, isError = true),
+                    )
+                    LoadingFile -> _state.value = _state.value.copy(
+                        fileViewEntity = NotSelectedFileViewEntity(isRunning = true, isError = false),
+                    )
+                    null -> doNothing()
+                }
             }
-        }.launchIn(viewModelScope)
+            .launchIn(viewModelScope)
 
-        deepLinkHandler.zipFile.onEach {
-            it?.let { onZipFileSelected(it) }
-        }.launchIn(viewModelScope)
+        deepLinkHandler.zipFile
+            .onEach { it?.let { onZipFileSelected(it) } }
+            .launchIn(viewModelScope)
     }
 
     private fun requestBluetoothDevice() {

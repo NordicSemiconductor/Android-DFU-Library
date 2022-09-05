@@ -34,12 +34,13 @@ package no.nordicsemi.android.dfu.app
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
 import androidx.compose.material3.Surface
 import dagger.hilt.android.AndroidEntryPoint
 import no.nordicsemi.android.common.navigation.NavigationView
 import no.nordicsemi.android.common.theme.NordicActivity
 import no.nordicsemi.android.common.theme.NordicTheme
+import no.nordicsemi.android.dfu.analytics.DfuAnalytics
+import no.nordicsemi.android.dfu.analytics.HandleDeepLinkEvent
 import no.nordicsemi.android.dfu.profile.DFUDestinations
 import no.nordicsemi.android.dfu.profile.scanner.ScannerDestinations
 import no.nordicsemi.android.dfu.storage.DeepLinkHandler
@@ -51,13 +52,15 @@ class MainActivity : NordicActivity() {
     @Inject
     lateinit var linkHandler: DeepLinkHandler
 
-    private val viewModel: MainViewModel by viewModels()
+    @Inject
+    lateinit var analytics: DfuAnalytics
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val isDeepLink = linkHandler.handleDeepLink(intent)
-        viewModel.logEvent(isDeepLink)
+        if (linkHandler.handleDeepLink(intent)) {
+            analytics.logEvent(HandleDeepLinkEvent)
+        }
 
         setContent {
             NordicTheme {
@@ -71,6 +74,8 @@ class MainActivity : NordicActivity() {
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
 
-        linkHandler.handleDeepLink(intent)
+        if (linkHandler.handleDeepLink(intent)) {
+            analytics.logEvent(HandleDeepLinkEvent)
+        }
     }
 }

@@ -27,9 +27,7 @@ android {
 }
 
 dependencies {
-    implementation platform('com.google.firebase:firebase-bom:29.2.1')
-    implementation 'com.google.firebase:firebase-analytics'
-    implementation 'com.google.firebase:firebase-crashlytics'
+    implementation "no.nordicsemi.android.common:analytics:1.0.21"
 
     implementation 'com.google.dagger:hilt-android:2.43.1'
     kapt 'com.google.dagger:hilt-compiler:2.43.1'

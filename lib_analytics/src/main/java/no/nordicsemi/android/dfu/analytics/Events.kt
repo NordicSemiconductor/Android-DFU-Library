@@ -33,37 +33,37 @@ package no.nordicsemi.android.dfu.analytics
 
 import android.os.Bundle
 
-private object FirebaseParam {
+private object  FirebaseParam {
     const val MESSAGE = "message"
     const val IS_ENABLED = "is_enabled"
     const val NUMBER_OF_PACKETS = "number_of_packets"
 }
 
-sealed interface AppEvent {
+sealed interface DfuEvent {
     val eventName: String
 }
 
-object AppOpenEvent : AppEvent {
+object AppOpenEvent : DfuEvent {
     override val eventName: String = "APP_OPEN_EVENT"
 }
 
-object FileSelectedEvent : AppEvent {
+object FileSelectedEvent : DfuEvent {
     override val eventName: String = "FILE_SELECTED"
 }
 
-object DeviceSelectedEvent : AppEvent {
+object DeviceSelectedEvent : DfuEvent {
     override val eventName: String = "DEVICE_SELECTED"
 }
 
-object InstallationStartedEvent : AppEvent {
+object InstallationStartedEvent : DfuEvent {
     override val eventName: String = "INSTALLATION_STARTED"
 }
 
-object HandleDeepLinkEvent : AppEvent {
+object HandleDeepLinkEvent : DfuEvent {
     override val eventName: String = "HANDLE_DEEP_LINK_EVENT"
 }
 
-sealed interface DFUResultEvent : AppEvent
+sealed interface DFUResultEvent : DfuEvent
 
 object DFUSuccessEvent : DFUResultEvent {
     override val eventName: String = "DFU_SUCCESS_RESULT"
@@ -83,7 +83,7 @@ class DFUErrorEvent(
     }
 }
 
-sealed interface DFUSettingsChangeEvent : AppEvent {
+sealed interface DFUSettingsChangeEvent : DfuEvent {
     fun createBundle(): Bundle?
 }
 
