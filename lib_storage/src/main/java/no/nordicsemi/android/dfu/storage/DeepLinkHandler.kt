@@ -49,7 +49,6 @@ private const val PARAM_KEY = "file"
 class DeepLinkHandler @Inject internal constructor(
     private val downloadManagerWrapper: ExternalFileDataSource,
 ) {
-
     private val _zipFile = MutableStateFlow<Uri?>(null)
     val zipFile = _zipFile.asStateFlow()
 
