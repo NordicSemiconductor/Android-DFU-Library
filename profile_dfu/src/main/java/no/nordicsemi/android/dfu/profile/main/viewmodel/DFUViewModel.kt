@@ -48,7 +48,7 @@ import no.nordicsemi.android.dfu.profile.main.data.*
 import no.nordicsemi.android.dfu.profile.main.repository.DFURepository
 import no.nordicsemi.android.dfu.profile.main.view.*
 import no.nordicsemi.android.dfu.profile.main.view.DFUProgressViewEntity.Companion.createErrorStage
-import no.nordicsemi.android.dfu.profile.scanner.ScannerDestinationId
+import no.nordicsemi.android.dfu.profile.scanner.ScannerDestination
 import no.nordicsemi.android.dfu.profile.scanner.ScannerResult
 import no.nordicsemi.android.dfu.profile.settings.repository.SettingsRepository
 import no.nordicsemi.android.dfu.storage.*
@@ -79,7 +79,7 @@ internal class DFUViewModel @Inject constructor(
     val state = _state.asStateFlow()
 
     init {
-        navigationManager.getResultForIds(ScannerDestinationId)
+        navigationManager.getResultForIds(ScannerDestination)
             .onEach { result ->
                 ((result as? ScannerResult)?.device)?.let { device ->
                     repository.device = device
@@ -155,7 +155,7 @@ internal class DFUViewModel @Inject constructor(
     }
 
     private fun requestBluetoothDevice() {
-        navigationManager.navigateTo(ScannerDestinationId)
+        navigationManager.navigateTo(ScannerDestination)
     }
 
     fun onEvent(event: DFUViewEvent) {

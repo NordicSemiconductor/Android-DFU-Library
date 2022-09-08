@@ -14,7 +14,7 @@ fun ScannerContent(navigationManager: NavigationManager) {
             when (result) {
                 ScanningCancelled -> navigationManager.navigateUp()
                 is DeviceSelected -> navigationManager.navigateUp(
-                    ScannerResult(ScannerDestinationId, result.device)
+                    ScannerResult(ScannerDestination, result.device)
                 )
             }
         },

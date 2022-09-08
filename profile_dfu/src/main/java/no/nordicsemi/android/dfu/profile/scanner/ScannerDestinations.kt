@@ -6,14 +6,15 @@ import no.nordicsemi.android.common.navigation.DestinationId
 import no.nordicsemi.android.common.navigation.NavigationResult
 import no.nordicsemi.android.common.ui.scanner.model.DiscoveredBluetoothDevice
 
-val ScannerDestinationId = DestinationId("uiscanner-destination")
+internal val ScannerDestination = DestinationId("uiscanner-destination")
 
-private val ScannerDestination =
-    ComposeDestination(ScannerDestinationId) { navigationManager ->
+private val destinations = listOf(
+    ComposeDestination(ScannerDestination) { navigationManager ->
         ScannerContent(navigationManager = navigationManager)
     }
+)
 
-val ScannerDestinations = ComposeDestinations(listOf(ScannerDestination))
+val ScannerDestinations = ComposeDestinations(destinations)
 
 data class ScannerResult(
     override val destinationId: DestinationId,
