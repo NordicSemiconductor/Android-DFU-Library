@@ -47,14 +47,6 @@ object AppOpenEvent : DfuEvent {
     override val eventName: String = "APP_OPEN_EVENT"
 }
 
-object FileSelectedEvent : DfuEvent {
-    override val eventName: String = "FILE_SELECTED"
-}
-
-object DeviceSelectedEvent : DfuEvent {
-    override val eventName: String = "DEVICE_SELECTED"
-}
-
 object InstallationStartedEvent : DfuEvent {
     override val eventName: String = "INSTALLATION_STARTED"
 }

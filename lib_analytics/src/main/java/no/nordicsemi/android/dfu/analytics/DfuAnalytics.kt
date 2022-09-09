@@ -46,8 +46,6 @@ class DfuAnalytics @Inject constructor(
             AppOpenEvent,
             HandleDeepLinkEvent,
             DFUSuccessEvent -> analytics.logEvent(event.eventName, null)
-            DeviceSelectedEvent -> analytics.logEvent(event.eventName, null)
-            FileSelectedEvent -> analytics.logEvent(event.eventName, null)
             InstallationStartedEvent -> analytics.logEvent(event.eventName, null)
             is DFUErrorEvent -> analytics.logEvent(event.eventName, event.createBundle())
             is DisableResumeSettingsEvent -> analytics.logEvent(event.eventName, event.createBundle())
