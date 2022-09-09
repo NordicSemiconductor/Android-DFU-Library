@@ -146,22 +146,25 @@ import no.nordicsemi.android.error.SecureDfuError;
 					throw new RemoteDfuException("Device returned error after sending Enter Bootloader", status);
 				// The device will disconnect and now reset. Some devices don't disconnect gracefully,
 				// but reset instead. In that case, Android would assume disconnection after
-				// "supervision timeout" seconds, which may be 5 more seconds. If the device will
-				// use a different address in bootloader mode, there is no reason to wait for that.
-				// The library will immediately start scanning for the device advertising in
-				// bootloader mode and connect to it.
-				if (!shouldScanForBootloader()) {
+				// "supervision timeout" seconds, which may be 5 more seconds.
+				if (shouldScanForBootloader()) {
+					// If the device will use a different address in bootloader mode, there is no
+					// reason to wait for that. The library will immediately start scanning for the
+					// device advertising in bootloader mode and connect to it.
+					// On some devices, e.g OnePlus 5 or Moto G60 the device was failing to connect to
+					// the bootloader if not previously disconnected.
+					// https://devzone.nordicsemi.com/support/278664
+					mService.disconnect(gatt);
+				} else {
 					// However, if the device is expected to use the same address, we need to wait
 					// for the disconnection. Otherwise, a new connectGatt would reconnect before
 					// disconnection and subsequent operations would fail.
 					mService.waitUntilDisconnected();
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Disconnected by the remote device");
 				}
+				logi("Device disconnected");
 			} else {
 				logi("Device disconnected before receiving notification");
-			}
-
-			if (!shouldScanForBootloader()) {
-				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Disconnected by the remote device");
 			}
 			finalize(intent, false, shouldScanForBootloader());
 		} catch (final UnknownResponseException e) {

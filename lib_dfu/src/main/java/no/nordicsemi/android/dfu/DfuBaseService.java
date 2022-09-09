@@ -1331,7 +1331,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 						loge("Device not reachable. Check if the device with address " + deviceAddress + " is in range, is advertising and is connectable");
 						sendLogBroadcast(LOG_LEVEL_ERROR, "Error 133: Connection timeout");
 					} else {
-						loge("An error occurred while connecting to the device:" + error);
+						loge("An error occurred while connecting to the device: " + error);
 						sendLogBroadcast(LOG_LEVEL_ERROR, String.format(Locale.US, "Connection failed (0x%02X): %s", error, GattError.parseConnectionError(error)));
 					}
 				} else {
