@@ -89,37 +89,33 @@ internal class DFUViewModel @Inject constructor(
             .launchIn(viewModelScope)
 
         repository.data
-            .mapNotNull { it as? WorkingStatus }
+            .mapNotNull { it as? DfuState.InProgress }
             .mapNotNull { it.status }
             .onEach { status ->
                 when (status) {
                     is EnablingDfu -> {
                         _state.value = _state.value.copy(progressViewEntity = DFUProgressViewEntity.createDfuStage())
                     }
+                    is Uploading -> {
+                        _state.value = _state.value.copy(progressViewEntity = DFUProgressViewEntity.createInstallingStage(status))
+                    }
                     is Completed -> {
                         _state.value = _state.value.copy(progressViewEntity = DFUProgressViewEntity.createSuccessStage())
                         analytics.logEvent(DFUSuccessEvent)
                     }
-                    is ProgressUpdate -> {
-                        val newStatus = (_state.value.progressViewEntity as? WorkingProgressViewEntity)?.status?.createErrorStage("Aborted")
-                        newStatus?.let {
-                            _state.value = _state.value.copy(progressViewEntity = newStatus)
-                        }
-                    }
                     is Aborted -> {
-                        val newStatus = (_state.value.progressViewEntity as? WorkingProgressViewEntity)?.status?.createErrorStage("Aborted")
-                        newStatus?.let {
-                            _state.value = _state.value.copy(progressViewEntity = newStatus)
-                        }
+                        val currentProgressEntity = _state.value.progressViewEntity as WorkingProgressViewEntity
+                        val newStatus = currentProgressEntity.status.createErrorStage("Aborted")
+                        _state.value = _state.value.copy(progressViewEntity = newStatus)
+                        analytics.logEvent(DFUAbortedEvent)
                     }
                     is Error -> {
-                        val newStatus = (_state.value.progressViewEntity as? WorkingProgressViewEntity)?.status?.createErrorStage(status.message)
-                        newStatus?.let {
-                            _state.value = _state.value.copy(progressViewEntity = newStatus)
-                        }
+                        val currentProgressEntity = _state.value.progressViewEntity as WorkingProgressViewEntity
+                        val newStatus = currentProgressEntity.status.createErrorStage(status.message)
+                        _state.value = _state.value.copy(progressViewEntity = newStatus)
                         analytics.logEvent(DFUErrorEvent(status.message))
                     }
-                    else -> {}
+                    else -> doNothing()
                 }
             }
             .launchIn(viewModelScope)
@@ -138,10 +134,10 @@ internal class DFUViewModel @Inject constructor(
             .onEach {
                 when (it) {
                     is FileDownloaded -> onZipFileSelected(it.uri)
-                    FileError -> _state.value = _state.value.copy(
+                    is FileError -> _state.value = _state.value.copy(
                         fileViewEntity = NotSelectedFileViewEntity(isRunning = false, isError = true),
                     )
-                    LoadingFile -> _state.value = _state.value.copy(
+                    is LoadingFile -> _state.value = _state.value.copy(
                         fileViewEntity = NotSelectedFileViewEntity(isRunning = true, isError = false),
                     )
                     null -> doNothing()

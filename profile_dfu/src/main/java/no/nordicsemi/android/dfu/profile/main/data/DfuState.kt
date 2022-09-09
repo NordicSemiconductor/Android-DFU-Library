@@ -34,30 +34,30 @@ package no.nordicsemi.android.dfu.profile.main.data
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 
-internal sealed class DFUData
+sealed class DfuState {
+    object Idle : DfuState()
+    data class InProgress(val status: DfuProgress) : DfuState()
+}
 
-internal object IdleStatus : DFUData()
-internal data class WorkingStatus(val status: WorkingBasedStatus) : DFUData()
+sealed class DfuProgress
 
-internal sealed class WorkingBasedStatus
-
-internal object Connecting : WorkingBasedStatus()
-internal object Connected : WorkingBasedStatus()
-internal object Starting : WorkingBasedStatus()
-internal object Started : WorkingBasedStatus()
-internal object EnablingDfu : WorkingBasedStatus()
+object Connecting : DfuProgress()
+object Connected : DfuProgress()
+object Starting : DfuProgress()
+object Started : DfuProgress()
+object EnablingDfu : DfuProgress()
 
 @Parcelize
-internal data class ProgressUpdate(
+data class Uploading(
     val progress: Int = 0,
     val avgSpeed: Float = 0f,
     val currentPart: Int = 0,
     val partsTotal: Int = 0
-) : WorkingBasedStatus(), Parcelable
+) : DfuProgress(), Parcelable
 
-internal object Validating : WorkingBasedStatus()
-internal object Completed : WorkingBasedStatus()
-internal object Aborted : WorkingBasedStatus()
-internal object Disconnecting : WorkingBasedStatus()
-internal object Disconnected : WorkingBasedStatus()
-internal data class Error(val message: String?) : WorkingBasedStatus()
+object Validating : DfuProgress()
+object Completed : DfuProgress()
+object Aborted : DfuProgress()
+object Disconnecting : DfuProgress()
+object Disconnected : DfuProgress()
+data class Error(val message: String?) : DfuProgress()

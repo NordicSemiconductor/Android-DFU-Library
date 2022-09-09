@@ -36,7 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import no.nordicsemi.android.common.theme.view.ProgressItemStatus
 import no.nordicsemi.android.dfu.profile.R
-import no.nordicsemi.android.dfu.profile.main.data.ProgressUpdate
+import no.nordicsemi.android.dfu.profile.main.data.Uploading
 
 internal sealed class DFUProgressViewEntity {
 
@@ -53,14 +53,14 @@ internal sealed class DFUProgressViewEntity {
             )
         )
 
-        fun createInstallingStage(progress: ProgressUpdate) = WorkingProgressViewEntity(
-                ProgressItemViewEntity(
-                    bootloaderStatus = ProgressItemStatus.SUCCESS,
-                    dfuStatus = ProgressItemStatus.SUCCESS,
-                    installationStatus = ProgressItemStatus.WORKING,
-                    progress = progress
-                )
+        fun createInstallingStage(progress: Uploading) = WorkingProgressViewEntity(
+            ProgressItemViewEntity(
+                bootloaderStatus = ProgressItemStatus.SUCCESS,
+                dfuStatus = ProgressItemStatus.SUCCESS,
+                installationStatus = ProgressItemStatus.WORKING,
+                progress = progress
             )
+        )
 
         fun createSuccessStage() = WorkingProgressViewEntity(
             ProgressItemViewEntity(
@@ -72,16 +72,16 @@ internal sealed class DFUProgressViewEntity {
         )
 
         fun ProgressItemViewEntity.createErrorStage(errorMessage: String?) = WorkingProgressViewEntity(
-                ProgressItemViewEntity(
-                    bootloaderStatus = bootloaderStatus.createErrorStatus(),
-                    dfuStatus = dfuStatus.createErrorStatus(),
-                    installationStatus = installationStatus.createErrorStatus(),
-                    resultStatus = ProgressItemStatus.ERROR,
-                    errorMessage = errorMessage
-                )
+            ProgressItemViewEntity(
+                bootloaderStatus = bootloaderStatus.createErrorStatus(),
+                dfuStatus = dfuStatus.createErrorStatus(),
+                installationStatus = installationStatus.createErrorStatus(),
+                resultStatus = ProgressItemStatus.ERROR,
+                errorMessage = errorMessage
             )
+        )
 
-        private fun ProgressItemStatus.createErrorStatus(): ProgressItemStatus = when (this) {
+        private fun ProgressItemStatus.createErrorStatus() = when (this) {
             ProgressItemStatus.SUCCESS -> ProgressItemStatus.SUCCESS
             else -> ProgressItemStatus.ERROR
         }
@@ -99,13 +99,13 @@ internal data class ProgressItemViewEntity(
     val dfuStatus: ProgressItemStatus = ProgressItemStatus.DISABLED,
     val installationStatus: ProgressItemStatus = ProgressItemStatus.DISABLED,
     val resultStatus: ProgressItemStatus = ProgressItemStatus.DISABLED,
-    val progress: ProgressUpdate = ProgressUpdate(),
+    val progress: Uploading = Uploading(),
     val errorMessage: String? = null
 ) {
     fun isRunning() = !isCompleted() && (
-           bootloaderStatus != ProgressItemStatus.DISABLED ||
-           dfuStatus != ProgressItemStatus.DISABLED ||
-           installationStatus == ProgressItemStatus.WORKING
+       bootloaderStatus != ProgressItemStatus.DISABLED ||
+       dfuStatus != ProgressItemStatus.DISABLED ||
+       installationStatus == ProgressItemStatus.WORKING
     )
 
     fun isCompleted() =

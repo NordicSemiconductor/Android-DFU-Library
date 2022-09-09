@@ -44,7 +44,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import no.nordicsemi.android.common.theme.view.*
 import no.nordicsemi.android.dfu.profile.R
-import no.nordicsemi.android.dfu.profile.main.data.ProgressUpdate
+import no.nordicsemi.android.dfu.profile.main.data.Uploading
 
 private val icon = Icons.Default.Upload
 
@@ -196,7 +196,7 @@ private fun ProgressItem(viewEntity: ProgressItemViewEntity) {
 }
 
 @Composable
-private fun ProgressUpdate.toLabel(): String {
+private fun Uploading.toLabel(): String {
     return if (partsTotal > 1) {
         stringResource(id = R.string.dfu_display_status_progress_update_parts, currentPart, partsTotal, progress)
     } else {

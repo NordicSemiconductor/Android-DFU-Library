@@ -41,30 +41,28 @@ import javax.inject.Singleton
 
 @Singleton
 internal class DFUProgressManager @Inject constructor(
-    @ApplicationContext
-    private val context: Context
+    @ApplicationContext private val context: Context
 ) : DfuProgressListenerAdapter() {
-
-    val status = MutableStateFlow<DFUData>(IdleStatus)
+    val status = MutableStateFlow<DfuState>(DfuState.Idle)
 
     override fun onDeviceConnecting(deviceAddress: String) {
-        status.value = WorkingStatus(Connecting)
+        status.value = DfuState.InProgress(Connecting)
     }
 
     override fun onDeviceConnected(deviceAddress: String) {
-        status.value = WorkingStatus(Connected)
+        status.value = DfuState.InProgress(Connected)
     }
 
     override fun onDfuProcessStarting(deviceAddress: String) {
-        status.value = WorkingStatus(Starting)
+        status.value = DfuState.InProgress(Starting)
     }
 
     override fun onDfuProcessStarted(deviceAddress: String) {
-        status.value = WorkingStatus(Started)
+        status.value = DfuState.InProgress(Started)
     }
 
     override fun onEnablingDfuMode(deviceAddress: String) {
-        status.value = WorkingStatus(EnablingDfu)
+        status.value = DfuState.InProgress(EnablingDfu)
     }
 
     override fun onProgressChanged(
@@ -75,27 +73,27 @@ internal class DFUProgressManager @Inject constructor(
         currentPart: Int,
         partsTotal: Int
     ) {
-        status.value = WorkingStatus(ProgressUpdate(percent, avgSpeed, currentPart, partsTotal))
+        status.value = DfuState.InProgress(Uploading(percent, avgSpeed, currentPart, partsTotal))
     }
 
     override fun onFirmwareValidating(deviceAddress: String) {
-        status.value = WorkingStatus(Validating)
+        status.value = DfuState.InProgress(Validating)
     }
 
     override fun onDeviceDisconnecting(deviceAddress: String?) {
-        status.value = WorkingStatus(Disconnecting)
+        status.value = DfuState.InProgress(Disconnecting)
     }
 
     override fun onDeviceDisconnected(deviceAddress: String) {
-        status.value = WorkingStatus(Disconnected)
+        status.value = DfuState.InProgress(Disconnected)
     }
 
     override fun onDfuCompleted(deviceAddress: String) {
-        status.value = WorkingStatus(Completed)
+        status.value = DfuState.InProgress(Completed)
     }
 
     override fun onDfuAborted(deviceAddress: String) {
-        status.value = WorkingStatus(Aborted)
+        status.value = DfuState.InProgress(Aborted)
     }
 
     override fun onError(
@@ -104,7 +102,7 @@ internal class DFUProgressManager @Inject constructor(
         errorType: Int,
         message: String?
     ) {
-        status.value = WorkingStatus(Error(message))
+        status.value = DfuState.InProgress(Error(message))
     }
 
     fun registerListener() {
@@ -116,6 +114,6 @@ internal class DFUProgressManager @Inject constructor(
     }
 
     fun release() {
-        status.value = IdleStatus
+        status.value = DfuState.Idle
     }
 }
