@@ -62,6 +62,10 @@ object DFUSuccessEvent : DFUResultEvent {
     override val eventName: String = "DFU_SUCCESS_RESULT"
 }
 
+object DFUAbortedEvent : DFUResultEvent {
+    override val eventName: String = "DFU_ABORTED_RESULT"
+}
+
 class DFUErrorEvent(
     private val errorMessage: String?
 ) : DFUResultEvent {

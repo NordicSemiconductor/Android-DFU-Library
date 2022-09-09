@@ -45,6 +45,7 @@ class DfuAnalytics @Inject constructor(
         when (event) {
             AppOpenEvent,
             HandleDeepLinkEvent,
+            DFUAbortedEvent,
             DFUSuccessEvent -> analytics.logEvent(event.eventName, null)
             InstallationStartedEvent -> analytics.logEvent(event.eventName, null)
             is DFUErrorEvent -> analytics.logEvent(event.eventName, event.createBundle())
