@@ -132,16 +132,16 @@ internal fun SettingsScreen() {
 
             SettingsButton(
                 stringResource(id = R.string.dfu_about_app),
-                stringResource(id = R.string.dfu_about_app_desc),
+                onClick = { onEvent(OnShowWelcomeClick) }
+            )
+
+            SettingsButton(
+                stringResource(id = R.string.dfu_about_dfu),
+                stringResource(id = R.string.dfu_about_dfu_desc),
                 onClick = { onEvent(OnAboutAppClick) }
             )
 
             AnalyticsPermissionSwitch()
-
-            SettingsButton(
-                stringResource(id = R.string.dfu_show_welcome_screen),
-                onClick = { onEvent(OnShowWelcomeClick) }
-            )
 
             Text(
                 text = stringResource(id = R.string.dfu_version, VERSION_NAME),

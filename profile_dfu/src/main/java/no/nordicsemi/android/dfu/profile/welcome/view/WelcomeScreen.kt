@@ -37,8 +37,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -47,11 +45,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import no.nordicsemi.android.common.theme.view.NordicAppBar
 import no.nordicsemi.android.dfu.profile.R
 import no.nordicsemi.android.dfu.profile.welcome.viewmodel.WelcomeViewModel
 
@@ -62,11 +60,15 @@ fun WelcomeScreen() {
 
     Box {
         Column {
-
             if (firstRun) {
-                WelcomeAppBar()
+                NordicAppBar(
+                    text = stringResource(R.string.dfu_welcome),
+                )
             } else {
-                WelcomeAppBar { viewModel.navigateUp() }
+                NordicAppBar(
+                    text = stringResource(R.string.dfu_about_app),
+                    onNavigationButtonClick = { viewModel.navigateUp() },
+                )
             }
 
             Column(
@@ -75,7 +77,6 @@ fun WelcomeScreen() {
                     .verticalScroll(rememberScrollState())
                     .padding(16.dp)
             ) {
-
                 Image(
                     painter = painterResource(id = R.drawable.dfu),
                     contentDescription = stringResource(id = R.string.dfu_explanation_image),
@@ -98,53 +99,17 @@ fun WelcomeScreen() {
             }
         }
 
-        ElevatedButton(
-            onClick = { viewModel.navigateUp() },
-            colors = ButtonDefaults.buttonColors(),
-            modifier = Modifier
-                .padding(16.dp)
-                .width(150.dp)
-                .align(Alignment.BottomCenter),
-        ) {
-            Text(text = stringResource(id = R.string.dfu_start))
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun WelcomeAppBar() {
-    SmallTopAppBar(
-        title = { Text(stringResource(id = R.string.dfu_welcome)) },
-        colors = TopAppBarDefaults.smallTopAppBarColors(
-            scrolledContainerColor = MaterialTheme.colorScheme.primary,
-            containerColor = colorResource(id = R.color.appBarColor),
-            titleContentColor = MaterialTheme.colorScheme.onPrimary,
-            actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
-            navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-        )
-    )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun WelcomeAppBar(onNavigateUpClick: () -> Unit) {
-    SmallTopAppBar(
-        title = { Text(stringResource(id = R.string.dfu_welcome)) },
-        colors = TopAppBarDefaults.smallTopAppBarColors(
-            scrolledContainerColor = MaterialTheme.colorScheme.primary,
-            containerColor = colorResource(id = R.color.appBarColor),
-            titleContentColor = MaterialTheme.colorScheme.onPrimary,
-            actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
-            navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-        ),
-        navigationIcon = {
-            IconButton(onClick = { onNavigateUpClick() }) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = stringResource(id = R.string.dfu_navigate_up)
-                )
+        if (firstRun) {
+            ElevatedButton(
+                onClick = { viewModel.navigateUp() },
+                colors = ButtonDefaults.buttonColors(),
+                modifier = Modifier
+                    .padding(16.dp)
+                    .width(150.dp)
+                    .align(Alignment.BottomCenter),
+            ) {
+                Text(text = stringResource(id = R.string.dfu_start))
             }
         }
-    )
+    }
 }

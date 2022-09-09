@@ -99,9 +99,9 @@
     <string name="dfu_settings_external_mcu_dfu_info">Enabling this option will prevent from jumping to the DFU Bootloader mode in case there is no DFU Version characteristic.</string>
 
     <string name="dfu_parse_int_error">Please provide integer value.</string>
-    <string name="dfu_show_welcome_screen">Show Welcome Screen</string>
-    <string name="dfu_about_app">About DFU</string>
-    <string name="dfu_about_app_desc">DFU documentation on Nordic\'s Infocenter.</string>
+    <string name="dfu_about_app">About the app</string>
+    <string name="dfu_about_dfu">About DFU</string>
+    <string name="dfu_about_dfu_desc">DFU documentation on Nordic\'s Infocenter.</string>
     <string name="dfu_welcome">Welcome</string>
     <string name="dfu_start">Start</string>
     <string name="dfu_explanation_image">Image describing firmware update flow.</string>
