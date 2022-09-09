@@ -40,10 +40,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
 class DFUFileManager @Inject constructor(
-    @ApplicationContext
-    private val context: Context
+    @ApplicationContext private val context: Context
 ) {
-
     private val TAG = "DFU_FILE_MANAGER"
 
     fun createFile(uri: Uri): ZipFile? {
@@ -68,7 +66,6 @@ class DFUFileManager @Inject constructor(
         val data = context.contentResolver.query(uri, null, null, null, null)
 
         return if (data != null && data.moveToNext()) {
-
             val displayNameIndex = data.getColumnIndex(MediaStore.MediaColumns.DISPLAY_NAME)
             val fileSizeIndex = data.getColumnIndex(MediaStore.MediaColumns.SIZE)
             val dataIndex = data.getColumnIndex(MediaStore.MediaColumns.DATA)
