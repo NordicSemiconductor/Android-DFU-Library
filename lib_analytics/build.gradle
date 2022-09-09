@@ -27,7 +27,7 @@ android {
 }
 
 dependencies {
-    implementation "no.nordicsemi.android.common:analytics:1.0.21"
+    implementation "no.nordicsemi.android.common:analytics:1.0.22"
 
     implementation 'com.google.dagger:hilt-android:2.43.2'
     kapt 'com.google.dagger:hilt-compiler:2.43.2'
