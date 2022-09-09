@@ -104,15 +104,19 @@ internal class DFUViewModel @Inject constructor(
                         analytics.logEvent(DFUSuccessEvent)
                     }
                     is Aborted -> {
-                        val currentProgressEntity = _state.value.progressViewEntity as WorkingProgressViewEntity
-                        val newStatus = currentProgressEntity.status.createErrorStage("Aborted")
-                        _state.value = _state.value.copy(progressViewEntity = newStatus)
+                        (_state.value.progressViewEntity as? WorkingProgressViewEntity)?.status
+                            ?.createErrorStage("Aborted")
+                            ?.also { progressEntityWithError ->
+                                _state.value = _state.value.copy(progressViewEntity = progressEntityWithError)
+                            }
                         analytics.logEvent(DFUAbortedEvent)
                     }
                     is Error -> {
-                        val currentProgressEntity = _state.value.progressViewEntity as WorkingProgressViewEntity
-                        val newStatus = currentProgressEntity.status.createErrorStage(status.message)
-                        _state.value = _state.value.copy(progressViewEntity = newStatus)
+                        (_state.value.progressViewEntity as? WorkingProgressViewEntity)?.status
+                            ?.createErrorStage(status.message)
+                            ?.also { progressEntityWithError ->
+                                _state.value = _state.value.copy(progressViewEntity = progressEntityWithError)
+                            }
                         analytics.logEvent(DFUErrorEvent(status.message))
                     }
                     else -> doNothing()
