@@ -173,45 +173,28 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		writeOpCode(mControlPointCharacteristic, OP_CODE_ENTER_BOOTLOADER, true);
 		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Jump to bootloader sent (Op Code = 1, Upload Mode = 4)");
 
+		final BluetoothGatt gatt = mGatt;
 		// The device will disconnect and now reset. Some devices don't disconnect gracefully,
 		// but reset instead. In that case, Android would assume disconnection after
-		// "supervision timeout" seconds, which may be 5 more seconds. If the device will
-		// use a different address in bootloader mode, there is no reason to wait for that.
-		// The library will immediately start scanning for the device advertising in
-		// bootloader mode and connect to it.
+		// "supervision timeout" seconds, which may be 5 more seconds.
 		final boolean forceScanning = intent.getBooleanExtra(DfuBaseService.EXTRA_FORCE_SCANNING_FOR_BOOTLOADER_IN_LEGACY_DFU, false);
-		if (/* Bootloader from SDK 6.1 may use incremented address, see Pull request #45 */ !forceScanning && mVersion > 0) {
+		if (/* Bootloader from SDK 6.1 may use incremented address, see Pull request #45 */ forceScanning || mVersion == 0) {
+			// If the device will use a different address in bootloader mode, there is no
+			// reason to wait for that. The library will immediately start scanning for the
+			// device advertising in bootloader mode and connect to it.
+			// On some devices, e.g OnePlus 5 or Moto G60 the device was failing to connect to
+			// the bootloader if not previously disconnected.
+			// https://devzone.nordicsemi.com/support/278664
+			mService.disconnect(gatt);
+		} else {
+			// However, if the device is expected to use the same address, we need to wait
+			// for the disconnection. Otherwise, a new connectGatt would reconnect before
+			// disconnection and subsequent operations would fail.
 			mService.waitUntilDisconnected();
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Disconnected by the remote device");
 		}
-
-		/*
-		 * We would like to avoid using the hack with refreshing the device (refresh method is not in the public API). The refresh method clears the cached services and causes a
-		 * service discovery afterwards (when connected). Android, however, does it itself when receive the Service Changed indication when bonded.
-		 * In case of unpaired device we may either refresh the services manually (using the hack), or include the Service Changed characteristic.
-		 *
-		 * According to Bluetooth Core 4.0 (and 4.1) specification:
-		 *
-		 * [Vol. 3, Part G, 2.5.2 - Attribute Caching]
-		 * Note: Clients without a trusted relationship must perform service discovery on each connection if the server supports the Services Changed characteristic.
-		 *
-		 * However, as up to Android 7 the system does NOT respect this requirement and servers are cached for every device, even if Service Changed is enabled -> Android BUG?
-		 * For bonded devices Android performs service re-discovery when SC indication is received.
-		 *
-		 * Android 8 and 9 never cache services of not bonded devices.
-		 */
-		final BluetoothGatt gatt = mGatt;
-		final BluetoothGattService gas = gatt.getService(GENERIC_ATTRIBUTE_SERVICE_UUID);
-		final boolean hasServiceChanged = gas != null && gas.getCharacteristic(SERVICE_CHANGED_UUID) != null;
-		mService.refreshDeviceCache(gatt, !hasServiceChanged);
-
-		// Close the device
-		mService.close(gatt);
-
-		logi("Starting service that will connect to the DFU bootloader");
-		final Intent newIntent = new Intent();
-		newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
-		restartService(newIntent, /* scan only for SDK 6.1, see Pull request #45 */ forceScanning || mVersion == 0);
+		logi("Device disconnected");
+		finalize(intent, false, /* scan only for SDK 6.1, see Pull request #45 */ forceScanning || mVersion == 0);
 	}
 
 	/**
