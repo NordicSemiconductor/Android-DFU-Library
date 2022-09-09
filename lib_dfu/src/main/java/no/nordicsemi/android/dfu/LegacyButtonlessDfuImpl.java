@@ -71,13 +71,6 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 
 		mProgressInfo.setProgress(DfuBaseService.PROGRESS_STARTING);
 
-		// Add one second delay to avoid the traffic jam before the DFU mode is enabled
-		// Related:
-		//   issue:        https://github.com/NordicSemiconductor/Android-DFU-Library/issues/10
-		//   pull request: https://github.com/NordicSemiconductor/Android-DFU-Library/pull/12
-		mService.waitFor(1000);
-		// End
-
 		/*
 		 * Read the version number if available.
 		 * The DFU Version characteristic has been added in SDK 7.0.
@@ -160,12 +153,6 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		// Enable notifications
 		enableCCCD(mControlPointCharacteristic, NOTIFICATIONS);
 		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Notifications enabled");
-
-		// Wait a second here before going further
-		// Related:
-		//   pull request: https://github.com/NordicSemiconductor/Android-DFU-Library/pull/11
-		mService.waitFor(1000);
-		// End
 
 		// Send 'jump to bootloader command' (Start DFU)
 		mProgressInfo.setProgress(DfuBaseService.PROGRESS_ENABLING_DFU_MODE);

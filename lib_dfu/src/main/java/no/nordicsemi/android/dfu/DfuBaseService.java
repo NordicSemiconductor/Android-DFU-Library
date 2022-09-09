@@ -1289,13 +1289,6 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 				return;
 			}
 
-			if (!firstRun) {
-				// Wait a second... If we were connected before it's good to give some time before we start reconnecting.
-				waitFor(1000);
-				// Looks like a second is not enough. The ACL_DISCONNECTED broadcast sometimes comes later (on Android 7.0)
-				waitFor(1000);
-			}
-
 			mProgressInfo = new DfuProgressInfo(this);
 
 			if (mAborted) {

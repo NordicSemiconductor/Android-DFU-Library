@@ -454,7 +454,6 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		 * To create bond with the new application set the EXTRA_RESTORE_BOND extra to true.
 		 * In case the bond information is copied to the new application the new bonding is not required.
 		 */
-		boolean alreadyWaited = false;
 		if (mGatt.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
 			final boolean restoreBond = intent.getBooleanExtra(DfuBaseService.EXTRA_RESTORE_BOND, false);
 			if (restoreBond || !keepBond) {
@@ -464,14 +463,12 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 				// Give some time for removing the bond information. 300 ms was to short,
                 // let's set it to 2 seconds just to be sure.
 				mService.waitFor(2000);
-				alreadyWaited = true;
 			}
 
 			if (restoreBond && (mFileType & DfuBaseService.TYPE_APPLICATION) > 0) {
 				// Restore pairing when application was updated.
 				if (!createBond())
 					logw("Creating bond failed");
-				alreadyWaited = false;
 			}
 		}
 
@@ -483,9 +480,6 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		 * In the first case we do not send PROGRESS_COMPLETED notification.
 		 */
 		if (mProgressInfo.isLastPart()) {
-			// Delay this event a little bit. Android needs some time to prepare for reconnection.
-			if (!alreadyWaited)
-				mService.waitFor(1400);
 			mProgressInfo.setProgress(DfuBaseService.PROGRESS_COMPLETED);
 		} else {
 			/*
