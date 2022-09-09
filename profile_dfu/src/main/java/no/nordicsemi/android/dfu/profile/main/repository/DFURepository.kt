@@ -32,7 +32,9 @@
 package no.nordicsemi.android.dfu.profile.main.repository
 
 import android.net.Uri
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.*
 import no.nordicsemi.android.dfu.DfuServiceController
 import no.nordicsemi.android.dfu.profile.main.data.*
@@ -49,26 +51,24 @@ internal class DFURepository @Inject constructor(
     private val progressManager: DFUProgressManager,
 ) {
 
-    private val _data = MutableStateFlow<DFUData>(IdleStatus)
-    val data: StateFlow<DFUData> = _data.asStateFlow()
+    private val _data = MutableStateFlow<DfuState>(DfuState.Idle)
+    val data: StateFlow<DfuState> = _data.asStateFlow()
 
     var device: DiscoveredBluetoothDevice? = null
-    var zipFile: ZipFile? = null
-    var dfuServiceController: DfuServiceController? = null
+    private var zipFile: ZipFile? = null
+    private var dfuServiceController: DfuServiceController? = null
 
-    fun setZipFile(file: Uri): ZipFile? {
-        return fileManger.createFile(file)?.also {
-            zipFile = it
-        }
-    }
+    fun setZipFile(file: Uri) = fileManger.createFile(file)
+        ?.also { zipFile = it }
 
     fun launch(settings: DFUSettings) {
         progressManager.registerListener()
         dfuServiceController = dfuManager.install(zipFile!!, device!!, settings)
 
-        progressManager.status.onEach {
-            _data.value = it
-        }.launchIn(GlobalScope)
+        val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+        progressManager.status
+            .onEach { _data.value = it }
+            .launchIn(scope)
     }
 
     fun hasBeenInitialized(): Boolean {
