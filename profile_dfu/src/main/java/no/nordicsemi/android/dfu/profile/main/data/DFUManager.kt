@@ -75,7 +75,9 @@ class DFUManager @Inject constructor(
             }
 
             setForceScanningForNewAddressInLegacyDfu(settings.forceScanningInLegacyDfu)
-            setPrepareDataObjectDelay(400)
+            setPrepareDataObjectDelay(settings.prepareDataObjectDelay.toLong())
+            setRebootTime(settings.rebootTime.toLong())
+            setScanTimeout(settings.scanTimeout.toLong())
             setUnsafeExperimentalButtonlessServiceInSecureDfuEnabled(true)
 
             setPacketsReceiptNotificationsEnabled(settings.packetsReceiptNotification)

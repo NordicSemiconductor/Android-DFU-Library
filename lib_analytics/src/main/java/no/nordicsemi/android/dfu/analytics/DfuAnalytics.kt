@@ -45,16 +45,11 @@ class DfuAnalytics @Inject constructor(
         when (event) {
             AppOpenEvent,
             HandleDeepLinkEvent,
+            InstallationStartedEvent,
             DFUAbortedEvent,
-            DFUSuccessEvent -> analytics.logEvent(event.eventName, null)
-            InstallationStartedEvent -> analytics.logEvent(event.eventName, null)
+            DFUSuccessEvent -> analytics.logEvent(event.eventName)
             is DFUErrorEvent -> analytics.logEvent(event.eventName, event.createBundle())
-            is DisableResumeSettingsEvent -> analytics.logEvent(event.eventName, event.createBundle())
-            is ExternalMCUSettingsEvent -> analytics.logEvent(event.eventName, event.createBundle())
-            is ForceScanningSettingsEvent -> analytics.logEvent(event.eventName, event.createBundle())
-            is KeepBondSettingsEvent -> analytics.logEvent(event.eventName, event.createBundle())
-            is NumberOfPacketsSettingsEvent -> analytics.logEvent(event.eventName, event.createBundle())
-            is PacketsReceiptNotificationSettingsEvent -> analytics.logEvent(event.eventName, event.createBundle())
+            is DFUSettingsChangeEvent -> analytics.logEvent(event.eventName, event.createBundle())
         }
     }
 }

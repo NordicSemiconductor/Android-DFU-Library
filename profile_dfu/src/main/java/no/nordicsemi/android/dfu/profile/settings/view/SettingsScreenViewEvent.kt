@@ -37,6 +37,12 @@ object OnPacketsReceiptNotificationSwitchClick : SettingsScreenViewEvent
 
 data class OnNumberOfPocketsChange(val numberOfPockets: Int) : SettingsScreenViewEvent
 
+data class OnPrepareDataObjectDelayChange(val delay: Int) : SettingsScreenViewEvent
+
+data class OnRebootTimeChange(val time: Int) : SettingsScreenViewEvent
+
+data class OnScanTimeoutChange(val timeout: Int) : SettingsScreenViewEvent
+
 object OnDisableResumeSwitchClick : SettingsScreenViewEvent
 
 object OnForceScanningAddressesSwitchClick : SettingsScreenViewEvent
@@ -45,8 +51,8 @@ object OnKeepBondInformationSwitchClick : SettingsScreenViewEvent
 
 object OnExternalMcuDfuSwitchClick : SettingsScreenViewEvent
 
-object OnAboutAppClick : SettingsScreenViewEvent
+object OnAboutDfuClick : SettingsScreenViewEvent
 
-object OnShowWelcomeClick : SettingsScreenViewEvent
+object OnAboutAppClick : SettingsScreenViewEvent
 
 object NavigateUp : SettingsScreenViewEvent

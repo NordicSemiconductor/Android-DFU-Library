@@ -37,7 +37,7 @@ import androidx.core.os.bundleOf
 private object  FirebaseParam {
     const val MESSAGE = "message"
     const val IS_ENABLED = "is_enabled"
-    const val NUMBER_OF_PACKETS = "number_of_packets"
+    const val VALUE = "value"
 }
 
 sealed interface DfuEvent {
@@ -89,7 +89,25 @@ class PacketsReceiptNotificationSettingsEvent(private val isEnabled: Boolean) : 
 class NumberOfPacketsSettingsEvent(private val numberOfPackets: Int) : DFUSettingsChangeEvent {
     override val eventName: String = "NUMBER_OF_PACKETS_EVENT"
 
-    override fun createBundle() = bundleOf(FirebaseParam.NUMBER_OF_PACKETS to numberOfPackets)
+    override fun createBundle() = bundleOf(FirebaseParam.VALUE to numberOfPackets)
+}
+
+class PrepareDataObjectDelaySettingsEvent(private val delay: Int) : DFUSettingsChangeEvent {
+    override val eventName: String = "PREPARE_DATA_OBJECT_DELAY_EVENT"
+
+    override fun createBundle() = bundleOf(FirebaseParam.VALUE to delay)
+}
+
+class RebootTimeSettingsEvent(private val rebootTime: Int) : DFUSettingsChangeEvent {
+    override val eventName: String = "REBOOT_TIME_EVENT"
+
+    override fun createBundle() = bundleOf(FirebaseParam.VALUE to rebootTime)
+}
+
+class ScanTimeoutSettingsEvent(private val scanTimeout: Int) : DFUSettingsChangeEvent {
+    override val eventName: String = "SCAN_TIMEOUT_EVENT"
+
+    override fun createBundle() = bundleOf(FirebaseParam.VALUE to scanTimeout)
 }
 
 class KeepBondSettingsEvent(private val isEnabled: Boolean) : DFUSettingsChangeEvent {

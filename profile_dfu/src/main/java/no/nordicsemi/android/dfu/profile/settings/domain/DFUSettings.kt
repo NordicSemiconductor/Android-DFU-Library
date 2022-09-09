@@ -43,6 +43,9 @@ data class DFUSettings(
     val keepBondInformation: Boolean = false,
     val externalMcuDfu: Boolean = false,
     val disableResume: Boolean = false,
+    val prepareDataObjectDelay: Int = 400, // ms
+    val rebootTime: Int = 0, // ms
+    val scanTimeout: Int = 2_000, // ms
     val forceScanningInLegacyDfu: Boolean = false,
     val showWelcomeScreen: Boolean = true
 ) : Parcelable

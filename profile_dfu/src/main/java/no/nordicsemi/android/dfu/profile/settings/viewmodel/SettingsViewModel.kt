@@ -59,14 +59,17 @@ class SettingsViewModel @Inject constructor(
     fun onEvent(event: SettingsScreenViewEvent) {
         when (event) {
             NavigateUp -> navigationManager.navigateUp()
+            OnAboutAppClick -> navigationManager.navigateTo(DfuWelcomeScreen)
+            OnAboutDfuClick -> navigationManager.openLink(INFOCENTER_LINK)
             OnExternalMcuDfuSwitchClick -> onExternalMcuDfuSwitchClick()
             OnKeepBondInformationSwitchClick -> onKeepBondSwitchClick()
             OnPacketsReceiptNotificationSwitchClick -> onPacketsReceiptNotificationSwitchClick()
-            OnAboutAppClick -> navigationManager.openLink(INFOCENTER_LINK)
             OnDisableResumeSwitchClick -> onDisableResumeSwitchClick()
             OnForceScanningAddressesSwitchClick -> onForceScanningAddressesSwitchClick()
-            OnShowWelcomeClick -> navigationManager.navigateTo(DfuWelcomeScreen)
             is OnNumberOfPocketsChange -> onNumberOfPocketsChange(event.numberOfPockets)
+            is OnPrepareDataObjectDelayChange -> onPrepareDataObjectDelayChange(event.delay)
+            is OnRebootTimeChange -> onRebootTimeChange(event.time)
+            is OnScanTimeoutChange -> onScanTimeoutChange(event.timeout)
         }
     }
 
@@ -122,4 +125,30 @@ class SettingsViewModel @Inject constructor(
         }
         analytics.logEvent(NumberOfPacketsSettingsEvent(newSettings.numberOfPackets))
     }
+
+    private fun onPrepareDataObjectDelayChange(delay: Int) {
+        val newSettings = state.value.copy(prepareDataObjectDelay = delay)
+        viewModelScope.launch {
+            repository.storeSettings(newSettings)
+        }
+        analytics.logEvent(PrepareDataObjectDelaySettingsEvent(newSettings.prepareDataObjectDelay))
+    }
+
+    private fun onRebootTimeChange(rebootTime: Int) {
+        val newSettings = state.value.copy(rebootTime = rebootTime)
+        viewModelScope.launch {
+            repository.storeSettings(newSettings)
+        }
+        analytics.logEvent(RebootTimeSettingsEvent(newSettings.rebootTime))
+    }
+
+    private fun onScanTimeoutChange(scanTimeout: Int) {
+        val newSettings = state.value.copy(scanTimeout = scanTimeout)
+        viewModelScope.launch {
+            repository.storeSettings(newSettings)
+        }
+        analytics.logEvent(ScanTimeoutSettingsEvent(newSettings.scanTimeout))
+    }
+
+
 }

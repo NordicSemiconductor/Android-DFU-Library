@@ -90,6 +90,24 @@ internal fun SettingsScreen() {
                 enabled = state.packetsReceiptNotification,
             )
 
+            SettingsSlider(
+                text = stringResource(id = R.string.dfu_settings_reboot_time),
+                description = stringResource(id = R.string.dfu_settings_reboot_time_info),
+                value = state.rebootTime,
+                valueRange = 0..5_000,
+                stepInMilliseconds = 1_000, // 1 second
+                onChange = { onEvent(OnRebootTimeChange(it)) }
+            )
+
+            SettingsSlider(
+                text = stringResource(id = R.string.dfu_settings_scan_timeout),
+                description = stringResource(id = R.string.dfu_settings_scan_timeout_info),
+                value = state.scanTimeout,
+                valueRange = 1_000..10_000,
+                stepInMilliseconds = 1_000, // 1 second
+                onChange = { onEvent(OnScanTimeoutChange(it)) }
+            )
+
             Spacer(modifier = Modifier.size(16.dp))
 
             Headline(stringResource(id = R.string.dfu_settings_headline_secure_dfu))
@@ -99,6 +117,15 @@ internal fun SettingsScreen() {
                 stringResource(id = R.string.dfu_settings_disable_resume_info),
                 state.disableResume,
                 onClick = { onEvent(OnDisableResumeSwitchClick) }
+            )
+            
+            SettingsSlider(
+                text = stringResource(id = R.string.dfu_settings_prepare_data_object_delay),
+                description = stringResource(id = R.string.dfu_settings_prepare_data_object_delay_info),
+                value = state.prepareDataObjectDelay,
+                valueRange = 0..500,
+                stepInMilliseconds = 100, // 0.1 seconds
+                onChange = { onEvent(OnPrepareDataObjectDelayChange(it)) }
             )
 
             Spacer(modifier = Modifier.size(32.dp))
@@ -132,13 +159,13 @@ internal fun SettingsScreen() {
 
             SettingsButton(
                 stringResource(id = R.string.dfu_about_app),
-                onClick = { onEvent(OnShowWelcomeClick) }
+                onClick = { onEvent(OnAboutAppClick) }
             )
 
             SettingsButton(
                 stringResource(id = R.string.dfu_about_dfu),
                 stringResource(id = R.string.dfu_about_dfu_desc),
-                onClick = { onEvent(OnAboutAppClick) }
+                onClick = { onEvent(OnAboutDfuClick) }
             )
 
             AnalyticsPermissionSwitch()
@@ -198,6 +225,51 @@ private fun SettingsSwitch(
         }
 
         Checkbox(checked = isChecked, onCheckedChange = { onClick() })
+    }
+}
+
+@Composable
+private fun SettingsSlider(
+    text: String,
+    description: String?,
+    value: Int,
+    valueRange: IntRange,
+    stepInMilliseconds: Int,
+    onChange: (Int) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.titleLarge,
+        )
+
+        description?.let {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Slider(
+                value = value.toFloat() / stepInMilliseconds,
+                valueRange = valueRange.first.toFloat() / stepInMilliseconds..valueRange.last.toFloat() / stepInMilliseconds,
+                onValueChange = { onChange(it.toInt() * stepInMilliseconds) },
+                steps = (valueRange.last - valueRange.first) / stepInMilliseconds,
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                text = stringResource(id = R.string.dfu_settings_time, value),
+                textAlign = TextAlign.End,
+                modifier = Modifier.width(80.dp)
+            )
+        }
     }
 }
 

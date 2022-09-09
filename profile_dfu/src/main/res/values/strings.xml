@@ -84,6 +84,13 @@
     MAC address.\n\nChanging this requires modifying the DFU bootloader or the Buttonless Service implementation on the device.</string>
     <string name="dfu_settings_disable_resume">Disable resume</string>
     <string name="dfu_settings_disable_resume_info">This options allows to disable the resume feature in Secure DFU.</string>
+    <string name="dfu_settings_prepare_data_object_delay">Prepare object delay</string>
+    <string name="dfu_settings_prepare_data_object_delay_info">The time required by the DFU bootloader to save the data object in flash memory.</string>
+    <string name="dfu_settings_reboot_time">Reboot time</string>
+    <string name="dfu_settings_time">%d ms</string>
+    <string name="dfu_settings_reboot_time_info">The time the device needs to reboot into the DFU bootloader mode.</string>
+    <string name="dfu_settings_scan_timeout">Scan timeout</string>
+    <string name="dfu_settings_scan_timeout_info">The time the app will scan for the device after it switches to DFU bootloader mode.</string>
     <string name="dfu_settings_number_of_pockets">Number of packets</string>
     <string name="dfu_settings_headline_secure_dfu">Secure DFU option</string>
     <string name="dfu_settings_headline_legacy_dfu">Legacy DFU</string>
