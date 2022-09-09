@@ -32,6 +32,7 @@
 package no.nordicsemi.android.dfu.analytics
 
 import android.os.Bundle
+import androidx.core.os.bundleOf
 
 private object  FirebaseParam {
     const val MESSAGE = "message"
@@ -66,75 +67,47 @@ class DFUErrorEvent(
 ) : DFUResultEvent {
     override val eventName: String = "DFU_ERROR_RESULT"
 
-    fun createBundle(): Bundle? {
-        return errorMessage?.let {
-            Bundle().apply {
-                putString(FirebaseParam.MESSAGE, it)
-            }
-        }
+    fun createBundle() = errorMessage?.let { message ->
+        bundleOf(FirebaseParam.MESSAGE to message)
     }
 }
 
 sealed interface DFUSettingsChangeEvent : DfuEvent {
-    fun createBundle(): Bundle?
+    fun createBundle(): Bundle
 }
 
 class PacketsReceiptNotificationSettingsEvent(private val isEnabled: Boolean) : DFUSettingsChangeEvent {
     override val eventName: String = "PACKETS_RECEIPT_CHANGE_EVENT"
 
-    override fun createBundle(): Bundle {
-        return Bundle().apply {
-            putBoolean(FirebaseParam.IS_ENABLED, isEnabled)
-        }
-    }
+    override fun createBundle() = bundleOf(FirebaseParam.IS_ENABLED to isEnabled)
 }
 
 class NumberOfPacketsSettingsEvent(private val numberOfPackets: Int) : DFUSettingsChangeEvent {
     override val eventName: String = "NUMBER_OF_PACKETS_EVENT"
 
-    override fun createBundle(): Bundle {
-        return Bundle().apply {
-            putInt(FirebaseParam.NUMBER_OF_PACKETS, numberOfPackets)
-        }
-    }
+    override fun createBundle() = bundleOf(FirebaseParam.NUMBER_OF_PACKETS to numberOfPackets)
 }
 
 class KeepBondSettingsEvent(private val isEnabled: Boolean) : DFUSettingsChangeEvent {
     override val eventName: String = "KEEP_BOND_EVENT"
 
-    override fun createBundle(): Bundle {
-        return Bundle().apply {
-            putBoolean(FirebaseParam.IS_ENABLED, isEnabled)
-        }
-    }
+    override fun createBundle() = bundleOf(FirebaseParam.IS_ENABLED to isEnabled)
 }
 
 class ExternalMCUSettingsEvent(private val isEnabled: Boolean) : DFUSettingsChangeEvent {
     override val eventName: String = "EXTERNAL_MCU_EVENT"
 
-    override fun createBundle(): Bundle {
-        return Bundle().apply {
-            putBoolean(FirebaseParam.IS_ENABLED, isEnabled)
-        }
-    }
+    override fun createBundle() = bundleOf(FirebaseParam.IS_ENABLED to isEnabled)
 }
 
 class DisableResumeSettingsEvent(private val isEnabled: Boolean) : DFUSettingsChangeEvent {
     override val eventName: String = "DISABLE_RESUME_EVENT"
 
-    override fun createBundle(): Bundle {
-        return Bundle().apply {
-            putBoolean(FirebaseParam.IS_ENABLED, isEnabled)
-        }
-    }
+    override fun createBundle() = bundleOf(FirebaseParam.IS_ENABLED to isEnabled)
 }
 
 class ForceScanningSettingsEvent(private val isEnabled: Boolean) : DFUSettingsChangeEvent {
     override val eventName: String = "FORCE_SCANNING_EVENT"
 
-    override fun createBundle(): Bundle {
-        return Bundle().apply {
-            putBoolean(FirebaseParam.IS_ENABLED, isEnabled)
-        }
-    }
+    override fun createBundle() = bundleOf(FirebaseParam.IS_ENABLED to isEnabled)
 }
