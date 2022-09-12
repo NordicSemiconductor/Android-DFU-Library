@@ -84,11 +84,11 @@
     <string name="dfu_settings_force_scanning_info">Forces scanning for DFU bootloader. By default, the DFU bootloader advertises directly with the same
     MAC address.\n\nChanging this requires modifying the DFU bootloader or the Buttonless Service implementation on the device.</string>
     <string name="dfu_settings_disable_resume">Disable resume</string>
-    <string name="dfu_settings_disable_resume_info">This options allows to disable the resume feature in Secure DFU.</string>
+    <string name="dfu_settings_disable_resume_info">When the resume feature is disabled the app will not try to resume previously interrupted update.</string>
     <string name="dfu_settings_prepare_data_object_delay">Prepare object delay</string>
-    <string name="dfu_settings_prepare_data_object_delay_info">The time required by the DFU bootloader to save the data object in flash memory.</string>
+    <string name="dfu_settings_prepare_data_object_delay_info">The time required by the DFU bootloader to save the data object in flash memory. Shorter delays will increase upload speed, but may cause issues on some devices.</string>
     <string name="dfu_settings_reboot_time">Reboot time</string>
-    <string name="dfu_settings_reboot_time_info">The time the device needs to reboot into the DFU bootloader mode.</string>
+    <string name="dfu_settings_reboot_time_info">The time the device needs to reboot into the DFU bootloader mode. The app will delay scanning for the bootloader.</string>
     <string name="dfu_settings_scan_timeout">Scan timeout</string>
     <string name="dfu_settings_scan_timeout_info">The time the app will scan for the device after it switches to DFU bootloader mode.</string>
     <string name="dfu_settings_number_of_pockets">Number of packets</string>
