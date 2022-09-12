@@ -56,6 +56,10 @@ object HandleDeepLinkEvent : DfuEvent {
     override val eventName: String = "HANDLE_DEEP_LINK_EVENT"
 }
 
+object ResetSettingsEvent: DfuEvent {
+    override val eventName: String = "SETTINGS_RESET"
+}
+
 sealed interface DFUResultEvent : DfuEvent
 
 object DFUSuccessEvent : DFUResultEvent {

@@ -31,6 +31,8 @@
 
 package no.nordicsemi.android.dfu.profile.settings.view
 
+import no.nordicsemi.android.dfu.profile.main.view.DFUViewEvent
+
 sealed interface SettingsScreenViewEvent
 
 object OnPacketsReceiptNotificationSwitchClick : SettingsScreenViewEvent
@@ -56,3 +58,5 @@ object OnAboutDfuClick : SettingsScreenViewEvent
 object OnAboutAppClick : SettingsScreenViewEvent
 
 object NavigateUp : SettingsScreenViewEvent
+
+object OnResetButtonClick : SettingsScreenViewEvent

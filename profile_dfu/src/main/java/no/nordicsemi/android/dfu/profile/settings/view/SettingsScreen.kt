@@ -36,6 +36,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Backup
+import androidx.compose.material.icons.outlined.Restore
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.SettingsBackupRestore
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -50,6 +55,7 @@ import no.nordicsemi.android.common.analytics.view.AnalyticsPermissionSwitch
 import no.nordicsemi.android.common.theme.view.NordicAppBar
 import no.nordicsemi.android.dfu.BuildConfig.VERSION_NAME
 import no.nordicsemi.android.dfu.profile.R
+import no.nordicsemi.android.dfu.profile.main.view.OnSettingsButtonClick
 import no.nordicsemi.android.dfu.profile.settings.viewmodel.SettingsViewModel
 
 @Composable
@@ -70,6 +76,14 @@ internal fun SettingsScreen() {
         NordicAppBar(
             text = stringResource(R.string.dfu_settings),
             onNavigationButtonClick = { onEvent(NavigateUp) },
+            actions = {
+                IconButton(onClick = { onEvent(OnResetButtonClick) }) {
+                    Icon(
+                        imageVector = Icons.Outlined.SettingsBackupRestore,
+                        contentDescription = stringResource(id = R.string.dfu_settings_reset)
+                    )
+                }
+            }
         )
 
         // Scrollable Column

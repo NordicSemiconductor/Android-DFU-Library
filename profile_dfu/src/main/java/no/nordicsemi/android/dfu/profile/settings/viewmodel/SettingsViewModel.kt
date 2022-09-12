@@ -59,6 +59,7 @@ class SettingsViewModel @Inject constructor(
     fun onEvent(event: SettingsScreenViewEvent) {
         when (event) {
             NavigateUp -> navigationManager.navigateUp()
+            OnResetButtonClick -> restoreDefaultSettings()
             OnAboutAppClick -> navigationManager.navigateTo(DfuWelcomeScreen)
             OnAboutDfuClick -> navigationManager.openLink(INFOCENTER_LINK)
             OnExternalMcuDfuSwitchClick -> onExternalMcuDfuSwitchClick()
@@ -71,6 +72,13 @@ class SettingsViewModel @Inject constructor(
             is OnRebootTimeChange -> onRebootTimeChange(event.time)
             is OnScanTimeoutChange -> onScanTimeoutChange(event.timeout)
         }
+    }
+
+    private fun restoreDefaultSettings() {
+        viewModelScope.launch {
+            repository.storeSettings(DFUSettings().copy(showWelcomeScreen = false))
+        }
+        analytics.logEvent(ResetSettingsEvent)
     }
 
     private fun onExternalMcuDfuSwitchClick() {
