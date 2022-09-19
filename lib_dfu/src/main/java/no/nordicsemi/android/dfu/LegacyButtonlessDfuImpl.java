@@ -231,6 +231,10 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		if (mError != 0)
 			throw new DfuException("Unable to read version number", mError);
 
+		// The Version is encoded as UInt16
+		if (characteristic.getValue() == null || characteristic.getValue().length < 2)
+			return 0;
+
 		// The version is a 16-bit unsigned int
 		return characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 0);
 	}
