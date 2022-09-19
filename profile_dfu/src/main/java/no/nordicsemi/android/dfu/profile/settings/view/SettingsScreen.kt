@@ -37,9 +37,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Backup
-import androidx.compose.material.icons.outlined.Restore
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.SettingsBackupRestore
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -55,7 +52,6 @@ import no.nordicsemi.android.common.analytics.view.AnalyticsPermissionSwitch
 import no.nordicsemi.android.common.theme.view.NordicAppBar
 import no.nordicsemi.android.dfu.BuildConfig.VERSION_NAME
 import no.nordicsemi.android.dfu.profile.R
-import no.nordicsemi.android.dfu.profile.main.view.OnSettingsButtonClick
 import no.nordicsemi.android.dfu.profile.settings.viewmodel.SettingsViewModel
 
 @Composable
@@ -271,15 +267,17 @@ private fun SettingsSlider(
         Row(
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            var currentValue by remember(value) { mutableStateOf(value) }
             Slider(
-                value = value.toFloat() / stepInMilliseconds,
+                value = currentValue.toFloat() / stepInMilliseconds,
                 valueRange = valueRange.first.toFloat() / stepInMilliseconds..valueRange.last.toFloat() / stepInMilliseconds,
-                onValueChange = { onChange(it.toInt() * stepInMilliseconds) },
-                steps = (valueRange.last - valueRange.first) / stepInMilliseconds,
+                onValueChange = { currentValue = (it + 0.1F).toInt() * stepInMilliseconds },
+                onValueChangeFinished = { onChange(currentValue) },
+                steps = (valueRange.last - valueRange.first) / stepInMilliseconds - 1,
                 modifier = Modifier.weight(1f)
             )
             Text(
-                text = stringResource(id = R.string.dfu_settings_time, value),
+                text = stringResource(id = R.string.dfu_settings_time, currentValue),
                 textAlign = TextAlign.End,
                 modifier = Modifier.width(80.dp)
             )
