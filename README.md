@@ -35,6 +35,11 @@ Link format: ```https://www.nordicsemi.com/dfu/?file=link_to_file```
 
 > Note: Keep in mind to replace '&' with '%26' in the `link_to_file`.
 
+### nRF Logger integration
+
+During DFU process the app creates logs which can be shown in the [nRF Logger](https://play.google.com/store/apps/details?id=no.nordicsemi.android.log) app in runtime.
+The logger app needs to be installed before starting the DFU process. Use the Logger icon (next to Settings icon) to open the logs session in nRF Logger.
+
 # Library
 
 The *lib_dfu* module contains the source code of the DFU library for Android.
