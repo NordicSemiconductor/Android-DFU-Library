@@ -41,11 +41,8 @@ sealed class DfuState {
 
 sealed class DfuProgress
 
-object Connecting : DfuProgress()
-object Connected : DfuProgress()
 object Starting : DfuProgress()
-object Started : DfuProgress()
-object EnablingDfu : DfuProgress()
+object InitializingDFU : DfuProgress()
 
 @Parcelize
 data class Uploading(
@@ -55,9 +52,6 @@ data class Uploading(
     val partsTotal: Int = 0
 ) : DfuProgress(), Parcelable
 
-object Validating : DfuProgress()
 object Completed : DfuProgress()
 object Aborted : DfuProgress()
-object Disconnecting : DfuProgress()
-object Disconnected : DfuProgress()
 data class Error(val message: String?) : DfuProgress()

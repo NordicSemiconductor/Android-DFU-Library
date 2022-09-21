@@ -45,24 +45,8 @@ internal class DFUProgressManager @Inject constructor(
 ) : DfuProgressListenerAdapter() {
     val status = MutableStateFlow<DfuState>(DfuState.Idle)
 
-    override fun onDeviceConnecting(deviceAddress: String) {
-        status.value = DfuState.InProgress(Connecting)
-    }
-
-    override fun onDeviceConnected(deviceAddress: String) {
-        status.value = DfuState.InProgress(Connected)
-    }
-
-    override fun onDfuProcessStarting(deviceAddress: String) {
-        status.value = DfuState.InProgress(Starting)
-    }
-
-    override fun onDfuProcessStarted(deviceAddress: String) {
-        status.value = DfuState.InProgress(Started)
-    }
-
     override fun onEnablingDfuMode(deviceAddress: String) {
-        status.value = DfuState.InProgress(EnablingDfu)
+        status.value = DfuState.InProgress(InitializingDFU)
     }
 
     override fun onProgressChanged(
@@ -74,18 +58,6 @@ internal class DFUProgressManager @Inject constructor(
         partsTotal: Int
     ) {
         status.value = DfuState.InProgress(Uploading(percent, avgSpeed, currentPart, partsTotal))
-    }
-
-    override fun onFirmwareValidating(deviceAddress: String) {
-        status.value = DfuState.InProgress(Validating)
-    }
-
-    override fun onDeviceDisconnecting(deviceAddress: String?) {
-        status.value = DfuState.InProgress(Disconnecting)
-    }
-
-    override fun onDeviceDisconnected(deviceAddress: String) {
-        status.value = DfuState.InProgress(Disconnected)
     }
 
     override fun onDfuCompleted(deviceAddress: String) {
@@ -111,6 +83,10 @@ internal class DFUProgressManager @Inject constructor(
 
     fun unregisterListener() {
         DfuServiceListenerHelper.unregisterProgressListener(context, this)
+    }
+
+    fun start() {
+        status.value = DfuState.InProgress(Starting)
     }
 
     fun release() {
