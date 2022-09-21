@@ -93,7 +93,10 @@ internal class DFUViewModel @Inject constructor(
             .mapNotNull { it.status }
             .onEach { status ->
                 when (status) {
-                    is EnablingDfu -> {
+                    is Starting -> {
+                        _state.value = _state.value.copy(progressViewEntity = DFUProgressViewEntity.createBootloaderStage())
+                    }
+                    is InitializingDFU -> {
                         _state.value = _state.value.copy(progressViewEntity = DFUProgressViewEntity.createDfuStage())
                     }
                     is Uploading -> {
@@ -173,9 +176,8 @@ internal class DFUViewModel @Inject constructor(
     }
 
     private fun onInstallButtonClick() = _state.value.settings?.let {
-        repository.launch(it)
-        _state.value = _state.value.copy(progressViewEntity = DFUProgressViewEntity.createBootloaderStage())
         analytics.logEvent(InstallationStartedEvent)
+        repository.launch(it)
     }
 
     private fun onZipFileSelected(uri: Uri) {
