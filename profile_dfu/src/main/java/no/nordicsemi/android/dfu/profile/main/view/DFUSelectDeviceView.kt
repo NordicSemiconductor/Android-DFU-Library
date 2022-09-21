@@ -59,14 +59,14 @@ private val icon = Icons.Outlined.Bluetooth
 
 @Composable
 internal fun DFUSelectedDeviceView(
-    isRunning: Boolean,
     viewEntity: DFUSelectDeviceViewEntity,
+    enabled: Boolean,
     onEvent: (DFUViewEvent) -> Unit
 ) {
     when (viewEntity) {
         DisabledSelectedDeviceViewEntity -> DFUDisabledSelectedDeviceView()
         NotSelectedDeviceViewEntity -> DFUNotSelectedDeviceView(onEvent)
-        is SelectedDeviceViewEntity -> DFUSelectedDeviceView(viewEntity, onEvent, isRunning)
+        is SelectedDeviceViewEntity -> DFUSelectedDeviceView(viewEntity, enabled, onEvent)
     }
 }
 
@@ -109,8 +109,8 @@ private const val DEVICE_ADDRESS = "Address: <b>%s</b>"
 @Composable
 internal fun DFUSelectedDeviceView(
     viewEntity: SelectedDeviceViewEntity,
+    enabled: Boolean,
     onEvent: (DFUViewEvent) -> Unit,
-    isRunning: Boolean,
 ) {
     WizardStepComponent(
         icon = icon,
@@ -118,7 +118,7 @@ internal fun DFUSelectedDeviceView(
         decor = WizardStepAction.Action(
             text = stringResource(id = R.string.dfu_select_device),
             onClick = { onEvent(OnSelectDeviceButtonClick) },
-            enabled = !isRunning,
+            enabled = enabled,
         ),
         state = WizardStepState.COMPLETED,
     ) {

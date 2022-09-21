@@ -92,9 +92,11 @@ fun DFUScreen() {
                 Column(
                     modifier = Modifier.padding(16.dp)
                 ) {
-                    DFUSelectFileView(state.isRunning(), state.fileViewEntity, onEvent)
+                    val dfuInProgress = state.isRunning()
 
-                    DFUSelectedDeviceView(state.isRunning(), state.deviceViewEntity, onEvent)
+                    DFUSelectFileView(state.fileViewEntity, !dfuInProgress, onEvent)
+
+                    DFUSelectedDeviceView(state.deviceViewEntity, !dfuInProgress, onEvent)
 
                     DFUProgressView(state.progressViewEntity, onEvent)
                 }

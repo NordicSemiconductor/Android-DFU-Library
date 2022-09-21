@@ -69,13 +69,13 @@ private val icon = Icons.Outlined.FolderZip
 
 @Composable
 internal fun DFUSelectFileView(
-    isRunning: Boolean,
     viewEntity: DFUSelectFileViewEntity,
+    enabled: Boolean,
     onEvent: (DFUViewEvent) -> Unit
 ) {
     when (viewEntity) {
         is NotSelectedFileViewEntity -> DFUNotSelectedFileView(viewEntity, onEvent)
-        is SelectedFileViewEntity -> DFUSelectFileView(viewEntity.zipFile, onEvent, isRunning)
+        is SelectedFileViewEntity -> DFUSelectFileView(viewEntity.zipFile, onEvent, enabled)
     }
 }
 
@@ -129,7 +129,7 @@ private const val FILE_SIZE = "Size: <b>%d</b> bytes"
 internal fun DFUSelectFileView(
     zipFile: ZipFile,
     onEvent: (DFUViewEvent) -> Unit,
-    isRunning: Boolean,
+    enabled: Boolean,
 ) {
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let { onEvent(OnZipFileSelected(it)) }
@@ -151,7 +151,7 @@ internal fun DFUSelectFileView(
                     }
                 }
             },
-            enabled = !isRunning,
+            enabled = enabled,
         ),
         state = WizardStepState.COMPLETED,
     ) {
