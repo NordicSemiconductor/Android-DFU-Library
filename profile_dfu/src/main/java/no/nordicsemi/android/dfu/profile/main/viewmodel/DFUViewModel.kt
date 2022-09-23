@@ -191,6 +191,7 @@ internal class DFUViewModel @Inject constructor(
                     else -> SelectedDeviceViewEntity(repository.device!!)
                 }
             )
+            analytics.logEvent(FileSelectedEvent(zipFile.size))
         } ?: run { // If not, show an error.
             _state.value = _state.value.copy(
                 fileViewEntity = NotSelectedFileViewEntity(true)

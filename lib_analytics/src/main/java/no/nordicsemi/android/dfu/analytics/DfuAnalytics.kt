@@ -49,6 +49,7 @@ class DfuAnalytics @Inject constructor(
             ResetSettingsEvent,
             DFUAbortedEvent,
             DFUSuccessEvent -> analytics.logEvent(event.eventName)
+            is FileSelectedEvent -> analytics.logEvent(event.eventName, event.createBundle())
             is DFUErrorEvent -> analytics.logEvent(event.eventName, event.createBundle())
             is DFUSettingsChangeEvent -> analytics.logEvent(event.eventName, event.createBundle())
         }

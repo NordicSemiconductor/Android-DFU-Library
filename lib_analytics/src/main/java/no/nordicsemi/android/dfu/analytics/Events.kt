@@ -38,6 +38,7 @@ private object  FirebaseParam {
     const val MESSAGE = "message"
     const val IS_ENABLED = "is_enabled"
     const val VALUE = "value"
+    const val SIZE_BYTES = "size_in_bytes"
 }
 
 sealed interface DfuEvent {
@@ -46,6 +47,15 @@ sealed interface DfuEvent {
 
 object AppOpenEvent : DfuEvent {
     override val eventName: String = "APP_OPEN_EVENT"
+}
+
+class FileSelectedEvent(
+    private val fileSize: Long
+) : DfuEvent {
+    override val eventName: String = "FILE_SELECTED"
+
+    fun createBundle() =
+        bundleOf(FirebaseParam.SIZE_BYTES to fileSize)
 }
 
 object InstallationStartedEvent : DfuEvent {
