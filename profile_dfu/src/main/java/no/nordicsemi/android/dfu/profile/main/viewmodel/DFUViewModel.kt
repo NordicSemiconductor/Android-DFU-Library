@@ -181,19 +181,19 @@ internal class DFUViewModel @Inject constructor(
     }
 
     private fun onZipFileSelected(uri: Uri) {
-        val zipFile = repository.setZipFile(uri)
-        if (zipFile == null) {
-            _state.value = _state.value.copy(fileViewEntity = NotSelectedFileViewEntity(true))
-        } else {
+        // Check if the selected file is valid.
+        val file = repository.setZipFile(uri)
+        file?.let { zipFile ->
             _state.value = _state.value.copy(
                 fileViewEntity = SelectedFileViewEntity(zipFile),
-                deviceViewEntity = NotSelectedDeviceViewEntity
+                deviceViewEntity = when (repository.device) {
+                    null -> NotSelectedDeviceViewEntity
+                    else -> SelectedDeviceViewEntity(repository.device!!)
+                }
             )
-        }
-        if (repository.device != null) {
+        } ?: run { // If not, show an error.
             _state.value = _state.value.copy(
-                progressViewEntity = WorkingProgressViewEntity(),
-                deviceViewEntity = SelectedDeviceViewEntity(repository.device!!)
+                fileViewEntity = NotSelectedFileViewEntity(true)
             )
         }
     }
