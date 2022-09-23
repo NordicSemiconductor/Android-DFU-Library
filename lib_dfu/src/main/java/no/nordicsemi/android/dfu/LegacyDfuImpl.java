@@ -67,7 +67,7 @@ import no.nordicsemi.android.error.LegacyDfuError;
 	//private static final int OP_CODE_PACKET_REPORT_RECEIVED_IMAGE_SIZE_KEY = 0x07; // 7
 	private static final int OP_CODE_PACKET_RECEIPT_NOTIF_REQ_KEY = 0x08; // 8
 	private static final int OP_CODE_RESPONSE_CODE_KEY = 0x10; // 16
-	private static final int OP_CODE_PACKET_RECEIPT_NOTIF_KEY = 0x11; // 11
+	private static final int OP_CODE_PACKET_RECEIPT_NOTIF_KEY = 0x11; // 17
 	private static final byte[] OP_CODE_START_DFU = new byte[]{OP_CODE_START_DFU_KEY, 0x00};
 	private static final byte[] OP_CODE_START_DFU_V1 = new byte[]{OP_CODE_START_DFU_KEY};
 	private static final byte[] OP_CODE_INIT_DFU_PARAMS = new byte[]{OP_CODE_INIT_DFU_PARAMS_KEY}; // SDK 6.0.0 or older
