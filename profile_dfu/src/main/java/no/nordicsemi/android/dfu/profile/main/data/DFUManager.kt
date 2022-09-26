@@ -33,7 +33,6 @@ package no.nordicsemi.android.dfu.profile.main.data
 
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
-import no.nordicsemi.android.common.logger.LoggerAppRunner
 import no.nordicsemi.android.common.logger.NordicLogger
 import no.nordicsemi.android.common.logger.NordicLoggerFactory
 import no.nordicsemi.android.common.ui.scanner.model.DiscoveredBluetoothDevice
@@ -46,23 +45,22 @@ import javax.inject.Inject
 
 class DFUManager @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val appRunner: LoggerAppRunner,
-    private val loggerFactory: NordicLoggerFactory
+    private val loggerFactory: NordicLoggerFactory,
 ) {
-    private var _logger: NordicLogger? = null
+    private var logger: NordicLogger? = null
 
     fun install(
         file: ZipFile,
         device: DiscoveredBluetoothDevice,
         settings: DFUSettings
     ): DfuServiceController {
-        val logger = loggerFactory
-            .create("DFU", null, device.address)
-            .also { _logger = it}
-
-        DfuServiceListenerHelper.registerLogListener(context) { _, level, message ->
-            logger.log(level, message)
-        }
+        logger = loggerFactory
+            .create(null, device.address, device.name)
+            .also {
+                DfuServiceListenerHelper.registerLogListener(context) { _, level, message ->
+                    it.log(level, message)
+                }
+            }
 
         val starter = DfuServiceInitiator(device.address).apply {
             setDeviceName(device.displayName)
@@ -89,11 +87,6 @@ class DFUManager @Inject constructor(
     }
 
     fun openLogger() {
-        val logger = _logger
-        if (logger != null) {
-            logger.openLogger()
-        } else {
-            appRunner.runLogger()
-        }
+        NordicLogger.launch(context, logger)
     }
 }

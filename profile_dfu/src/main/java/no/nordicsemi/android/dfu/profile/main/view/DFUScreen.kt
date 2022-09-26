@@ -52,6 +52,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import no.nordicsemi.android.common.analytics.view.AnalyticsPermissionRequestDialog
+import no.nordicsemi.android.common.logger.view.LoggerAppBarIcon
 import no.nordicsemi.android.common.theme.view.NordicAppBar
 import no.nordicsemi.android.dfu.profile.R
 import no.nordicsemi.android.dfu.profile.main.viewmodel.DFUViewModel
@@ -66,14 +67,7 @@ fun DFUScreen() {
         NordicAppBar(
             text = stringResource(R.string.dfu_title),
             actions = {
-                IconButton(onClick = { onEvent(OnLoggerButtonClick) }) {
-                    Icon(
-                        painterResource(id = R.drawable.ic_logger),
-                        contentDescription = stringResource(id = R.string.open_logger),
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
+                LoggerAppBarIcon(onClick = { onEvent(OnLoggerButtonClick) })
                 IconButton(onClick = { onEvent(OnSettingsButtonClick) }) {
                     Icon(
                         imageVector = Icons.Outlined.Settings,
