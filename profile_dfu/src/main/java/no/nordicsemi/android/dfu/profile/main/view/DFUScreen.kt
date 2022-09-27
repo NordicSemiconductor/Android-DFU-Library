@@ -31,10 +31,7 @@
 
 package no.nordicsemi.android.dfu.profile.main.view
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -77,11 +74,15 @@ fun DFUScreen() {
             }
         )
         Column(
-            modifier = Modifier.verticalScroll(rememberScrollState()),
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             OutlinedCard(
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier
+                    .widthIn(max = 600.dp)
+                    .padding(16.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp)
