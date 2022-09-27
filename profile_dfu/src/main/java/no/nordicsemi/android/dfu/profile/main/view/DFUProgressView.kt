@@ -162,7 +162,6 @@ private fun ProgressItem(viewEntity: ProgressItemViewEntity) {
                             id = R.string.dfu_display_status_progress_speed,
                             viewEntity.progress.avgSpeed
                         ),
-                        style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.End
                     )
