@@ -54,4 +54,4 @@ data class Uploading(
 
 object Completed : DfuProgress()
 object Aborted : DfuProgress()
-data class Error(val message: String?) : DfuProgress()
+data class Error(val key: String, val message: String?) : DfuProgress()

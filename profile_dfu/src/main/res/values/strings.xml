@@ -61,7 +61,7 @@
     <string name="dfu_display_status_progress_update">Uploading… %d\%%</string>
     <string name="dfu_display_status_progress_speed">%.1f kB/s</string>
 
-    <string name="dfu_unknown">Unknown</string>
+    <string name="dfu_unknown">Unknown error</string>
 
     <string name="dfu_bootloader_idle">Enabling bootloader</string>
     <string name="dfu_bootloader_working">Enabling bootloader…</string>

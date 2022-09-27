@@ -120,9 +120,8 @@ internal class DFUViewModel @Inject constructor(
                             ?.also { progressEntityWithError ->
                                 _state.value = _state.value.copy(progressViewEntity = progressEntityWithError)
                             }
-                        analytics.logEvent(DFUErrorEvent(status.message))
+                        analytics.logEvent(DFUErrorEvent(status.key))
                     }
-                    else -> doNothing()
                 }
             }
             .launchIn(viewModelScope)

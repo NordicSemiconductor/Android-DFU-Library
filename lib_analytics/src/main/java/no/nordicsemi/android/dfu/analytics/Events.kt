@@ -81,13 +81,11 @@ object DFUAbortedEvent : DFUResultEvent {
 }
 
 class DFUErrorEvent(
-    private val errorMessage: String?
+    private val errorMessage: String
 ) : DFUResultEvent {
     override val eventName: String = "DFU_ERROR_RESULT"
 
-    fun createBundle() = errorMessage?.let { message ->
-        bundleOf(FirebaseParam.MESSAGE to message)
-    }
+    fun createBundle() = bundleOf(FirebaseParam.MESSAGE to errorMessage)
 }
 
 sealed interface DFUSettingsChangeEvent : DfuEvent {

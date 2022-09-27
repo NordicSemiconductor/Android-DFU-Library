@@ -34,8 +34,10 @@ package no.nordicsemi.android.dfu.profile.main.data
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
+import no.nordicsemi.android.dfu.DfuBaseService
 import no.nordicsemi.android.dfu.DfuProgressListenerAdapter
 import no.nordicsemi.android.dfu.DfuServiceListenerHelper
+import no.nordicsemi.android.dfu.profile.R
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -74,7 +76,18 @@ internal class DFUProgressManager @Inject constructor(
         errorType: Int,
         message: String?
     ) {
-        status.value = DfuState.InProgress(Error(message))
+        val betterMessage = when (error) {
+            DfuBaseService.ERROR_DEVICE_DISCONNECTED -> context.getString(R.string.dfu_error_link_loss)
+            DfuBaseService.ERROR_FILE_ERROR -> context.getString(R.string.dfu_error_file_error)
+            DfuBaseService.ERROR_FILE_INVALID -> context.getString(R.string.dfu_error_file_unsupported)
+            DfuBaseService.ERROR_FILE_TYPE_UNSUPPORTED -> context.getString(R.string.dfu_error_file_type_invalid)
+            DfuBaseService.ERROR_SERVICE_NOT_FOUND -> context.getString(R.string.dfu_error_not_supported)
+            DfuBaseService.ERROR_BLUETOOTH_DISABLED -> context.getString(R.string.dfu_error_bluetooth_disabled)
+            DfuBaseService.ERROR_DEVICE_NOT_BONDED -> context.getString(R.string.dfu_error_not_bonded)
+            DfuBaseService.ERROR_INIT_PACKET_REQUIRED -> context.getString(R.string.dfu_error_init_packet_required)
+            else -> message
+        }
+        status.value = DfuState.InProgress(Error(message!!, betterMessage))
     }
 
     fun registerListener() {
