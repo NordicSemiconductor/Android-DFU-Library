@@ -45,13 +45,13 @@ dependencies {
     implementation project(":lib_dfu")
     implementation project(":lib_storage")
 
-    implementation "no.nordicsemi.android.common:core:1.0.23"
-    implementation "no.nordicsemi.android.common:theme:1.0.23"
-    implementation "no.nordicsemi.android.common:navigation:1.0.23"
-    implementation "no.nordicsemi.android.common:uiscanner:1.0.23"
-    implementation "no.nordicsemi.android.common:uilogger:1.0.23"
-    implementation "no.nordicsemi.android.common:permission:1.0.23"
-    implementation "no.nordicsemi.android.common:analytics:1.0.23"
+    implementation "no.nordicsemi.android.common:core:1.0.24"
+    implementation "no.nordicsemi.android.common:theme:1.0.24"
+    implementation "no.nordicsemi.android.common:navigation:1.0.24"
+    implementation "no.nordicsemi.android.common:uiscanner:1.0.24"
+    implementation "no.nordicsemi.android.common:uilogger:1.0.24"
+    implementation "no.nordicsemi.android.common:permission:1.0.24"
+    implementation "no.nordicsemi.android.common:analytics:1.0.24"
 
     implementation "androidx.compose.material3:material3:1.0.0-beta03"
     implementation "androidx.compose.material:material-icons-core:$compose_version"
