@@ -127,6 +127,11 @@ public class ArchiveInputStream extends InputStream {
 	 */
 	public ArchiveInputStream(final InputStream stream, final int mbrSize, final int types)
             throws IOException {
+		// Check if the file is not too big. It's hard to say what would be considered too big, but
+		// 10 MB should be enough for any firmware package. If not, fork the library and change this.
+		if (stream.available() > 10 * 1024 * 1024) {
+			throw new IOException("File too large: " + stream.available() + " bytes (max 10 MB)");
+		}
 		this.zipInputStream = new ZipInputStream(stream);
 
 		this.crc32 = new CRC32();
