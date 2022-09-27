@@ -149,9 +149,8 @@ public class ArchiveInputStream extends InputStream {
 			/*
 			 * Let's read and parse the 'manifest.json' file.
 			 */
+			boolean valid = false;
 			if (manifest != null) {
-				boolean valid = false;
-
 				// Read the application
 				if (manifest.getApplicationInfo() != null && (types == DfuBaseService.TYPE_AUTO || (types & DfuBaseService.TYPE_APPLICATION) > 0)) {
 					final FileInfo application = manifest.getApplicationInfo();
@@ -227,7 +226,6 @@ public class ArchiveInputStream extends InputStream {
 				 * - bootloader.hex/dat
 				 *     + system.dat
 				 */
-				boolean valid = false;
 				// Search for the application
 				if (types == DfuBaseService.TYPE_AUTO || (types & DfuBaseService.TYPE_APPLICATION) > 0) {
 					applicationBytes = entries.get(APPLICATION_HEX); // the entry bytes has already been converted to BIN, just the name remained.
