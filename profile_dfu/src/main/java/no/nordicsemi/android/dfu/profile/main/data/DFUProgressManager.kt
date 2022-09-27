@@ -38,6 +38,7 @@ import no.nordicsemi.android.dfu.DfuBaseService
 import no.nordicsemi.android.dfu.DfuProgressListenerAdapter
 import no.nordicsemi.android.dfu.DfuServiceListenerHelper
 import no.nordicsemi.android.dfu.profile.R
+import no.nordicsemi.android.error.SecureDfuError
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -85,6 +86,9 @@ internal class DFUProgressManager @Inject constructor(
             DfuBaseService.ERROR_BLUETOOTH_DISABLED -> context.getString(R.string.dfu_error_bluetooth_disabled)
             DfuBaseService.ERROR_DEVICE_NOT_BONDED -> context.getString(R.string.dfu_error_not_bonded)
             DfuBaseService.ERROR_INIT_PACKET_REQUIRED -> context.getString(R.string.dfu_error_init_packet_required)
+            // Secure DFU errors
+            DfuBaseService.ERROR_REMOTE_TYPE_SECURE or SecureDfuError.INVALID_OBJECT -> context.getString(R.string.dfu_error_invalid_object)
+            DfuBaseService.ERROR_REMOTE_TYPE_SECURE or SecureDfuError.INSUFFICIENT_RESOURCES -> context.getString(R.string.dfu_error_insufficient_resources)
             else -> message
         }
         status.value = DfuState.InProgress(Error(message!!, betterMessage))

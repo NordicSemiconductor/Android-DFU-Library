@@ -40,4 +40,7 @@
     <string name="dfu_error_bluetooth_disabled">Bluetooth is disabled.</string>
     <string name="dfu_error_not_bonded">The device is not bonded.</string>
     <string name="dfu_error_init_packet_required">The init packet is required.</string>
+    <!-- Secure DFU errors -->
+    <string name="dfu_error_invalid_object">Selected firmware is not compatible with the device.</string>
+    <string name="dfu_error_insufficient_resources">Insufficient resources.</string>
 </resources>
