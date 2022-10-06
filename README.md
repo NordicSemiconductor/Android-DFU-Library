@@ -19,7 +19,7 @@ The DFU is design to update the firmware of nRF51 or nRF52 Series SoCs having an
 
 nRF Device Firmware Update is a mobile app for updating nRF5 SDK firmware using Bluetooth Low Energy as a transport.
 
-![Welcome screen](resources/app_welcome.png) ![Main screen](resources/app_main.png) ![Settings](resources/settings.png)
+![Welcome screen](resources/app_welcome.png) ![Main screen](resources/app_main.png) ![Settings](resources/app_settings.png)
 
 ### Supported files
 
