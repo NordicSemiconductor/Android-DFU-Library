@@ -19,7 +19,7 @@ The DFU is design to update the firmware of nRF51 or nRF52 Series SoCs having an
 
 nRF Device Firmware Update is a mobile app for updating nRF5 SDK firmware using Bluetooth Low Energy as a transport.
 
-![Welcome screen](resources/app_welcome.png) ![Main screen](resources/app_main.png) ![Settings](resources/app_settings.png)
+![Welcome screen](resources/app_welcome.png) ![Main screen](resources/app_main.png) ![Settings](resources/settings.png)
 
 ### Supported files
 
@@ -35,11 +35,6 @@ Link format: ```https://www.nordicsemi.com/dfu/?file=link_to_file```
 
 > Note: Keep in mind to replace '&' with '%26' in the `link_to_file`.
 
-### nRF Logger integration
-
-During DFU process the app creates logs which can be shown in the [nRF Logger](https://play.google.com/store/apps/details?id=no.nordicsemi.android.log) app in runtime.
-The logger app needs to be installed before starting the DFU process. Use the Logger icon (next to Settings icon) to open the logs session in nRF Logger.
-
 # Library
 
 The *lib_dfu* module contains the source code of the DFU library for Android.
@@ -48,7 +43,7 @@ The DFU library is available on Maven Central repository. Add it to your project
 adding the following dependency:
 
 ```Groovy
-implementation 'no.nordicsemi.android:dfu:2.2.0'
+implementation 'no.nordicsemi.android:dfu:2.2.1'
 ```
 
 Latest version targeting API lower than 31 is 1.11.1.
@@ -137,15 +132,15 @@ DFU Bootloader flashed on.
 
 * **SDK 4.3.0** - First version of DFU over Bluetooth Smart. DFU supports Application update.
 * **SDK 6.1.0** - DFU Bootloader supports Soft Device and Bootloader update. As the updated
-  Bootloader may be dependent on the new Soft Device, those two may be sent and
-  installed together.
+                  Bootloader may be dependent on the new Soft Device, those two may be sent and
+                  installed together.
     - Buttonless update support for non-bonded devices.
 * **SDK 7.0.0** - The extended init packet is required. The init packet contains additional
-  validation information: device type and revision, application version, compatible
-  Soft Devices and the firmware CRC.
+                  validation information: device type and revision, application version, compatible
+                  Soft Devices and the firmware CRC.
 * **SDK 8.0.0** - The bond information may be preserved after an application update.
-  The new application, when first started, will send the Service Change indication
-  to the phone to refresh the services.
+                  The new application, when first started, will send the Service Change indication
+                  to the phone to refresh the services.
     - Buttonless update support for bonded devices
     - sharing the LTK between an app and the bootloader.
 
@@ -153,9 +148,9 @@ DFU Bootloader flashed on.
 
 * **SDK 12.0.0** - New Secure DFU has been released. Buttonless service is experimental.
 * **SDK 13.0.0** - Buttonless DFU (still experimental) uses different UUIDs. No bond sharing
-  supported. Bootloader will use address +1.
+                   supported. Bootloader will use address +1.
 * **SDK 14.0.0** - Buttonless DFU is no longer experimental. A new UUID (0004) added for bonded
-  only devices (previous one (0003) is for non-bonded only).
+                   only devices (previous one (0003) is for non-bonded only).
 * **SDK 15.0.0** - Support for higher MTUs added.
 
 This library is fully backwards compatible and supports both the new and legacy DFU.
@@ -176,13 +171,13 @@ iOS version of the same library can be found at [IOS-DFU-Library](https://github
 
 ### React Native
 
-A library for both iOS and Android that is based on this library is available for React Native:
-[react-native-nordic-dfu](https://github.com/Pilloxa/react-native-nordic-dfu)
+A library for both iOS and Android that is based on this library is available for React Native: 
+[react-native-nordic-dfu](https://github.com/Pilloxa/react-native-nordic-dfu) 
 
 ### Flutter
 
-A library for both iOS and Android that is based on this library is available for Flutter:
-[flutter-nordic-dfu](https://github.com/fengqiangboy/flutter-nordic-dfu)
+A library for both iOS and Android that is based on this library is available for Flutter: 
+[flutter-nordic-dfu](https://github.com/fengqiangboy/flutter-nordic-dfu) 
 
 ### Xamarin
 
