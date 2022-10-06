@@ -1,4 +1,6 @@
-apply plugin: 'com.android.library'
+plugins {
+    id 'com.android.library'
+}
 apply from: rootProject.file("gradle/git-tag-version.gradle")
 
 android {

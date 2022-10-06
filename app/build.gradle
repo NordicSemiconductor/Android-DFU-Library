@@ -3,7 +3,7 @@ plugins {
     id 'kotlin-android'
     id 'kotlin-parcelize'
     id 'kotlin-kapt'
-    id 'dagger.hilt.android.plugin'
+    id 'com.google.dagger.hilt.android'
 }
 apply from: rootProject.file("gradle/git-tag-version.gradle")
 
@@ -43,15 +43,18 @@ android {
         }
     }
 
-    buildFeatures {
-        compose true
-    }
     composeOptions {
         kotlinCompilerExtensionVersion compose_compiler_version
     }
-    hilt {
-        enableExperimentalClasspathAggregation = true
+    buildFeatures {
+        compose true
     }
+}
+hilt {
+    enableAggregatingTask = true
+}
+kapt {
+    correctErrorTypes true
 }
 
 dependencies {
@@ -67,5 +70,5 @@ dependencies {
     implementation "androidx.activity:activity-compose:1.6.0"
 
     implementation "com.google.dagger:hilt-android:$dagger_version"
-    kapt "com.google.dagger:hilt-compiler:$dagger_version"
+    kapt "com.google.dagger:hilt-android-compiler:$dagger_version"
 }

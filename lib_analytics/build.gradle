@@ -1,7 +1,9 @@
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
-apply plugin: 'dagger.hilt.android.plugin'
-apply plugin: 'kotlin-kapt'
+plugins {
+    id 'com.android.library'
+    id 'kotlin-android'
+    id 'kotlin-kapt'
+    id 'com.google.dagger.hilt.android'
+}
 
 android {
     namespace 'no.nordicsemi.android.dfu.analytics'
@@ -20,15 +22,17 @@ android {
             consumerProguardFiles 'analytics-proguard-rules.pro'
         }
     }
-
-    hilt {
-        enableExperimentalClasspathAggregation = true
-    }
+}
+hilt {
+    enableAggregatingTask = true
+}
+kapt {
+    correctErrorTypes true
 }
 
 dependencies {
     implementation "no.nordicsemi.android.common:analytics:$nordic_common_version"
 
     implementation "com.google.dagger:hilt-android:$dagger_version"
-    kapt "com.google.dagger:hilt-compiler:$dagger_version"
+    kapt "com.google.dagger:hilt-android-compiler:$dagger_version"
 }
