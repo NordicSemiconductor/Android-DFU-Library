@@ -122,18 +122,14 @@ internal fun DFUSelectedDeviceView(
         ),
         state = WizardStepState.COMPLETED,
     ) {
-        Column {
-            Text(
-                text = String.format(DEVICE_NAME, viewEntity.device.displayName ?: "No name").parseBold(),
-                style = MaterialTheme.typography.bodyMedium
-            )
+        Text(
+            text = String.format(DEVICE_NAME, viewEntity.device.displayName ?: "No name").parseBold(),
+            style = MaterialTheme.typography.bodyMedium
+        )
 
-            Spacer(modifier = Modifier.size(4.dp))
-
-            Text(
-                text = String.format(DEVICE_ADDRESS, viewEntity.device.address).parseBold(),
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        }
+        Text(
+            text = String.format(DEVICE_ADDRESS, viewEntity.device.address).parseBold(),
+            style = MaterialTheme.typography.bodyMedium,
+        )
     }
 }

@@ -35,7 +35,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -130,67 +129,60 @@ private fun DFUIdleProgressView(
 
 @Composable
 private fun ProgressItem(viewEntity: ProgressItemViewEntity) {
-    Column(
-        modifier = Modifier.padding(start = 8.dp)
-    ) {
-        ProgressItem(
-            text = BootloaderItem.toDisplayString(status = viewEntity.bootloaderStatus),
-            status = viewEntity.bootloaderStatus,
-            iconRightPadding = 24.dp,
-        )
-        Spacer(modifier = Modifier.size(8.dp))
-        ProgressItem(
-            text = DfuItem.toDisplayString(status = viewEntity.dfuStatus),
-            status = viewEntity.dfuStatus,
-            iconRightPadding = 24.dp,
-        )
-        Spacer(modifier = Modifier.size(8.dp))
+    ProgressItem(
+        text = BootloaderItem.toDisplayString(status = viewEntity.bootloaderStatus),
+        status = viewEntity.bootloaderStatus,
+        iconRightPadding = 24.dp,
+    )
 
-        if (viewEntity.installationStatus == ProgressItemStatus.WORKING) {
-            Column {
-                ProgressItem(
-                    text = viewEntity.progress.toLabel(),
-                    status = viewEntity.installationStatus,
-                    iconRightPadding = 24.dp,
-                ) {
-                    LinearProgressIndicator(
-                        progress = viewEntity.progress.progress / 100f,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Text(
-                        text = stringResource(
-                            id = R.string.dfu_display_status_progress_speed,
-                            viewEntity.progress.avgSpeed
-                        ),
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.End
-                    )
-                }
-            }
-        } else {
-            ProgressItem(
-                text = FirmwareItem.toDisplayString(status = viewEntity.installationStatus),
-                status = viewEntity.installationStatus,
-                iconRightPadding = 24.dp,
+    ProgressItem(
+        text = DfuItem.toDisplayString(status = viewEntity.dfuStatus),
+        status = viewEntity.dfuStatus,
+        iconRightPadding = 24.dp,
+    )
+
+    if (viewEntity.installationStatus == ProgressItemStatus.WORKING) {
+        ProgressItem(
+            text = viewEntity.progress.toLabel(),
+            status = viewEntity.installationStatus,
+            iconRightPadding = 24.dp,
+        ) {
+            LinearProgressIndicator(
+                progress = viewEntity.progress.progress / 100f,
+                modifier = Modifier.fillMaxWidth()
             )
-        }
-        Spacer(modifier = Modifier.size(8.dp))
-        if (viewEntity.resultStatus != ProgressItemStatus.ERROR) {
-            ProgressItem(
-                text = stringResource(id = R.string.dfu_progress_stage_completed),
-                status = viewEntity.resultStatus,
-                iconRightPadding = 24.dp,
-            )
-        } else {
-            ProgressItem(
+            Text(
                 text = stringResource(
-                    id = R.string.dfu_progress_stage_error,
-                    viewEntity.errorMessage ?: stringResource(id = R.string.dfu_unknown)
+                    id = R.string.dfu_display_status_progress_speed,
+                    viewEntity.progress.avgSpeed
                 ),
-                status = viewEntity.resultStatus,
-                iconRightPadding = 24.dp,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.End
             )
         }
+    } else {
+        ProgressItem(
+            text = FirmwareItem.toDisplayString(status = viewEntity.installationStatus),
+            status = viewEntity.installationStatus,
+            iconRightPadding = 24.dp,
+        )
+    }
+
+    if (viewEntity.resultStatus != ProgressItemStatus.ERROR) {
+        ProgressItem(
+            text = stringResource(id = R.string.dfu_progress_stage_completed),
+            status = viewEntity.resultStatus,
+            iconRightPadding = 24.dp,
+        )
+    } else {
+        ProgressItem(
+            text = stringResource(
+                id = R.string.dfu_progress_stage_error,
+                viewEntity.errorMessage ?: stringResource(id = R.string.dfu_unknown)
+            ),
+            status = viewEntity.resultStatus,
+            iconRightPadding = 24.dp,
+        )
     }
 }
 

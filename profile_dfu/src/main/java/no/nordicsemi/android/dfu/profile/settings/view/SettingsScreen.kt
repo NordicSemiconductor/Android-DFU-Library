@@ -54,6 +54,7 @@ import no.nordicsemi.android.dfu.BuildConfig.VERSION_NAME
 import no.nordicsemi.android.dfu.profile.R
 import no.nordicsemi.android.dfu.profile.settings.viewmodel.SettingsViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun SettingsScreen() {
     val viewModel = hiltViewModel<SettingsViewModel>()
