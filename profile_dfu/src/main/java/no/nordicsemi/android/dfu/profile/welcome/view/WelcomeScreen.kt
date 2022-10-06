@@ -53,6 +53,7 @@ import no.nordicsemi.android.common.theme.view.NordicAppBar
 import no.nordicsemi.android.dfu.profile.R
 import no.nordicsemi.android.dfu.profile.welcome.viewmodel.WelcomeViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WelcomeScreen() {
     val viewModel = hiltViewModel<WelcomeViewModel>()

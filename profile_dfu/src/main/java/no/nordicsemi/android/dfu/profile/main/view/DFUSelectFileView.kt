@@ -104,20 +104,19 @@ internal fun DFUNotSelectedFileView(viewEntity: NotSelectedFileViewEntity, onEve
         ),
         state = WizardStepState.CURRENT,
     ) {
-        Column {
+        Text(
+            text = stringResource(id = R.string.dfu_choose_info),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        if (viewEntity.isError) {
+            Spacer(modifier = Modifier.size(8.dp))
+
             Text(
-                text = stringResource(id = R.string.dfu_choose_info),
-                style = MaterialTheme.typography.bodyMedium,
+                text = stringResource(id = R.string.dfu_load_file_error),
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier.padding(horizontal = 16.dp),
+                color = MaterialTheme.colorScheme.error
             )
-            if (viewEntity.isError) {
-                Spacer(modifier = Modifier.size(8.dp))
-                Text(
-                    text = stringResource(id = R.string.dfu_load_file_error),
-                    style = MaterialTheme.typography.labelMedium,
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    color = MaterialTheme.colorScheme.error
-                )
-            }
         }
     }
 }
@@ -162,8 +161,6 @@ internal fun DFUSelectFileView(
                 text = String.format(FILE_NAME, zipFile.name).parseBold(),
                 style = MaterialTheme.typography.bodyMedium
             )
-
-            Spacer(modifier = Modifier.size(4.dp))
 
             Text(
                 text = String.format(FILE_SIZE, zipFile.size).parseBold(),
