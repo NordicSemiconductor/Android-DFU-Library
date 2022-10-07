@@ -1,7 +1,6 @@
 plugins {
     id 'com.android.application'
     id 'kotlin-android'
-    id 'kotlin-parcelize'
     id 'kotlin-kapt'
     id 'com.google.dagger.hilt.android'
 }
@@ -22,8 +21,6 @@ android {
         targetSdk android_api_version
         versionCode getVersionCodeFromTags()
         versionName getVersionNameFromTags()
-
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     signingConfigs {
@@ -58,9 +55,9 @@ kapt {
 }
 
 dependencies {
-    implementation project(":lib_analytics")
-    implementation project(":lib_storage")
-    implementation project(":profile_dfu")
+    implementation project(":lib:analytics")
+    implementation project(":lib:storage") // Deep link support
+    implementation project(":profile:navigation")
 
     implementation "no.nordicsemi.android.common:theme:$nordic_common_version"
     implementation "no.nordicsemi.android.common:navigation:$nordic_common_version"
