@@ -31,7 +31,6 @@
 
 package no.nordicsemi.android.dfu.profile.main.data
 
-import android.bluetooth.BluetoothDevice
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
 import no.nordicsemi.android.common.logger.NordicLogger

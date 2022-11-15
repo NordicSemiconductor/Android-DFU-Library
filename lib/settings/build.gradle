@@ -30,9 +30,9 @@ kapt {
 
 dependencies {
     implementation project(":lib:storage")
-
+    // Datastore
     implementation "androidx.datastore:datastore-preferences:1.0.0"
-
+    // Dagger and Hilt
     implementation "com.google.dagger:hilt-android:$dagger_version"
     kapt "com.google.dagger:hilt-android-compiler:$dagger_version"
 }

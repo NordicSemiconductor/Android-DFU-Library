@@ -31,9 +31,9 @@
 
 package no.nordicsemi.android.dfu.navigation
 
-import no.nordicsemi.android.dfu.profile.main.DfuMainDestinations
-import no.nordicsemi.android.dfu.profile.scanner.ScannerDestinations
-import no.nordicsemi.android.dfu.profile.settings.DfuSettingsDestinations
-import no.nordicsemi.android.dfu.profile.welcome.DfuWelcomeDestinations
+import no.nordicsemi.android.dfu.profile.main.DfuMainDestination
+import no.nordicsemi.android.dfu.profile.scanner.ScannerDestination
+import no.nordicsemi.android.dfu.profile.settings.DfuSettingsDestination
+import no.nordicsemi.android.dfu.profile.welcome.DfuWelcomeDestination
 
-val DfuDestinations = DfuMainDestinations + DfuSettingsDestinations + DfuWelcomeDestinations + ScannerDestinations
+val DfuDestinations = DfuMainDestination + DfuSettingsDestination + DfuWelcomeDestination + ScannerDestination

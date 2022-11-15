@@ -36,17 +36,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
-import no.nordicsemi.android.common.navigation.NavigationManager
-import no.nordicsemi.android.common.navigation.doNothing
+import no.nordicsemi.android.common.navigation.NavigationResult
+import no.nordicsemi.android.common.navigation.Navigator
 import no.nordicsemi.android.dfu.analytics.*
 import no.nordicsemi.android.dfu.profile.main.data.*
 import no.nordicsemi.android.dfu.profile.main.repository.DFURepository
 import no.nordicsemi.android.dfu.profile.main.view.*
 import no.nordicsemi.android.dfu.profile.main.view.DFUProgressViewEntity.Companion.createErrorStage
-import no.nordicsemi.android.dfu.profile.scanner.ScannerDestination
-import no.nordicsemi.android.dfu.profile.scanner.ScannerResult
-import no.nordicsemi.android.dfu.profile.settings.DfuSettingsScreen
-import no.nordicsemi.android.dfu.profile.welcome.DfuWelcomeScreen
+import no.nordicsemi.android.dfu.profile.scanner.Scanner
+import no.nordicsemi.android.dfu.profile.settings.DfuSettings
+import no.nordicsemi.android.dfu.profile.welcome.DfuWelcome
 import no.nordicsemi.android.dfu.settings.repository.SettingsRepository
 import no.nordicsemi.android.dfu.storage.*
 import javax.inject.Inject
@@ -65,7 +64,7 @@ internal class StateHolder @Inject constructor() {
 internal class DFUViewModel @Inject constructor(
     private val stateHolder: StateHolder,
     private val repository: DFURepository,
-    private val navigationManager: NavigationManager,
+    private val navigator: Navigator,
     private val analytics: DfuAnalytics,
     settingsRepository: SettingsRepository,
     externalFileDataSource: ExternalFileDataSource,
@@ -76,9 +75,11 @@ internal class DFUViewModel @Inject constructor(
     val state = _state.asStateFlow()
 
     init {
-        navigationManager.getResultForIds(ScannerDestination)
-            .mapNotNull { it as? ScannerResult }
-            .mapNotNull { it.dfuTarget }
+        navigator.resultFrom(Scanner)
+            // Filter out results of cancelled navigation.
+            .mapNotNull { it as? NavigationResult.Success }
+            .map { it.value }
+            // Present the returned device.
             .onEach { target ->
                 repository.target = target
                 _state.value = _state.value.copy(
@@ -131,7 +132,7 @@ internal class DFUViewModel @Inject constructor(
                 _state.value = _state.value.copy(settings = it)
 
                 if (it.showWelcomeScreen) {
-                    navigationManager.navigateTo(DfuWelcomeScreen)
+                    navigator.navigateTo(DfuWelcome)
                 }
             }
             .launchIn(viewModelScope)
@@ -146,7 +147,7 @@ internal class DFUViewModel @Inject constructor(
                     is LoadingFile -> _state.value = _state.value.copy(
                         fileViewEntity = NotSelectedFileViewEntity(isRunning = true, isError = false),
                     )
-                    null -> doNothing()
+                    null -> {}
                 }
             }
             .launchIn(viewModelScope)
@@ -157,19 +158,19 @@ internal class DFUViewModel @Inject constructor(
     }
 
     private fun requestBluetoothDevice() {
-        navigationManager.navigateTo(ScannerDestination)
+        navigator.navigateTo(Scanner)
     }
 
     fun onEvent(event: DFUViewEvent) {
         when (event) {
-            OnDisconnectButtonClick -> navigationManager.navigateUp()
+            OnDisconnectButtonClick -> navigator.navigateUp()
             OnInstallButtonClick -> onInstallButtonClick()
             OnAbortButtonClick -> repository.abort()
             is OnZipFileSelected -> onZipFileSelected(event.file)
-            NavigateUp -> navigationManager.navigateUp()
-            OnCloseButtonClick -> navigationManager.navigateUp()
+            NavigateUp -> navigator.navigateUp()
+            OnCloseButtonClick -> navigator.navigateUp()
             OnSelectDeviceButtonClick -> requestBluetoothDevice()
-            OnSettingsButtonClick -> navigationManager.navigateTo(DfuSettingsScreen)
+            OnSettingsButtonClick -> navigator.navigateTo(DfuSettings)
             OnLoggerButtonClick -> repository.openLogger()
         }
     }

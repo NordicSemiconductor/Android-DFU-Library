@@ -31,26 +31,27 @@
 
 package no.nordicsemi.android.dfu.profile.settings.viewmodel
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import no.nordicsemi.android.common.navigation.NavigationManager
+import no.nordicsemi.android.common.navigation.Navigator
 import no.nordicsemi.android.dfu.analytics.*
-import no.nordicsemi.android.dfu.profile.welcome.DfuWelcomeScreen
 import no.nordicsemi.android.dfu.profile.settings.view.*
+import no.nordicsemi.android.dfu.profile.welcome.DfuWelcome
 import no.nordicsemi.android.dfu.settings.domain.DFUSettings
 import no.nordicsemi.android.dfu.settings.repository.SettingsRepository
 import javax.inject.Inject
 
-private const val INFOCENTER_LINK = "https://infocenter.nordicsemi.com/topic/sdk_nrf5_v17.1.0/examples_bootloader.html"
+private val INFOCENTER_LINK = Uri.parse("https://infocenter.nordicsemi.com/topic/sdk_nrf5_v17.1.0/examples_bootloader.html")
 
 @HiltViewModel
 internal class SettingsViewModel @Inject constructor(
     private val repository: SettingsRepository,
-    private val navigationManager: NavigationManager,
+    private val navigator: Navigator,
     private val analytics: DfuAnalytics
 ) : ViewModel() {
 
@@ -58,10 +59,10 @@ internal class SettingsViewModel @Inject constructor(
 
     fun onEvent(event: SettingsScreenViewEvent) {
         when (event) {
-            NavigateUp -> navigationManager.navigateUp()
+            NavigateUp -> navigator.navigateUp()
             OnResetButtonClick -> restoreDefaultSettings()
-            OnAboutAppClick -> navigationManager.navigateTo(DfuWelcomeScreen)
-            OnAboutDfuClick -> navigationManager.openLink(INFOCENTER_LINK)
+            OnAboutAppClick -> navigator.navigateTo(DfuWelcome)
+            OnAboutDfuClick -> navigator.open(INFOCENTER_LINK)
             OnExternalMcuDfuSwitchClick -> onExternalMcuDfuSwitchClick()
             OnKeepBondInformationSwitchClick -> onKeepBondSwitchClick()
             OnPacketsReceiptNotificationSwitchClick -> onPacketsReceiptNotificationSwitchClick()

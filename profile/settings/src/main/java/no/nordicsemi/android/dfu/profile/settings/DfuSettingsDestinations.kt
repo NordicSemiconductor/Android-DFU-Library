@@ -31,15 +31,12 @@
 
 package no.nordicsemi.android.dfu.profile.settings
 
-import no.nordicsemi.android.common.navigation.ComposeDestination
-import no.nordicsemi.android.common.navigation.ComposeDestinations
-import no.nordicsemi.android.common.navigation.DestinationId
+import no.nordicsemi.android.common.navigation.createSimpleDestination
+import no.nordicsemi.android.common.navigation.defineDestination
 import no.nordicsemi.android.dfu.profile.settings.view.SettingsScreen
 
-val DfuSettingsScreen = DestinationId("dfu-settings-screen")
+val DfuSettings = createSimpleDestination("dfu-settings")
 
-private val destinations = listOf(
-    ComposeDestination(DfuSettingsScreen) { SettingsScreen() },
-)
-
-val DfuSettingsDestinations = ComposeDestinations(destinations)
+val DfuSettingsDestination = defineDestination(DfuSettings) {
+    SettingsScreen()
+}

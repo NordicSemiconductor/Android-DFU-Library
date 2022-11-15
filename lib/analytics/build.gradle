@@ -32,7 +32,7 @@ kapt {
 
 dependencies {
     implementation "no.nordicsemi.android.common:analytics:$nordic_common_version"
-
+    // Dagger and Hilt
     implementation "com.google.dagger:hilt-android:$dagger_version"
     kapt "com.google.dagger:hilt-android-compiler:$dagger_version"
 }

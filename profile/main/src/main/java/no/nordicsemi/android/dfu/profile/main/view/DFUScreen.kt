@@ -86,6 +86,8 @@ internal fun DFUScreen() {
                 modifier = Modifier
                     .widthIn(max = 600.dp)
                     .padding(16.dp)
+                    // Leave more space for the navigation bar.
+                    .padding(bottom = 16.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp)

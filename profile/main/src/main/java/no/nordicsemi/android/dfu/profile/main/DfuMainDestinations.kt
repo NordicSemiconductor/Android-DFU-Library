@@ -31,15 +31,12 @@
 
 package no.nordicsemi.android.dfu.profile.main
 
-import no.nordicsemi.android.common.navigation.ComposeDestination
-import no.nordicsemi.android.common.navigation.ComposeDestinations
-import no.nordicsemi.android.common.navigation.DestinationId
+import no.nordicsemi.android.common.navigation.createSimpleDestination
+import no.nordicsemi.android.common.navigation.defineDestination
 import no.nordicsemi.android.dfu.profile.main.view.DFUScreen
 
-val DfuMainScreen = DestinationId("dfu-main-screen")
+val DfuMain = createSimpleDestination("dfu")
 
-private val destinations = listOf(
-    ComposeDestination(DfuMainScreen) { DFUScreen() },
-)
-
-val DfuMainDestinations = ComposeDestinations(destinations)
+val DfuMainDestination = defineDestination(DfuMain) {
+    DFUScreen()
+}

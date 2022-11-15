@@ -38,13 +38,13 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import no.nordicsemi.android.common.navigation.NavigationManager
+import no.nordicsemi.android.common.navigation.Navigator
 import no.nordicsemi.android.dfu.settings.repository.SettingsRepository
 import javax.inject.Inject
 
 @HiltViewModel
 internal class WelcomeViewModel @Inject constructor(
-    private val navigationManager: NavigationManager,
+    private val navigator: Navigator,
     private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
@@ -55,7 +55,7 @@ internal class WelcomeViewModel @Inject constructor(
     fun navigateUp() {
         viewModelScope.launch {
             settingsRepository.tickWelcomeScreenShown()
-            navigationManager.navigateUp()
+            navigator.navigateUp()
         }
     }
 }
