@@ -9,6 +9,8 @@ include ':profile:settings'
 include ':profile:welcome'
 include ':profile:navigation'
 
+rootProject.name = "Device Firmware Update"
+
 if (file('../Android-Common-Libraries').exists()) {
     includeBuild('../Android-Common-Libraries')
 }
