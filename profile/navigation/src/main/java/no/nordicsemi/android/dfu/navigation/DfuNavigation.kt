@@ -29,49 +29,11 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package no.nordicsemi.android.dfu.app
+package no.nordicsemi.android.dfu.navigation
 
-import android.content.Intent
-import android.os.Bundle
-import androidx.activity.compose.setContent
-import dagger.hilt.android.AndroidEntryPoint
-import no.nordicsemi.android.common.navigation.NavigationView
-import no.nordicsemi.android.common.theme.NordicActivity
-import no.nordicsemi.android.common.theme.NordicTheme
-import no.nordicsemi.android.dfu.analytics.DfuAnalytics
-import no.nordicsemi.android.dfu.analytics.HandleDeepLinkEvent
-import no.nordicsemi.android.dfu.navigation.DfuDestinations
-import no.nordicsemi.android.dfu.storage.DeepLinkHandler
-import javax.inject.Inject
+import no.nordicsemi.android.dfu.profile.main.DfuMainDestination
+import no.nordicsemi.android.dfu.profile.scanner.ScannerDestination
+import no.nordicsemi.android.dfu.profile.settings.DfuSettingsDestination
+import no.nordicsemi.android.dfu.profile.welcome.DfuWelcomeDestination
 
-@AndroidEntryPoint
-class MainActivity : NordicActivity() {
-
-    @Inject
-    lateinit var linkHandler: DeepLinkHandler
-
-    @Inject
-    lateinit var analytics: DfuAnalytics
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        if (linkHandler.handleDeepLink(intent)) {
-            analytics.logEvent(HandleDeepLinkEvent)
-        }
-
-        setContent {
-            NordicTheme {
-                NavigationView(DfuDestinations)
-            }
-        }
-    }
-
-    override fun onNewIntent(intent: Intent?) {
-        super.onNewIntent(intent)
-
-        if (linkHandler.handleDeepLink(intent)) {
-            analytics.logEvent(HandleDeepLinkEvent)
-        }
-    }
-}
+val DfuDestinations = DfuMainDestination + DfuSettingsDestination + DfuWelcomeDestination + ScannerDestination

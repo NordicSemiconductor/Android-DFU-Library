@@ -1,8 +1,15 @@
 include ':app'
-include ':lib_analytics'
-include ':lib_dfu'
-include ':lib_storage'
-include ':profile_dfu'
+include ':lib:analytics'
+include ':lib:dfu'
+include ':lib:storage'
+include ':lib:settings'
+include ':profile:main'
+include ':profile:scanner'
+include ':profile:settings'
+include ':profile:welcome'
+include ':profile:navigation'
+
+rootProject.name = "Device Firmware Update"
 
 if (file('../Android-Common-Libraries').exists()) {
     includeBuild('../Android-Common-Libraries')

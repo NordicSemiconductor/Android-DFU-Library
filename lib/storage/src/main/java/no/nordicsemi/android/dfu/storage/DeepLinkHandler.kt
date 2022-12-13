@@ -29,49 +29,43 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package no.nordicsemi.android.dfu.app
+package no.nordicsemi.android.dfu.storage
 
 import android.content.Intent
-import android.os.Bundle
-import androidx.activity.compose.setContent
-import dagger.hilt.android.AndroidEntryPoint
-import no.nordicsemi.android.common.navigation.NavigationView
-import no.nordicsemi.android.common.theme.NordicActivity
-import no.nordicsemi.android.common.theme.NordicTheme
-import no.nordicsemi.android.dfu.analytics.DfuAnalytics
-import no.nordicsemi.android.dfu.analytics.HandleDeepLinkEvent
-import no.nordicsemi.android.dfu.navigation.DfuDestinations
-import no.nordicsemi.android.dfu.storage.DeepLinkHandler
+import android.net.Uri
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
+import javax.inject.Singleton
 
-@AndroidEntryPoint
-class MainActivity : NordicActivity() {
+/**
+ * Example test:
+ *
+ * adb shell am start -W -a android.intent.action.VIEW -d "http://www.nordicsemi.com/dfu/?file=https://drive.google.com/uc?export=download%26id=1EcPZBA7Mi4-g-ygnk1SnTiSm0r57i1Rt" no.nordicsemi.android.dfu
+ * '&' in nested link encode with '%26'
+ */
+private const val PARAM_KEY = "file"
 
-    @Inject
-    lateinit var linkHandler: DeepLinkHandler
+@Singleton
+class DeepLinkHandler @Inject internal constructor(
+    private val downloadManagerWrapper: ExternalFileDataSource,
+) {
+    private val _zipFile = MutableStateFlow<Uri?>(null)
+    val zipFile = _zipFile.asStateFlow()
 
-    @Inject
-    lateinit var analytics: DfuAnalytics
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        if (linkHandler.handleDeepLink(intent)) {
-            analytics.logEvent(HandleDeepLinkEvent)
+    /**
+     * @return true if deep link was handled
+     */
+    fun handleDeepLink(intent: Intent?): Boolean {
+        val data = intent?.data
+        val deeplinkParam = data?.getQueryParameter(PARAM_KEY)
+        if (deeplinkParam != null) {
+            downloadManagerWrapper.download(deeplinkParam)
+            return true
+        } else if (data != null) {
+            _zipFile.value = data
+            return true
         }
-
-        setContent {
-            NordicTheme {
-                NavigationView(DfuDestinations)
-            }
-        }
-    }
-
-    override fun onNewIntent(intent: Intent?) {
-        super.onNewIntent(intent)
-
-        if (linkHandler.handleDeepLink(intent)) {
-            analytics.logEvent(HandleDeepLinkEvent)
-        }
+        return false
     }
 }

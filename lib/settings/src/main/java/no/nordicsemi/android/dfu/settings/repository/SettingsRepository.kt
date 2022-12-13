@@ -29,49 +29,23 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package no.nordicsemi.android.dfu.app
+package no.nordicsemi.android.dfu.settings.repository
 
-import android.content.Intent
-import android.os.Bundle
-import androidx.activity.compose.setContent
-import dagger.hilt.android.AndroidEntryPoint
-import no.nordicsemi.android.common.navigation.NavigationView
-import no.nordicsemi.android.common.theme.NordicActivity
-import no.nordicsemi.android.common.theme.NordicTheme
-import no.nordicsemi.android.dfu.analytics.DfuAnalytics
-import no.nordicsemi.android.dfu.analytics.HandleDeepLinkEvent
-import no.nordicsemi.android.dfu.navigation.DfuDestinations
-import no.nordicsemi.android.dfu.storage.DeepLinkHandler
+import dagger.hilt.android.scopes.ViewModelScoped
+import no.nordicsemi.android.dfu.settings.domain.DFUSettings
 import javax.inject.Inject
 
-@AndroidEntryPoint
-class MainActivity : NordicActivity() {
+@ViewModelScoped
+class SettingsRepository @Inject constructor(
+    private val settingsDataSource: SettingsDataSource
+) {
+    val settings = settingsDataSource.settings
 
-    @Inject
-    lateinit var linkHandler: DeepLinkHandler
-
-    @Inject
-    lateinit var analytics: DfuAnalytics
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        if (linkHandler.handleDeepLink(intent)) {
-            analytics.logEvent(HandleDeepLinkEvent)
-        }
-
-        setContent {
-            NordicTheme {
-                NavigationView(DfuDestinations)
-            }
-        }
+    suspend fun storeSettings(settings: DFUSettings) {
+        settingsDataSource.storeSettings(settings)
     }
 
-    override fun onNewIntent(intent: Intent?) {
-        super.onNewIntent(intent)
-
-        if (linkHandler.handleDeepLink(intent)) {
-            analytics.logEvent(HandleDeepLinkEvent)
-        }
+    suspend fun tickWelcomeScreenShown() {
+        settingsDataSource.tickWelcomeScreenShown()
     }
 }

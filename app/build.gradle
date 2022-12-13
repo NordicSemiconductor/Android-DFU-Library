@@ -1,7 +1,6 @@
 plugins {
     id 'com.android.application'
     id 'kotlin-android'
-    id 'kotlin-parcelize'
     id 'kotlin-kapt'
     id 'com.google.dagger.hilt.android'
 }
@@ -22,8 +21,6 @@ android {
         targetSdk android_api_version
         versionCode getVersionCodeFromTags()
         versionName getVersionNameFromTags()
-
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     signingConfigs {
@@ -58,17 +55,20 @@ kapt {
 }
 
 dependencies {
-    implementation project(":lib_analytics")
-    implementation project(":lib_storage")
-    implementation project(":profile_dfu")
+    implementation project(":lib:analytics")
+    implementation project(":lib:storage") // Deep link support
+    implementation project(":profile:navigation")
 
     implementation "no.nordicsemi.android.common:theme:$nordic_common_version"
     implementation "no.nordicsemi.android.common:navigation:$nordic_common_version"
 
-    implementation "androidx.compose.ui:ui:$compose_version"
-    implementation "androidx.compose.material3:material3:$material3_version"
-    implementation "androidx.activity:activity-compose:1.6.0"
+    implementation platform("androidx.compose:compose-bom:$compose_version")
+    // Material 3
+    implementation "androidx.compose.material3:material3"
+    // Integration with activities
+    implementation "androidx.activity:activity-compose:1.6.1"
 
+    // Dagger and Hilt
     implementation "com.google.dagger:hilt-android:$dagger_version"
     kapt "com.google.dagger:hilt-android-compiler:$dagger_version"
 }

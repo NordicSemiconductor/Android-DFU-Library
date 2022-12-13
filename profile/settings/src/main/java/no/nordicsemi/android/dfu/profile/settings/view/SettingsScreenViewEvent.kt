@@ -29,49 +29,32 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package no.nordicsemi.android.dfu.app
+package no.nordicsemi.android.dfu.profile.settings.view
 
-import android.content.Intent
-import android.os.Bundle
-import androidx.activity.compose.setContent
-import dagger.hilt.android.AndroidEntryPoint
-import no.nordicsemi.android.common.navigation.NavigationView
-import no.nordicsemi.android.common.theme.NordicActivity
-import no.nordicsemi.android.common.theme.NordicTheme
-import no.nordicsemi.android.dfu.analytics.DfuAnalytics
-import no.nordicsemi.android.dfu.analytics.HandleDeepLinkEvent
-import no.nordicsemi.android.dfu.navigation.DfuDestinations
-import no.nordicsemi.android.dfu.storage.DeepLinkHandler
-import javax.inject.Inject
+internal sealed interface SettingsScreenViewEvent
 
-@AndroidEntryPoint
-class MainActivity : NordicActivity() {
+internal object OnPacketsReceiptNotificationSwitchClick : SettingsScreenViewEvent
 
-    @Inject
-    lateinit var linkHandler: DeepLinkHandler
+internal data class OnNumberOfPocketsChange(val numberOfPockets: Int) : SettingsScreenViewEvent
 
-    @Inject
-    lateinit var analytics: DfuAnalytics
+internal data class OnPrepareDataObjectDelayChange(val delay: Int) : SettingsScreenViewEvent
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+internal data class OnRebootTimeChange(val time: Int) : SettingsScreenViewEvent
 
-        if (linkHandler.handleDeepLink(intent)) {
-            analytics.logEvent(HandleDeepLinkEvent)
-        }
+internal data class OnScanTimeoutChange(val timeout: Int) : SettingsScreenViewEvent
 
-        setContent {
-            NordicTheme {
-                NavigationView(DfuDestinations)
-            }
-        }
-    }
+internal object OnDisableResumeSwitchClick : SettingsScreenViewEvent
 
-    override fun onNewIntent(intent: Intent?) {
-        super.onNewIntent(intent)
+internal object OnForceScanningAddressesSwitchClick : SettingsScreenViewEvent
 
-        if (linkHandler.handleDeepLink(intent)) {
-            analytics.logEvent(HandleDeepLinkEvent)
-        }
-    }
-}
+internal object OnKeepBondInformationSwitchClick : SettingsScreenViewEvent
+
+internal object OnExternalMcuDfuSwitchClick : SettingsScreenViewEvent
+
+internal object OnAboutDfuClick : SettingsScreenViewEvent
+
+internal object OnAboutAppClick : SettingsScreenViewEvent
+
+internal object NavigateUp : SettingsScreenViewEvent
+
+internal object OnResetButtonClick : SettingsScreenViewEvent
