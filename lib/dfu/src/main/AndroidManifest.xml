@@ -1,5 +1,4 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="no.nordicsemi.android.dfu">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!--
          Bluetooth permission is required on Android 4.3 - 11 in order to communicate with
