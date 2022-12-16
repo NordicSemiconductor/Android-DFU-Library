@@ -12,4 +12,7 @@ plugins {
     alias(libs.plugins.nordic.kotlin) apply false
     alias(libs.plugins.nordic.hilt) apply false
     alias(libs.plugins.nordic.nexus) apply false
+
+    id("com.google.gms.google-services") version "4.3.14" apply false
+    id("com.google.firebase.crashlytics") version "2.9.2" apply false
 }
