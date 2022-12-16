@@ -19,7 +19,7 @@ platform :android do
 
   desc "Deploy libraries to Nexus."
   lane :deployNexus do
-    gradle(task: "publishToSonatype closeAndReleaseSonatypeStagingRepository")
+    gradle(task: "publish")
   end
 
   desc "Deploy a new version to the Google Play"
