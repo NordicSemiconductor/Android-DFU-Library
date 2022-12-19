@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import no.nordicsemi.android.common.analytics.view.AnalyticsPermissionSwitch
 import no.nordicsemi.android.common.theme.view.NordicAppBar
+import no.nordicsemi.android.dfu.BuildConfig.VERSION_CODE
 import no.nordicsemi.android.dfu.BuildConfig.VERSION_NAME
 import no.nordicsemi.android.dfu.profile.settings.R
 import no.nordicsemi.android.dfu.profile.settings.viewmodel.SettingsViewModel
@@ -182,7 +183,7 @@ internal fun SettingsScreen() {
             AnalyticsPermissionSwitch()
 
             Text(
-                text = stringResource(id = R.string.dfu_version, VERSION_NAME),
+                text = stringResource(id = R.string.dfu_version, VERSION_NAME, VERSION_CODE),
                 modifier = Modifier.fillMaxWidth(),
                 style = MaterialTheme.typography.labelMedium,
                 color = LocalContentColor.current.copy(alpha = 0.38f),
