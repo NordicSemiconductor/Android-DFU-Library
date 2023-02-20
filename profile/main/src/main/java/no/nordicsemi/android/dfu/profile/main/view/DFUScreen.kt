@@ -44,12 +44,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import no.nordicsemi.android.common.analytics.view.AnalyticsPermissionRequestDialog
 import no.nordicsemi.android.common.logger.view.LoggerAppBarIcon
 import no.nordicsemi.android.common.theme.view.NordicAppBar
@@ -60,7 +60,7 @@ import no.nordicsemi.android.dfu.profile.main.viewmodel.DFUViewModel
 @Composable
 internal fun DFUScreen() {
     val viewModel: DFUViewModel = hiltViewModel()
-    val state = viewModel.state.collectAsState().value
+    val state = viewModel.state.collectAsStateWithLifecycle().value
     val onEvent: (DFUViewEvent) -> Unit = { viewModel.onEvent(it) }
 
     Column {

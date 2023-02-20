@@ -48,6 +48,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import no.nordicsemi.android.common.analytics.view.AnalyticsPermissionSwitch
 import no.nordicsemi.android.common.theme.view.NordicAppBar
 import no.nordicsemi.android.dfu.BuildConfig.VERSION_CODE
@@ -59,7 +60,7 @@ import no.nordicsemi.android.dfu.profile.settings.viewmodel.SettingsViewModel
 @Composable
 internal fun SettingsScreen() {
     val viewModel = hiltViewModel<SettingsViewModel>()
-    val state = viewModel.state.collectAsState().value
+    val state = viewModel.state.collectAsStateWithLifecycle().value
     val onEvent: (SettingsScreenViewEvent) -> Unit = { viewModel.onEvent(it) }
     var showDialog by rememberSaveable { mutableStateOf(false) }
 
