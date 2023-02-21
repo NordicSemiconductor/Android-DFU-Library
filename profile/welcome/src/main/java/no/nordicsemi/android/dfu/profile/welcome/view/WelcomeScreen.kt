@@ -39,6 +39,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,7 +58,7 @@ import no.nordicsemi.android.dfu.profile.welcome.viewmodel.WelcomeViewModel
 @Composable
 internal fun WelcomeScreen() {
     val viewModel = hiltViewModel<WelcomeViewModel>()
-    val firstRun = viewModel.firstRun.collectAsStateWithLifecycle().value
+    val firstRun by viewModel.firstRun.collectAsStateWithLifecycle()
 
     Box {
         Column {

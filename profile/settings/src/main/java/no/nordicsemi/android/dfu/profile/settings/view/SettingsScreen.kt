@@ -60,7 +60,7 @@ import no.nordicsemi.android.dfu.profile.settings.viewmodel.SettingsViewModel
 @Composable
 internal fun SettingsScreen() {
     val viewModel = hiltViewModel<SettingsViewModel>()
-    val state = viewModel.state.collectAsStateWithLifecycle().value
+    val state by viewModel.state.collectAsStateWithLifecycle()
     val onEvent: (SettingsScreenViewEvent) -> Unit = { viewModel.onEvent(it) }
     var showDialog by rememberSaveable { mutableStateOf(false) }
 

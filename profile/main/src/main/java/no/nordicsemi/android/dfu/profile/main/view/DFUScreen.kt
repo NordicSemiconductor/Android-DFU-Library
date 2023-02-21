@@ -44,6 +44,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -60,7 +61,7 @@ import no.nordicsemi.android.dfu.profile.main.viewmodel.DFUViewModel
 @Composable
 internal fun DFUScreen() {
     val viewModel: DFUViewModel = hiltViewModel()
-    val state = viewModel.state.collectAsStateWithLifecycle().value
+    val state by viewModel.state.collectAsStateWithLifecycle()
     val onEvent: (DFUViewEvent) -> Unit = { viewModel.onEvent(it) }
 
     Column {
