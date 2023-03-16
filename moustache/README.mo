@@ -172,17 +172,17 @@ iOS version of the same library can be found at [IOS-DFU-Library](https://github
 ### React Native
 
 A library for both iOS and Android that is based on this library is available for React Native: 
-[react-native-nordic-dfu](https://github.com/Pilloxa/react-native-nordic-dfu) 
+[react-native-nordic-dfu](https://github.com/Salt-PepperEngineering/react-native-nordic-dfu) 
 
 ### Flutter
 
 A library for both iOS and Android that is based on this library is available for Flutter: 
-[flutter-nordic-dfu](https://github.com/fengqiangboy/flutter-nordic-dfu) 
+[nordic-dfu](https://pub.dev/packages/nordic_dfu) 
 
 ### Xamarin
 
 Simple binding library for Android is available on nuget:
-[Laerdal.Dfu.Android](https://www.nuget.org/packages/Laerdal.Dfu.Android/)
+[Laerdal.Dfu](https://www.nuget.org/packages/Laerdal.Dfu/)
 
 ## Resources
 
