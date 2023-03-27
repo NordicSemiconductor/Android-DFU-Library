@@ -769,7 +769,6 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Scanning for the DFU Bootloader... (timeout " + timeout + " ms)");
 			if (delay > 0)
 				mService.waitFor(delay);
-			newAddress = BootloaderScannerFactory.getScanner(mGatt.getDevice().getAddress()).searchUsing(mService.getDeviceSelector(), timeout);
 			if (mBootloaderScannerCustomDeviceAddress != null) {
 				bootloaderScannerDeviceAddress = mBootloaderScannerCustomDeviceAddress;
 			} else {
@@ -778,7 +777,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 			
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Scanning for the DFU Bootloader...; Looking for bootloader at deviceAddress=" + bootloaderScannerDeviceAddress);
 
-			newAddress = BootloaderScannerFactory.getScanner().searchFor(bootloaderScannerDeviceAddress);
+			newAddress = BootloaderScannerFactory.getScanner(bootloaderScannerDeviceAddress).searchUsing(mService.getDeviceSelector(), timeout);
 
 			logi("Scanning for new address finished with: " + newAddress);
 			if (newAddress != null)
