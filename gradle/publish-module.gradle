@@ -59,10 +59,10 @@ afterEvaluate {
     }
 }
 
-//ext["signing.keyId"] = System.env.GPG_SIGNING_KEY
-//ext["signing.password"] = System.env.GPG_PASSWORD
-//ext["signing.secretKeyRingFile"] = "../sec.gpg"
-//
-//signing {
-//    sign publishing.publications
-//}
+ext["signing.keyId"] = System.env.GPG_SIGNING_KEY
+ext["signing.password"] = System.env.GPG_PASSWORD
+ext["signing.secretKeyRingFile"] = "../sec.gpg"
+
+signing {
+    sign publishing.publications
+}
