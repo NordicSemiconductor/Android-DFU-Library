@@ -1,3 +1,12 @@
+
+# Somewear 
+## Generate artifact
+1. Move keystore.properties to root directory. Obtain from team password manager.
+2. Run `./gradlew app:assemble`
+3. .aar file will be located in: `lib/dfu/build/outputs/aar/dfu-release.aar`
+4. Upload .aar to our repo
+
+
 [ ![Download](https://maven-badges.herokuapp.com/maven-central/no.nordicsemi.android/dfu/badge.svg?style=plastic) ](https://search.maven.org/artifact/no.nordicsemi.android/dfu)
 
 # Device Firmware Update
