@@ -5,19 +5,18 @@ jobs:
   deployAarsToNexus:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - shell: bash
         env:
-          # The following env variables are used by gradle/publish-module.gradle
+          # The following env variables are used by Nexus plugin
           GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
           GPG_PASSWORD: ${{ secrets.GPG_PASSWORD }}
-          # The following env variables are used by gradle/publish-root.gradle
           OSSR_USERNAME: ${{ secrets.OSSR_USERNAME }}
           OSSR_PASSWORD: ${{ secrets.OSSR_PASSWORD }}
           SONATYPE_STATING_PROFILE_ID: ${{ secrets.SONATYPE_STATING_PROFILE_ID }}
-        # The script generates sec.gpg file that is required by gradle/publish-module.gradle
+        # The script generates sec.gpg file that is required by Nexus plugin
         # and starts :deployNexus lane using fastlane.
         run: |
           echo "${{ secrets.GPG_FILE }}" > sec.gpg.asc
