@@ -5,16 +5,24 @@ plugins {
     alias(libs.plugins.nordic.hilt)
 }
 
-if (gradle.startParameter.taskRequests.toString().contains("Release")) {
-    apply(plugin = "com.google.gms.google-services")
-    apply(plugin = "com.google.firebase.crashlytics")
-}
+//if (gradle.startParameter.taskRequests.toString().contains("Release")) {
+//    apply(plugin = "com.google.gms.google-services")
+//    apply(plugin = "com.google.firebase.crashlytics")
+//}
 
 android {
     namespace = "no.nordicsemi.android.dfu.app"
     defaultConfig {
         applicationId = "no.nordicsemi.android.dfu"
         resourceConfigurations.add("en")
+    }
+    signingConfigs {
+        getByName("release") {
+            keyAlias = "alias"
+            keyPassword = "password"
+            storeFile = file("jks file")
+            storePassword = "store_password"
+        }
     }
 }
 
