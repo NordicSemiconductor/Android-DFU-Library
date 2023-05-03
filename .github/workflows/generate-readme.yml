@@ -8,6 +8,10 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'corretto'
+          java-version: '17'
       - shell: bash
         # The script gets VERSION from the latest tag and replaces {{VERSION}} with it in
         # moustache/README.mo. Then, it commits the change using GitHub Action user.
