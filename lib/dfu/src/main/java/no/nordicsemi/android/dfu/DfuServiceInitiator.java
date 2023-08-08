@@ -913,11 +913,11 @@ public final class DfuServiceInitiator {
 	}
 
 	@RequiresApi(api = Build.VERSION_CODES.O)
-	public static void createDfuNotificationChannel(@NonNull final Context context) {
+	public static void createDfuNotificationChannel(@NonNull final Context context, @NonNull final String dfu_channel_name, @NonNull final String dfu_channel_description, boolean showBadge) {
 		final NotificationChannel channel =
-				new NotificationChannel(DfuBaseService.NOTIFICATION_CHANNEL_DFU, context.getString(R.string.dfu_channel_name), NotificationManager.IMPORTANCE_LOW);
-		channel.setDescription(context.getString(R.string.dfu_channel_description));
-		channel.setShowBadge(false);
+				new NotificationChannel(DfuBaseService.NOTIFICATION_CHANNEL_DFU, dfu_channel_name, NotificationManager.IMPORTANCE_LOW);
+		channel.setDescription(dfu_channel_description);
+		channel.setShowBadge(showBadge);
 		channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
 
 		final NotificationManager notificationManager =
@@ -925,5 +925,10 @@ public final class DfuServiceInitiator {
 		if (notificationManager != null) {
 			notificationManager.createNotificationChannel(channel);
 		}
+	}
+
+	@RequiresApi(api = Build.VERSION_CODES.O)
+	public static void createDfuNotificationChannel(@NonNull final Context context) {
+		createDfuNotificationChannel(context, context.getString(R.string.dfu_channel_name), context.getString(R.string.dfu_channel_description), false)
 	}
 }
