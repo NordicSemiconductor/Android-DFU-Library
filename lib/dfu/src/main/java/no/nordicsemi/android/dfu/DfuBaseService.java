@@ -1592,7 +1592,6 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 
 		sendLogBroadcast(LOG_LEVEL_VERBOSE, "Disconnecting...");
 		mProgressInfo.setProgress(PROGRESS_DISCONNECTING);
-		mConnectionState = STATE_DISCONNECTING;
 
 		logi("Disconnecting from the device...");
 		sendLogBroadcast(LOG_LEVEL_DEBUG, "gatt.disconnect()");
