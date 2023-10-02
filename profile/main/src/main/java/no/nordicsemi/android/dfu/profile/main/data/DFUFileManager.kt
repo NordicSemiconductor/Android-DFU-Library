@@ -42,7 +42,9 @@ import javax.inject.Inject
 internal class DFUFileManager @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
-    private val TAG = "DFU_FILE_MANAGER"
+    companion object {
+        private const val TAG = "DFUFileManager"
+    }
 
     fun createFile(uri: Uri): ZipFile? {
         return try {

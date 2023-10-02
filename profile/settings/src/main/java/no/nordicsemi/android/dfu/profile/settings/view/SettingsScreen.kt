@@ -322,7 +322,6 @@ private fun SettingsButton(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun NumberOfPocketsDialog(
     numberOfPockets: Int,

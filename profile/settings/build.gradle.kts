@@ -1,7 +1,7 @@
 plugins {
     // https://github.com/NordicSemiconductor/Android-Gradle-Plugins/blob/main/plugins/src/main/kotlin/AndroidFeatureConventionPlugin.kt
     alias(libs.plugins.nordic.feature)
-    id("kotlin-parcelize")
+    alias(libs.plugins.kotlin.parcelize)
 }
 
 android {
@@ -11,7 +11,6 @@ android {
 dependencies {
     implementation(project(":lib:dfu"))
     implementation(project(":lib:analytics"))
-    implementation(project(":lib:storage"))
     implementation(project(":lib:settings"))
     implementation(project(":profile:welcome"))
 

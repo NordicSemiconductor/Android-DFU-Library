@@ -35,6 +35,6 @@ import android.net.Uri
 
 sealed class FileResource
 
-object LoadingFile : FileResource()
+data object LoadingFile : FileResource()
 data class FileDownloaded(val uri: Uri) : FileResource()
-object FileError : FileResource()
+data object FileError : FileResource()

@@ -11,7 +11,7 @@
     <string name="dfu_status_starting">Starting DFU&#8230;</string>
     <string name="dfu_status_switching_to_dfu">Starting bootloader&#8230;</string>
     <string name="dfu_status_uploading">Uploading&#8230;</string>
-    <string name="dfu_status_uploading_part" formatted="false">Uploading part %d/%d&#8230;</string>
+    <string name="dfu_status_uploading_part">Uploading part %d/%d&#8230;</string>
     <string name="dfu_status_validating">Validating&#8230;</string>
     <string name="dfu_status_disconnecting">Disconnecting&#8230;</string>
     <string name="dfu_status_completed">Done</string>

@@ -33,8 +33,8 @@ package no.nordicsemi.android.dfu.profile.main.data
 
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
-import no.nordicsemi.android.common.logger.NordicLogger
-import no.nordicsemi.android.common.logger.NordicLoggerFactory
+import no.nordicsemi.android.common.logger.BleLoggerAndLauncher
+import no.nordicsemi.android.common.logger.DefaultBleLogger
 import no.nordicsemi.android.dfu.DfuServiceController
 import no.nordicsemi.android.dfu.DfuServiceInitiator
 import no.nordicsemi.android.dfu.DfuServiceListenerHelper
@@ -45,24 +45,23 @@ import javax.inject.Inject
 
 internal class DFUManager @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val loggerFactory: NordicLoggerFactory,
 ) {
-    private var logger: NordicLogger? = null
+    private var logger: BleLoggerAndLauncher? = null
 
     fun install(
         file: ZipFile,
         target: DfuTarget,
         settings: DFUSettings
     ): DfuServiceController {
-        logger = loggerFactory
-            .create(null, target.device.address, target.name)
+        logger = DefaultBleLogger
+            .create(context, null, target.address, target.name)
             .also {
                 DfuServiceListenerHelper.registerLogListener(context) { _, level, message ->
                     it.log(level, message)
                 }
             }
 
-        val starter = DfuServiceInitiator(target.device.address).apply {
+        val starter = DfuServiceInitiator(target.address).apply {
             setDeviceName(target.name)
 
             setKeepBond(settings.keepBondInformation)
@@ -87,6 +86,6 @@ internal class DFUManager @Inject constructor(
     }
 
     fun openLogger() {
-        NordicLogger.launch(context, logger)
+        logger?.launch()
     }
 }

@@ -386,7 +386,7 @@ public final class DfuServiceInitiator {
 	 * The higher the MTU, the faster the data may be sent.
 	 * <p>
 	 * If you encounter problems with high MTU, you may lower the required value using this method.
-	 * See: https://github.com/NordicSemiconductor/Android-DFU-Library/issues/111
+	 * See: <a href="https://github.com/NordicSemiconductor/Android-DFU-Library/issues/111">Issue 111</a>
 	 * <p>
 	 * To disable requesting MTU, use value 0, or {@link #disableMtuRequest()}.
 	 * <p>

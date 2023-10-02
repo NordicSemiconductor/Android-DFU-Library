@@ -34,8 +34,12 @@
 
     <!-- BLUETOOTH permissions are added by lib_dfu module. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE"/>
 
     <application>
-        <service android:name=".repository.DFUService" />
+        <service
+            android:name=".repository.DFUService"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice" />
     </application>
 </manifest>

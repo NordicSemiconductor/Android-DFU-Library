@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.application) apply false
+    alias(libs.plugins.kotlin.parcelize) apply false
     alias(libs.plugins.kotlin.kapt) apply false
     alias(libs.plugins.hilt) apply false
 
@@ -13,6 +14,6 @@ plugins {
     alias(libs.plugins.nordic.hilt) apply false
     alias(libs.plugins.nordic.nexus) apply false
 
-    id("com.google.gms.google-services") version "4.3.14" apply false
-    id("com.google.firebase.crashlytics") version "2.9.2" apply false
+    id("com.google.gms.google-services") version "4.4.0" apply false
+    id("com.google.firebase.crashlytics") version "2.9.9" apply false
 }

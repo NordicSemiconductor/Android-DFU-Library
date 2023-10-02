@@ -30,7 +30,8 @@
   ~ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   -->
 
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!--
     This permission allows displaying foreground service notification.
@@ -58,21 +59,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <intent-filter android:autoVerify="true">
+            <intent-filter android:autoVerify="true" tools:targetApi="m">
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <data
-                    android:host="www.nordicsemi.com"
-                    android:pathPrefix="/dfu"
-                    android:scheme="http" />
-
-                <data
-                    android:host="www.nordicsemi.com"
-                    android:pathPrefix="/dfu"
-                    android:scheme="https" />
+                <data android:scheme="https"/>
+                <data android:scheme="http"/>
+                <data android:host="www.nordicsemi.com"/>
+                <data android:pathPrefix="/dfu"/>
             </intent-filter>
 
             <intent-filter>

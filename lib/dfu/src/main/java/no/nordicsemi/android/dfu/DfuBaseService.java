@@ -50,6 +50,7 @@ import android.provider.MediaStore;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import android.util.Log;
 
@@ -248,7 +249,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 * <p>
 	 * In the SDK 12.x the Buttonless DFU feature for Secure DFU was experimental.
 	 * It is NOT recommended to use it: it was not properly tested, had implementation bugs
-	 * (e.g. https://devzone.nordicsemi.com/question/100609/sdk-12-bootloader-erased-after-programming/)
+	 * (e.g. <a href="https://devzone.nordicsemi.com/question/100609/sdk-12-bootloader-erased-after-programming/">this thread</a>)
 	 * and does not require encryption and therefore may lead to DOS attack (anyone can use it
 	 * to switch the device to bootloader mode). However, as there is no other way to trigger
 	 * bootloader mode on devices without a button, this DFU Library supports this service,
@@ -279,7 +280,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 * This property must contain a boolean value.
 	 * <p>
 	 * If true the Packet Receipt Notification procedure will be enabled.
-	 * See DFU documentation on http://infocenter.nordicsemi.com for more details.
+	 * See DFU documentation on <a href="http://infocenter.nordicsemi.com">Infocenter</a> for more details.
 	 * The number of packets before receiving a Packet Receipt Notification is set with property
 	 * {@link #EXTRA_PACKET_RECEIPT_NOTIFICATIONS_VALUE}.
 	 * The PRNs by default are enabled on devices running Android 4.3, 4.4.x and 5.x and
@@ -393,7 +394,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 *
 	 * @see #EXTRA_FILE_TYPE
 	 */
-	public static final int TYPE_SOFT_DEVICE = 0x01;
+	public static final int TYPE_SOFT_DEVICE = 1;
 	/**
 	 * <p>
 	 * The file contains a new version of Bootloader.
@@ -404,7 +405,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 *
 	 * @see #EXTRA_FILE_TYPE
 	 */
-	public static final int TYPE_BOOTLOADER = 0x02;
+	public static final int TYPE_BOOTLOADER = 1 << 1;
 	/**
 	 * <p>
 	 * The file contains a new version of Application.
@@ -415,7 +416,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 *
 	 * @see #EXTRA_FILE_TYPE
 	 */
-	public static final int TYPE_APPLICATION = 0x04;
+	public static final int TYPE_APPLICATION = 1 << 2;
 	/**
 	 * <p>
 	 * A ZIP file that consists of more than 1 file. Since SDK 8.0 the ZIP Distribution packet is
@@ -636,7 +637,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 * Thrown when the DFU library lost track of what is going on. Reported number of bytes is
 	 * not equal to the number of bytes sent and due to some other events the library cannot recover.
 	 * <p>
-	 * Check https://github.com/NordicSemiconductor/Android-DFU-Library/issues/229
+	 * Check <a href="https://github.com/NordicSemiconductor/Android-DFU-Library/issues/229">Issue 229</a>
 	 */
 	public static final int ERROR_PROGRESS_LOST = ERROR_MASK | 0x0F;
 	/**
@@ -787,22 +788,22 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 
 			logi("User action received: " + action);
 			switch (action) {
-				case ACTION_PAUSE:
+				case ACTION_PAUSE -> {
 					sendLogBroadcast(LOG_LEVEL_WARNING, "[Broadcast] Pause action received");
 					if (mDfuServiceImpl != null)
 						mDfuServiceImpl.pause();
-					break;
-				case ACTION_RESUME:
+				}
+				case ACTION_RESUME -> {
 					sendLogBroadcast(LOG_LEVEL_WARNING, "[Broadcast] Resume action received");
 					if (mDfuServiceImpl != null)
 						mDfuServiceImpl.resume();
-					break;
-				case ACTION_ABORT:
+				}
+				case ACTION_ABORT -> {
 					sendLogBroadcast(LOG_LEVEL_WARNING, "[Broadcast] Abort action received");
 					mAborted = true;
 					if (mDfuServiceImpl != null)
 						mDfuServiceImpl.abort();
-					break;
+				}
 			}
 		}
 	};
@@ -1035,20 +1036,21 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		final LocalBroadcastManager manager = LocalBroadcastManager.getInstance(this);
 		final IntentFilter actionFilter = makeDfuActionIntentFilter();
 		manager.registerReceiver(mDfuActionReceiver, actionFilter);
-		registerReceiver(mDfuActionReceiver, actionFilter); // Additionally we must register this receiver as a non-local to get broadcasts from the notification actions
+		// Additionally we must register this receiver as a non-local to get broadcasts from the notification actions
+		ContextCompat.registerReceiver(this, mDfuActionReceiver, actionFilter, ContextCompat.RECEIVER_NOT_EXPORTED);
 
 		final IntentFilter filter = new IntentFilter();
 		// As we no longer perform any action based on this broadcast, we may log all ACL events
 		filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
 		filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED);
 		filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
-		registerReceiver(mConnectionStateBroadcastReceiver, filter);
+		ContextCompat.registerReceiver(this, mConnectionStateBroadcastReceiver, filter, ContextCompat.RECEIVER_EXPORTED);
 
 		final IntentFilter bondFilter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
-		registerReceiver(mBondStateBroadcastReceiver, bondFilter);
+		ContextCompat.registerReceiver(this, mBondStateBroadcastReceiver, bondFilter, ContextCompat.RECEIVER_EXPORTED);
 
 		final IntentFilter stateFilter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
-		registerReceiver(mBluetoothStateBroadcastReceiver, stateFilter);
+		ContextCompat.registerReceiver(this, mBluetoothStateBroadcastReceiver, stateFilter, ContextCompat.RECEIVER_EXPORTED);
 	}
 
 	@Override
@@ -1720,41 +1722,53 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		builder.setColor(Color.GRAY);
 
 		switch (progress) {
-			case PROGRESS_CONNECTING:
-				builder.setOngoing(true).setContentTitle(getString(R.string.dfu_status_connecting)).setContentText(getString(R.string.dfu_status_connecting_msg, deviceName))
-						.setProgress(100, 0, true);
-				break;
-			case PROGRESS_STARTING:
-				builder.setOngoing(true).setContentTitle(getString(R.string.dfu_status_starting)).setContentText(getString(R.string.dfu_status_starting_msg))
-						.setProgress(100, 0, true);
-				break;
-			case PROGRESS_ENABLING_DFU_MODE:
-				builder.setOngoing(true).setContentTitle(getString(R.string.dfu_status_switching_to_dfu)).setContentText(getString(R.string.dfu_status_switching_to_dfu_msg))
-						.setProgress(100, 0, true);
-				break;
-			case PROGRESS_VALIDATING:
-				builder.setOngoing(true).setContentTitle(getString(R.string.dfu_status_validating)).setContentText(getString(R.string.dfu_status_validating_msg))
-						.setProgress(100, 0, true);
-				break;
-			case PROGRESS_DISCONNECTING:
-				builder.setOngoing(true).setContentTitle(getString(R.string.dfu_status_disconnecting)).setContentText(getString(R.string.dfu_status_disconnecting_msg, deviceName))
-						.setProgress(100, 0, true);
-				break;
-			case PROGRESS_COMPLETED:
-				builder.setOngoing(false).setContentTitle(getString(R.string.dfu_status_completed)).setSmallIcon(android.R.drawable.stat_sys_upload_done)
-						.setContentText(getString(R.string.dfu_status_completed_msg)).setAutoCancel(true).setColor(0xFF00B81A);
-				break;
-			case PROGRESS_ABORTED:
-				builder.setOngoing(false).setContentTitle(getString(R.string.dfu_status_aborted)).setSmallIcon(android.R.drawable.stat_sys_upload_done)
-						.setContentText(getString(R.string.dfu_status_aborted_msg)).setAutoCancel(true);
-				break;
-			default:
+			case PROGRESS_CONNECTING ->
+					builder.setOngoing(true)
+							.setContentTitle(getString(R.string.dfu_status_connecting))
+							.setContentText(getString(R.string.dfu_status_connecting_msg, deviceName))
+							.setProgress(100, 0, true);
+			case PROGRESS_STARTING ->
+					builder.setOngoing(true)
+							.setContentTitle(getString(R.string.dfu_status_starting))
+							.setContentText(getString(R.string.dfu_status_starting_msg))
+							.setProgress(100, 0, true);
+			case PROGRESS_ENABLING_DFU_MODE ->
+					builder.setOngoing(true)
+							.setContentTitle(getString(R.string.dfu_status_switching_to_dfu))
+							.setContentText(getString(R.string.dfu_status_switching_to_dfu_msg))
+							.setProgress(100, 0, true);
+			case PROGRESS_VALIDATING ->
+					builder.setOngoing(true)
+							.setContentTitle(getString(R.string.dfu_status_validating))
+							.setContentText(getString(R.string.dfu_status_validating_msg))
+							.setProgress(100, 0, true);
+			case PROGRESS_DISCONNECTING ->
+					builder.setOngoing(true)
+							.setContentTitle(getString(R.string.dfu_status_disconnecting))
+							.setContentText(getString(R.string.dfu_status_disconnecting_msg, deviceName))
+							.setProgress(100, 0, true);
+			case PROGRESS_COMPLETED ->
+					builder.setOngoing(false)
+							.setContentTitle(getString(R.string.dfu_status_completed))
+							.setSmallIcon(android.R.drawable.stat_sys_upload_done)
+							.setContentText(getString(R.string.dfu_status_completed_msg))
+							.setAutoCancel(true)
+							.setColor(0xFF00B81A);
+			case PROGRESS_ABORTED ->
+					builder.setOngoing(false)
+							.setContentTitle(getString(R.string.dfu_status_aborted))
+							.setSmallIcon(android.R.drawable.stat_sys_upload_done)
+							.setContentText(getString(R.string.dfu_status_aborted_msg))
+							.setAutoCancel(true);
+			default -> {
 				// progress is in percents
-				final String title = info.getTotalParts() == 1 ? getString(R.string.dfu_status_uploading) : getString(R.string.dfu_status_uploading_part, info.getCurrentPart(), info.getTotalParts());
+				final String title = info.getTotalParts() == 1 ?
+						getString(R.string.dfu_status_uploading) :
+						getString(R.string.dfu_status_uploading_part, info.getCurrentPart(), info.getTotalParts());
 				final String text = getString(R.string.dfu_status_uploading_msg, deviceName);
 				builder.setOngoing(true).setContentTitle(title).setContentText(text)
 						.setProgress(100, progress, false);
-				break;
+			}
 		}
 
 		// update the notification

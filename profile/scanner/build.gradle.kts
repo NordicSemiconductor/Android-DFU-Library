@@ -1,7 +1,7 @@
 plugins {
     // https://github.com/NordicSemiconductor/Android-Gradle-Plugins/blob/main/plugins/src/main/kotlin/AndroidFeatureConventionPlugin.kt
     alias(libs.plugins.nordic.feature)
-    id("kotlin-parcelize")
+    alias(libs.plugins.kotlin.parcelize)
 }
 
 android {
@@ -9,6 +9,7 @@ android {
 }
 
 dependencies {
-    implementation(libs.nordic.uiscanner)
+    implementation(libs.nordic.blek.core)
+    implementation(libs.nordic.blek.uiscanner)
     implementation(libs.nordic.navigation)
 }

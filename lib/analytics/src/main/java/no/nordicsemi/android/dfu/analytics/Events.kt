@@ -34,7 +34,7 @@ package no.nordicsemi.android.dfu.analytics
 import android.os.Bundle
 import androidx.core.os.bundleOf
 
-private object  FirebaseParam {
+private data object  FirebaseParam {
     const val MESSAGE = "message"
     const val IS_ENABLED = "is_enabled"
     const val VALUE = "value"
@@ -45,7 +45,7 @@ sealed interface DfuEvent {
     val eventName: String
 }
 
-object AppOpenEvent : DfuEvent {
+data object AppOpenEvent : DfuEvent {
     override val eventName: String = "APP_OPEN_EVENT"
 }
 
@@ -58,25 +58,25 @@ class FileSelectedEvent(
         bundleOf(FirebaseParam.SIZE_BYTES to fileSize)
 }
 
-object InstallationStartedEvent : DfuEvent {
+data object InstallationStartedEvent : DfuEvent {
     override val eventName: String = "INSTALLATION_STARTED"
 }
 
-object HandleDeepLinkEvent : DfuEvent {
+data object HandleDeepLinkEvent : DfuEvent {
     override val eventName: String = "HANDLE_DEEP_LINK_EVENT"
 }
 
-object ResetSettingsEvent: DfuEvent {
+data object ResetSettingsEvent: DfuEvent {
     override val eventName: String = "SETTINGS_RESET"
 }
 
 sealed interface DFUResultEvent : DfuEvent
 
-object DFUSuccessEvent : DFUResultEvent {
+data object DFUSuccessEvent : DFUResultEvent {
     override val eventName: String = "DFU_SUCCESS_RESULT"
 }
 
-object DFUAbortedEvent : DFUResultEvent {
+data object DFUAbortedEvent : DFUResultEvent {
     override val eventName: String = "DFU_ABORTED_RESULT"
 }
 

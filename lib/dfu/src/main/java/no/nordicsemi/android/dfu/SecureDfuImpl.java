@@ -105,7 +105,7 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 
 				//noinspection SwitchStatementWithTooFewBranches
 				switch (requestType) {
-					case OP_CODE_CALCULATE_CHECKSUM_KEY: {
+					case OP_CODE_CALCULATE_CHECKSUM_KEY -> {
 						final int offset = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 3);
 						final int remoteCrc = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 3 + 4);
 						final int localCrc = (int) (((ArchiveInputStream) mFirmwareStream).getCrc32() & 0xFFFFFFFFL);
@@ -115,7 +115,7 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 							mProgressInfo.setBytesReceived(offset);
 						} else {
 							// Else, and only in case it was a PRN received, not the response for
-                            // Calculate Checksum Request, stop sending data
+							// Calculate Checksum Request, stop sending data
 							if (mFirmwareUploadInProgress) {
 								mFirmwareUploadInProgress = false;
 								notifyLock();
@@ -123,9 +123,8 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 							} // else will be handled by sendFirmware(gatt) below
 						}
 						handlePacketReceiptNotification(gatt, characteristic);
-						break;
 					}
-					default: {
+					default -> {
 						/*
 						 * If the DFU target device is in invalid state (e.g. the Init Packet is
 						 * required but has not been selected), the target will send
@@ -139,7 +138,6 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 							mRemoteErrorOccurred = true;
 
 						handleNotification(gatt, characteristic);
-						break;
 					}
 				}
 			} else {
@@ -284,8 +282,7 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
                     "Remote DFU error: %s", SecureDfuError.parse(error)));
 
 			// For the Extended Error more details can be obtained on some devices.
-			if (e instanceof RemoteDfuExtendedErrorException) {
-				final RemoteDfuExtendedErrorException ee = (RemoteDfuExtendedErrorException) e;
+			if (e instanceof final RemoteDfuExtendedErrorException ee) {
 				final int extendedError = DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | ee.getExtendedErrorNumber();
 				loge("Extended Error details: " + SecureDfuError.parseExtendedError(extendedError));
 				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR,

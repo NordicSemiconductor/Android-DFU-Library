@@ -70,7 +70,6 @@ internal class DFUViewModel @Inject constructor(
     externalFileDataSource: ExternalFileDataSource,
     deepLinkHandler: DeepLinkHandler,
 ) : ViewModel() {
-
     private val _state: MutableStateFlow<DFUViewState> = stateHolder.state
     val state = _state.asStateFlow()
 
