@@ -30,7 +30,9 @@
  */
 
 plugins {
+    // https://github.com/NordicSemiconductor/Android-Gradle-Plugins/blob/main/plugins/src/main/kotlin/AndroidLibraryConventionPlugin.kt
     alias(libs.plugins.nordic.library)
+    // https://github.com/NordicSemiconductor/Android-Gradle-Plugins/blob/main/plugins/src/main/kotlin/AndroidNexusRepositoryPlugin.kt
     alias(libs.plugins.nordic.nexus)
 }
 
@@ -56,6 +58,11 @@ android {
 
     defaultConfig {
         minSdk = 18
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 }
 

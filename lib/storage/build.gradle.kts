@@ -10,6 +10,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.core)
     // Coroutines
     implementation(libs.kotlinx.coroutines.core)
 }

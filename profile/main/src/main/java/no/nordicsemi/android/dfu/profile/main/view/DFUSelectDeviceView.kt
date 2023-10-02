@@ -46,9 +46,9 @@ import no.nordicsemi.android.dfu.profile.scanner.data.DfuTarget
 
 internal sealed class DFUSelectDeviceViewEntity
 
-internal object DisabledSelectedDeviceViewEntity : DFUSelectDeviceViewEntity()
+internal data object DisabledSelectedDeviceViewEntity : DFUSelectDeviceViewEntity()
 
-internal object NotSelectedDeviceViewEntity : DFUSelectDeviceViewEntity()
+internal data object NotSelectedDeviceViewEntity : DFUSelectDeviceViewEntity()
 
 internal data class SelectedDeviceViewEntity(val target: DfuTarget) : DFUSelectDeviceViewEntity()
 
@@ -125,7 +125,7 @@ internal fun DFUSelectedDeviceView(
         )
 
         Text(
-            text = String.format(DEVICE_ADDRESS, viewEntity.target.device.address).parseBold(),
+            text = String.format(DEVICE_ADDRESS, viewEntity.target.address).parseBold(),
             style = MaterialTheme.typography.bodyMedium,
         )
     }

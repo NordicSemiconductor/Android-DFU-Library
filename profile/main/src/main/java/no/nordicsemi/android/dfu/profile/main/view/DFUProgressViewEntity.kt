@@ -88,7 +88,7 @@ internal sealed class DFUProgressViewEntity {
     }
 }
 
-internal object DisabledProgressViewEntity : DFUProgressViewEntity()
+internal data object DisabledProgressViewEntity : DFUProgressViewEntity()
 
 internal data class WorkingProgressViewEntity(
     val status: ProgressItemViewEntity = ProgressItemViewEntity()

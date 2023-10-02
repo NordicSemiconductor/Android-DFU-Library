@@ -104,26 +104,21 @@ import no.nordicsemi.android.error.LegacyDfuError;
 		public void onCharacteristicChanged(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) {
 			final int responseType = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
 
-			switch (responseType) {
-				case OP_CODE_PACKET_RECEIPT_NOTIF_KEY:
-					mProgressInfo.setBytesReceived(characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 1));
-					handlePacketReceiptNotification(gatt, characteristic);
-					break;
-				case OP_CODE_RESPONSE_CODE_KEY:
-				default:
-					/*
-					 * If the DFU target device is in invalid state (f.e. the Init Packet is required but has not been selected), the target will send DFU_STATUS_INVALID_STATE error
-					 * for each firmware packet that was send. We are interested may ignore all but the first one.
-					 * After obtaining a remote DFU error the OP_CODE_RESET_KEY will be sent.
-					 */
-					if (mRemoteErrorOccurred)
-						break;
+			if (responseType == OP_CODE_PACKET_RECEIPT_NOTIF_KEY) {
+				mProgressInfo.setBytesReceived(characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 1));
+				handlePacketReceiptNotification(gatt, characteristic);
+			} else  {
+				/*
+				 * If the DFU target device is in invalid state (f.e. the Init Packet is required but has not been selected), the target will send DFU_STATUS_INVALID_STATE error
+				 * for each firmware packet that was send. We are interested may ignore all but the first one.
+				 * After obtaining a remote DFU error the OP_CODE_RESET_KEY will be sent.
+				 */
+				if (!mRemoteErrorOccurred) {
 					final int status = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 2);
 					if (status != DFU_STATUS_SUCCESS)
 						mRemoteErrorOccurred = true;
-
 					handleNotification(gatt, characteristic);
-					break;
+				}
 			}
 			notifyLock();
 		}
@@ -244,8 +239,7 @@ import no.nordicsemi.android.error.LegacyDfuError;
 			int bootloaderImageSize = (fileType & DfuBaseService.TYPE_BOOTLOADER) > 0 ? mImageSizeInBytes : 0;
 			int appImageSize = (fileType & DfuBaseService.TYPE_APPLICATION) > 0 ? mImageSizeInBytes : 0;
 			// The sizes above may be overwritten if a ZIP file was passed
-			if (mFirmwareStream instanceof ArchiveInputStream) {
-				final ArchiveInputStream zhis = (ArchiveInputStream) mFirmwareStream;
+			if (mFirmwareStream instanceof final ArchiveInputStream zhis) {
 				if (zhis.isSecureDfuRequired()) {
 					loge("Secure DFU is required to upload selected firmware");
 					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, "The device does not support given firmware.");

@@ -1,14 +1,13 @@
 package no.nordicsemi.android.dfu.profile.scanner.data
 
-import android.bluetooth.BluetoothDevice
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
-import no.nordicsemi.android.common.ui.scanner.DeviceSelected
+import no.nordicsemi.android.kotlin.ble.core.ServerDevice
 
 @Parcelize
 data class DfuTarget(
-    val device: BluetoothDevice,
+    val address: String,
     val name: String?,
 ): Parcelable {
-    internal constructor(result: DeviceSelected): this(result.device.device, result.device.displayName)
+    internal constructor(result: ServerDevice): this(result.address, result.name)
 }

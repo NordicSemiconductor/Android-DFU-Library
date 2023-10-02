@@ -33,7 +33,7 @@ package no.nordicsemi.android.dfu.profile.settings.view
 
 internal sealed interface SettingsScreenViewEvent
 
-internal object OnPacketsReceiptNotificationSwitchClick : SettingsScreenViewEvent
+internal data object OnPacketsReceiptNotificationSwitchClick : SettingsScreenViewEvent
 
 internal data class OnNumberOfPocketsChange(val numberOfPockets: Int) : SettingsScreenViewEvent
 
@@ -43,18 +43,18 @@ internal data class OnRebootTimeChange(val time: Int) : SettingsScreenViewEvent
 
 internal data class OnScanTimeoutChange(val timeout: Int) : SettingsScreenViewEvent
 
-internal object OnDisableResumeSwitchClick : SettingsScreenViewEvent
+internal data object OnDisableResumeSwitchClick : SettingsScreenViewEvent
 
-internal object OnForceScanningAddressesSwitchClick : SettingsScreenViewEvent
+internal data object OnForceScanningAddressesSwitchClick : SettingsScreenViewEvent
 
-internal object OnKeepBondInformationSwitchClick : SettingsScreenViewEvent
+internal data object OnKeepBondInformationSwitchClick : SettingsScreenViewEvent
 
-internal object OnExternalMcuDfuSwitchClick : SettingsScreenViewEvent
+internal data object OnExternalMcuDfuSwitchClick : SettingsScreenViewEvent
 
-internal object OnAboutDfuClick : SettingsScreenViewEvent
+internal data object OnAboutDfuClick : SettingsScreenViewEvent
 
-internal object OnAboutAppClick : SettingsScreenViewEvent
+internal data object OnAboutAppClick : SettingsScreenViewEvent
 
-internal object NavigateUp : SettingsScreenViewEvent
+internal data object NavigateUp : SettingsScreenViewEvent
 
-internal object OnResetButtonClick : SettingsScreenViewEvent
+internal data object OnResetButtonClick : SettingsScreenViewEvent

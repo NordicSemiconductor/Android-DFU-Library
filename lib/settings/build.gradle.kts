@@ -3,7 +3,7 @@ plugins {
     alias(libs.plugins.nordic.library)
     // https://github.com/NordicSemiconductor/Android-Gradle-Plugins/blob/main/plugins/src/main/kotlin/AndroidHiltConventionPlugin.kt
     alias(libs.plugins.nordic.hilt)
-    id("kotlin-parcelize")
+    alias(libs.plugins.kotlin.parcelize)
 }
 
 android {

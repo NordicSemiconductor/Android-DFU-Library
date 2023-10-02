@@ -34,7 +34,7 @@ import no.nordicsemi.android.dfu.internal.exception.HexFileValidationException;
 
 /**
  * Reads the binary content from the HEX file using IntelHex standard:
- * http://www.interlog.com/~speff/usefulinfo/Hexfrmt.pdf.
+ * <a href="http://www.interlog.com/~speff/usefulinfo/Hexfrmt.pdf">http://www.interlog.com/~speff/usefulinfo/Hexfrmt.pdf</a>.
  * Truncates the HEX file from all meta data and returns only the BIN content.
  * <p>
  * In nRF51 chips memory a SoftDevice starts at address 0x1000. From 0x0000 to 0x1000 there is
@@ -278,18 +278,19 @@ public class HexInputStream extends FilterInputStream {
 
 			// if the line type is no longer data type (0x00), we've reached the end of the file
 			switch (type) {
-				case 0x00:
+				case 0x00 -> {
 					// data type
 					if (lastAddress + offset < MBRSize) { // skip MBR
 						type = -1; // some other than 0
 						pos += skip(in, lineSize * 2L /* 2 hex per one byte */ + 2 /* check sum */);
 					}
-					break;
-				case 0x01:
+				}
+				case 0x01 -> {
 					// end of file
 					pos = -1;
 					return 0;
-				case 0x02: {
+				}
+				case 0x02 -> {
 					// extended segment address
 					final int address = readAddress(in) << 4;
 					pos += 4;
@@ -297,9 +298,8 @@ public class HexInputStream extends FilterInputStream {
 						return 0;
 					lastAddress = address;
 					pos += skip(in, 2 /* check sum */);
-					break;
 				}
-				case 0x04: {
+				case 0x04 -> {
 					// extended linear address
 					final int address = readAddress(in);
 					pos += 4;
@@ -307,12 +307,11 @@ public class HexInputStream extends FilterInputStream {
 						return 0;
 					lastAddress = address << 16;
 					pos += skip(in, 2 /* check sum */);
-					break;
 				}
-				default:
+				default -> {
 					final long toBeSkipped = lineSize * 2L /* 2 hex per one byte */ + 2 /* check sum */;
 					pos += skip(in, toBeSkipped);
-					break;
+				}
 			}
 		} while (type != 0);
 

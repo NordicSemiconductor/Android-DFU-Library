@@ -35,14 +35,14 @@ import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 
 internal sealed class DfuState {
-    object Idle : DfuState()
+    data object Idle : DfuState()
     data class InProgress(val status: DfuProgress) : DfuState()
 }
 
 internal sealed class DfuProgress
 
-internal object Starting : DfuProgress()
-internal object InitializingDFU : DfuProgress()
+internal data object Starting : DfuProgress()
+internal data object InitializingDFU : DfuProgress()
 
 @Parcelize
 internal data class Uploading(
@@ -52,6 +52,6 @@ internal data class Uploading(
     val partsTotal: Int = 0
 ) : DfuProgress(), Parcelable
 
-internal object Completed : DfuProgress()
-internal object Aborted : DfuProgress()
+internal data object Completed : DfuProgress()
+internal data object Aborted : DfuProgress()
 internal data class Error(val key: String, val message: String?) : DfuProgress()

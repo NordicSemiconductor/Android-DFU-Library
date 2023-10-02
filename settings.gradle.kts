@@ -16,7 +16,7 @@ dependencyResolutionManagement {
     }
     versionCatalogs {
         create("libs") {
-            from("no.nordicsemi.android.gradle:version-catalog:1.4.3")
+            from("no.nordicsemi.android.gradle:version-catalog:1.9.10")
         }
     }
 }
@@ -33,6 +33,6 @@ include(":profile:settings")
 include(":profile:welcome")
 include(":profile:navigation")
 
-//if (file("../Android-Common-Libraries").exists()) {
-//    includeBuild("../Android-Common-Libraries")
-//}
+if (file("../Android-Common-Libraries").exists()) {
+    includeBuild("../Android-Common-Libraries")
+}

@@ -241,16 +241,12 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 		}
 
 		private String phyToString(final int phy) {
-			switch (phy) {
-				case BluetoothDevice.PHY_LE_1M:
-					return "LE 1M";
-				case BluetoothDevice.PHY_LE_2M:
-					return "LE 2M";
-				case BluetoothDevice.PHY_LE_CODED:
-					return "LE Coded";
-				default:
-					return "UNKNOWN (" + phy + ")";
-			}
+			return switch (phy) {
+				case BluetoothDevice.PHY_LE_1M -> "LE 1M";
+				case BluetoothDevice.PHY_LE_2M -> "LE 2M";
+				case BluetoothDevice.PHY_LE_CODED -> "LE Coded";
+				default -> "UNKNOWN (" + phy + ")";
+			};
 		}
 	}
 
@@ -620,7 +616,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 		 */
 		try {
 			final Method createBond = device.getClass().getMethod("createBond");
-            mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG, "gatt.getDevice().createBond() (hidden)");
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG, "gatt.getDevice().createBond() (hidden)");
 			//noinspection ConstantConditions
 			return (Boolean) createBond.invoke(device);
 		} catch (final Exception e) {

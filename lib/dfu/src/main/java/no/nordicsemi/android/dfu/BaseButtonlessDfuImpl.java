@@ -23,7 +23,6 @@
 package no.nordicsemi.android.dfu;
 
 import android.annotation.SuppressLint;
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.content.Intent;

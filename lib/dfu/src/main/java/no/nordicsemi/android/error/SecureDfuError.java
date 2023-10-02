@@ -55,45 +55,59 @@ public final class SecureDfuError {
 	public static final int BUTTONLESS_ERROR_OPERATION_FAILED = 4;
 
 	public static String parse(final int error) {
-		switch (error) {
-			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE | OP_CODE_NOT_SUPPORTED:		return "OP CODE NOT SUPPORTED";
-			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE | INVALID_PARAM:				return "INVALID PARAM";
-			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE | INSUFFICIENT_RESOURCES:		return "INSUFFICIENT RESOURCES";
-			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE | INVALID_OBJECT:				return "INVALID OBJECT";
-			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE | UNSUPPORTED_TYPE:			return "UNSUPPORTED TYPE";
-			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE | OPERATION_NOT_PERMITTED:		return "OPERATION NOT PERMITTED";
-			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE | OPERATION_FAILED:			return "OPERATION FAILED";
-			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE | EXTENDED_ERROR:				return "EXTENDED ERROR";
-			default:
-				return "UNKNOWN (" + error + ")";
-		}
+		return switch (error) {
+			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE | OP_CODE_NOT_SUPPORTED ->
+					"OP CODE NOT SUPPORTED";
+			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE | INVALID_PARAM -> "INVALID PARAM";
+			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE | INSUFFICIENT_RESOURCES ->
+					"INSUFFICIENT RESOURCES";
+			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE | INVALID_OBJECT -> "INVALID OBJECT";
+			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE | UNSUPPORTED_TYPE -> "UNSUPPORTED TYPE";
+			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE | OPERATION_NOT_PERMITTED ->
+					"OPERATION NOT PERMITTED";
+			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE | OPERATION_FAILED -> "OPERATION FAILED";
+			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE | EXTENDED_ERROR -> "EXTENDED ERROR";
+			default -> "UNKNOWN (" + error + ")";
+		};
 	}
 
 	public static String parseExtendedError(final int error) {
-		switch (error) {
-			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | EXT_ERROR_WRONG_COMMAND_FORMAT: return "Wrong command format";
-			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | EXT_ERROR_UNKNOWN_COMMAND:		return "Unknown command";
-			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | EXT_ERROR_INIT_COMMAND_INVALID: return "Init command invalid";
-			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | EXT_ERROR_FW_VERSION_FAILURE:	return "FW version failure";
-			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | EXT_ERROR_HW_VERSION_FAILURE:	return "HW version failure";
-			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | EXT_ERROR_SD_VERSION_FAILURE:	return "SD version failure";
-			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | EXT_ERROR_SIGNATURE_MISSING :	return "Signature mismatch";
-			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | EXT_ERROR_WRONG_HASH_TYPE:		return "Wrong hash type";
-			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | EXT_ERROR_HASH_FAILED:			return "Hash failed";
-			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | EXT_ERROR_WRONG_SIGNATURE_TYPE: return "Wrong signature type";
-			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | EXT_ERROR_VERIFICATION_FAILED:	return "Verification failed";
-			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | EXT_ERROR_INSUFFICIENT_SPACE:	return "Insufficient space";
-			default:
-				return "Reserved for future use";
-		}
+		return switch (error) {
+			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | EXT_ERROR_WRONG_COMMAND_FORMAT ->
+					"Wrong command format";
+			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | EXT_ERROR_UNKNOWN_COMMAND ->
+					"Unknown command";
+			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | EXT_ERROR_INIT_COMMAND_INVALID ->
+					"Init command invalid";
+			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | EXT_ERROR_FW_VERSION_FAILURE ->
+					"FW version failure";
+			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | EXT_ERROR_HW_VERSION_FAILURE ->
+					"HW version failure";
+			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | EXT_ERROR_SD_VERSION_FAILURE ->
+					"SD version failure";
+			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | EXT_ERROR_SIGNATURE_MISSING ->
+					"Signature mismatch";
+			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | EXT_ERROR_WRONG_HASH_TYPE ->
+					"Wrong hash type";
+			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | EXT_ERROR_HASH_FAILED ->
+					"Hash failed";
+			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | EXT_ERROR_WRONG_SIGNATURE_TYPE ->
+					"Wrong signature type";
+			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | EXT_ERROR_VERIFICATION_FAILED ->
+					"Verification failed";
+			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | EXT_ERROR_INSUFFICIENT_SPACE ->
+					"Insufficient space";
+			default -> "Reserved for future use";
+		};
 	}
 
 	public static String parseButtonlessError(final int error) {
-		switch (error) {
-			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_BUTTONLESS | BUTTONLESS_ERROR_OP_CODE_NOT_SUPPORTED:	return "OP CODE NOT SUPPORTED";
-			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_BUTTONLESS | BUTTONLESS_ERROR_OPERATION_FAILED:		return "OPERATION FAILED";
-			default:
-				return "UNKNOWN (" + error + ")";
-		}
+		return switch (error) {
+			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_BUTTONLESS | BUTTONLESS_ERROR_OP_CODE_NOT_SUPPORTED ->
+					"OP CODE NOT SUPPORTED";
+			case DfuBaseService.ERROR_REMOTE_TYPE_SECURE_BUTTONLESS | BUTTONLESS_ERROR_OPERATION_FAILED ->
+					"OPERATION FAILED";
+			default -> "UNKNOWN (" + error + ")";
+		};
 	}
 }

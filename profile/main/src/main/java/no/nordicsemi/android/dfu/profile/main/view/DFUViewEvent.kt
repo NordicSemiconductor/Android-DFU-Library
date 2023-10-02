@@ -37,18 +37,18 @@ internal sealed class DFUViewEvent
 
 internal data class OnZipFileSelected(val file: Uri) : DFUViewEvent()
 
-internal object OnInstallButtonClick : DFUViewEvent()
+internal data object OnInstallButtonClick : DFUViewEvent()
 
-internal object OnCloseButtonClick : DFUViewEvent()
+internal data object OnCloseButtonClick : DFUViewEvent()
 
-internal object OnAbortButtonClick : DFUViewEvent()
+internal data object OnAbortButtonClick : DFUViewEvent()
 
-internal object OnSelectDeviceButtonClick : DFUViewEvent()
+internal data object OnSelectDeviceButtonClick : DFUViewEvent()
 
-internal object OnDisconnectButtonClick : DFUViewEvent()
+internal data object OnDisconnectButtonClick : DFUViewEvent()
 
-internal object NavigateUp : DFUViewEvent()
+internal data object NavigateUp : DFUViewEvent()
 
-internal object OnSettingsButtonClick : DFUViewEvent()
+internal data object OnSettingsButtonClick : DFUViewEvent()
 
-internal object OnLoggerButtonClick : DFUViewEvent()
+internal data object OnLoggerButtonClick : DFUViewEvent()
