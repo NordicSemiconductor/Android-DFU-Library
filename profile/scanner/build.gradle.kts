@@ -9,6 +9,6 @@ android {
 }
 
 dependencies {
-    implementation(libs.nordic.uiscanner)
+    implementation(libs.nordic.scanner)
     implementation(libs.nordic.navigation)
 }

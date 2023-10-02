@@ -21,7 +21,7 @@ dependencies {
     implementation(libs.nordic.theme)
     implementation(libs.nordic.uilogger)
     implementation(libs.nordic.analytics)
-    implementation(libs.nordic.permission)
+    implementation(libs.nordic.permissions.ble)
     implementation(libs.nordic.navigation)
 
     // Extended Icons
