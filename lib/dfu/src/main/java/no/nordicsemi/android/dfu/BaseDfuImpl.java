@@ -25,6 +25,7 @@ package no.nordicsemi.android.dfu;
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
@@ -125,14 +126,24 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 		}
 
 		@Override
-		public void onCharacteristicRead(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final int status) {
+		public void onCharacteristicChanged(@NonNull final BluetoothGatt gatt,
+											@NonNull final BluetoothGattCharacteristic characteristic,
+											@NonNull final byte[] value) {
+			// This method is overridden in implementations
+		}
+
+		@Override
+		public void onCharacteristicRead(@NonNull final BluetoothGatt gatt,
+										 @NonNull final BluetoothGattCharacteristic characteristic,
+										 @NonNull final byte[] value,
+										 int status) {
 			if (status == BluetoothGatt.GATT_SUCCESS) {
 				/*
 				 * This method is called when the DFU Version characteristic has been read.
 				 */
 				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO,
-                        "Read Response received from " + characteristic.getUuid() + ", value (0x): " + parse(characteristic));
-				mReceivedData = characteristic.getValue();
+						"Read Response received from " + characteristic.getUuid() + ", value (0x): " + parse(value));
+				mReceivedData = value;
 				mRequestCompleted = true;
 			} else {
 				loge("Characteristic read error: " + status);
@@ -142,12 +153,18 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 		}
 
 		@Override
-		public void onDescriptorRead(final BluetoothGatt gatt, final BluetoothGattDescriptor descriptor, final int status) {
+		public void onDescriptorRead(@NonNull final BluetoothGatt gatt,
+									 @NonNull final BluetoothGattDescriptor descriptor,
+									 int status,
+									 @NonNull final byte[] value) {
 			if (status == BluetoothGatt.GATT_SUCCESS) {
-				if (CLIENT_CHARACTERISTIC_CONFIG.equals(descriptor.getUuid())) {
+				final UUID uuid = descriptor.getUuid();
+				final UUID parentUuid = descriptor.getCharacteristic().getUuid();
+				mReceivedData = value;
+				if (CLIENT_CHARACTERISTIC_CONFIG.equals(uuid)) {
 					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO,
-                            "Read Response received from descr." + descriptor.getCharacteristic().getUuid() + ", value (0x): " + parse(descriptor));
-					if (SERVICE_CHANGED_UUID.equals(descriptor.getCharacteristic().getUuid())) {
+							"Read Response received from descr." + parentUuid + ", value (0x): " + parse(value));
+					if (SERVICE_CHANGED_UUID.equals(parentUuid)) {
 						// We have enabled indications for the Service Changed characteristic
 						mRequestCompleted = true;
 					} else {
@@ -165,19 +182,22 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 		@Override
 		public void onDescriptorWrite(final BluetoothGatt gatt, final BluetoothGattDescriptor descriptor, final int status) {
 			if (status == BluetoothGatt.GATT_SUCCESS) {
-				if (CLIENT_CHARACTERISTIC_CONFIG.equals(descriptor.getUuid())) {
+				final UUID uuid = descriptor.getUuid();
+				final UUID parentUuid = descriptor.getCharacteristic().getUuid();
+				if (CLIENT_CHARACTERISTIC_CONFIG.equals(uuid)) {
 					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO,
-                            "Data written to descr." + descriptor.getCharacteristic().getUuid() + ", value (0x): " + parse(descriptor));
-					if (SERVICE_CHANGED_UUID.equals(descriptor.getCharacteristic().getUuid())) {
+                            "Data written to descr." + parentUuid);
+					if (SERVICE_CHANGED_UUID.equals(parentUuid)) {
 						// We have enabled indications for the Service Changed characteristic
 						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE,
-                                "Indications enabled for " + descriptor.getCharacteristic().getUuid());
+                                "Indications enabled for " + parentUuid);
 					} else {
 						// We have enabled notifications for this characteristic
 						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE,
-                                "Notifications enabled for " + descriptor.getCharacteristic().getUuid());
+                                "Notifications enabled for " + parentUuid);
 					}
 				}
+				mRequestCompleted = true;
 			} else {
 				loge("Descriptor write error: " + status);
 				mError = DfuBaseService.ERROR_CONNECTION_MASK | status;
@@ -214,15 +234,29 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 			}
 		}
 
-		protected String parse(final BluetoothGattCharacteristic characteristic) {
-			return parse(characteristic.getValue());
+		@Override
+		public void onCharacteristicChanged(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) {
+			onCharacteristicChanged(gatt, characteristic, characteristic.getValue());
 		}
 
-		protected String parse(final BluetoothGattDescriptor descriptor) {
-			return parse(descriptor.getValue());
+		@Override
+		public void onCharacteristicRead(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final int status) {
+			onCharacteristicRead(gatt, characteristic, characteristic.getValue(), status);
 		}
 
-		private String parse(final byte[] data) {
+		@Override
+		public void onDescriptorRead(final BluetoothGatt gatt, final BluetoothGattDescriptor descriptor, final int status) {
+			onDescriptorRead(gatt, descriptor, status, descriptor.getValue());
+		}
+
+		protected int getInt(@NonNull final byte[] value, final int offset) {
+			return (value[offset] & 0xFF) |
+				  ((value[offset + 1] & 0xFF) << 8)  |
+				  ((value[offset + 2] & 0xFF) << 16) |
+				  ((value[offset + 3] & 0xFF) << 24);
+		}
+
+		protected String parse(final byte[] data) {
 			if (data == null)
 				return "";
 			final int length = data.length;
@@ -398,7 +432,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 	/**
 	 * Enables or disables the notifications for given characteristic.
      * This method is SYNCHRONOUS and wait until the
-	 * {@link android.bluetooth.BluetoothGattCallback#onDescriptorWrite(android.bluetooth.BluetoothGatt, android.bluetooth.BluetoothGattDescriptor, int)}
+	 * {@link BluetoothGattCallback#onDescriptorWrite(BluetoothGatt, BluetoothGattDescriptor, int)}
      * will be called or the device gets disconnected.
 	 * If connection state will change, or an error will occur, an exception will be thrown.
 	 *
@@ -418,12 +452,10 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 		if (mAborted)
 			throw new UploadAbortedException();
 
+		mRequestCompleted = false;
 		mReceivedData = null;
 		mError = 0;
 		final BluetoothGattDescriptor descriptor = characteristic.getDescriptor(CLIENT_CHARACTERISTIC_CONFIG);
-		boolean cccdEnabled = descriptor.getValue() != null && descriptor.getValue().length == 2 && descriptor.getValue()[0] > 0 && descriptor.getValue()[1] == 0;
-		if (cccdEnabled)
-			return;
 
 		logi("Enabling " + debugString + "...");
 		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE,
@@ -435,21 +467,20 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 		gatt.setCharacteristicNotification(characteristic, true);
 
 		// enable notifications on the device
-		descriptor.setValue(type == NOTIFICATIONS ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE : BluetoothGattDescriptor.ENABLE_INDICATION_VALUE);
 		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG,
                 "gatt.writeDescriptor(" + descriptor.getUuid() + (type == NOTIFICATIONS ? ", value=0x01-00)" : ", value=0x02-00)"));
-		gatt.writeDescriptor(descriptor);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+			gatt.writeDescriptor(descriptor, type == NOTIFICATIONS ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE : BluetoothGattDescriptor.ENABLE_INDICATION_VALUE);
+		} else {
+			descriptor.setValue(type == NOTIFICATIONS ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE : BluetoothGattDescriptor.ENABLE_INDICATION_VALUE);
+			gatt.writeDescriptor(descriptor);
+		}
 
 		// We have to wait until device receives a response or an error occur
 		try {
 			synchronized (mLock) {
-				while ((!cccdEnabled && mConnected && mError == 0) || mPaused) {
+				while ((!mRequestCompleted && mConnected && mError == 0) || mPaused) {
 					mLock.wait();
-					// Check the value of the CCCD
-					cccdEnabled = descriptor.getValue() != null
-							   && descriptor.getValue().length == 2
-							   && descriptor.getValue()[0] > 0
-							   && descriptor.getValue()[1] == 0;
 				}
 			}
 		} catch (final InterruptedException e) {
@@ -492,6 +523,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 			return false;
 
 		mRequestCompleted = false;
+		mReceivedData = null;
 		mError = 0;
 
 		logi("Reading Service Changed CCCD value...");
@@ -514,15 +546,17 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 			throw new DfuException("Unable to read Service Changed CCCD", mError);
 
 		// Return true if the CCCD value is
-		return descriptor.getValue() != null && descriptor.getValue().length == 2
-				&& descriptor.getValue()[0] == BluetoothGattDescriptor.ENABLE_INDICATION_VALUE[0]
-				&& descriptor.getValue()[1] == BluetoothGattDescriptor.ENABLE_INDICATION_VALUE[1];
+		final byte[] value = mReceivedData;
+		return value != null &&
+			   value.length == 2 &&
+			   value[0] == BluetoothGattDescriptor.ENABLE_INDICATION_VALUE[0] &&
+			   value[1] == BluetoothGattDescriptor.ENABLE_INDICATION_VALUE[1];
 	}
 
 	/**
 	 * Writes the operation code to the characteristic.
      * This method is SYNCHRONOUS and wait until the
-	 * {@link android.bluetooth.BluetoothGattCallback#onCharacteristicWrite(android.bluetooth.BluetoothGatt, android.bluetooth.BluetoothGattCharacteristic, int)}
+	 * {@link BluetoothGattCallback#onCharacteristicWrite(BluetoothGatt, BluetoothGattCharacteristic, int)}
      * will be called or the device gets disconnected.
      * If connection state will change, or an error will occur, an exception will be thrown.
 	 *
@@ -549,11 +583,16 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 		 */
 		mResetRequestSent = reset;
 
-		characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
-		characteristic.setValue(value);
-		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Writing to characteristic " + characteristic.getUuid());
-		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG, "gatt.writeCharacteristic(" + characteristic.getUuid() + ")");
-		mGatt.writeCharacteristic(characteristic);
+		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Writing to characteristic " + characteristic.getUuid()+ ", value (0x): " + parse(value));
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG, "gatt.writeCharacteristic(" + characteristic.getUuid() + ", value=0x" + parse(value) + ", WRITE_TYPE_DEFAULT)");
+			mGatt.writeCharacteristic(characteristic, value, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
+		} else {
+			characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
+			characteristic.setValue(value);
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG, "gatt.writeCharacteristic(" + characteristic.getUuid() + ")");
+			mGatt.writeCharacteristic(characteristic);
+		}
 
 		// We have to wait for confirmation
 		try {
@@ -646,7 +685,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
             //noinspection JavaReflectionMemberAccess
             final Method removeBond = device.getClass().getMethod("removeBond");
             mRequestCompleted = false;
-            mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG, "gatt.getDevice().removeBond() (hidden)");
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG, "gatt.getDevice().removeBond() (hidden)");
 			//noinspection ConstantConditions
 			result = (Boolean) removeBond.invoke(device);
 

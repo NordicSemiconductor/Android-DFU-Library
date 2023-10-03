@@ -87,7 +87,10 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	boolean mRemoteErrorOccurred;
 
 	class BaseCustomBluetoothCallback extends BaseBluetoothGattCallback {
-		protected void onPacketCharacteristicWrite(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final int status) {
+		protected void onPacketCharacteristicWrite(@NonNull final BluetoothGatt gatt,
+												   @NonNull final BluetoothGattCharacteristic characteristic,
+												   final int status,
+												   @NonNull final byte[] value) {
 			// this method can be overwritten on the final class
 		}
 
@@ -104,15 +107,16 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 				 * - send the next packet, if notification is not required at that moment, or
 				 * - do nothing, because we have to wait for the notification to confirm the data received
 				 */
-				if (characteristic.getUuid().equals(getPacketCharacteristicUUID())) {
+				final UUID uuid = characteristic.getUuid();
+				final byte[] value = characteristic.getValue();
+				if (uuid.equals(getPacketCharacteristicUUID())) {
 					if (mInitPacketInProgress) {
 						// We've got confirmation that the init packet was sent
-						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO,
-								"Data written to " + characteristic.getUuid() + ", value (0x): " + parse(characteristic));
+						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Data written to " + uuid);
 						mInitPacketInProgress = false;
 					} else if (mFirmwareUploadInProgress) {
 						// If the PACKET characteristic was written with image data, update counters
-						mProgressInfo.addBytesSent(characteristic.getValue().length);
+						mProgressInfo.addBytesSent(value.length);
 						mPacketsSentSinceNotification++;
 
 						final boolean notificationExpected = mPacketsBeforeNotification > 0 && mPacketsSentSinceNotification >= mPacketsBeforeNotification;
@@ -159,13 +163,12 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 							mError = DfuBaseService.ERROR_FILE_IO_EXCEPTION;
 						}
 					} else {
-						onPacketCharacteristicWrite(gatt, characteristic, status);
+						onPacketCharacteristicWrite(gatt, characteristic, status, value);
 					}
 				} else {
 					// If the CONTROL POINT characteristic was written just set the flag to true.
 					// The main thread will continue its task when notified.
-					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO,
-							"Data written to " + characteristic.getUuid() + ", value (0x): " + parse(characteristic));
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Data written to " + uuid);
 					mRequestCompleted = true;
 				}
 			} else {
@@ -185,11 +188,11 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 			notifyLock();
 		}
 
-		void handlePacketReceiptNotification(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) {
+		void handlePacketReceiptNotification(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final byte[] value) {
 			// Secure DFU:
 			// When PRN is set to be received after the object is complete we don't want to send anything. First the object needs to be executed.
 			if (!mFirmwareUploadInProgress) {
-				handleNotification(gatt, characteristic);
+				handleNotification(gatt, characteristic, value);
 				return;
 			}
 
@@ -232,10 +235,10 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		}
 
 		@SuppressWarnings("unused")
-		void handleNotification(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) {
+		void handleNotification(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final byte[] value) {
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO,
-					"Notification received from " + characteristic.getUuid() + ", value (0x): " + parse(characteristic));
-			mReceivedData = characteristic.getValue();
+					"Notification received from " + characteristic.getUuid() + ", value (0x): " + parse(value));
+			mReceivedData = value;
 			mFirmwareUploadInProgress = false;
 		}
 	}
@@ -421,9 +424,13 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 			locBuffer = new byte[size];
 			System.arraycopy(buffer, 0, locBuffer, 0, size);
 		}
-		characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
-		characteristic.setValue(locBuffer);
-		gatt.writeCharacteristic(characteristic);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+			gatt.writeCharacteristic(characteristic, locBuffer, BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+		} else {
+			characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+			characteristic.setValue(locBuffer);
+			gatt.writeCharacteristic(characteristic);
+		}
 	}
 
 	/**
