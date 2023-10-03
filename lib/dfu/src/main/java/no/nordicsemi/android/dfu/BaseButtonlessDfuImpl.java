@@ -40,8 +40,10 @@ import androidx.annotation.NonNull;
 
 	protected class ButtonlessBluetoothCallback extends BaseBluetoothGattCallback {
 		@Override
-		public void onCharacteristicChanged(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) {
-			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Notification received from " + characteristic.getUuid() + ", value (0x): " + parse(characteristic));
+		public void onCharacteristicChanged(@NonNull final BluetoothGatt gatt,
+											@NonNull final BluetoothGattCharacteristic characteristic,
+											@NonNull final  byte[] value) {
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Notification received from " + characteristic.getUuid() + ", value (0x): " + parse(value));
 			mReceivedData = characteristic.getValue();
 			notifyLock();
 		}

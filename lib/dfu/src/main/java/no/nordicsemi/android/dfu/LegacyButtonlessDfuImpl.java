@@ -34,6 +34,8 @@ import android.preference.PreferenceManager;
 import java.util.UUID;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import no.nordicsemi.android.dfu.internal.exception.DeviceDisconnectedException;
 import no.nordicsemi.android.dfu.internal.exception.DfuException;
 import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
@@ -195,7 +197,8 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	 * @throws DfuException                Thrown if DFU error occur.
 	 * @throws UploadAbortedException      Thrown if DFU operation was aborted by user.
 	 */
-	private int readVersion(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic)
+	private int readVersion(@NonNull final BluetoothGatt gatt,
+							@Nullable final BluetoothGattCharacteristic characteristic)
             throws DeviceDisconnectedException, DfuException, UploadAbortedException {
 		if (!mConnected)
 			throw new DeviceDisconnectedException("Unable to read version number: device disconnected");
@@ -210,15 +213,13 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 
 		logi("Reading DFU version number...");
 		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Reading DFU version number...");
-
-		characteristic.setValue((byte[]) null);
 		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG, "gatt.readCharacteristic(" + characteristic.getUuid() + ")");
 		gatt.readCharacteristic(characteristic);
 
 		// We have to wait until device receives a response or an error occur
 		try {
 			synchronized (mLock) {
-				while (((!mRequestCompleted || characteristic.getValue() == null) && mConnected && mError == 0 && !mAborted) || mPaused) {
+				while (((!mRequestCompleted || mReceivedData == null) && mConnected && mError == 0 && !mAborted) || mPaused) {
 					mRequestCompleted = false;
 					mLock.wait();
 				}
@@ -232,11 +233,17 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 			throw new DfuException("Unable to read version number", mError);
 
 		// The Version is encoded as UInt16
-		if (characteristic.getValue() == null || characteristic.getValue().length < 2)
+		final byte[] value = mReceivedData;
+		if (value == null || value.length < 2)
 			return 0;
 
 		// The version is a 16-bit unsigned int
-		return characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 0);
+		return getShort(value, 0);
+	}
+
+	protected int getShort(@NonNull final byte[] value, final int offset) {
+		return (value[offset] & 0xFF) |
+			  ((value[offset + 1] & 0xFF) << 8);
 	}
 
 	private String getVersionFeatures(final int version) {

@@ -24,6 +24,7 @@ package no.nordicsemi.android.dfu;
 
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.content.Intent;
@@ -92,21 +93,26 @@ import no.nordicsemi.android.error.LegacyDfuError;
 
 	protected class LegacyBluetoothCallback extends BaseCustomBluetoothCallback {
 		@Override
-		protected void onPacketCharacteristicWrite(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final int status) {
+		protected void onPacketCharacteristicWrite(@NonNull final BluetoothGatt gatt,
+												   @NonNull final BluetoothGattCharacteristic characteristic,
+												   final int status,
+												   @NonNull final byte[] value) {
 			if (mImageSizeInProgress) {
 				// We've got confirmation that the image size was sent
-				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Data written to " + characteristic.getUuid() + ", value (0x): " + parse(characteristic));
+				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Data written to " + characteristic.getUuid() + ", value (0x): " + parse(value));
 				mImageSizeInProgress = false;
 			}
 		}
 
 		@Override
-		public void onCharacteristicChanged(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) {
-			final int responseType = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
+		public void onCharacteristicChanged(@NonNull final BluetoothGatt gatt,
+											@NonNull final BluetoothGattCharacteristic characteristic,
+											@NonNull final byte[] value) {
+			final int responseType = value[0] & 0xFF;
 
 			if (responseType == OP_CODE_PACKET_RECEIPT_NOTIF_KEY) {
-				mProgressInfo.setBytesReceived(characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 1));
-				handlePacketReceiptNotification(gatt, characteristic);
+				mProgressInfo.setBytesReceived(getInt(value, 1));
+				handlePacketReceiptNotification(gatt, characteristic, value);
 			} else  {
 				/*
 				 * If the DFU target device is in invalid state (f.e. the Init Packet is required but has not been selected), the target will send DFU_STATUS_INVALID_STATE error
@@ -114,10 +120,11 @@ import no.nordicsemi.android.error.LegacyDfuError;
 				 * After obtaining a remote DFU error the OP_CODE_RESET_KEY will be sent.
 				 */
 				if (!mRemoteErrorOccurred) {
-					final int status = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 2);
+					// value[1] contains the request code, and value[2] the status
+					final int status = value[2] & 0xFF;
 					if (status != DFU_STATUS_SUCCESS)
 						mRemoteErrorOccurred = true;
-					handleNotification(gatt, characteristic);
+					handleNotification(gatt, characteristic, value);
 				}
 			}
 			notifyLock();
@@ -555,6 +562,20 @@ import no.nordicsemi.android.error.LegacyDfuError;
 	}
 
 	/**
+	 * Writes the image size to the buffer at given offset.
+	 *
+	 * @param data the buffer to write to.
+	 * @param size the image size in bytes.
+	 * @param offset the offset in the buffer.
+	 */
+	private void setImageSize(@NonNull final byte[] data, final int size, final int offset) {
+		data[offset] = (byte) (size & 0xFF);
+		data[offset + 1] = (byte) ((size >> 8) & 0xFF);
+		data[offset + 2] = (byte) ((size >> 16) & 0xFF);
+		data[offset + 3] = (byte) ((size >> 24) & 0xFF);
+	}
+
+	/**
 	 * Checks whether the response received is valid and returns the status code.
 	 *
 	 * @param response the response received from the DFU device.
@@ -602,7 +623,7 @@ import no.nordicsemi.android.error.LegacyDfuError;
 
 	/**
 	 * Writes the image size to the characteristic. This method is SYNCHRONOUS and wait until the
-	 * {@link android.bluetooth.BluetoothGattCallback#onCharacteristicWrite(android.bluetooth.BluetoothGatt, android.bluetooth.BluetoothGattCharacteristic, int)}
+	 * {@link BluetoothGattCallback#onCharacteristicWrite(BluetoothGatt, BluetoothGattCharacteristic, int)}
 	 * will be called or the device gets disconnected. If connection state will change, or an
 	 * error will occur, an exception will be thrown.
 	 *
@@ -620,12 +641,19 @@ import no.nordicsemi.android.error.LegacyDfuError;
 		mError = 0;
 		mImageSizeInProgress = true;
 
-		characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
-		characteristic.setValue(new byte[4]);
-		characteristic.setValue(imageSize, BluetoothGattCharacteristic.FORMAT_UINT32, 0);
-		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Writing to characteristic " + characteristic.getUuid());
-		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG, "gatt.writeCharacteristic(" + characteristic.getUuid() + ")");
-		mGatt.writeCharacteristic(characteristic);
+		final byte[] value = new byte[4];
+		setImageSize(value, imageSize, 0);
+
+		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Writing to characteristic " + characteristic.getUuid()+ ", value (0x): " + parse(value));
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG, "gatt.writeCharacteristic(" + characteristic.getUuid() + ", value=" + parse(value) +", WRITE_TYPE_NO_RESPONSE)");
+			mGatt.writeCharacteristic(characteristic, value, BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+		} else {
+			characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+			characteristic.setValue(value);
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG, "gatt.writeCharacteristic(" + characteristic.getUuid() + ")");
+			mGatt.writeCharacteristic(characteristic);
+		}
 
 		// We have to wait for confirmation
 		try {
@@ -672,14 +700,21 @@ import no.nordicsemi.android.error.LegacyDfuError;
 		mError = 0;
 		mImageSizeInProgress = true;
 
-		characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
-		characteristic.setValue(new byte[12]);
-		characteristic.setValue(softDeviceImageSize, BluetoothGattCharacteristic.FORMAT_UINT32, 0);
-		characteristic.setValue(bootloaderImageSize, BluetoothGattCharacteristic.FORMAT_UINT32, 4);
-		characteristic.setValue(appImageSize, BluetoothGattCharacteristic.FORMAT_UINT32, 8);
-		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Writing to characteristic " + characteristic.getUuid());
-		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG, "gatt.writeCharacteristic(" + characteristic.getUuid() + ")");
-		mGatt.writeCharacteristic(characteristic);
+		final byte[] value = new byte[12];
+		setImageSize(value, softDeviceImageSize, 0);
+		setImageSize(value, bootloaderImageSize, 4);
+		setImageSize(value, appImageSize, 8);
+
+		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Writing to characteristic " + characteristic.getUuid()+ ", value (0x): " + parse(value));
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG, "gatt.writeCharacteristic(" + characteristic.getUuid() + ", value=" + parse(value) +", WRITE_TYPE_NO_RESPONSE)");
+			mGatt.writeCharacteristic(characteristic, value, BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+		} else {
+			characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+			characteristic.setValue(value);
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG, "gatt.writeCharacteristic(" + characteristic.getUuid() + ")");
+			mGatt.writeCharacteristic(characteristic);
+		}
 
 		// We have to wait for confirmation
 		try {

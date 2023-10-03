@@ -89,25 +89,27 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 	protected class SecureBluetoothCallback extends BaseCustomBluetoothCallback {
 
 		@Override
-		public void onCharacteristicChanged(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) {
-			if (characteristic.getValue() == null || characteristic.getValue().length < 3) {
-				loge("Empty response: " + parse(characteristic));
+		public void onCharacteristicChanged(@NonNull final BluetoothGatt gatt,
+											@NonNull final BluetoothGattCharacteristic characteristic,
+											@NonNull final byte[] value) {
+			if (value.length < 3) {
+				loge("Empty response: " + parse(value));
 				mError = DfuBaseService.ERROR_INVALID_RESPONSE;
 				notifyLock();
 				return;
 			}
 
-			final int responseType = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
+			final int responseType = value[0] & 0xFF;
 
 			// The first byte should always be the response code
 			if (responseType == OP_CODE_RESPONSE_CODE_KEY) {
-				final int requestType = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1);
+				final int requestType = value[1] & 0xFF;
 
 				//noinspection SwitchStatementWithTooFewBranches
 				switch (requestType) {
 					case OP_CODE_CALCULATE_CHECKSUM_KEY -> {
-						final int offset = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 3);
-						final int remoteCrc = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 3 + 4);
+						final int offset = getInt(value, 3);
+						final int remoteCrc = getInt(value, 7);
 						final int localCrc = (int) (((ArchiveInputStream) mFirmwareStream).getCrc32() & 0xFFFFFFFFL);
 						// Check whether local and remote CRC match
 						if (localCrc == remoteCrc) {
@@ -122,7 +124,7 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 								return;
 							} // else will be handled by sendFirmware(gatt) below
 						}
-						handlePacketReceiptNotification(gatt, characteristic);
+						handlePacketReceiptNotification(gatt, characteristic, value);
 					}
 					default -> {
 						/*
@@ -133,15 +135,15 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 						 */
 						if (mRemoteErrorOccurred)
 							break;
-						final int status = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 2);
+						final int status = value[2] & 0xFF;
 						if (status != DFU_STATUS_SUCCESS)
 							mRemoteErrorOccurred = true;
 
-						handleNotification(gatt, characteristic);
+						handleNotification(gatt, characteristic, value);
 					}
 				}
 			} else {
-				loge("Invalid response: " + parse(characteristic));
+				loge("Invalid response: " + parse(value));
 				mError = DfuBaseService.ERROR_INVALID_RESPONSE;
 			}
 			notifyLock();
