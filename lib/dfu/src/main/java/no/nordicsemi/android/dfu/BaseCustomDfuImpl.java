@@ -25,17 +25,19 @@ package no.nordicsemi.android.dfu;
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.preference.PreferenceManager;
 
+import androidx.annotation.NonNull;
+
 import java.io.IOException;
 import java.util.UUID;
 import java.util.zip.CRC32;
 
-import androidx.annotation.NonNull;
 import no.nordicsemi.android.dfu.internal.exception.DeviceDisconnectedException;
 import no.nordicsemi.android.dfu.internal.exception.DfuException;
 import no.nordicsemi.android.dfu.internal.exception.HexFileValidationException;
@@ -87,16 +89,16 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	boolean mRemoteErrorOccurred;
 
 	class BaseCustomBluetoothCallback extends BaseBluetoothGattCallback {
-		protected void onPacketCharacteristicWrite(@NonNull final BluetoothGatt gatt,
-												   @NonNull final BluetoothGattCharacteristic characteristic,
-												   final int status,
-												   @NonNull final byte[] value) {
+		protected void onPacketCharacteristicWrite() {
 			// this method can be overwritten on the final class
 		}
 
 		@Override
 		public void onCharacteristicWrite(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final int status) {
 			if (status == BluetoothGatt.GATT_SUCCESS) {
+				final UUID uuid = characteristic.getUuid();
+				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Data written to " + uuid);
+
 				/*
 				 * This method is called when either a CONTROL POINT or PACKET characteristic has been written.
 				 * If it is the CONTROL POINT characteristic, just set the {@link mRequestCompleted}
@@ -107,16 +109,11 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 				 * - send the next packet, if notification is not required at that moment, or
 				 * - do nothing, because we have to wait for the notification to confirm the data received
 				 */
-				final UUID uuid = characteristic.getUuid();
-				final byte[] value = characteristic.getValue();
 				if (uuid.equals(getPacketCharacteristicUUID())) {
 					if (mInitPacketInProgress) {
 						// We've got confirmation that the init packet was sent
-						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Data written to " + uuid);
 						mInitPacketInProgress = false;
 					} else if (mFirmwareUploadInProgress) {
-						// If the PACKET characteristic was written with image data, update counters
-						mProgressInfo.addBytesSent(value.length);
 						mPacketsSentSinceNotification++;
 
 						final boolean notificationExpected = mPacketsBeforeNotification > 0 && mPacketsSentSinceNotification >= mPacketsBeforeNotification;
@@ -163,12 +160,11 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 							mError = DfuBaseService.ERROR_FILE_IO_EXCEPTION;
 						}
 					} else {
-						onPacketCharacteristicWrite(gatt, characteristic, status, value);
+						onPacketCharacteristicWrite();
 					}
 				} else {
 					// If the CONTROL POINT characteristic was written just set the flag to true.
 					// The main thread will continue its task when notified.
-					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Data written to " + uuid);
 					mRequestCompleted = true;
 				}
 			} else {
@@ -285,7 +281,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	protected abstract UUID getDfuServiceUUID();
 
 	/**
-	 * Wends the whole init packet stream to the given characteristic.
+	 * Sends the whole init packet stream to the given characteristic.
 	 *
 	 * @param characteristic the target characteristic
 	 * @param crc32          the CRC object to be updated based on the data sent
@@ -312,7 +308,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 
 	/**
 	 * Writes the Init packet to the characteristic. This method is SYNCHRONOUS and wait until the
-	 * {@link android.bluetooth.BluetoothGattCallback#onCharacteristicWrite(android.bluetooth.BluetoothGatt, android.bluetooth.BluetoothGattCharacteristic, int)}
+	 * {@link BluetoothGattCallback#onCharacteristicWrite(BluetoothGatt, BluetoothGattCharacteristic, int)}
 	 * will be called or the device gets disconnected. If connection state will change,
 	 * or an error will occur, an exception will be thrown.
 	 *
@@ -336,12 +332,17 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		mError = 0;
 		mInitPacketInProgress = true;
 
-		characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
-		characteristic.setValue(locBuffer);
-		logi("Sending init packet (Value = " + parse(locBuffer) + ")");
-		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Writing to characteristic " + characteristic.getUuid());
-		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG, "gatt.writeCharacteristic(" + characteristic.getUuid() + ")");
-		mGatt.writeCharacteristic(characteristic);
+		logi("Sending init packet (size: " + locBuffer.length + ", value: 0x" + parse(locBuffer) + ")");
+		mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Writing to characteristic " + characteristic.getUuid() + " value (0x): " + parse(locBuffer));
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG, "gatt.writeCharacteristic(" + characteristic.getUuid() + ", value=0x" + parse(locBuffer) + ", WRITE_TYPE_NO_RESPONSE)");
+			mGatt.writeCharacteristic(characteristic, locBuffer, BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+		} else {
+			characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+			characteristic.setValue(locBuffer);
+			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG, "gatt.writeCharacteristic(" + characteristic.getUuid() + ")");
+			mGatt.writeCharacteristic(characteristic);
+		}
 
 		// We have to wait for confirmation
 		try {
@@ -424,6 +425,9 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 			locBuffer = new byte[size];
 			System.arraycopy(buffer, 0, locBuffer, 0, size);
 		}
+		// If the PACKET characteristic was written with image data, update counters
+		mProgressInfo.addBytesSent(size);
+
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
 			gatt.writeCharacteristic(characteristic, locBuffer, BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
 		} else {
