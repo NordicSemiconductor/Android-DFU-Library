@@ -93,13 +93,9 @@ import no.nordicsemi.android.error.LegacyDfuError;
 
 	protected class LegacyBluetoothCallback extends BaseCustomBluetoothCallback {
 		@Override
-		protected void onPacketCharacteristicWrite(@NonNull final BluetoothGatt gatt,
-												   @NonNull final BluetoothGattCharacteristic characteristic,
-												   final int status,
-												   @NonNull final byte[] value) {
+		protected void onPacketCharacteristicWrite() {
 			if (mImageSizeInProgress) {
 				// We've got confirmation that the image size was sent
-				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Data written to " + characteristic.getUuid() + ", value (0x): " + parse(value));
 				mImageSizeInProgress = false;
 			}
 		}
