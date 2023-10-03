@@ -101,6 +101,7 @@ class BootloaderScannerLollipop extends ScanCallback implements BootloaderScanne
             // Some Android devices fail to scan with offloaded address filters.
             // Instead, we will add an empty filter, just to allow background scanning, and will
             // filter below using the device selector.
+            filters.add(new ScanFilter.Builder().build()); // Accept all devices
             scanner.startScan(filters, settings, this);
         } else {
             /*
