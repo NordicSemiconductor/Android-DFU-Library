@@ -94,6 +94,7 @@ internal fun WelcomeScreen() {
 
                 Text(
                     text = stringResource(id = R.string.dfu_about_text),
+                    modifier = Modifier.sizeIn(maxWidth = 600.dp),
                     style = MaterialTheme.typography.bodyMedium
                 )
 
