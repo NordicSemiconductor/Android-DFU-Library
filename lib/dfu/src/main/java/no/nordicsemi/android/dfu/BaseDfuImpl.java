@@ -684,7 +684,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 		try {
             //noinspection JavaReflectionMemberAccess
             final Method removeBond = device.getClass().getMethod("removeBond");
-            mRequestCompleted = false;
+			mRequestCompleted = false;
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG, "gatt.getDevice().removeBond() (hidden)");
 			//noinspection ConstantConditions
 			result = (Boolean) removeBond.invoke(device);
