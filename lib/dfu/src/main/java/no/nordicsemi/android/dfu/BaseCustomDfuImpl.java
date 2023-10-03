@@ -96,8 +96,6 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		@Override
 		public void onCharacteristicWrite(final BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic, final int status) {
 			if (status == BluetoothGatt.GATT_SUCCESS) {
-				final UUID uuid = characteristic.getUuid();
-				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Data written to " + uuid);
 
 				/*
 				 * This method is called when either a CONTROL POINT or PACKET characteristic has been written.
@@ -109,9 +107,11 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 				 * - send the next packet, if notification is not required at that moment, or
 				 * - do nothing, because we have to wait for the notification to confirm the data received
 				 */
+				final UUID uuid = characteristic.getUuid();
 				if (uuid.equals(getPacketCharacteristicUUID())) {
 					if (mInitPacketInProgress) {
 						// We've got confirmation that the init packet was sent
+						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Data written to " + uuid);
 						mInitPacketInProgress = false;
 					} else if (mFirmwareUploadInProgress) {
 						mPacketsSentSinceNotification++;
@@ -160,11 +160,13 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 							mError = DfuBaseService.ERROR_FILE_IO_EXCEPTION;
 						}
 					} else {
+						mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Data written to " + uuid);
 						onPacketCharacteristicWrite();
 					}
 				} else {
 					// If the CONTROL POINT characteristic was written just set the flag to true.
 					// The main thread will continue its task when notified.
+					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "Data written to " + uuid);
 					mRequestCompleted = true;
 				}
 			} else {
