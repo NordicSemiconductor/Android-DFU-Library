@@ -48,7 +48,7 @@
     <string name="dfu_settings_number_of_pockets">Number of packets</string>
     <string name="dfu_settings_headline_secure_dfu">Secure DFU option</string>
     <string name="dfu_settings_headline_legacy_dfu">Legacy DFU</string>
-    <string name="dfu_settings_time">%d ms</string>
+    <string name="dfu_settings_time">ms</string>
 
     <string name="dfu_macro_dialog_confirm">Confirm</string>
     <string name="dfu_macro_dialog_dismiss">Dismiss</string>
