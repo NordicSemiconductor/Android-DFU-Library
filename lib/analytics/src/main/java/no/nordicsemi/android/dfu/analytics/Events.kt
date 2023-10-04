@@ -122,6 +122,12 @@ class ScanTimeoutSettingsEvent(private val scanTimeout: Int) : DFUSettingsChange
     override fun createBundle() = bundleOf(FirebaseParam.VALUE to scanTimeout)
 }
 
+class MtuRequestChangedSettingsEvent(private val enabled: Boolean) : DFUSettingsChangeEvent {
+    override val eventName: String = "MTU_CHANGED"
+
+    override fun createBundle() = bundleOf(FirebaseParam.VALUE to enabled)
+}
+
 class KeepBondSettingsEvent(private val isEnabled: Boolean) : DFUSettingsChangeEvent {
     override val eventName: String = "KEEP_BOND_EVENT"
 

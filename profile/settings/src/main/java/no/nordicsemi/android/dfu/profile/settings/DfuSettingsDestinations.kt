@@ -31,12 +31,27 @@
 
 package no.nordicsemi.android.dfu.profile.settings
 
+import androidx.compose.runtime.getValue
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import no.nordicsemi.android.common.analytics.view.AnalyticsPermissionSwitch
 import no.nordicsemi.android.common.navigation.createSimpleDestination
 import no.nordicsemi.android.common.navigation.defineDestination
 import no.nordicsemi.android.dfu.profile.settings.view.SettingsScreen
+import no.nordicsemi.android.dfu.profile.settings.viewmodel.SettingsViewModel
 
 val DfuSettings = createSimpleDestination("dfu-settings")
 
 val DfuSettingsDestination = defineDestination(DfuSettings) {
-    SettingsScreen()
+    val viewModel = hiltViewModel<SettingsViewModel>()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    SettingsScreen(
+        state = state,
+        onEvent = { viewModel.onEvent(it) },
+        other = {
+            // Analytics permission switch is externalized from the SettingsScreen as it
+            // is using a ViewModel, which prevents from showing a Preview.
+            AnalyticsPermissionSwitch()
+        }
+    )
 }

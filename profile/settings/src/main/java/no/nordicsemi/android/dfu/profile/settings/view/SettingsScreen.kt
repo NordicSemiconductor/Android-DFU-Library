@@ -31,10 +31,8 @@
 
 package no.nordicsemi.android.dfu.profile.settings.view
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.SettingsBackupRestore
@@ -44,24 +42,29 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import no.nordicsemi.android.common.analytics.view.AnalyticsPermissionSwitch
+import no.nordicsemi.android.common.theme.NordicTheme
 import no.nordicsemi.android.common.theme.view.NordicAppBar
 import no.nordicsemi.android.dfu.BuildConfig.VERSION_CODE
 import no.nordicsemi.android.dfu.BuildConfig.VERSION_NAME
 import no.nordicsemi.android.dfu.profile.settings.R
-import no.nordicsemi.android.dfu.profile.settings.viewmodel.SettingsViewModel
+import no.nordicsemi.android.dfu.profile.settings.view.dialog.NumberOfPocketsDialog
+import no.nordicsemi.android.dfu.profile.settings.view.widget.Headline
+import no.nordicsemi.android.dfu.profile.settings.view.widget.SettingsButton
+import no.nordicsemi.android.dfu.profile.settings.view.widget.SettingsSwitch
+import no.nordicsemi.android.dfu.profile.settings.view.widget.SettingsTimeSlider
+import no.nordicsemi.android.dfu.settings.domain.DFUSettings
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun SettingsScreen() {
-    val viewModel = hiltViewModel<SettingsViewModel>()
-    val state by viewModel.state.collectAsStateWithLifecycle()
-    val onEvent: (SettingsScreenViewEvent) -> Unit = { viewModel.onEvent(it) }
+internal fun SettingsScreen(
+    state: DFUSettings,
+    onEvent: (SettingsScreenViewEvent) -> Unit,
+    modifier: Modifier = Modifier,
+    other: @Composable ColumnScope.() -> Unit = {},
+) {
     var showDialog by rememberSaveable { mutableStateOf(false) }
 
     if (showDialog) {
@@ -71,7 +74,10 @@ internal fun SettingsScreen() {
         )
     }
 
-    Column {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier,
+    ) {
         NordicAppBar(
             text = stringResource(R.string.dfu_settings),
             onNavigationButtonClick = { onEvent(NavigateUp) },
@@ -87,23 +93,25 @@ internal fun SettingsScreen() {
 
         // Scrollable Column
         Column(
-            modifier = Modifier.verticalScroll(rememberScrollState())
+            modifier = Modifier
+                .verticalScroll(rememberScrollState())
+                .sizeIn(maxWidth = 600.dp)
         ) {
             SettingsSwitch(
-                stringResource(id = R.string.dfu_settings_packets_receipt_notification),
-                stringResource(id = R.string.dfu_settings_packets_receipt_notification_info),
-                state.packetsReceiptNotification,
+                text = stringResource(id = R.string.dfu_settings_packets_receipt_notification),
+                description = stringResource(id = R.string.dfu_settings_packets_receipt_notification_info),
+                isChecked = state.packetsReceiptNotification,
                 onClick = { onEvent(OnPacketsReceiptNotificationSwitchClick) }
             )
 
             SettingsButton(
-                stringResource(id = R.string.dfu_settings_number_of_pockets),
-                state.numberOfPackets.toString(),
+                text = stringResource(id = R.string.dfu_settings_number_of_pockets),
+                description = state.numberOfPackets.toString(),
                 onClick = { showDialog = true },
                 enabled = state.packetsReceiptNotification,
             )
 
-            SettingsSlider(
+            SettingsTimeSlider(
                 text = stringResource(id = R.string.dfu_settings_reboot_time),
                 description = stringResource(id = R.string.dfu_settings_reboot_time_info),
                 value = state.rebootTime,
@@ -112,7 +120,7 @@ internal fun SettingsScreen() {
                 onChange = { onEvent(OnRebootTimeChange(it)) }
             )
 
-            SettingsSlider(
+            SettingsTimeSlider(
                 text = stringResource(id = R.string.dfu_settings_scan_timeout),
                 description = stringResource(id = R.string.dfu_settings_scan_timeout_info),
                 value = state.scanTimeout,
@@ -121,18 +129,25 @@ internal fun SettingsScreen() {
                 onChange = { onEvent(OnScanTimeoutChange(it)) }
             )
 
+            SettingsSwitch(
+                text = stringResource(id = R.string.dfu_settings_mtu),
+                description = stringResource(id = R.string.dfu_settings_mtu_info),
+                isChecked = state.mtuRequestEnabled,
+                onClick = { onEvent(OnMtuRequestClick) }
+            )
+
             Spacer(modifier = Modifier.size(16.dp))
 
             Headline(stringResource(id = R.string.dfu_settings_headline_secure_dfu))
 
             SettingsSwitch(
-                stringResource(id = R.string.dfu_settings_disable_resume),
-                stringResource(id = R.string.dfu_settings_disable_resume_info),
-                state.disableResume,
+                text = stringResource(id = R.string.dfu_settings_disable_resume),
+                description = stringResource(id = R.string.dfu_settings_disable_resume_info),
+                isChecked = state.disableResume,
                 onClick = { onEvent(OnDisableResumeSwitchClick) }
             )
             
-            SettingsSlider(
+            SettingsTimeSlider(
                 text = stringResource(id = R.string.dfu_settings_prepare_data_object_delay),
                 description = stringResource(id = R.string.dfu_settings_prepare_data_object_delay_info),
                 value = state.prepareDataObjectDelay,
@@ -146,23 +161,23 @@ internal fun SettingsScreen() {
             Headline(stringResource(id = R.string.dfu_settings_headline_legacy_dfu))
 
             SettingsSwitch(
-                stringResource(id = R.string.dfu_settings_force_scanning),
-                stringResource(id = R.string.dfu_settings_force_scanning_info),
-                state.forceScanningInLegacyDfu,
+                text = stringResource(id = R.string.dfu_settings_force_scanning),
+                description = stringResource(id = R.string.dfu_settings_force_scanning_info),
+                isChecked = state.forceScanningInLegacyDfu,
                 onClick = { onEvent(OnForceScanningAddressesSwitchClick) }
             )
 
             SettingsSwitch(
-                stringResource(id = R.string.dfu_settings_keep_bond_information),
-                stringResource(id = R.string.dfu_settings_keep_bond_information_info),
-                state.keepBondInformation,
+                text = stringResource(id = R.string.dfu_settings_keep_bond_information),
+                description = stringResource(id = R.string.dfu_settings_keep_bond_information_info),
+                isChecked = state.keepBondInformation,
                 onClick = { onEvent(OnKeepBondInformationSwitchClick) }
             )
 
             SettingsSwitch(
-                stringResource(id = R.string.dfu_settings_external_mcu_dfu),
-                stringResource(id = R.string.dfu_settings_external_mcu_dfu_info),
-                state.externalMcuDfu,
+                text = stringResource(id = R.string.dfu_settings_external_mcu_dfu),
+                description = stringResource(id = R.string.dfu_settings_external_mcu_dfu_info),
+                isChecked = state.externalMcuDfu,
                 onClick = { onEvent(OnExternalMcuDfuSwitchClick) }
             )
 
@@ -171,17 +186,17 @@ internal fun SettingsScreen() {
             Headline(stringResource(id = R.string.dfu_settings_other))
 
             SettingsButton(
-                stringResource(id = R.string.dfu_about_app),
+                text = stringResource(id = R.string.dfu_about_app),
                 onClick = { onEvent(OnAboutAppClick) }
             )
 
             SettingsButton(
-                stringResource(id = R.string.dfu_about_dfu),
-                stringResource(id = R.string.dfu_about_dfu_desc),
+                text = stringResource(id = R.string.dfu_about_dfu),
+                description = stringResource(id = R.string.dfu_about_dfu_desc),
                 onClick = { onEvent(OnAboutDfuClick) }
             )
 
-            AnalyticsPermissionSwitch()
+            other()
 
             Text(
                 text = stringResource(id = R.string.dfu_version, VERSION_NAME, VERSION_CODE),
@@ -196,183 +211,13 @@ internal fun SettingsScreen() {
     }
 }
 
+@Preview
 @Composable
-private fun Headline(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.titleSmall,
-        modifier = Modifier.padding(horizontal = 16.dp),
-        color = MaterialTheme.colorScheme.secondary
-    )
-}
-
-@Composable
-private fun SettingsSwitch(
-    text: String,
-    description: String?,
-    isChecked: Boolean,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(
-            modifier = Modifier
-                .weight(1f)
-        ) {
-            Text(
-                text = text,
-                style = MaterialTheme.typography.titleLarge,
-            )
-
-            description?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-        }
-
-        Checkbox(checked = isChecked, onCheckedChange = { onClick() })
-    }
-}
-
-@Composable
-private fun SettingsSlider(
-    text: String,
-    description: String?,
-    value: Int,
-    valueRange: IntRange,
-    stepInMilliseconds: Int,
-    onChange: (Int) -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-    ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.titleLarge,
+private fun SettingsScreenPreview() {
+    NordicTheme {
+        SettingsScreen(
+            state = DFUSettings(),
+            onEvent = {}
         )
-
-        description?.let {
-            Text(
-                text = it,
-                style = MaterialTheme.typography.bodySmall,
-            )
-        }
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            var currentValue by remember(value) { mutableStateOf(value) }
-            Slider(
-                value = currentValue.toFloat() / stepInMilliseconds,
-                valueRange = valueRange.first.toFloat() / stepInMilliseconds..valueRange.last.toFloat() / stepInMilliseconds,
-                onValueChange = { currentValue = (it + 0.1F).toInt() * stepInMilliseconds },
-                onValueChangeFinished = { onChange(currentValue) },
-                steps = (valueRange.last - valueRange.first) / stepInMilliseconds - 1,
-                modifier = Modifier.weight(1f)
-            )
-            Text(
-                text = stringResource(id = R.string.dfu_settings_time, currentValue),
-                textAlign = TextAlign.End,
-                modifier = Modifier.width(80.dp)
-            )
-        }
     }
-}
-
-@Composable
-private fun SettingsButton(
-    title: String,
-    description: String? = null,
-    onClick: () -> Unit,
-    enabled: Boolean = true,
-) {
-    val color = if (enabled) {
-        LocalContentColor.current
-    } else {
-        LocalContentColor.current.copy(alpha = 0.38f)
-    }
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(enabled = enabled) { onClick() }
-            .padding(16.dp)
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            color = color,
-        )
-
-        description?.let {
-            Text(
-                text = it,
-                style = MaterialTheme.typography.bodySmall,
-                color = color,
-            )
-        }
-    }
-}
-
-@Composable
-private fun NumberOfPocketsDialog(
-    numberOfPockets: Int,
-    onDismiss: () -> Unit,
-    onNumberOfPocketsChange: (Int) -> Unit
-) {
-    var numberOfPocketsState by rememberSaveable { mutableStateOf("$numberOfPockets") }
-    var showError by rememberSaveable { mutableStateOf(false) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(text = stringResource(id = R.string.dfu_settings_number_of_pockets))
-        },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = numberOfPocketsState,
-                    onValueChange = { newValue ->
-                        val value = newValue.toIntOrNull()
-                        if (value != null) {
-                            numberOfPocketsState = "$value"
-                            showError = false
-                        } else {
-                            numberOfPocketsState = ""
-                            showError = true
-                        }
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    label = { Text(text = stringResource(id = R.string.dfu_settings_number_of_pockets)) },
-                )
-                if (showError) {
-                    Text(text = stringResource(id = R.string.dfu_parse_int_error))
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    onDismiss()
-                    onNumberOfPocketsChange(numberOfPocketsState.toInt())
-                },
-                enabled = !showError
-            ) {
-                Text(text = stringResource(id = R.string.dfu_macro_dialog_confirm))
-            }
-        },
-        dismissButton = {
-            Button(onClick = onDismiss) {
-                Text(text = stringResource(id = R.string.dfu_macro_dialog_dismiss))
-            }
-        }
-    )
 }
