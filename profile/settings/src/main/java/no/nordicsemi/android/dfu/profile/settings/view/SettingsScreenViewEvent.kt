@@ -43,6 +43,8 @@ internal data class OnRebootTimeChange(val time: Int) : SettingsScreenViewEvent
 
 internal data class OnScanTimeoutChange(val timeout: Int) : SettingsScreenViewEvent
 
+internal data object OnMtuRequestClick : SettingsScreenViewEvent
+
 internal data object OnDisableResumeSwitchClick : SettingsScreenViewEvent
 
 internal data object OnForceScanningAddressesSwitchClick : SettingsScreenViewEvent

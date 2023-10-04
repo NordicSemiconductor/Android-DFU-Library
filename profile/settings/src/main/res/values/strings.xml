@@ -46,6 +46,8 @@
     <string name="dfu_settings_scan_timeout">Scan timeout</string>
     <string name="dfu_settings_scan_timeout_info">The time the app will scan for the device after it switches to DFU bootloader mode.</string>
     <string name="dfu_settings_number_of_pockets">Number of packets</string>
+    <string name="dfu_settings_mtu">Request high MTU</string>
+    <string name="dfu_settings_mtu_info">With this option is enabled the phone will send ATT Exchange MTU Request to negotiate longer packets, which should increase upload speed.\n\nDisable when upload fails after few seconds with GATT ERROR.</string>
     <string name="dfu_settings_headline_secure_dfu">Secure DFU option</string>
     <string name="dfu_settings_headline_legacy_dfu">Legacy DFU</string>
     <string name="dfu_settings_time">ms</string>

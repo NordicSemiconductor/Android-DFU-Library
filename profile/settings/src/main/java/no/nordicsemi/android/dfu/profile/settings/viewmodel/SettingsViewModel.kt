@@ -67,6 +67,7 @@ internal class SettingsViewModel @Inject constructor(
             OnKeepBondInformationSwitchClick -> onKeepBondSwitchClick()
             OnPacketsReceiptNotificationSwitchClick -> onPacketsReceiptNotificationSwitchClick()
             OnDisableResumeSwitchClick -> onDisableResumeSwitchClick()
+            OnMtuRequestClick -> onMtuRequestClick()
             OnForceScanningAddressesSwitchClick -> onForceScanningAddressesSwitchClick()
             is OnNumberOfPocketsChange -> onNumberOfPocketsChange(event.numberOfPockets)
             is OnPrepareDataObjectDelayChange -> onPrepareDataObjectDelayChange(event.delay)
@@ -157,5 +158,14 @@ internal class SettingsViewModel @Inject constructor(
             repository.storeSettings(newSettings)
         }
         analytics.logEvent(ScanTimeoutSettingsEvent(newSettings.scanTimeout))
+    }
+
+    private fun onMtuRequestClick() {
+        val currentValue = state.value.mtuRequestEnabled
+        val newSettings = state.value.copy(mtuRequestEnabled = !currentValue)
+        viewModelScope.launch {
+            repository.storeSettings(newSettings)
+        }
+        analytics.logEvent(MtuRequestChangedSettingsEvent(newSettings.mtuRequestEnabled))
     }
 }

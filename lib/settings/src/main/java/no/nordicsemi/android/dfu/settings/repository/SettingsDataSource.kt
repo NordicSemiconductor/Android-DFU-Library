@@ -55,6 +55,7 @@ private val NUMBER_OF_POCKETS_KEY = intPreferencesKey("number_of_pockets")
 private val PREPARE_OBJECT_DELAY_KEY = intPreferencesKey("prepare_data_object_delay")
 private val REBOOT_TIME_KEY = intPreferencesKey("reboot_time")
 private val SCAN_TIMEOUT_KEY = intPreferencesKey("scan_timeout")
+private val MTU = booleanPreferencesKey("requestMtu")
 
 @Singleton
 class SettingsDataSource @Inject constructor(
@@ -80,6 +81,7 @@ class SettingsDataSource @Inject constructor(
             it[KEEP_BOND_KEY] = settings.keepBondInformation
             it[EXTERNAL_MCU_KEY] = settings.externalMcuDfu
             it[DISABLE_RESUME] = settings.disableResume
+            it[MTU] = settings.mtuRequestEnabled
             it[FORCE_SCANNING_ADDRESS] = settings.forceScanningInLegacyDfu
             it[SHOW_WELCOME_KEY] = settings.showWelcomeScreen
         }
@@ -95,6 +97,7 @@ class SettingsDataSource @Inject constructor(
             this[PREPARE_OBJECT_DELAY_KEY] ?: 400,
             this[REBOOT_TIME_KEY] ?: 0,
             this[SCAN_TIMEOUT_KEY] ?: 2_000,
+            this[MTU] ?: true,
             this[FORCE_SCANNING_ADDRESS] ?: false,
             this[SHOW_WELCOME_KEY] ?: true,
         )

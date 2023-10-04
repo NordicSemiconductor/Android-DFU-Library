@@ -53,9 +53,8 @@ import no.nordicsemi.android.dfu.profile.settings.R
 import no.nordicsemi.android.dfu.profile.settings.view.dialog.NumberOfPocketsDialog
 import no.nordicsemi.android.dfu.profile.settings.view.widget.Headline
 import no.nordicsemi.android.dfu.profile.settings.view.widget.SettingsButton
-import no.nordicsemi.android.dfu.profile.settings.view.widget.SettingsSlider
-import no.nordicsemi.android.dfu.profile.settings.view.widget.SettingsTimeSlider
 import no.nordicsemi.android.dfu.profile.settings.view.widget.SettingsSwitch
+import no.nordicsemi.android.dfu.profile.settings.view.widget.SettingsTimeSlider
 import no.nordicsemi.android.dfu.settings.domain.DFUSettings
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -128,6 +127,13 @@ internal fun SettingsScreen(
                 valueRange = 1_000..10_000,
                 stepInMilliseconds = 1_000, // 1 second
                 onChange = { onEvent(OnScanTimeoutChange(it)) }
+            )
+
+            SettingsSwitch(
+                text = stringResource(id = R.string.dfu_settings_mtu),
+                description = stringResource(id = R.string.dfu_settings_mtu_info),
+                isChecked = state.mtuRequestEnabled,
+                onClick = { onEvent(OnMtuRequestClick) }
             )
 
             Spacer(modifier = Modifier.size(16.dp))

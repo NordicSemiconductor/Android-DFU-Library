@@ -70,6 +70,9 @@ internal class DFUManager @Inject constructor(
             if (settings.disableResume) {
                 disableResume()
             }
+            if (!settings.mtuRequestEnabled) {
+                disableMtuRequest()
+            }
 
             setForceScanningForNewAddressInLegacyDfu(settings.forceScanningInLegacyDfu)
             setPrepareDataObjectDelay(settings.prepareDataObjectDelay.toLong())
