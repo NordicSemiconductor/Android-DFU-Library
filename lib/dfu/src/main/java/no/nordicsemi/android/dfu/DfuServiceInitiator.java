@@ -929,6 +929,6 @@ public final class DfuServiceInitiator {
 
 	@RequiresApi(api = Build.VERSION_CODES.O)
 	public static void createDfuNotificationChannel(@NonNull final Context context) {
-		createDfuNotificationChannel(context, context.getString(R.string.dfu_channel_name), context.getString(R.string.dfu_channel_description), false)
+		createDfuNotificationChannel(context, context.getString(R.string.dfu_channel_name), context.getString(R.string.dfu_channel_description), false);
 	}
 }
