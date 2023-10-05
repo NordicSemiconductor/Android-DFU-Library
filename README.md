@@ -43,7 +43,7 @@ The DFU library is available on Maven Central repository. Add it to your project
 adding the following dependency:
 
 ```Groovy
-implementation 'no.nordicsemi.android:dfu:2.3.0'
+implementation 'no.nordicsemi.android:dfu:2.3.1'
 ```
 
 Latest version targeting API lower than 31 is 1.11.1.
@@ -177,7 +177,7 @@ A library for both iOS and Android that is based on this library is available fo
 ### Flutter
 
 A library for both iOS and Android that is based on this library is available for Flutter: 
-[nordic_dfu](https://pub.dev/packages/nordic_dfu) 
+[nordic-dfu](https://pub.dev/packages/nordic_dfu) 
 
 ### Xamarin
 
