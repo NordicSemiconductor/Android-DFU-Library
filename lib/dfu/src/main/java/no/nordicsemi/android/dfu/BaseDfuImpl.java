@@ -723,6 +723,27 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 	@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 	void requestMtu(@IntRange(from = 0, to = 517) final int mtu)
             throws DeviceDisconnectedException, UploadAbortedException {
+		// Samsung Tab A8 claims it can only transmit 27-byte long packets on L2CAP in the
+		// LLCP Data Length Update procedure, but it is sending 251.
+		// Long packets get rejected by the SoftDevice, so we have to disable MTU request on this device.
+		//
+		// See: https://github.com/NordicSemiconductor/Android-DFU-Library/issues/339
+		//
+		// Note: Perhaps there are other devices with the same issue or perhaps this has been
+		//       fixed on those devices. As we don't can't say apriori which devices have the issue,
+		//       and which not, we're disabling it for all with the same motherboard.
+		//       This can be modified in the future.
+		//
+		// To bypass the check, set MTU to 516 instead of default 517.
+		// Most probably the MTU supported by the target is 23 or 247, so this does not matter.
+		if (Build.HARDWARE.equals("ums512_25c10")) {
+			if (mtu == 516) {
+				logw("MTU request forced");
+			} else {
+				logw("MTU request disabled for this device. See https://github.com/NordicSemiconductor/Android-DFU-Library/issues/339");
+				return;
+			}
+		}
 		if (mAborted)
 			throw new UploadAbortedException();
 		mRequestCompleted = false;
