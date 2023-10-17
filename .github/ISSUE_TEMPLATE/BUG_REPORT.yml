@@ -1,0 +1,53 @@
+name: Bug report
+description: Report an issue in DFU library or the app.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+  - type: dropdown
+    id: type
+    attributes:
+      label: Where do you suspect the issue?
+      description: Is it a bug in the nRF DFU app or an issue in the library?
+      options:
+        - Issue in DFU library, e.g. upload stops in the middle
+        - Issue related to Android version or specific device
+        - A UI issue in nRF DFU app
+        - Other
+      default: 0
+    validations:
+      required: true
+  - type: dropdown
+    id: version
+    attributes:
+      label: Version
+      description: What version of our product are you running?
+      options:
+        - 2.3.1 (Latest)
+        - 2.3.0
+        - 2.2.x
+        - 1.x
+      default: 0
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: Describe the issue
+      description: Describe the issue, expected and actual result.
+      placeholder: |
+        I'm getting error... when trying to...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
+      render: text
+  - type: markdown
+    attributes:
+      value: |
+        If you need to attach a file, create the issue and add it as a comment.

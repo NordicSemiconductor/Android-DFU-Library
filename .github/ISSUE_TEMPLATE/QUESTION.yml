@@ -1,0 +1,42 @@
+name: Question
+description: Ask a question related to DFU app or library.
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For questions related to DFU bootlaoder from nRF5 SDK and other Nordic's products use 
+        [DevZone](https://devzone.nordicsemi.com/).
+
+        If you're using Mcu Manager from nRF Connect SDK (NCS) use 
+        [nRF Connect Device Manager](https://github.com/NordicSemiconductor/Android-nRF-Connect-Device-Manager/) 
+        library instead
+  - type: dropdown
+    id: version
+    attributes:
+      label: Version
+      description: What version of our product are you running?
+      options:
+        - 2.3.1 (Latest)
+        - 2.3.0
+        - 2.2.x
+        - 2.1.x
+        - 2.0.x
+        - 1.x
+      default: 0
+    validations:
+      required: false
+  - type: textarea
+    id: question
+    attributes:
+      label: Ask the question
+      description: How can we help?
+      placeholder: How do I...?
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
+      render: text
