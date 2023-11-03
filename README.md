@@ -43,7 +43,7 @@ The DFU library is available on Maven Central repository. Add it to your project
 adding the following dependency:
 
 ```Groovy
-implementation 'no.nordicsemi.android:dfu:2.3.1'
+implementation 'no.nordicsemi.android:dfu:2.3.2'
 ```
 
 Latest version targeting API lower than 31 is 1.11.1.
