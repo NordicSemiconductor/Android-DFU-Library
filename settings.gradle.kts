@@ -16,7 +16,7 @@ dependencyResolutionManagement {
     }
     versionCatalogs {
         create("libs") {
-            from("no.nordicsemi.android.gradle:version-catalog:1.9.14")
+            from("no.nordicsemi.android.gradle:version-catalog:1.9.15")
         }
     }
 }
@@ -33,6 +33,6 @@ include(":profile:settings")
 include(":profile:welcome")
 include(":profile:navigation")
 
-//if (file("../Android-Common-Libraries").exists()) {
-//    includeBuild("../Android-Common-Libraries")
+//if (file("../Kotlin-BLE-Library").exists()) {
+//    includeBuild("../Kotlin-BLE-Library")
 //}
