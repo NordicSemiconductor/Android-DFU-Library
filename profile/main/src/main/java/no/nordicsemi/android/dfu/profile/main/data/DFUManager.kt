@@ -35,6 +35,7 @@ import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
 import no.nordicsemi.android.common.logger.BleLoggerAndLauncher
 import no.nordicsemi.android.common.logger.DefaultBleLogger
+import no.nordicsemi.android.common.logger.LoggerLauncher
 import no.nordicsemi.android.dfu.DfuServiceController
 import no.nordicsemi.android.dfu.DfuServiceInitiator
 import no.nordicsemi.android.dfu.DfuServiceListenerHelper
@@ -89,6 +90,12 @@ internal class DFUManager @Inject constructor(
     }
 
     fun openLogger() {
-        logger?.launch()
+        logger?.launch() ?: context.packageManager
+            .getLaunchIntentForPackage("no.nordicsemi.android.log")
+            ?.let { launchIntent ->
+                context.startActivity(launchIntent)
+            } ?: run {
+                LoggerLauncher.launch(context)
+            }
     }
 }
