@@ -33,6 +33,6 @@ include(":profile:settings")
 include(":profile:welcome")
 include(":profile:navigation")
 
-//if (file("../Kotlin-BLE-Library").exists()) {
-//    includeBuild("../Kotlin-BLE-Library")
-//}
+if (file("../Kotlin-BLE-Library").exists()) {
+    includeBuild("../Kotlin-BLE-Library")
+}
