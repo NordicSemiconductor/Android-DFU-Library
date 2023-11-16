@@ -53,7 +53,8 @@ internal class DFUFileManager @Inject constructor(
             try {
                 createFromContentResolver(uri)
             } catch (e: Exception) {
-                Log.e(TAG, "Error loading file from content resolver.", e)
+                // Stack trace is too long, log just the message.
+                Log.e(TAG, "Error loading file from content resolver: ${e.localizedMessage}")
                 null
             }
         }
