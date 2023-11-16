@@ -32,10 +32,12 @@
 package no.nordicsemi.android.dfu.profile.main.data
 
 import android.content.Context
+import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
 import no.nordicsemi.android.common.logger.BleLoggerAndLauncher
 import no.nordicsemi.android.common.logger.DefaultBleLogger
 import no.nordicsemi.android.common.logger.LoggerLauncher
+import no.nordicsemi.android.dfu.DfuBaseService
 import no.nordicsemi.android.dfu.DfuServiceController
 import no.nordicsemi.android.dfu.DfuServiceInitiator
 import no.nordicsemi.android.dfu.DfuServiceListenerHelper
@@ -58,7 +60,16 @@ internal class DFUManager @Inject constructor(
             .create(context, null, target.address, target.name)
             .also {
                 DfuServiceListenerHelper.registerLogListener(context) { _, level, message ->
-                    it.log(level, message)
+                    // Convert nRF Logger log level to Android log priority, used by the BleLogger.
+                    val priority = when (level) {
+                        DfuBaseService.LOG_LEVEL_DEBUG -> Log.DEBUG
+                        DfuBaseService.LOG_LEVEL_VERBOSE -> Log.VERBOSE
+                        DfuBaseService.LOG_LEVEL_INFO -> Log.INFO
+                        DfuBaseService.LOG_LEVEL_WARNING -> Log.WARN
+                        DfuBaseService.LOG_LEVEL_ERROR -> Log.ERROR
+                        else -> level
+                    }
+                    it.log(priority, message)
                 }
             }
 
