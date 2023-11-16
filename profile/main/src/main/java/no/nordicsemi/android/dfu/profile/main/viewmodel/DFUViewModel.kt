@@ -83,9 +83,9 @@ internal class DFUViewModel @Inject constructor(
                 repository.target = target
                 _state.value = _state.value.copy(
                     deviceViewEntity = SelectedDeviceViewEntity(target),
-                    progressViewEntity = repository.zipFile
-                        ?.let { WorkingProgressViewEntity() }
-                        ?: _state.value.progressViewEntity
+                    // It may be, that the file URI has expired and an error will
+                    // be shown upon clicking Start. That's OK.
+                    progressViewEntity = WorkingProgressViewEntity(),
                 )
             }
             .launchIn(viewModelScope)
