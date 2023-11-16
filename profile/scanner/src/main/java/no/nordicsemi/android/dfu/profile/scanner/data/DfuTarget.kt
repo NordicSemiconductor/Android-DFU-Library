@@ -9,5 +9,5 @@ data class DfuTarget(
     val address: String,
     val name: String?,
 ): Parcelable {
-    internal constructor(result: ServerDevice): this(result.address, result.name)
+    internal constructor(result: ServerDevice, name: String?): this(result.address, name)
 }
