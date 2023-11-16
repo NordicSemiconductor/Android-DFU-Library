@@ -18,7 +18,13 @@ internal fun ScannerContent() {
         onResult = { result ->
             when (result) {
                 ScanningCancelled -> vm.navigateUp()
-                is DeviceSelected -> vm.navigateUpWithResult(Scanner, DfuTarget(result.scanResults.device))
+                is DeviceSelected -> vm.navigateUpWithResult(
+                    from = Scanner,
+                    result = DfuTarget(
+                        result = result.scanResults.device,
+                        name = result.scanResults.scanResult.firstNotNullOfOrNull { it.scanRecord?.deviceName } ?: result.scanResults.device.name
+                    )
+                )
             }
         },
     )
