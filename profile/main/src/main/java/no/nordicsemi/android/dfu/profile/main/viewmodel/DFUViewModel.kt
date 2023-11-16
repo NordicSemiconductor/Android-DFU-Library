@@ -83,10 +83,17 @@ internal class DFUViewModel @Inject constructor(
                 repository.target = target
                 _state.value = _state.value.copy(
                     deviceViewEntity = SelectedDeviceViewEntity(target),
-                    progressViewEntity = WorkingProgressViewEntity()
+                    progressViewEntity = repository.zipFile
+                        ?.let { WorkingProgressViewEntity() }
+                        ?: _state.value.progressViewEntity
                 )
             }
             .launchIn(viewModelScope)
+
+        // Restore selected target if it was saved in the State Holder.
+        (_state.value.deviceViewEntity as? SelectedDeviceViewEntity)?.let {
+            repository.target = it.target
+        }
 
         repository.data
             .mapNotNull { it as? DfuState.InProgress }
@@ -121,6 +128,12 @@ internal class DFUViewModel @Inject constructor(
                                 _state.value = _state.value.copy(progressViewEntity = progressEntityWithError)
                             }
                         analytics.logEvent(DFUErrorEvent(status.key))
+                    }
+                    is InvalidFile -> {
+                        _state.value = _state.value.copy(
+                            fileViewEntity = NotSelectedFileViewEntity(isRunning = false, isError = true),
+                            progressViewEntity = DFUProgressViewEntity.createBootloaderStage().status.createErrorStage("Access to the file expired. Please select the file again.")
+                        )
                     }
                 }
             }
@@ -188,6 +201,9 @@ internal class DFUViewModel @Inject constructor(
                 deviceViewEntity = repository.target
                     ?.let { SelectedDeviceViewEntity(it) }
                     ?: NotSelectedDeviceViewEntity,
+                progressViewEntity = repository.target
+                    ?.let { WorkingProgressViewEntity() }
+                    ?: DisabledProgressViewEntity
             )
             analytics.logEvent(FileSelectedEvent(zipFile.size))
         } ?: run { // If not, show an error.

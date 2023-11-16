@@ -54,7 +54,7 @@ internal class DFURepository @Inject constructor(
     val data: StateFlow<DfuState> = _data.asStateFlow()
 
     var target: DfuTarget? = null
-    private var zipFile: ZipFile? = null
+    var zipFile: ZipFile? = null
     private var dfuServiceController: DfuServiceController? = null
 
     init {
@@ -67,9 +67,12 @@ internal class DFURepository @Inject constructor(
     fun setZipFile(file: Uri) = fileManger.createFile(file)?.also { zipFile = it }
 
     fun launch(settings: DFUSettings) {
-        progressManager.start()
-
-        dfuServiceController = dfuManager.install(zipFile!!, target!!, settings)
+        zipFile?.let { file ->
+            progressManager.start()
+            dfuServiceController = dfuManager.install(file, target!!, settings)
+        } ?: run {
+            progressManager.onFileError()
+        }
     }
 
     fun abort() {

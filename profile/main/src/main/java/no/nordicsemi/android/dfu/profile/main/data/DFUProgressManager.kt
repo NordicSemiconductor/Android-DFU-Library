@@ -71,6 +71,10 @@ internal class DFUProgressManager @Inject constructor(
         status.value = DfuState.InProgress(Aborted)
     }
 
+    fun onFileError() {
+        status.value = DfuState.InProgress(InvalidFile)
+    }
+
     override fun onError(
         deviceAddress: String,
         error: Int,

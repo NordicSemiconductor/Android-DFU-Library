@@ -41,6 +41,7 @@ internal sealed class DfuState {
 
 internal sealed class DfuProgress
 
+internal data object InvalidFile : DfuProgress()
 internal data object Starting : DfuProgress()
 internal data object InitializingDFU : DfuProgress()
 

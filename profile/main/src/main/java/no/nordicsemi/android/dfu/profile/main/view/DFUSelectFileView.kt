@@ -35,20 +35,16 @@ import android.content.ActivityNotFoundException
 import android.os.Parcelable
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FolderZip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import kotlinx.parcelize.Parcelize
 import no.nordicsemi.android.common.core.parseBold
-import no.nordicsemi.android.common.theme.view.WizardStepComponent
 import no.nordicsemi.android.common.theme.view.WizardStepAction
+import no.nordicsemi.android.common.theme.view.WizardStepComponent
 import no.nordicsemi.android.common.theme.view.WizardStepState
 import no.nordicsemi.android.dfu.DfuBaseService
 import no.nordicsemi.android.dfu.profile.main.R
@@ -104,18 +100,16 @@ internal fun DFUNotSelectedFileView(viewEntity: NotSelectedFileViewEntity, onEve
         ),
         state = WizardStepState.CURRENT,
     ) {
-        Text(
-            text = stringResource(id = R.string.dfu_choose_info),
-            style = MaterialTheme.typography.bodyMedium,
-        )
         if (viewEntity.isError) {
-            Spacer(modifier = Modifier.size(8.dp))
-
             Text(
                 text = stringResource(id = R.string.dfu_load_file_error),
                 style = MaterialTheme.typography.labelMedium,
-                modifier = Modifier.padding(horizontal = 16.dp),
                 color = MaterialTheme.colorScheme.error
+            )
+        } else {
+            Text(
+                text = stringResource(id = R.string.dfu_choose_info),
+                style = MaterialTheme.typography.bodyMedium,
             )
         }
     }
@@ -154,18 +148,14 @@ internal fun DFUSelectFileView(
         ),
         state = WizardStepState.COMPLETED,
     ) {
-        Column(
-            horizontalAlignment = Alignment.Start
-        ) {
-            Text(
-                text = String.format(FILE_NAME, zipFile.name).parseBold(),
-                style = MaterialTheme.typography.bodyMedium
-            )
+        Text(
+            text = String.format(FILE_NAME, zipFile.name).parseBold(),
+            style = MaterialTheme.typography.bodyMedium
+        )
 
-            Text(
-                text = String.format(FILE_SIZE, zipFile.size).parseBold(),
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        }
+        Text(
+            text = String.format(FILE_SIZE, zipFile.size).parseBold(),
+            style = MaterialTheme.typography.bodyMedium,
+        )
     }
 }
