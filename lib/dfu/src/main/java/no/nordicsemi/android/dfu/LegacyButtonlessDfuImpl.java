@@ -247,15 +247,21 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 	}
 
 	private String getVersionFeatures(final int version) {
-		return switch (version) {
-			case 0 -> "Bootloader from SDK 6.1 or older";
-			case 1 -> "Application with Legacy buttonless update from SDK 7.0 or newer";
-			case 5 -> "Bootloader from SDK 7.0 or newer. No bond sharing";
-			case 6 -> "Bootloader from SDK 8.0 or newer. Bond sharing supported";
-			case 7 ->
-					"Bootloader from SDK 8.0 or newer. SHA-256 used instead of CRC-16 in the Init Packet";
-			case 8 -> "Bootloader from SDK 9.0 or newer. Signature supported";
-			default -> "Unknown version";
-		};
+		switch (version) {
+			case 0:
+				return "Bootloader from SDK 6.1 or older";
+			case 1:
+				return "Application with Legacy buttonless update from SDK 7.0 or newer";
+			case 5:
+				return "Bootloader from SDK 7.0 or newer. No bond sharing";
+			case 6:
+				return "Bootloader from SDK 8.0 or newer. Bond sharing supported";
+			case 7:
+				return "Bootloader from SDK 8.0 or newer. SHA-256 used instead of CRC-16 in the Init Packet";
+			case 8:
+				return "Bootloader from SDK 9.0 or newer. Signature supported";
+			default:
+				return "Unknown version";
+		}
 	}
 }

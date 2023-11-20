@@ -22,10 +22,7 @@
 
 package no.nordicsemi.android.dfu.internal.exception;
 
-import java.io.Serial;
-
 public class UploadAbortedException extends Exception {
-	@Serial
 	private static final long serialVersionUID = -6901728550661937942L;
 
 	public UploadAbortedException() {

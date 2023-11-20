@@ -275,12 +275,16 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 		}
 
 		private String phyToString(final int phy) {
-			return switch (phy) {
-				case BluetoothDevice.PHY_LE_1M -> "LE 1M";
-				case BluetoothDevice.PHY_LE_2M -> "LE 2M";
-				case BluetoothDevice.PHY_LE_CODED -> "LE Coded";
-				default -> "UNKNOWN (" + phy + ")";
-			};
+			switch (phy) {
+				case BluetoothDevice.PHY_LE_1M:
+					return "LE 1M";
+				case BluetoothDevice.PHY_LE_2M:
+					return "LE 2M";
+				case BluetoothDevice.PHY_LE_CODED:
+					return "LE Coded";
+				default:
+					return "UNKNOWN (" + phy + ")";
+			}
 		}
 	}
 

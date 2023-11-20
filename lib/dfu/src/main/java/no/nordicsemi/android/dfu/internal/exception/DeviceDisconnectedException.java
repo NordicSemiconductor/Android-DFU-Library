@@ -22,13 +22,10 @@
 
 package no.nordicsemi.android.dfu.internal.exception;
 
-import java.io.Serial;
-
 /**
  * Device has disconnected.
  */
 public class DeviceDisconnectedException extends Exception {
-	@Serial
 	private static final long serialVersionUID = -6901728550661937942L;
 
 	public DeviceDisconnectedException(final String message) {

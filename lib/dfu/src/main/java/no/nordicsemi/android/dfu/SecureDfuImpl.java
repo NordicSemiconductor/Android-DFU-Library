@@ -107,9 +107,9 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 
 				//noinspection SwitchStatementWithTooFewBranches
 				switch (requestType) {
-					case OP_CODE_CALCULATE_CHECKSUM_KEY -> {
-						final int offset = getInt(value, 3);
-						final int remoteCrc = getInt(value, 7);
+					case OP_CODE_CALCULATE_CHECKSUM_KEY: {
+						final int offset = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 3);
+						final int remoteCrc = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 3 + 4);
 						final int localCrc = (int) (((ArchiveInputStream) mFirmwareStream).getCrc32() & 0xFFFFFFFFL);
 						// Check whether local and remote CRC match
 						if (localCrc == remoteCrc) {
@@ -125,8 +125,9 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 							} // else will be handled by sendFirmware(gatt) below
 						}
 						handlePacketReceiptNotification(gatt, characteristic, value);
+						break;
 					}
-					default -> {
+					default: {
 						/*
 						 * If the DFU target device is in invalid state (e.g. the Init Packet is
 						 * required but has not been selected), the target will send
@@ -140,6 +141,7 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 							mRemoteErrorOccurred = true;
 
 						handleNotification(gatt, characteristic, value);
+						break;
 					}
 				}
 			} else {
@@ -284,7 +286,8 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
                     "Remote DFU error: %s", SecureDfuError.parse(error)));
 
 			// For the Extended Error more details can be obtained on some devices.
-			if (e instanceof final RemoteDfuExtendedErrorException ee) {
+			if (e instanceof RemoteDfuExtendedErrorException) {
+				final RemoteDfuExtendedErrorException ee = (RemoteDfuExtendedErrorException) e;
 				final int extendedError = DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | ee.getExtendedErrorNumber();
 				loge("Extended Error details: " + SecureDfuError.parseExtendedError(extendedError));
 				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR,
