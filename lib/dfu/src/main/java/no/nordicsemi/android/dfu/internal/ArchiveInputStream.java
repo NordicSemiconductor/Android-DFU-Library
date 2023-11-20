@@ -41,6 +41,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import no.nordicsemi.android.dfu.DfuBaseService;
 import no.nordicsemi.android.dfu.internal.manifest.FileInfo;
 import no.nordicsemi.android.dfu.internal.manifest.Manifest;
@@ -85,12 +87,19 @@ public class ArchiveInputStream extends InputStream {
 	private final CRC32 crc32;
 	private Manifest manifest;
 
+	@Nullable
 	private byte[] applicationBytes;
+	@Nullable
 	private byte[] softDeviceBytes;
+	@Nullable
 	private byte[] bootloaderBytes;
+	@Nullable
 	private byte[] softDeviceAndBootloaderBytes;
+	@Nullable
 	private byte[] systemInitBytes;
+	@Nullable
 	private byte[] applicationInitBytes;
+	@Nullable
 	private byte[] currentSource;
 	private int type;
 	private int bytesReadFromCurrentSource;
@@ -99,6 +108,7 @@ public class ArchiveInputStream extends InputStream {
 	private int applicationSize;
 	private int bytesRead;
 
+	@Nullable
 	private byte[] markedSource;
 	private int bytesReadFromMarkedSource;
 
@@ -423,6 +433,8 @@ public class ArchiveInputStream extends InputStream {
 	}
 
 	private int rawRead(@NonNull final byte[] buffer, final int offset, final int length) {
+		if (currentSource == null || offset < 0 || length < 0)
+			return -1;
 		final int maxSize = currentSource.length - bytesReadFromCurrentSource;
 		final int size = Math.min(length, maxSize);
 		System.arraycopy(currentSource, bytesReadFromCurrentSource, buffer, offset, size);
