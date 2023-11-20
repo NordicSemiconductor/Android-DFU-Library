@@ -4,14 +4,15 @@
 
 Update nRF5 SDK firmware using Bluetooth LE.
 
-This repository contains the source code of the [DFU library](#library) (*lib_dfu* module) and nRF Device Firmware Update app.
+This repository contains the source code of the [DFU library](#library) (*lib/dfu* module) and nRF DFU app.
 
 The DFU is design to update the firmware of nRF51 or nRF52 Series SoCs having an
 * **nRF5 SDK Secure Bootloader** (v12.0.0 or newer) or
 * **nRF5 SDK Legacy Bootloader** (v4.3.0-11.0.0).
 
-***It can't be used to update firmware developed with the nRF Connect SDK, then the
-[nRF Connect Device Manager](https://github.com/NordicSemiconductor/Android-nRF-Connect-Device-Manager) mobile app must be used.***
+> [!IMPORTANT]
+> The DFU Library can't be used to update firmware developed with the nRF Connect SDK. Use
+[nRF Connect Device Manager](https://github.com/NordicSemiconductor/Android-nRF-Connect-Device-Manager) instead.
 
 ## Application
 
