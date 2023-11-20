@@ -34,14 +34,14 @@ public final class LegacyDfuError {
 	public static final int OPERATION_FAILED = 6;
 
 	public static String parse(final int error) {
-		return switch (error) {
-			case DfuBaseService.ERROR_REMOTE_TYPE_LEGACY | INVALID_STATE -> "INVALID STATE";
-			case DfuBaseService.ERROR_REMOTE_TYPE_LEGACY | NOT_SUPPORTED -> "NOT SUPPORTED";
-			case DfuBaseService.ERROR_REMOTE_TYPE_LEGACY | DATA_SIZE_EXCEEDS_LIMIT ->
-					"DATA SIZE EXCEEDS LIMIT";
-			case DfuBaseService.ERROR_REMOTE_TYPE_LEGACY | CRC_ERROR -> "INVALID CRC ERROR";
-			case DfuBaseService.ERROR_REMOTE_TYPE_LEGACY | OPERATION_FAILED -> "OPERATION FAILED";
-			default -> "UNKNOWN (" + error + ")";
-		};
+		switch (error) {
+			case DfuBaseService.ERROR_REMOTE_TYPE_LEGACY | INVALID_STATE:				return "INVALID STATE";
+			case DfuBaseService.ERROR_REMOTE_TYPE_LEGACY | NOT_SUPPORTED:				return "NOT SUPPORTED";
+			case DfuBaseService.ERROR_REMOTE_TYPE_LEGACY | DATA_SIZE_EXCEEDS_LIMIT:		return "DATA SIZE EXCEEDS LIMIT";
+			case DfuBaseService.ERROR_REMOTE_TYPE_LEGACY | CRC_ERROR:					return "INVALID CRC ERROR";
+			case DfuBaseService.ERROR_REMOTE_TYPE_LEGACY | OPERATION_FAILED:			return "OPERATION FAILED";
+			default:
+				return "UNKNOWN (" + error + ")";
+		}
 	}
 }

@@ -278,19 +278,18 @@ public class HexInputStream extends FilterInputStream {
 
 			// if the line type is no longer data type (0x00), we've reached the end of the file
 			switch (type) {
-				case 0x00 -> {
+				case 0x00:
 					// data type
 					if (lastAddress + offset < MBRSize) { // skip MBR
 						type = -1; // some other than 0
 						pos += skip(in, lineSize * 2L /* 2 hex per one byte */ + 2 /* check sum */);
 					}
-				}
-				case 0x01 -> {
+					break;
+				case 0x01:
 					// end of file
 					pos = -1;
 					return 0;
-				}
-				case 0x02 -> {
+				case 0x02: {
 					// extended segment address
 					final int address = readAddress(in) << 4;
 					pos += 4;
@@ -298,8 +297,9 @@ public class HexInputStream extends FilterInputStream {
 						return 0;
 					lastAddress = address;
 					pos += skip(in, 2 /* check sum */);
+					break;
 				}
-				case 0x04 -> {
+				case 0x04: {
 					// extended linear address
 					final int address = readAddress(in);
 					pos += 4;
@@ -307,11 +307,12 @@ public class HexInputStream extends FilterInputStream {
 						return 0;
 					lastAddress = address << 16;
 					pos += skip(in, 2 /* check sum */);
+					break;
 				}
-				default -> {
+				default:
 					final long toBeSkipped = lineSize * 2L /* 2 hex per one byte */ + 2 /* check sum */;
 					pos += skip(in, toBeSkipped);
-				}
+					break;
 			}
 		} while (type != 0);
 

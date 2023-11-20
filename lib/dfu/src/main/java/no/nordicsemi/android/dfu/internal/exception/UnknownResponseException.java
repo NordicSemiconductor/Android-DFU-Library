@@ -22,11 +22,9 @@
 
 package no.nordicsemi.android.dfu.internal.exception;
 
-import java.io.Serial;
 import java.util.Locale;
 
 public class UnknownResponseException extends Exception {
-	@Serial
 	private static final long serialVersionUID = -8716125467309979289L;
 	private static final char[] HEX_ARRAY = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 

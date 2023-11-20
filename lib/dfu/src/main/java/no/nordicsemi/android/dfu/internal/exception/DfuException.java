@@ -22,15 +22,12 @@
 
 package no.nordicsemi.android.dfu.internal.exception;
 
-import java.io.Serial;
-
 import no.nordicsemi.android.dfu.DfuBaseService;
 
 /**
  * A DFU error occurred on the remote DFU target.
  */
 public class DfuException extends Exception {
-	@Serial
 	private static final long serialVersionUID = -6901728550661937942L;
 
 	private final int mError;

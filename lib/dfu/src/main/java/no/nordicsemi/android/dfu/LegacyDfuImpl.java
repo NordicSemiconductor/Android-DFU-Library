@@ -242,7 +242,8 @@ import no.nordicsemi.android.error.LegacyDfuError;
 			int bootloaderImageSize = (fileType & DfuBaseService.TYPE_BOOTLOADER) > 0 ? mImageSizeInBytes : 0;
 			int appImageSize = (fileType & DfuBaseService.TYPE_APPLICATION) > 0 ? mImageSizeInBytes : 0;
 			// The sizes above may be overwritten if a ZIP file was passed
-			if (mFirmwareStream instanceof final ArchiveInputStream zhis) {
+			if (mFirmwareStream instanceof ArchiveInputStream) {
+				final ArchiveInputStream zhis = (ArchiveInputStream) mFirmwareStream;
 				if (zhis.isSecureDfuRequired()) {
 					loge("Secure DFU is required to upload selected firmware");
 					mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_ERROR, "The device does not support given firmware.");
