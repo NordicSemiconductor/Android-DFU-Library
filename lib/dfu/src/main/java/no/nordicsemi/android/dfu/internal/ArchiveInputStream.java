@@ -471,7 +471,9 @@ public class ArchiveInputStream extends InputStream {
 			crc32.update(softDeviceBytes);
 			bytesRead += softDeviceSize;
 		}
-		crc32.update(currentSource, 0, bytesReadFromCurrentSource);
+		if (currentSource != null && bytesReadFromCurrentSource > 0) {
+			crc32.update(currentSource, 0, bytesReadFromCurrentSource);
+		}
 	}
 
 	/**
