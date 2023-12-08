@@ -84,20 +84,23 @@ internal fun DFUNotSelectedFileView(viewEntity: NotSelectedFileViewEntity, onEve
     WizardStepComponent(
         icon = icon,
         title = stringResource(id = R.string.dfu_choose_file),
-        decor = WizardStepAction.Action(
-            text = stringResource(id = R.string.dfu_select_file),
-            onClick = {
-                try {
-                    launcher.launch(DfuBaseService.MIME_TYPE_ZIP)
-                } catch (e: ActivityNotFoundException) {
-                    try {
-                        launcher.launch("*/*")
-                    } catch (e1: ActivityNotFoundException) {
-                        // Handle
-                    }
-                }
-            }
-        ),
+        decor = if (viewEntity.isRunning)
+                    WizardStepAction.ProgressIndicator
+                else
+                    WizardStepAction.Action(
+                        text = stringResource(id = R.string.dfu_select_file),
+                        onClick = {
+                            try {
+                                launcher.launch(DfuBaseService.MIME_TYPE_ZIP)
+                            } catch (e: ActivityNotFoundException) {
+                                try {
+                                    launcher.launch("*/*")
+                                } catch (e1: ActivityNotFoundException) {
+                                    // Handle
+                                }
+                            }
+                        }
+                    ),
         state = WizardStepState.CURRENT,
     ) {
         if (viewEntity.isError) {
