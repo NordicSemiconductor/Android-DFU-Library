@@ -75,7 +75,7 @@ class ExternalFileDataSource @Inject internal constructor(
         ContextCompat.registerReceiver(context,
             onDownloadCompleteReceiver,
             IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
-            ContextCompat.RECEIVER_NOT_EXPORTED
+            ContextCompat.RECEIVER_EXPORTED
         )
     }
 
