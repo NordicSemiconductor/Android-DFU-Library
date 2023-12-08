@@ -17,13 +17,13 @@ body:
       label: Version
       description: What version of our product are you running?
       options:
-        - 2.3.1 (Latest)
-        - 2.3.0
+        - 2.4.1 (Latest)
+        - 2.4.0
+        - 2.3.x
         - 2.2.x
-        - 2.1.x
+        - 2.1.0
         - 2.0.x
         - 1.x
-      default: 0
     validations:
       required: false
   - type: textarea
@@ -39,4 +39,3 @@ body:
     attributes:
       label: Relevant log output
       description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
-      render: text

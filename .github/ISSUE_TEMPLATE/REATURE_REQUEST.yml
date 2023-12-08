@@ -14,7 +14,6 @@ body:
       options:
         - Library
         - App
-      default: 0
     validations:
       required: true
   - type: textarea
