@@ -20,6 +20,7 @@ platform :android do
   desc "Deploy libraries to Nexus."
   lane :deployNexus do
     gradle(task: "publish")
+    gradle(task: "releaseStagingRepositories")
   end
 
   desc "Deploy a new version to the Google Play"
