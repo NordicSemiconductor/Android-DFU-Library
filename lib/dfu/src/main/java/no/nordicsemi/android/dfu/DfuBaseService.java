@@ -1356,7 +1356,11 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 					final Intent newIntent = new Intent();
 					newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
 					newIntent.putExtra(EXTRA_RECONNECTION_ATTEMPT, attempt + 1);
-					startService(newIntent);
+
+					if (foregroundService && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+						startForegroundService(newIntent);
+					else
+						startService(newIntent);
 					return;
 				}
 				terminateConnection(gatt, mError);
@@ -1415,7 +1419,11 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 					final Intent newIntent = new Intent();
 					newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
 					newIntent.putExtra(EXTRA_DFU_ATTEMPT, attempt + 1);
-					startService(newIntent);
+
+					if (foregroundService && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+						startForegroundService(newIntent);
+					else
+						startService(newIntent);
 					return;
 				}
 				report(ERROR_DEVICE_DISCONNECTED);
@@ -1914,7 +1922,12 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		// Any additional configuration?
 		updateForegroundNotification(builder);
 
-		startForeground(NOTIFICATION_ID, builder.build());
+		try {
+			startForeground(NOTIFICATION_ID, builder.build());
+		} catch (final SecurityException e) {
+			loge("Service cannot be started in foreground", e);
+			logi("Starting DFU service in background instead");
+		}
 	}
 
 	/**
