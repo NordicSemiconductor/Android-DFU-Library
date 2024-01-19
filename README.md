@@ -11,8 +11,9 @@ The DFU is design to update the firmware of nRF51 or nRF52 Series SoCs having an
 * **nRF5 SDK Legacy Bootloader** (v4.3.0-11.0.0).
 
 > [!IMPORTANT]
-> The DFU Library can't be used to update firmware developed with the nRF Connect SDK. Use
-[nRF Connect Device Manager](https://github.com/NordicSemiconductor/Android-nRF-Connect-Device-Manager) instead.
+> The DFU Library can't be used to update firmware developed with the nRF Connect SDK. 
+>
+> Use [nRF Connect Device Manager](https://github.com/NordicSemiconductor/Android-nRF-Connect-Device-Manager) instead.
 
 ## Application
 
