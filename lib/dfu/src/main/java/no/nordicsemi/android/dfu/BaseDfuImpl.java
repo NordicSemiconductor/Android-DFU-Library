@@ -831,7 +831,11 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 		// Reset the DFU attempt counter
 		intent.putExtra(DfuBaseService.EXTRA_DFU_ATTEMPT, 0);
 
-		mService.startService(intent);
+		final boolean foregroundService = intent.getBooleanExtra(DfuBaseService.EXTRA_FOREGROUND_SERVICE, true);
+		if (foregroundService && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+			mService.startForegroundService(intent);
+		else
+			mService.startService(intent);
 	}
 
 	protected String parse(@Nullable final byte[] data) {
