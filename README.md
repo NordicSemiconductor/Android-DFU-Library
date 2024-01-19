@@ -11,7 +11,7 @@ The DFU is design to update the firmware of nRF51 or nRF52 Series SoCs having an
 * **nRF5 SDK Legacy Bootloader** (v4.3.0-11.0.0).
 
 > [!IMPORTANT]
-> The DFU Library can't be used to update firmware developed with the nRF Connect SDK. 
+> The DFU Library can't be used to update firmware developed with the nRF Connect SDK.
 >
 > Use [nRF Connect Device Manager](https://github.com/NordicSemiconductor/Android-nRF-Connect-Device-Manager) instead.
 
@@ -45,7 +45,7 @@ The DFU library is available on Maven Central repository. Add it to your project
 adding the following dependency:
 
 ```Groovy
-implementation 'no.nordicsemi.android:dfu:2.4.1'
+implementation 'no.nordicsemi.android:dfu:2.4.2'
 ```
 
 Latest version targeting API lower than 31 is 1.11.1.
