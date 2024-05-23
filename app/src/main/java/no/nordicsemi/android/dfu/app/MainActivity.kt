@@ -67,7 +67,7 @@ class MainActivity : NordicActivity() {
         }
     }
 
-    override fun onNewIntent(intent: Intent?) {
+    override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
 
         if (linkHandler.handleDeepLink(intent)) {
