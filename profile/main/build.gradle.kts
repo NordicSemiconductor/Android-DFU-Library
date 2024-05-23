@@ -20,7 +20,6 @@ dependencies {
     implementation(libs.nordic.core)
     implementation(libs.nordic.theme)
     implementation(libs.nordic.logger)
-    implementation(libs.nordic.uilogger)
     implementation(libs.nordic.analytics)
     implementation(libs.nordic.permissions.ble)
     implementation(libs.nordic.navigation)

@@ -32,44 +32,32 @@
 package no.nordicsemi.android.dfu.profile.main.data
 
 import android.content.Context
-import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
-import no.nordicsemi.android.common.logger.BleLoggerAndLauncher
-import no.nordicsemi.android.common.logger.DefaultBleLogger
 import no.nordicsemi.android.common.logger.LoggerLauncher
-import no.nordicsemi.android.dfu.DfuBaseService
 import no.nordicsemi.android.dfu.DfuServiceController
 import no.nordicsemi.android.dfu.DfuServiceInitiator
 import no.nordicsemi.android.dfu.DfuServiceListenerHelper
 import no.nordicsemi.android.dfu.profile.main.repository.DFUService
 import no.nordicsemi.android.dfu.profile.scanner.data.DfuTarget
 import no.nordicsemi.android.dfu.settings.domain.DFUSettings
+import no.nordicsemi.android.log.LogSession
+import no.nordicsemi.android.log.Logger
 import javax.inject.Inject
 
 internal class DFUManager @Inject constructor(
     @ApplicationContext private val context: Context,
 ) {
-    private var logger: BleLoggerAndLauncher? = null
+    private var session: LogSession? = null
 
     fun install(
         file: ZipFile,
         target: DfuTarget,
         settings: DFUSettings
     ): DfuServiceController {
-        logger = DefaultBleLogger
-            .create(context, null, target.address, target.name)
-            .also {
+        session = Logger.newSession(context, target.address, target.name)
+            ?.also { session ->
                 DfuServiceListenerHelper.registerLogListener(context) { _, level, message ->
-                    // Convert nRF Logger log level to Android log priority, used by the BleLogger.
-                    val priority = when (level) {
-                        DfuBaseService.LOG_LEVEL_DEBUG -> Log.DEBUG
-                        DfuBaseService.LOG_LEVEL_VERBOSE -> Log.VERBOSE
-                        DfuBaseService.LOG_LEVEL_INFO -> Log.INFO
-                        DfuBaseService.LOG_LEVEL_WARNING -> Log.WARN
-                        DfuBaseService.LOG_LEVEL_ERROR -> Log.ERROR
-                        else -> level
-                    }
-                    it.log(priority, message)
+                    Logger.log(session, level, message)
                 }
             }
 
@@ -101,12 +89,6 @@ internal class DFUManager @Inject constructor(
     }
 
     fun openLogger() {
-        logger?.launch() ?: context.packageManager
-            .getLaunchIntentForPackage("no.nordicsemi.android.log")
-            ?.let { launchIntent ->
-                context.startActivity(launchIntent)
-            } ?: run {
-                LoggerLauncher.launch(context)
-            }
+        LoggerLauncher.launch(context, session)
     }
 }
