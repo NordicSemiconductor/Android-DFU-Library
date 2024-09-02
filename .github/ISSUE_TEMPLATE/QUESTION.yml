@@ -17,8 +17,8 @@ body:
       label: Version
       description: What version of our product are you running?
       options:
-        - 2.4.1 (Latest)
-        - 2.4.0
+        - 2.5.0 (Latest)
+        - 2.4.x
         - 2.3.x
         - 2.2.x
         - 2.1.0
