@@ -10,7 +10,6 @@ import androidx.annotation.RequiresApi;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * The device selector can be used to filter scan results when scanning for the device
