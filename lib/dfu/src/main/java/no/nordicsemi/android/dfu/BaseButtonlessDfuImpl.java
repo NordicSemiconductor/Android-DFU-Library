@@ -94,6 +94,6 @@ import androidx.annotation.NonNull;
 		logi("Restarting to bootloader mode");
 		final Intent newIntent = new Intent();
 		newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
-		restartService(newIntent, scanForBootloader);
+		restartService(newIntent, scanForBootloader, getDfuServiceUUID());
 	}
 }

@@ -25,6 +25,7 @@ package no.nordicsemi.android.dfu.internal.scanner;
 import android.os.Build;
 
 import java.util.Locale;
+import java.util.UUID;
 
 import androidx.annotation.NonNull;
 
@@ -53,11 +54,12 @@ public final class BootloaderScannerFactory {
 	 *
 	 * @return the bootloader scanner
 	 */
-	public static BootloaderScanner getScanner(@NonNull final String deviceAddress) {
+	public static BootloaderScanner getScanner(@NonNull final String deviceAddress,
+											   @NonNull final UUID serviceUuid) {
 		final String deviceAddressIncremented = getIncrementedAddress(deviceAddress);
 
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-			return new BootloaderScannerLollipop(deviceAddress, deviceAddressIncremented);
+			return new BootloaderScannerLollipop(deviceAddress, deviceAddressIncremented, serviceUuid);
 		return new BootloaderScannerJB(deviceAddress, deviceAddressIncremented);
 	}
 }

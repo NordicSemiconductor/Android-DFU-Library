@@ -159,6 +159,7 @@ import no.nordicsemi.android.error.LegacyDfuError;
 		return DFU_PACKET_UUID;
 	}
 
+	@NonNull
 	@Override
 	protected UUID getDfuServiceUUID() {
 		return DFU_SERVICE_UUID;
@@ -763,6 +764,6 @@ import no.nordicsemi.android.error.LegacyDfuError;
 		logi("Restarting the service");
 		final Intent newIntent = new Intent();
 		newIntent.fillIn(intent, Intent.FILL_IN_COMPONENT | Intent.FILL_IN_PACKAGE);
-		restartService(newIntent, false);
+		restartService(newIntent, false, DFU_SERVICE_UUID);
 	}
 }

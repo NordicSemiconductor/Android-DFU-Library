@@ -59,6 +59,12 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		super(intent, service);
 	}
 
+	@NonNull
+	@Override
+	protected UUID getDfuServiceUUID() {
+		return LegacyDfuImpl.DFU_SERVICE_UUID;
+	}
+
 	@SuppressWarnings("deprecation")
 	@Override
 	public boolean isClientCompatible(@NonNull final Intent intent, @NonNull final BluetoothGatt gatt)

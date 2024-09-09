@@ -808,7 +808,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 	 * @param intent            the intent to be started as a service
 	 * @param scanForBootloader true to scan for advertising bootloader, false to keep the same address
 	 */
-	void restartService(@NonNull final Intent intent, final boolean scanForBootloader) {
+	void restartService(@NonNull final Intent intent, final boolean scanForBootloader, @NonNull final UUID serviceUuid) {
 		String newAddress = null;
 		if (scanForBootloader) {
 			final long delay = intent.getLongExtra(DfuBaseService.EXTRA_SCAN_DELAY, 0);
@@ -816,7 +816,10 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE, "Scanning for the DFU Bootloader... (timeout " + timeout + " ms)");
 			if (delay > 0)
 				mService.waitFor(delay);
-			newAddress = BootloaderScannerFactory.getScanner(mGatt.getDevice().getAddress()).searchUsing(mService.getDeviceSelector(), timeout);
+			logi("Scanning for the DFU Bootloader... (timeout " + timeout + " ms)");
+			newAddress = BootloaderScannerFactory
+					.getScanner(mGatt.getDevice().getAddress(), serviceUuid)
+					.searchUsing(mService.getDeviceSelector(), timeout);
 			logi("Scanning for new address finished with: " + newAddress);
 			if (newAddress != null)
 				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_INFO, "DFU Bootloader found with address " + newAddress);
@@ -837,6 +840,13 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 		else
 			mService.startService(intent);
 	}
+
+	/**
+	 * Returns the service UUID used by the DFU target.
+	 * @return the service UUID.
+	 */
+	@NonNull
+	protected abstract UUID getDfuServiceUUID();
 
 	protected String parse(@Nullable final byte[] data) {
 		if (data == null)
