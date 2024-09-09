@@ -31,9 +31,10 @@ import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.os.Build;
+import android.os.ParcelUuid;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -48,13 +49,17 @@ class BootloaderScannerLollipop extends ScanCallback implements BootloaderScanne
     private final Object mLock = new Object();
     private final String mDeviceAddress;
     private final String mDeviceAddressIncremented;
+    private final ParcelUuid mDfuServiceUuid;
     private DfuDeviceSelector mSelector;
     private String mBootloaderAddress;
     private boolean mFound;
 
-    BootloaderScannerLollipop(final String deviceAddress, final String deviceAddressIncremented) {
+    BootloaderScannerLollipop(@NonNull final String deviceAddress,
+                              @NonNull final String deviceAddressIncremented,
+                              @NonNull final UUID dfuServiceUuid) {
         mDeviceAddress = deviceAddress;
         mDeviceAddressIncremented = deviceAddressIncremented;
+        mDfuServiceUuid = new ParcelUuid(dfuServiceUuid);
     }
 
     @Nullable
@@ -97,11 +102,13 @@ class BootloaderScannerLollipop extends ScanCallback implements BootloaderScanne
          */
         final ScanSettings settings = new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build();
         if (adapter.isOffloadedFilteringSupported() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-            final List<ScanFilter> filters = new ArrayList<>();
-            // Some Android devices fail to scan with offloaded address filters.
-            // Instead, we will add an empty filter, just to allow background scanning, and will
-            // filter below using the device selector.
-            filters.add(new ScanFilter.Builder().build()); // Accept all devices
+            // It's not possible to scan for MAC address. The setDeviceAddress(...) method,
+            // which could be used, scans for PUBLIC address type only. Instead, we need to
+            // scan for the DFU Service UUID.
+            // The UUID depends on the service type (Legacy or Secure DFU) and can also be
+            // customized using EXTRA_CUSTOM_UUIDS_FOR_LEGACY_DFU and EXTRA_CUSTOM_UUIDS_FOR_SECURE_DFU
+            // in the Intent.
+            final List<ScanFilter> filters = selector.getScanFilters(mDfuServiceUuid);
             scanner.startScan(filters, settings, this);
         } else {
             /*

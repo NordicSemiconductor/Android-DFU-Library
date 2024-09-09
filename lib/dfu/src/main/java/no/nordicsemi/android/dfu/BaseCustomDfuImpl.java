@@ -280,8 +280,6 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 
 	protected abstract UUID getPacketCharacteristicUUID();
 
-	protected abstract UUID getDfuServiceUUID();
-
 	/**
 	 * Sends the whole init packet stream to the given characteristic.
 	 *
@@ -510,10 +508,10 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 			 * when the new Soft Device was uploaded and the old application has been removed in
 			 * this process.
 			 *
-			 * We could have save the fact of jumping as a parameter of the service but it ma be
-			 * that some Android devices must first scan a device before connecting to it.
-			 * It a device with the address+1 has never been detected before the service could have
-			 * failed on connection.
+			 * We could have save the fact of jumping as a parameter of the service but Android
+			 * devices must first scan a device before connecting to it to get the address type.
+			 * If a device with the address+1 has never been detected before the service could have
+			 * failed on connection as it would be trying to connect to a public address.
 			 */
 
 			/*
@@ -527,7 +525,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 			newIntent.putExtra(DfuBaseService.EXTRA_FILE_TYPE, DfuBaseService.TYPE_APPLICATION); // set the type to application only
 			newIntent.putExtra(DfuBaseService.EXTRA_PART_CURRENT, mProgressInfo.getCurrentPart() + 1);
 			newIntent.putExtra(DfuBaseService.EXTRA_PARTS_TOTAL, mProgressInfo.getTotalParts());
-			restartService(newIntent, /* the bootloader may advertise with different address */ true);
+			restartService(newIntent, /* the bootloader may advertise with different address */ true, getDfuServiceUUID());
 		}
 	}
 }

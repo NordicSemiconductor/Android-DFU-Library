@@ -200,6 +200,7 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 		return DFU_PACKET_UUID;
 	}
 
+	@NonNull
 	@Override
 	protected UUID getDfuServiceUUID() {
 		return DFU_SERVICE_UUID;

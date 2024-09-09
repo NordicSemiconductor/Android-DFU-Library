@@ -77,6 +77,12 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 		return mButtonlessDfuCharacteristic;
 	}
 
+	@NonNull
+	@Override
+	protected UUID getDfuServiceUUID() {
+		return SecureDfuImpl.DFU_SERVICE_UUID;
+	}
+
 	@Override
 	protected boolean shouldScanForBootloader() {
 		return true;
