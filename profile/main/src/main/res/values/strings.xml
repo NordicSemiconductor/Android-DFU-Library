@@ -35,13 +35,8 @@
 
     <string name="dfu_load_file_error">An error occurred during loading the file. Try again or select another one.</string>
 
-    <string name="dfu_choose_not_selected">Not selected</string>
-    <string name="dfu_choose_selected">Selected</string>
-
     <string name="dfu_abort">Abort</string>
     <string name="dfu_progress">Progress</string>
-    <string name="dfu_progress_idle">Idle</string>
-    <string name="dfu_progress_running">Running</string>
     <string name="dfu_progress_run">Start</string>
     <string name="dfu_progress_stage_completed">Completed</string>
     <string name="dfu_progress_stage_error">Error: %s</string>

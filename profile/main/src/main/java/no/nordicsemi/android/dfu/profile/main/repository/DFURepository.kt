@@ -54,7 +54,7 @@ internal class DFURepository @Inject constructor(
     val data: StateFlow<DfuState> = _data.asStateFlow()
 
     var target: DfuTarget? = null
-    var zipFile: ZipFile? = null
+    private var zipFile: ZipFile? = null
     private var dfuServiceController: DfuServiceController? = null
 
     init {

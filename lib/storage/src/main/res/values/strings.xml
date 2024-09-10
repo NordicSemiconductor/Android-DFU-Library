@@ -31,6 +31,5 @@
   -->
 
 <resources>
-    <string name="storage_notification_title">Downloading file</string>
     <string name="storage_notification_description">Downloading file</string>
 </resources>

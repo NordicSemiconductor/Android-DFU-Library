@@ -148,8 +148,8 @@ private fun ProgressItem(viewEntity: ProgressItemViewEntity) {
             iconRightPadding = 24.dp,
         ) {
             LinearProgressIndicator(
-                progress = viewEntity.progress.progress / 100f,
-                modifier = Modifier.fillMaxWidth()
+                progress = { viewEntity.progress.progress / 100f },
+                modifier = Modifier.fillMaxWidth(),
             )
             Text(
                 text = stringResource(

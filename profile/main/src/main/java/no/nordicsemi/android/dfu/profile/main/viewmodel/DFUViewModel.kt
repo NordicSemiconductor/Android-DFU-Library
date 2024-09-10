@@ -58,7 +58,7 @@ internal class StateHolder @Inject constructor() {
 
 @HiltViewModel
 internal class DFUViewModel @Inject constructor(
-    private val stateHolder: StateHolder,
+    stateHolder: StateHolder,
     private val repository: DFURepository,
     private val navigator: Navigator,
     private val analytics: DfuAnalytics,

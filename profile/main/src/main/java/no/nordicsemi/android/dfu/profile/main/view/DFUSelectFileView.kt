@@ -49,6 +49,7 @@ import no.nordicsemi.android.common.theme.view.WizardStepState
 import no.nordicsemi.android.dfu.DfuBaseService
 import no.nordicsemi.android.dfu.profile.main.R
 import no.nordicsemi.android.dfu.profile.main.data.ZipFile
+import java.util.Locale
 
 internal sealed class DFUSelectFileViewEntity : Parcelable
 
@@ -157,7 +158,7 @@ internal fun DFUSelectFileView(
         )
 
         Text(
-            text = String.format(FILE_SIZE, zipFile.size).parseBold(),
+            text = String.format(Locale.US, FILE_SIZE, zipFile.size).parseBold(),
             style = MaterialTheme.typography.bodyMedium,
         )
     }
