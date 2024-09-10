@@ -54,10 +54,6 @@ import javax.inject.Singleton
 @Singleton
 internal class StateHolder @Inject constructor() {
     internal val state = MutableStateFlow(DFUViewState())
-
-    fun clear() {
-        state.value = DFUViewState()
-    }
 }
 
 @HiltViewModel
@@ -217,7 +213,6 @@ internal class DFUViewModel @Inject constructor(
         super.onCleared()
 
         if (!repository.isRunning()) {
-            stateHolder.clear()
             repository.release()
         }
     }
