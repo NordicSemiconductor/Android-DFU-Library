@@ -34,7 +34,7 @@ package no.nordicsemi.android.dfu.profile.main.view
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
-import no.nordicsemi.android.common.theme.view.ProgressItemStatus
+import no.nordicsemi.android.common.ui.view.ProgressItemStatus
 import no.nordicsemi.android.dfu.profile.main.R
 import no.nordicsemi.android.dfu.profile.main.data.Uploading
 

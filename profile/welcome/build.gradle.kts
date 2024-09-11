@@ -10,6 +10,6 @@ android {
 dependencies {
     implementation(project(":lib:settings"))
 
-    implementation(libs.nordic.theme)
+    implementation(libs.nordic.ui)
     implementation(libs.nordic.navigation)
 }

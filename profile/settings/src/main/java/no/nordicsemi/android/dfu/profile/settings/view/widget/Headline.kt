@@ -1,13 +1,11 @@
 package no.nordicsemi.android.dfu.profile.settings.view.widget
 
-import androidx.compose.foundation.layout.padding
+import android.content.res.Configuration
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import no.nordicsemi.android.common.theme.NordicTheme
 
 @Composable
 internal fun Headline(
@@ -16,16 +14,14 @@ internal fun Headline(
 ) {
     Text(
         text = text,
+        modifier = modifier,
         style = MaterialTheme.typography.titleSmall,
-        modifier = modifier.padding(horizontal = 16.dp),
         color = MaterialTheme.colorScheme.secondary
     )
 }
 
+@Preview(uiMode = Configuration.UI_MODE_NIGHT_NO, showBackground = true, widthDp = 200, heightDp = 50)
 @Composable
-@Preview(heightDp = 100)
 private fun HeadlinePreview() {
-    NordicTheme {
-        Headline(text = "Headline")
-    }
+    Headline(text = "Headline")
 }

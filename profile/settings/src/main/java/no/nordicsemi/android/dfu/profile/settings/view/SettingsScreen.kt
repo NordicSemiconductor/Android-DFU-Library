@@ -31,6 +31,7 @@
 
 package no.nordicsemi.android.dfu.profile.settings.view
 
+import android.content.res.Configuration
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -45,8 +46,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import no.nordicsemi.android.common.theme.NordicTheme
-import no.nordicsemi.android.common.theme.view.NordicAppBar
+import no.nordicsemi.android.common.ui.view.NordicAppBar
 import no.nordicsemi.android.dfu.BuildConfig.VERSION_CODE
 import no.nordicsemi.android.dfu.BuildConfig.VERSION_NAME
 import no.nordicsemi.android.dfu.profile.settings.R
@@ -79,7 +79,7 @@ internal fun SettingsScreen(
         modifier = modifier,
     ) {
         NordicAppBar(
-            text = stringResource(R.string.dfu_settings),
+            title = { Text(text = stringResource(R.string.dfu_settings)) },
             onNavigationButtonClick = { onEvent(NavigateUp) },
             actions = {
                 IconButton(onClick = { onEvent(OnResetButtonClick) }) {
@@ -94,8 +94,11 @@ internal fun SettingsScreen(
         // Scrollable Column
         Column(
             modifier = Modifier
+                .padding(horizontal = 16.dp)
                 .verticalScroll(rememberScrollState())
-                .sizeIn(maxWidth = 600.dp)
+                .padding(vertical = 16.dp)
+                .sizeIn(maxWidth = 600.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
             SettingsSwitch(
                 text = stringResource(id = R.string.dfu_settings_packets_receipt_notification),
@@ -136,8 +139,6 @@ internal fun SettingsScreen(
                 onClick = { onEvent(OnMtuRequestClick) }
             )
 
-            Spacer(modifier = Modifier.size(16.dp))
-
             Headline(stringResource(id = R.string.dfu_settings_headline_secure_dfu))
 
             SettingsSwitch(
@@ -155,8 +156,6 @@ internal fun SettingsScreen(
                 stepInMilliseconds = 100, // 0.1 seconds
                 onChange = { onEvent(OnPrepareDataObjectDelayChange(it)) }
             )
-
-            Spacer(modifier = Modifier.size(32.dp))
 
             Headline(stringResource(id = R.string.dfu_settings_headline_legacy_dfu))
 
@@ -180,8 +179,6 @@ internal fun SettingsScreen(
                 isChecked = state.externalMcuDfu,
                 onClick = { onEvent(OnExternalMcuDfuSwitchClick) }
             )
-
-            Spacer(modifier = Modifier.size(16.dp))
 
             Headline(stringResource(id = R.string.dfu_settings_other))
 
@@ -211,13 +208,11 @@ internal fun SettingsScreen(
     }
 }
 
-@Preview
+@Preview(uiMode = Configuration.UI_MODE_NIGHT_NO, showBackground = true)
 @Composable
 private fun SettingsScreenPreview() {
-    NordicTheme {
-        SettingsScreen(
-            state = DFUSettings(),
-            onEvent = {}
-        )
-    }
+    SettingsScreen(
+        state = DFUSettings(),
+        onEvent = {}
+    )
 }

@@ -38,9 +38,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import no.nordicsemi.android.common.core.parseBold
-import no.nordicsemi.android.common.theme.view.WizardStepAction
-import no.nordicsemi.android.common.theme.view.WizardStepComponent
-import no.nordicsemi.android.common.theme.view.WizardStepState
+import no.nordicsemi.android.common.ui.view.StatusItem
+import no.nordicsemi.android.common.ui.view.WizardStepAction
+import no.nordicsemi.android.common.ui.view.WizardStepComponent
+import no.nordicsemi.android.common.ui.view.WizardStepState
 import no.nordicsemi.android.dfu.profile.main.R
 import no.nordicsemi.android.dfu.profile.scanner.data.DfuTarget
 
@@ -75,10 +76,12 @@ internal fun DFUDisabledSelectedDeviceView() {
         decor = WizardStepAction.Action(stringResource(id = R.string.dfu_select_device), enabled = false),
         state = WizardStepState.INACTIVE,
     ) {
-        Text(
-            text = stringResource(id = R.string.dfu_select_device_info),
-            style = MaterialTheme.typography.bodyMedium,
-        )
+        StatusItem {
+            Text(
+                text = stringResource(id = R.string.dfu_select_device_info),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
     }
 }
 
@@ -93,10 +96,12 @@ internal fun DFUNotSelectedDeviceView(onEvent: (DFUViewEvent) -> Unit) {
         ),
         state = WizardStepState.CURRENT,
     ) {
-        Text(
-            text = stringResource(id = R.string.dfu_select_device_info),
-            style = MaterialTheme.typography.bodyMedium,
-        )
+        StatusItem {
+            Text(
+                text = stringResource(id = R.string.dfu_select_device_info),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
     }
 }
 
@@ -119,14 +124,16 @@ internal fun DFUSelectedDeviceView(
         ),
         state = WizardStepState.COMPLETED,
     ) {
-        Text(
-            text = String.format(DEVICE_NAME, viewEntity.target.name ?: "No name").parseBold(),
-            style = MaterialTheme.typography.bodyMedium
-        )
+        StatusItem {
+            Text(
+                text = String.format(DEVICE_NAME, viewEntity.target.name ?: "No name").parseBold(),
+                style = MaterialTheme.typography.bodyMedium
+            )
 
-        Text(
-            text = String.format(DEVICE_ADDRESS, viewEntity.target.address).parseBold(),
-            style = MaterialTheme.typography.bodyMedium,
-        )
+            Text(
+                text = String.format(DEVICE_ADDRESS, viewEntity.target.address).parseBold(),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
     }
 }

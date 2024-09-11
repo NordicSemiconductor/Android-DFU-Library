@@ -51,7 +51,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import no.nordicsemi.android.common.theme.view.NordicAppBar
+import no.nordicsemi.android.common.ui.view.NordicAppBar
 import no.nordicsemi.android.dfu.profile.welcome.R
 import no.nordicsemi.android.dfu.profile.welcome.viewmodel.WelcomeViewModel
 
@@ -65,11 +65,11 @@ internal fun WelcomeScreen() {
         Column {
             if (firstRun) {
                 NordicAppBar(
-                    text = stringResource(R.string.dfu_welcome),
+                    title = { Text(text = stringResource(R.string.dfu_welcome)) },
                 )
             } else {
                 NordicAppBar(
-                    text = stringResource(R.string.dfu_about_app),
+                    title = { Text(text = stringResource(R.string.dfu_about_app)) },
                     onNavigationButtonClick = { viewModel.navigateUp() },
                 )
             }
