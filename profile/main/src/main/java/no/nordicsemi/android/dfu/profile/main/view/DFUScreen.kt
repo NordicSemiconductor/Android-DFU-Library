@@ -43,6 +43,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -53,7 +54,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import no.nordicsemi.android.common.analytics.view.AnalyticsPermissionRequestDialog
 import no.nordicsemi.android.common.logger.view.LoggerAppBarIcon
-import no.nordicsemi.android.common.theme.view.NordicAppBar
+import no.nordicsemi.android.common.ui.view.NordicAppBar
 import no.nordicsemi.android.dfu.profile.main.R
 import no.nordicsemi.android.dfu.profile.main.viewmodel.DFUViewModel
 
@@ -66,7 +67,7 @@ internal fun DFUScreen() {
 
     Column {
         NordicAppBar(
-            text = stringResource(R.string.dfu_title),
+            title = { Text(text = stringResource(R.string.dfu_title)) },
             actions = {
                 LoggerAppBarIcon(onClick = { onEvent(OnLoggerButtonClick) })
                 IconButton(onClick = { onEvent(OnSettingsButtonClick) }) {

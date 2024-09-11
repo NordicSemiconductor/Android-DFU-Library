@@ -33,7 +33,7 @@ plugins {
     // https://github.com/NordicSemiconductor/Android-Gradle-Plugins/blob/main/plugins/src/main/kotlin/AndroidLibraryConventionPlugin.kt
     alias(libs.plugins.nordic.library)
     // https://github.com/NordicSemiconductor/Android-Gradle-Plugins/blob/main/plugins/src/main/kotlin/AndroidNexusRepositoryPlugin.kt
-    alias(libs.plugins.nordic.nexus)
+    alias(libs.plugins.nordic.nexus.android)
 }
 
 group = "no.nordicsemi.android"
@@ -71,5 +71,5 @@ dependencies {
     implementation(libs.androidx.annotation)
     implementation(libs.androidx.localbroadcastmanager)
 
-    implementation("com.google.code.gson:gson:2.10.1")
+    implementation(libs.gson)
 }

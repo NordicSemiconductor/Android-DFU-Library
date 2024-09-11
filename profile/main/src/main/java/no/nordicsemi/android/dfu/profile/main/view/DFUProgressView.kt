@@ -31,17 +31,21 @@
 
 package no.nordicsemi.android.dfu.profile.main.view
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import no.nordicsemi.android.common.theme.view.*
+import no.nordicsemi.android.common.ui.view.ProgressItem
+import no.nordicsemi.android.common.ui.view.ProgressItemStatus
+import no.nordicsemi.android.common.ui.view.WizardStepAction
+import no.nordicsemi.android.common.ui.view.WizardStepComponent
+import no.nordicsemi.android.common.ui.view.WizardStepState
 import no.nordicsemi.android.dfu.profile.main.R
 import no.nordicsemi.android.dfu.profile.main.data.Uploading
 
@@ -69,7 +73,6 @@ private fun DisabledDFUProgressView(viewEntity: ProgressItemViewEntity = Progres
         title = stringResource(id = R.string.dfu_progress),
         decor = WizardStepAction.Action(stringResource(id = R.string.dfu_progress_run), enabled = false),
         state = WizardStepState.INACTIVE,
-        showVerticalDivider = false,
     ) {
         ProgressItem(viewEntity)
     }
@@ -83,7 +86,6 @@ private fun DFUCompletedProgressView(
         icon = icon,
         title = stringResource(id = R.string.dfu_progress),
         state = WizardStepState.COMPLETED,
-        showVerticalDivider = false,
     ) {
         ProgressItem(viewEntity)
     }
@@ -103,7 +105,6 @@ private fun DFURunningProgressView(
             dangerous = true
         ),
         state = WizardStepState.CURRENT,
-        showVerticalDivider = false,
     ) {
         ProgressItem(viewEntity)
     }
@@ -121,7 +122,6 @@ private fun DFUIdleProgressView(
             onClick = { onEvent(OnInstallButtonClick) }
         ),
         state = WizardStepState.CURRENT,
-        showVerticalDivider = false,
     ) {
         ProgressItem(ProgressItemViewEntity())
     }
@@ -132,24 +132,23 @@ private fun ProgressItem(viewEntity: ProgressItemViewEntity) {
     ProgressItem(
         text = BootloaderItem.toDisplayString(status = viewEntity.bootloaderStatus),
         status = viewEntity.bootloaderStatus,
-        iconRightPadding = 24.dp,
     )
 
     ProgressItem(
         text = DfuItem.toDisplayString(status = viewEntity.dfuStatus),
         status = viewEntity.dfuStatus,
-        iconRightPadding = 24.dp,
     )
 
     if (viewEntity.installationStatus == ProgressItemStatus.WORKING) {
         ProgressItem(
-            text = viewEntity.progress.toLabel(),
             status = viewEntity.installationStatus,
-            iconRightPadding = 24.dp,
         ) {
+            Text(text = viewEntity.progress.toLabel())
             LinearProgressIndicator(
                 progress = { viewEntity.progress.progress / 100f },
                 modifier = Modifier.fillMaxWidth(),
+                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                drawStopIndicator = {}
             )
             Text(
                 text = stringResource(
@@ -164,7 +163,6 @@ private fun ProgressItem(viewEntity: ProgressItemViewEntity) {
         ProgressItem(
             text = FirmwareItem.toDisplayString(status = viewEntity.installationStatus),
             status = viewEntity.installationStatus,
-            iconRightPadding = 24.dp,
         )
     }
 
@@ -172,7 +170,6 @@ private fun ProgressItem(viewEntity: ProgressItemViewEntity) {
         ProgressItem(
             text = stringResource(id = R.string.dfu_progress_stage_completed),
             status = viewEntity.resultStatus,
-            iconRightPadding = 24.dp,
         )
     } else {
         ProgressItem(
@@ -181,7 +178,6 @@ private fun ProgressItem(viewEntity: ProgressItemViewEntity) {
                 viewEntity.errorMessage ?: stringResource(id = R.string.dfu_unknown)
             ),
             status = viewEntity.resultStatus,
-            iconRightPadding = 24.dp,
         )
     }
 }

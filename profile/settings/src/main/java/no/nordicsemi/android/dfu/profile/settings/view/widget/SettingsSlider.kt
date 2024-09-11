@@ -1,5 +1,6 @@
 package no.nordicsemi.android.dfu.profile.settings.view.widget
 
+import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,7 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import no.nordicsemi.android.common.theme.NordicTheme
+import no.nordicsemi.android.common.ui.view.NordicSliderDefaults
 
 @Composable
 internal fun SettingsSlider(
@@ -34,8 +35,7 @@ internal fun SettingsSlider(
 ) {
     Column(
         modifier = modifier
-            .fillMaxWidth()
-            .padding(16.dp),
+            .fillMaxWidth(),
     ) {
         Text(
             text = text,
@@ -51,6 +51,7 @@ internal fun SettingsSlider(
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(top = 8.dp)
         ) {
             var currentValue by remember(value) { mutableIntStateOf(value) }
             Slider(
@@ -59,7 +60,8 @@ internal fun SettingsSlider(
                 onValueChange = { currentValue = (it + 0.1F).toInt() * step },
                 onValueChangeFinished = { onChange(currentValue) },
                 steps = (valueRange.last - valueRange.first) / step - 1,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                colors = NordicSliderDefaults.colors()
             )
             Row(
                 horizontalArrangement = Arrangement.End,
@@ -81,16 +83,14 @@ internal fun SettingsSlider(
     }
 }
 
-@Preview(heightDp = 120)
+@Preview(heightDp = 120, uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
 @Composable
 private fun SettingsSliderPreview() {
-    NordicTheme {
-        SettingsSlider(
-            text = "Slider",
-            description = "Description",
-            value = 15,
-            valueRange = 0..20,
-            onChange = {},
-        )
-    }
+    SettingsSlider(
+        text = "Slider",
+        description = "Description",
+        value = 15,
+        valueRange = 0..20,
+        onChange = {},
+    )
 }

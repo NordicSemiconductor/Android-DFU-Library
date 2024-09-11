@@ -43,9 +43,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import kotlinx.parcelize.Parcelize
 import no.nordicsemi.android.common.core.parseBold
-import no.nordicsemi.android.common.theme.view.WizardStepAction
-import no.nordicsemi.android.common.theme.view.WizardStepComponent
-import no.nordicsemi.android.common.theme.view.WizardStepState
+import no.nordicsemi.android.common.ui.view.StatusItem
+import no.nordicsemi.android.common.ui.view.WizardStepAction
+import no.nordicsemi.android.common.ui.view.WizardStepComponent
+import no.nordicsemi.android.common.ui.view.WizardStepState
 import no.nordicsemi.android.dfu.DfuBaseService
 import no.nordicsemi.android.dfu.profile.main.R
 import no.nordicsemi.android.dfu.profile.main.data.ZipFile
@@ -105,16 +106,20 @@ internal fun DFUNotSelectedFileView(viewEntity: NotSelectedFileViewEntity, onEve
         state = WizardStepState.CURRENT,
     ) {
         if (viewEntity.isError) {
-            Text(
-                text = stringResource(id = R.string.dfu_load_file_error),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.error
-            )
+            StatusItem {
+                Text(
+                    text = stringResource(id = R.string.dfu_load_file_error),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
         } else {
-            Text(
-                text = stringResource(id = R.string.dfu_choose_info),
-                style = MaterialTheme.typography.bodyMedium,
-            )
+            StatusItem {
+                Text(
+                    text = stringResource(id = R.string.dfu_choose_info),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
         }
     }
 }
@@ -152,14 +157,16 @@ internal fun DFUSelectFileView(
         ),
         state = WizardStepState.COMPLETED,
     ) {
-        Text(
-            text = String.format(FILE_NAME, zipFile.name).parseBold(),
-            style = MaterialTheme.typography.bodyMedium
-        )
+        StatusItem {
+            Text(
+                text = String.format(FILE_NAME, zipFile.name).parseBold(),
+                style = MaterialTheme.typography.bodyMedium
+            )
 
-        Text(
-            text = String.format(Locale.US, FILE_SIZE, zipFile.size).parseBold(),
-            style = MaterialTheme.typography.bodyMedium,
-        )
+            Text(
+                text = String.format(Locale.US, FILE_SIZE, zipFile.size).parseBold(),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
     }
 }

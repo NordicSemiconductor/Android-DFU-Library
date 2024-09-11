@@ -14,8 +14,7 @@ dependencies {
     implementation(project(":lib:settings"))
     implementation(project(":profile:welcome"))
 
-    implementation(libs.nordic.core)
-    implementation(libs.nordic.theme)
+    implementation(libs.nordic.ui)
     implementation(libs.nordic.analytics)
     implementation(libs.nordic.navigation)
 
