@@ -48,9 +48,9 @@ nordicNexusPublishing {
     POM_SCM_CONNECTION = "scm:git@github.com:NordicSemiconductor/Android-DFU-Library.git"
     POM_SCM_DEV_CONNECTION = "scm:git@github.com:NordicSemiconductor/Android-DFU-Library.git"
 
-    POM_DEVELOPER_ID = "philips77"
-    POM_DEVELOPER_NAME = "Aleksander Nowakowski"
-    POM_DEVELOPER_EMAIL = "aleksander.nowakowski@nordicsemi.no"
+    POM_DEVELOPER_ID = "mag"
+    POM_DEVELOPER_NAME = "Mobile Applications Group"
+    POM_DEVELOPER_EMAIL = "mag@nordicsemi.no"
 }
 
 android {
