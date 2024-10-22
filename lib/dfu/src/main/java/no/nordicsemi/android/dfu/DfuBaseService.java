@@ -43,16 +43,17 @@ import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-import android.util.Log;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
@@ -752,6 +753,11 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	private String mDeviceAddress;
 	private String mDeviceName;
 	private boolean mDisableNotification;
+
+	/**
+	 * The handler running on the main looper.
+	 */
+	private Handler mHandler;
 	/**
 	 * The current connection state. If its value is > 0 than an error has occurred.
 	 * Error number is a negative value of mConnectionState
@@ -891,46 +897,28 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 				if (newState == BluetoothGatt.STATE_CONNECTED) {
 					logi("Connected to GATT server");
 					sendLogBroadcast(LOG_LEVEL_INFO, "Connected to " + mDeviceAddress);
-					mConnectionState = STATE_CONNECTED;
 
 					/*
-					 * The onConnectionStateChange callback is called just after establishing connection and before sending Encryption Request BLE event in case of a paired device.
-					 * In that case and when the Service Changed CCCD is enabled we will get the indication after initializing the encryption, about 1600 milliseconds later.
-					 * If we discover services right after connecting, the onServicesDiscovered callback will be called immediately, before receiving the indication and the following
-					 * service discovery and we may end up with old, application's services instead.
+					 * On bonded devices the Service Changed indication will be sent to
+					 * indicate that the services has changed.
 					 *
-					 * This is to support the buttonless switch from application to bootloader mode where the DFU bootloader notifies the master about service change.
-					 * Tested on Nexus 4 (Android 4.4.4 and 5), Nexus 5 (Android 5), Samsung Note 2 (Android 4.4.2). The time after connection to end of service discovery is about 1.6s
-					 * on Samsung Note 2.
-					 *
-					 * NOTE: We are doing this to avoid the hack with calling the hidden gatt.refresh()
-					 * method, at least for bonded devices.
-					 *
-					 * IMPORTANT: BluetoothDevice.getBondState() returns true if the bond information
-					 * is present on Android, not necessarily when the link is established or even
-					 * encrypted. This is a security issue, but in here it does not matter.
+					 * The code below will wait 1.6 seconds for the indication, or continue
+					 * with service discovery immediately when the indication is received.
+					 * See "onServiceChanged" method below.
 					 */
 					if (gatt.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
 						logi("Waiting 1600 ms for a possible Service Changed indication...");
-						waitFor(1600);
-						// After 1.6s the services are already discovered so the following gatt.discoverServices() finishes almost immediately.
-
-						// NOTE: This also works with shorted waiting time. The gatt.discoverServices() must be called after the indication is received which is
-						// about 600ms after establishing connection. Values 600 - 1600ms should be OK.
-					}
-
-					// Attempts to discover services after successful connection.
-					sendLogBroadcast(LOG_LEVEL_VERBOSE, "Discovering services...");
-					sendLogBroadcast(LOG_LEVEL_DEBUG, "gatt.discoverServices()");
-					final boolean success = gatt.discoverServices();
-					logi("Attempting to start service discovery... " + (success ? "succeed" : "failed"));
-
-					if (!success) {
-						mError = ERROR_SERVICE_DISCOVERY_NOT_STARTED;
+						mHandler.postDelayed(() -> {
+							if (mConnectionState != STATE_CONNECTING)
+								return;
+							mConnectionState = STATE_CONNECTED;
+							discoverServices(gatt);
+						}, 1600);
 					} else {
-						// Just return here, lock will be notified when service discovery finishes
-						return;
+						mConnectionState = STATE_CONNECTED;
+						discoverServices(gatt);
 					}
+					return;
 				} else if (newState == BluetoothGatt.STATE_DISCONNECTED) {
 					logi("Disconnected from GATT server");
 					mConnectionState = STATE_DISCONNECTED;
@@ -969,6 +957,38 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 			// Notify waiting thread
 			synchronized (mLock) {
 				mLock.notifyAll();
+			}
+		}
+
+		@Override
+		public void onServiceChanged(@NonNull final BluetoothGatt gatt) {
+			if (mConnectionState != STATE_CONNECTING)
+				return;
+			logi("Service Changed indication received");
+			sendLogBroadcast(LOG_LEVEL_INFO, "Service Changed indication received");
+			mConnectionState = STATE_CONNECTED;
+			discoverServices(gatt);
+		}
+
+		/**
+		 * Initiates service discovery on the target device.
+		 * <p>
+		 * In case of an error the lock will be notified.
+		 * @param gatt the GATT client
+		 */
+		private void discoverServices(@NonNull final BluetoothGatt gatt) {
+			sendLogBroadcast(LOG_LEVEL_VERBOSE, "Discovering services...");
+			sendLogBroadcast(LOG_LEVEL_DEBUG, "gatt.discoverServices()");
+			final boolean success = gatt.discoverServices();
+			logi("Attempting to start service discovery... " + (success ? "succeed" : "failed"));
+
+			if (!success) {
+				mError = ERROR_SERVICE_DISCOVERY_NOT_STARTED;
+
+				// Notify waiting thread
+				synchronized (mLock) {
+					mLock.notifyAll();
+				}
 			}
 		}
 
@@ -1032,6 +1052,8 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	public void onCreate() {
 		super.onCreate();
 
+		mHandler = new Handler();
+
 		DEBUG = isDebug();
 		logi("DFU service created. Version: " + BuildConfig.VERSION_NAME);
 		initialize();
@@ -1072,6 +1094,8 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
+
+		mHandler = null;
 
 		if (mDfuServiceImpl != null)
 			mDfuServiceImpl.abort();
