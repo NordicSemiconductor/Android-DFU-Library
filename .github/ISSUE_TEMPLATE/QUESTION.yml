@@ -10,14 +10,16 @@ body:
 
         If you're using Mcu Manager from nRF Connect SDK (NCS) use 
         [nRF Connect Device Manager](https://github.com/NordicSemiconductor/Android-nRF-Connect-Device-Manager/) 
-        library instead
+        library instead.
   - type: dropdown
     id: version
     attributes:
       label: Version
       description: What version of our product are you running?
       options:
-        - 2.5.0 (Latest)
+        - 2.7.0 (Latest)
+        - 2.6.0
+        - 2.5.0
         - 2.4.x
         - 2.3.x
         - 2.2.x
