@@ -230,10 +230,23 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION,
                     "Notifications enabled");
 
+			// Request short connection interval.
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+				logi("Requesting high connection priority");
+				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE,
+						"Requesting high connection priority...");
+				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG,
+						"gatt.requestConnectionPriority(CONNECTION_PRIORITY_HIGH)");
+				mGatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
+				// There will be a (hidden) callback on newer Android versions,
+				// but we don't have to wait for it.
+			}
+
 			final boolean allowResume = !intent.hasExtra(DfuBaseService.EXTRA_DISABLE_RESUME)
 					|| !intent.getBooleanExtra(DfuBaseService.EXTRA_DISABLE_RESUME, false);
-			if (!allowResume)
+			if (!allowResume) {
 				logi("Resume feature disabled. Performing fresh DFU");
+			}
 			try {
 				sendInitPacket(gatt, allowResume);
 			} catch (final RemoteDfuException e) {
