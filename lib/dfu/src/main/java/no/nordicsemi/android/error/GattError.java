@@ -42,21 +42,26 @@ public class GattError {
 		switch (error) {
 			case BluetoothGatt.GATT_SUCCESS:
 				return "SUCCESS";
-			case 0x01:
+			case 1:
 				return "GATT CONN L2C FAILURE";
-			case 0x08:
+			case 8:
+			case 147: // BluetoothGatt.GATT_CONNECTION_TIMEOUT
 				return "GATT CONN TIMEOUT";
-			case 0x13:
+			case 19:
 				return "GATT CONN TERMINATE PEER USER";
-			case 0x16:
+			case 22:
 				return "GATT CONN TERMINATE LOCAL HOST";
-			case 0x3E:
-				return "GATT CONN FAIL ESTABLISH";
-			case 0x22:
+			case 34:
 				return "GATT CONN LMP TIMEOUT";
-			case 0x0100:
-				return "GATT CONN CANCEL ";
-			case 0x0085:
+			case 62:
+				return "GATT CONN FAIL ESTABLISH";
+			case 143: // BluetoothGatt.GATT_CONNECTION_CONGESTED
+				return "GATT CONN CONGESTED";
+			case 256:
+				return "GATT CONN CANCEL";
+			case 257: // BluetoothGatt.GATT_FAILURE
+				return "GATT FAILURE";
+			case 133:
 				return "GATT ERROR"; // Device not reachable
 			default:
 				return "UNKNOWN (" + error + ")";
@@ -73,19 +78,19 @@ public class GattError {
 		switch (error) {
 			case 0x0001:
 				return "GATT INVALID HANDLE";
-			case 0x0002:
+			case 0x0002: // BluetoothGatt.GATT_READ_NOT_PERMITTED
 				return "GATT READ NOT PERMIT";
-			case 0x0003:
+			case 0x0003: // BluetoothGatt.GATT_WRITE_NOT_PERMITTED
 				return "GATT WRITE NOT PERMIT";
 			case 0x0004:
 				return "GATT INVALID PDU";
-			case 0x0005:
+			case 0x0005: // BluetoothGatt.GATT_INSUFFICIENT_AUTHENTICATION
 				return "GATT INSUF AUTHENTICATION";
-			case 0x0006:
+			case 0x0006: // BluetoothGatt.GATT_REQUEST_NOT_SUPPORTED
 				return "GATT REQ NOT SUPPORTED";
-			case 0x0007:
+			case 0x0007: // BluetoothGatt.GATT_INVALID_OFFSET
 				return "GATT INVALID OFFSET";
-			case 0x0008:
+			case 0x0008: // BluetoothGatt.GATT_INSUFFICIENT_AUTHORIZATION
 				return "GATT INSUF AUTHORIZATION";
 			case 0x0009:
 				return "GATT PREPARE Q FULL";
@@ -95,11 +100,11 @@ public class GattError {
 				return "GATT NOT LONG";
 			case 0x000c:
 				return "GATT INSUF KEY SIZE";
-			case 0x000d:
+			case 0x000d: // BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH
 				return "GATT INVALID ATTR LEN";
 			case 0x000e:
 				return "GATT ERR UNLIKELY";
-			case 0x000f:
+			case 0x000f: // BluetoothGatt.GATT_INSUFFICIENT_ENCRYPTION
 				return "GATT INSUF ENCRYPTION";
 			case 0x0010:
 				return "GATT UNSUPPORT GRP TYPE";
@@ -147,7 +152,7 @@ public class GattError {
 				return "GATT ENCRYPTED NO MITM";
 			case 0x008e:
 				return "GATT NOT ENCRYPTED";
-			case 0x008f:
+			case 0x008f: // BluetoothGatt.GATT_CONNECTION_CONGESTED
 				return "GATT CONGESTED";
 			case 0x00FD:
 				return "GATT CCCD CFG ERROR";
@@ -155,7 +160,7 @@ public class GattError {
 				return "GATT PROCEDURE IN PROGRESS";
 			case 0x00FF:
 				return "GATT VALUE OUT OF RANGE";
-			case 0x0101:
+			case 0x0101: // BluetoothGatt.GATT_FAILURE
 				return "TOO MANY OPEN CONNECTIONS";
 			case DfuBaseService.ERROR_DEVICE_DISCONNECTED:
 				return "DFU DEVICE DISCONNECTED";
