@@ -244,8 +244,9 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 
 			final boolean allowResume = !intent.hasExtra(DfuBaseService.EXTRA_DISABLE_RESUME)
 					|| !intent.getBooleanExtra(DfuBaseService.EXTRA_DISABLE_RESUME, false);
-			if (!allowResume)
+			if (!allowResume) {
 				logi("Resume feature disabled. Performing fresh DFU");
+			}
 			try {
 				sendInitPacket(gatt, allowResume);
 			} catch (final RemoteDfuException e) {
