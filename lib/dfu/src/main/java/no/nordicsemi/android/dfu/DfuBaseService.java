@@ -967,6 +967,13 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 			}
 		}
 
+		// Note: This method was added in Android 11. Earlier versions will handle service change
+		//       internally, but will not notify the app, so the app will always wait for 4 seconds
+		//       before starting service discovery.
+		// Added here:
+		// https://cs.android.com/android/_/android/platform/packages/modules/Bluetooth/+/d173ec435715533f4c9fd3d104df70afae8826d8
+		// Exposed here:
+		// https://cs.android.com/android/_/android/platform/packages/modules/Bluetooth/+/f36b9b5d686e8bf02a1d9fd482324037ebf2310f
 		@Override
 		public void onServiceChanged(@NonNull final BluetoothGatt gatt) {
 			if (mConnectionState != STATE_CONNECTING)
