@@ -800,7 +800,7 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 			throws DfuException, DeviceDisconnectedException, UploadAbortedException,
 			UnknownResponseException, RemoteDfuException {
 		if (!mConnected)
-			throw new DeviceDisconnectedException("Unable to read Checksum: device disconnected");
+			throw new DeviceDisconnectedException("Unable to read Checksum: device disconnected", mError);
 
 		// Send the number of packets of firmware before receiving a receipt notification
 		logi("Sending the number of packets before notifications (Op Code = 2, Value = " + number + ")");
@@ -848,7 +848,7 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 			throws DeviceDisconnectedException, DfuException, UploadAbortedException, RemoteDfuException,
 			UnknownResponseException {
 		if (!mConnected)
-			throw new DeviceDisconnectedException("Unable to create object: device disconnected");
+			throw new DeviceDisconnectedException("Unable to create object: device disconnected", mError);
 
 		final byte[] data = (type == OBJECT_COMMAND) ? OP_CODE_CREATE_COMMAND : OP_CODE_CREATE_DATA;
 		setObjectSize(data, size);
@@ -877,7 +877,7 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 			throws DeviceDisconnectedException, DfuException, UploadAbortedException,
 			RemoteDfuException, UnknownResponseException {
 		if (!mConnected)
-			throw new DeviceDisconnectedException("Unable to read object info: device disconnected");
+			throw new DeviceDisconnectedException("Unable to read object info: device disconnected", mError);
 
 		OP_CODE_SELECT_OBJECT[1] = (byte) type;
 		writeOpCode(mControlPointCharacteristic, OP_CODE_SELECT_OBJECT);
@@ -910,7 +910,7 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 	private ObjectChecksum readChecksum() throws DeviceDisconnectedException, DfuException,
             UploadAbortedException, RemoteDfuException, UnknownResponseException {
 		if (!mConnected)
-			throw new DeviceDisconnectedException("Unable to read Checksum: device disconnected");
+			throw new DeviceDisconnectedException("Unable to read Checksum: device disconnected", mError);
 
 		writeOpCode(mControlPointCharacteristic, OP_CODE_CALCULATE_CHECKSUM);
 
@@ -948,7 +948,7 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 	private void writeExecute() throws DfuException, DeviceDisconnectedException,
             UploadAbortedException, UnknownResponseException, RemoteDfuException {
 		if (!mConnected)
-			throw new DeviceDisconnectedException("Unable to read Checksum: device disconnected");
+			throw new DeviceDisconnectedException("Unable to execute: device disconnected", mError);
 
 		writeOpCode(mControlPointCharacteristic, OP_CODE_EXECUTE);
 

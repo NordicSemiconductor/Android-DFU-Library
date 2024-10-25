@@ -120,8 +120,9 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 		// public void onConnected() { }
 
 		@Override
-		public void onDisconnected() {
+		public void onDisconnected(int error) {
 			mConnected = false;
+			mError = error;
 			notifyLock();
 		}
 
@@ -452,7 +453,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 		final BluetoothGatt gatt = mGatt;
 		final String debugString = type == NOTIFICATIONS ? "notifications" : "indications";
 		if (!mConnected)
-			throw new DeviceDisconnectedException("Unable to set " + debugString + " state: device disconnected");
+			throw new DeviceDisconnectedException("Unable to set " + debugString + " state: device disconnected", mError);
 		if (mAborted)
 			throw new UploadAbortedException();
 
@@ -491,7 +492,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 			loge("Sleeping interrupted", e);
 		}
 		if (!mConnected)
-			throw new DeviceDisconnectedException("Unable to set " + debugString + " state: device disconnected");
+			throw new DeviceDisconnectedException("Unable to set " + debugString + " state: device disconnected", mError);
 		if (mError != 0)
 			throw new DfuException("Unable to set " + debugString + " state", mError);
 	}
@@ -508,7 +509,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 	private boolean isServiceChangedCCCDEnabled()
             throws DeviceDisconnectedException, DfuException, UploadAbortedException {
 		if (!mConnected)
-			throw new DeviceDisconnectedException("Unable to read Service Changed CCCD: device disconnected");
+			throw new DeviceDisconnectedException("Unable to read Service Changed CCCD: device disconnected", mError);
 		if (mAborted)
 			throw new UploadAbortedException();
 
@@ -545,7 +546,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 			loge("Sleeping interrupted", e);
 		}
 		if (!mConnected)
-			throw new DeviceDisconnectedException("Unable to read Service Changed CCCD: device disconnected");
+			throw new DeviceDisconnectedException("Unable to read Service Changed CCCD: device disconnected", mError);
 		if (mError != 0)
 			throw new DfuException("Unable to read Service Changed CCCD", mError);
 
@@ -608,7 +609,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 			loge("Sleeping interrupted", e);
 		}
 		if (!mResetRequestSent && !mConnected)
-			throw new DeviceDisconnectedException("Unable to write Op Code " + value[0] + ": device disconnected");
+			throw new DeviceDisconnectedException("Unable to write Op Code " + value[0] + ": device disconnected", mError);
 		if (!mResetRequestSent && mError != 0)
 			throw new DfuException("Unable to write Op Code " + value[0], mError);
 	}
@@ -768,7 +769,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 			loge("Sleeping interrupted", e);
 		}
 		if (!mConnected)
-			throw new DeviceDisconnectedException("Unable to read Service Changed CCCD: device disconnected");
+			throw new DeviceDisconnectedException("Unable to request MTU: device disconnected", mError);
 	}
 
 	/**
@@ -796,9 +797,9 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 		if (mAborted)
 			throw new UploadAbortedException();
 		if (!mConnected)
-			throw new DeviceDisconnectedException("Unable to write Op Code: device disconnected");
+			throw new DeviceDisconnectedException("Response not received: device disconnected", mError);
 		if (mError != 0)
-			throw new DfuException("Unable to write Op Code", mError);
+			throw new DfuException("Response not received", mError);
 		return mReceivedData;
 	}
 

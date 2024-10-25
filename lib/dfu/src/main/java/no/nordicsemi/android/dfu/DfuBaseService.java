@@ -829,7 +829,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 				sendLogBroadcast(LOG_LEVEL_WARNING, "Bluetooth adapter disabled");
 				mConnectionState = STATE_DISCONNECTED;
 				if (mDfuServiceImpl != null)
-					mDfuServiceImpl.getGattCallback().onDisconnected();
+					mDfuServiceImpl.getGattCallback().onDisconnected(22 /* GATT CONN TERMINATE LOCAL HOST */);
 
 				// Notify waiting thread
 				synchronized (mLock) {
@@ -930,7 +930,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 					logi("Disconnected from GATT server");
 					mConnectionState = STATE_DISCONNECTED;
 					if (mDfuServiceImpl != null)
-						mDfuServiceImpl.getGattCallback().onDisconnected();
+						mDfuServiceImpl.getGattCallback().onDisconnected(0);
 				}
 			} else {
 				if (status == 0x08 /* GATT CONN TIMEOUT */ || status == 0x13 /* GATT CONN TERMINATE PEER USER */)
@@ -941,7 +941,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 				if (newState == BluetoothGatt.STATE_DISCONNECTED) {
 					mConnectionState = STATE_DISCONNECTED;
 					if (mDfuServiceImpl != null)
-						mDfuServiceImpl.getGattCallback().onDisconnected();
+						mDfuServiceImpl.getGattCallback().onDisconnected(mError);
 				}
 			}
 
@@ -1482,7 +1482,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 						startService(newIntent);
 					return;
 				}
-				report(ERROR_DEVICE_DISCONNECTED);
+				report(e.getErrorNumber());
 			} catch (final DfuException e) {
 				int error = e.getErrorNumber();
 				// Connection state errors and other Bluetooth GATT callbacks share the same error numbers. Therefore we are using bit masks to identify the type.

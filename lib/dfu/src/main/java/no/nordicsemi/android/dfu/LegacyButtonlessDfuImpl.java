@@ -207,7 +207,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 							@Nullable final BluetoothGattCharacteristic characteristic)
             throws DeviceDisconnectedException, DfuException, UploadAbortedException {
 		if (!mConnected)
-			throw new DeviceDisconnectedException("Unable to read version number: device disconnected");
+			throw new DeviceDisconnectedException("Unable to read version number: device disconnected", mError);
 		if (mAborted)
 			throw new UploadAbortedException();
 		// If the DFU Version characteristic is not available we return 0.
@@ -234,7 +234,7 @@ import no.nordicsemi.android.dfu.internal.exception.UploadAbortedException;
 			loge("Sleeping interrupted", e);
 		}
 		if (!mConnected)
-			throw new DeviceDisconnectedException("Unable to read version number: device disconnected");
+			throw new DeviceDisconnectedException("Unable to read version number: device disconnected", mError);
 		if (mError != 0)
 			throw new DfuException("Unable to read version number", mError);
 
