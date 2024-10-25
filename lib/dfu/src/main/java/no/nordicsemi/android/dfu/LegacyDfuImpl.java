@@ -454,6 +454,12 @@ import no.nordicsemi.android.error.LegacyDfuError;
 				response = readNotificationResponse();
 				status = getStatusCode(response, OP_CODE_INIT_DFU_PARAMS_KEY);
 				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Response received (Op Code = " + response[1] + ", Status = " + status + ")");
+				if (status == 6 && mInitPacketSizeInBytes > 14) {
+					// Note: nRF5 SDK 11 also supported Init Packet with a signature,
+					//       which was longer than 14 bytes.
+					logw("Hint: Most probably the Init packet is not supported by the DFU target. " +
+							"It may be, that you're sending a file from a newer SDK (e.g. Secure DFU).");
+				}
 				if (status != DFU_STATUS_SUCCESS)
 					throw new RemoteDfuException("Device returned error after sending init packet", status);
 			}
