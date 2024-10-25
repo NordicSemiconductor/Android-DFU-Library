@@ -393,6 +393,18 @@ import no.nordicsemi.android.error.LegacyDfuError;
 				}
 			}
 
+			// Request short connection interval.
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+				logi("Requesting high connection priority");
+				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE,
+						"Requesting high connection priority...");
+				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG,
+						"gatt.requestConnectionPriority(HIGH)");
+				mGatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
+				// There will be a (hidden) callback on newer Android versions,
+				// but we don't have to wait for it.
+			}
+
 			/*
 			 * If the DFU Version characteristic is present and the version returned from it is greater or equal to 0.5, the Extended Init Packet is required.
 			 * For older versions, or if the DFU Version characteristic is not present (pre SDK 7.0.0), the Init Packet (which could have contained only the firmware CRC) was optional.
