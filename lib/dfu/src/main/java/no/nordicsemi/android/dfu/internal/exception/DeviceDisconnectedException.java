@@ -22,13 +22,28 @@
 
 package no.nordicsemi.android.dfu.internal.exception;
 
+import no.nordicsemi.android.dfu.DfuBaseService;
+
 /**
  * Device has disconnected.
  */
 public class DeviceDisconnectedException extends Exception {
 	private static final long serialVersionUID = -6901728550661937942L;
 
-	public DeviceDisconnectedException(final String message) {
+	private final int mError;
+
+	public DeviceDisconnectedException(final String message, final int state) {
 		super(message);
+
+		mError = state;
+	}
+
+	public int getErrorNumber() {
+		return mError;
+	}
+
+	@Override
+	public String getMessage() {
+		return super.getMessage() + " (error " + (mError & ~DfuBaseService.ERROR_CONNECTION_STATE_MASK) + ")";
 	}
 }

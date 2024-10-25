@@ -829,7 +829,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 				sendLogBroadcast(LOG_LEVEL_WARNING, "Bluetooth adapter disabled");
 				mConnectionState = STATE_DISCONNECTED;
 				if (mDfuServiceImpl != null)
-					mDfuServiceImpl.getGattCallback().onDisconnected();
+					mDfuServiceImpl.getGattCallback().onDisconnected(22 /* GATT CONN TERMINATE LOCAL HOST */);
 
 				// Notify waiting thread
 				synchronized (mLock) {
@@ -903,18 +903,24 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 					 * On bonded devices the Service Changed indication will be sent to
 					 * indicate that the services has changed.
 					 *
-					 * The code below will wait 1.6 seconds for the indication, or continue
+					 * The code below will wait 4 seconds for the indication, or continue
 					 * with service discovery immediately when the indication is received.
 					 * See "onServiceChanged" method below.
+					 *
+					 * It was tested using Pixel 7 with Android 15 using SDK 11 and 17.1, that
+					 * at least around 4 seconds are required. When service discovery is started
+					 * before SC indication is received, following operations will fail.
+					 * On SDK 11 the SC indication is received after service discovery is started,
+					 * but this seems not to cause any issues.
 					 */
 					if (gatt.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
-						logi("Waiting 1600 ms for a possible Service Changed indication...");
+						logi("Waiting 4000 ms for a possible Service Changed indication...");
 						mHandler.postDelayed(() -> {
 							if (mConnectionState != STATE_CONNECTING)
 								return;
 							mConnectionState = STATE_CONNECTED;
 							discoverServices(gatt);
-						}, 1600);
+						}, 4000);
 					} else {
 						mConnectionState = STATE_CONNECTED;
 						discoverServices(gatt);
@@ -924,7 +930,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 					logi("Disconnected from GATT server");
 					mConnectionState = STATE_DISCONNECTED;
 					if (mDfuServiceImpl != null)
-						mDfuServiceImpl.getGattCallback().onDisconnected();
+						mDfuServiceImpl.getGattCallback().onDisconnected(0);
 				}
 			} else {
 				if (status == 0x08 /* GATT CONN TIMEOUT */ || status == 0x13 /* GATT CONN TERMINATE PEER USER */)
@@ -935,7 +941,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 				if (newState == BluetoothGatt.STATE_DISCONNECTED) {
 					mConnectionState = STATE_DISCONNECTED;
 					if (mDfuServiceImpl != null)
-						mDfuServiceImpl.getGattCallback().onDisconnected();
+						mDfuServiceImpl.getGattCallback().onDisconnected(mError);
 				}
 			}
 
@@ -961,6 +967,13 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 			}
 		}
 
+		// Note: This method was added in Android 11. Earlier versions will handle service change
+		//       internally, but will not notify the app, so the app will always wait for 4 seconds
+		//       before starting service discovery.
+		// Added here:
+		// https://cs.android.com/android/_/android/platform/packages/modules/Bluetooth/+/d173ec435715533f4c9fd3d104df70afae8826d8
+		// Exposed here:
+		// https://cs.android.com/android/_/android/platform/packages/modules/Bluetooth/+/f36b9b5d686e8bf02a1d9fd482324037ebf2310f
 		@Override
 		public void onServiceChanged(@NonNull final BluetoothGatt gatt) {
 			if (mConnectionState != STATE_CONNECTING)
@@ -1365,9 +1378,10 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 				// Connection usually fails due to a 133 error (device unreachable, or.. something else went wrong).
 				// Usually trying the same for the second time works. Let's try 2 times.
 				final int attempt = intent.getIntExtra(EXTRA_RECONNECTION_ATTEMPT, 0);
-				logi("Attempt: " + (attempt + 1));
-				if (attempt < 2) {
-					sendLogBroadcast(LOG_LEVEL_WARNING, "Retrying...");
+				final int maxAttempts = 3;
+				if (attempt < maxAttempts - 1) {
+					logi("Retrying... (attempt " + (attempt + 2) + " / " + maxAttempts + ")");
+					sendLogBroadcast(LOG_LEVEL_WARNING, "Retrying... (attempt " + (attempt + 2) + " / " + maxAttempts + ")");
 
 					if (mConnectionState != STATE_DISCONNECTED) {
 						// Disconnect from the device
@@ -1387,6 +1401,23 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 					else
 						startService(newIntent);
 					return;
+				} else {
+					final int error = mError & ~ERROR_CONNECTION_STATE_MASK;
+					if (error == 133 && after < before + 2000) {
+						// The DFU bootloader from SDK 8-11 is using Direct advertising when switched
+						// to DFU mode using Buttonless service. Some tested devices (e.g. Samsung Tab A8
+						// with Android 14) are not able to connect to such devices. The connection fails
+						// with error 133 around 1600 ms after calling connectGatt.
+						// Possible workarounds:
+						// 1. Bonding - reconnecting to devices advertising directly seems to work
+						//              when the device is bonded. Try bonding (in app mode) before starting DFU.
+						// 2. Use button to switch to DFU mode - instead of using automatic Buttonless
+						//              service, check if the device can be switched to bootloader mode using
+						//              a button. In that case the device will advertise using broadcast.
+						logw("Hint: If all connection attempts quickly failed with error 133 " +
+								"the Android device may not support connecting to directly advertising " +
+								"devices without bonding. Bond, or use a button to switch to DFU mode.");
+					}
 				}
 				terminateConnection(gatt, mError);
 				return;
@@ -1451,7 +1482,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 						startService(newIntent);
 					return;
 				}
-				report(ERROR_DEVICE_DISCONNECTED);
+				report(e.getErrorNumber());
 			} catch (final DfuException e) {
 				int error = e.getErrorNumber();
 				// Connection state errors and other Bluetooth GATT callbacks share the same error numbers. Therefore we are using bit masks to identify the type.
@@ -1948,12 +1979,12 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		updateForegroundNotification(builder);
 
 		try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                startForeground(NOTIFICATION_ID, builder.build(), ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE);
-            } else {
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+				startForeground(NOTIFICATION_ID, builder.build(), ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE);
+			} else {
 				startForeground(NOTIFICATION_ID, builder.build());
 			}
-        } catch (final SecurityException e) {
+		} catch (final SecurityException e) {
 			loge("Service cannot be started in foreground", e);
 			logi("Starting DFU service in background instead");
 		}

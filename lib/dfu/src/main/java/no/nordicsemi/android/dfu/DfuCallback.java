@@ -27,7 +27,7 @@ import android.bluetooth.BluetoothGattCallback;
 /* package */ interface DfuCallback extends DfuController {
 
 	class DfuGattCallback extends BluetoothGattCallback {
-		public void onDisconnected() {
+		public void onDisconnected(int error) {
 			// empty initial implementation
 		}
 	}

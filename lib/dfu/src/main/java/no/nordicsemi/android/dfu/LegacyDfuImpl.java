@@ -111,7 +111,8 @@ import no.nordicsemi.android.error.LegacyDfuError;
 				handlePacketReceiptNotification(gatt, characteristic, value);
 			} else  {
 				/*
-				 * If the DFU target device is in invalid state (f.e. the Init Packet is required but has not been selected), the target will send DFU_STATUS_INVALID_STATE error
+				 * If the DFU target device is in invalid state (e.g. the Init Packet is required
+				 * but has not been selected), the target will send DFU_STATUS_INVALID_STATE error
 				 * for each firmware packet that was send. We are interested may ignore all but the first one.
 				 * After obtaining a remote DFU error the OP_CODE_RESET_KEY will be sent.
 				 */
@@ -393,6 +394,18 @@ import no.nordicsemi.android.error.LegacyDfuError;
 				}
 			}
 
+			// Request short connection interval.
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+				logi("Requesting high connection priority");
+				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE,
+						"Requesting high connection priority...");
+				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG,
+						"gatt.requestConnectionPriority(HIGH)");
+				mGatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
+				// There will be a (hidden) callback on newer Android versions,
+				// but we don't have to wait for it.
+			}
+
 			/*
 			 * If the DFU Version characteristic is present and the version returned from it is greater or equal to 0.5, the Extended Init Packet is required.
 			 * For older versions, or if the DFU Version characteristic is not present (pre SDK 7.0.0), the Init Packet (which could have contained only the firmware CRC) was optional.
@@ -481,6 +494,10 @@ import no.nordicsemi.android.error.LegacyDfuError;
 			status = getStatusCode(response, OP_CODE_RECEIVE_FIRMWARE_IMAGE_KEY);
 			logi("Response received (Op Code = " + response[0] + ", Req Op Code = " + response[1] + ", Status = " + response[2] + ")");
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Response received (Op Code = " + response[1] + ", Status = " + status + ")");
+			if (status == 6 && numberOfPacketsBeforeNotification == 0 || numberOfPacketsBeforeNotification > 10) {
+				logw("Hint: Error 6 (OPERATION FAILED) means the date were sent too fast for the target to handle. " +
+						"Reduce the number of packets before notification (PRN) to 10 or less.");
+			}
 			if (status != DFU_STATUS_SUCCESS)
 				throw new RemoteDfuException("Device returned error after sending file", status);
 
@@ -665,7 +682,7 @@ import no.nordicsemi.android.error.LegacyDfuError;
 		if (mAborted)
 			throw new UploadAbortedException();
 		if (!mConnected)
-			throw new DeviceDisconnectedException("Unable to write Image Size: device disconnected");
+			throw new DeviceDisconnectedException("Unable to write Image Size: device disconnected", mError);
 		if (mError != 0)
 			throw new DfuException("Unable to write Image Size", mError);
 	}
@@ -726,7 +743,7 @@ import no.nordicsemi.android.error.LegacyDfuError;
 		if (mAborted)
 			throw new UploadAbortedException();
 		if (!mConnected)
-			throw new DeviceDisconnectedException("Unable to write Image Sizes: device disconnected");
+			throw new DeviceDisconnectedException("Unable to write Image Sizes: device disconnected", mError);
 		if (mError != 0)
 			throw new DfuException("Unable to write Image Sizes", mError);
 	}
