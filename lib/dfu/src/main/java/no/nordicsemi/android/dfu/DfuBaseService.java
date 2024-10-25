@@ -906,6 +906,12 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 					 * The code below will wait 1.6 seconds for the indication, or continue
 					 * with service discovery immediately when the indication is received.
 					 * See "onServiceChanged" method below.
+					 *
+					 * It was tested using Pixel 7 with Android 15 using SDK 11 and 17.1, that
+					 * at least around 4 seconds are required. When service discovery is started
+					 * before SC indication is received, following operations will fail.
+					 * On SDK 11 the SC indication is received after service discovery is started,
+					 * but this seems not to cause any issues.
 					 */
 					if (gatt.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
 						logi("Waiting 1600 ms for a possible Service Changed indication...");
