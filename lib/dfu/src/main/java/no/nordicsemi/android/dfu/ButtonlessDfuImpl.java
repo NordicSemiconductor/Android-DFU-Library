@@ -135,6 +135,9 @@ import no.nordicsemi.android.error.SecureDfuError;
 				// but reset instead. In that case, Android would assume disconnection after
 				// "supervision timeout" seconds, which may be 5 more seconds.
 				if (shouldScanForBootloader()) {
+					// Why waiting? See: https://github.com/NordicSemiconductor/Android-DFU-Library/issues/444
+					mService.waitFor(500);
+
 					// If the device will use a different address in bootloader mode, there is no
 					// reason to wait for that. The library will immediately start scanning for the
 					// device advertising in bootloader mode and connect to it.
