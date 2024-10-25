@@ -903,7 +903,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 					 * On bonded devices the Service Changed indication will be sent to
 					 * indicate that the services has changed.
 					 *
-					 * The code below will wait 1.6 seconds for the indication, or continue
+					 * The code below will wait 4 seconds for the indication, or continue
 					 * with service discovery immediately when the indication is received.
 					 * See "onServiceChanged" method below.
 					 *
@@ -914,13 +914,13 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 					 * but this seems not to cause any issues.
 					 */
 					if (gatt.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
-						logi("Waiting 1600 ms for a possible Service Changed indication...");
+						logi("Waiting 4000 ms for a possible Service Changed indication...");
 						mHandler.postDelayed(() -> {
 							if (mConnectionState != STATE_CONNECTING)
 								return;
 							mConnectionState = STATE_CONNECTED;
 							discoverServices(gatt);
-						}, 1600);
+						}, 4000);
 					} else {
 						mConnectionState = STATE_CONNECTED;
 						discoverServices(gatt);
