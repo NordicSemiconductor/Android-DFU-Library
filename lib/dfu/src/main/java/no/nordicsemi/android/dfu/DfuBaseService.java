@@ -1378,9 +1378,10 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 				// Connection usually fails due to a 133 error (device unreachable, or.. something else went wrong).
 				// Usually trying the same for the second time works. Let's try 2 times.
 				final int attempt = intent.getIntExtra(EXTRA_RECONNECTION_ATTEMPT, 0);
-				logi("Attempt: " + (attempt + 1));
-				if (attempt < 2) {
-					sendLogBroadcast(LOG_LEVEL_WARNING, "Retrying...");
+				final int maxAttempts = 3;
+				if (attempt < maxAttempts - 1) {
+					logi("Retrying... (attempt " + (attempt + 2) + " / " + maxAttempts + ")");
+					sendLogBroadcast(LOG_LEVEL_WARNING, "Retrying... (attempt " + (attempt + 2) + " / " + maxAttempts + ")");
 
 					if (mConnectionState != STATE_DISCONNECTED) {
 						// Disconnect from the device
@@ -1400,6 +1401,23 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 					else
 						startService(newIntent);
 					return;
+				} else {
+					final int error = mError & ~ERROR_CONNECTION_STATE_MASK;
+					if (error == 133 && after < before + 2000) {
+						// The DFU bootloader from SDK 8-11 is using Direct advertising when switched
+						// to DFU mode using Buttonless service. Some tested devices (e.g. Samsung Tab A8
+						// with Android 14) are not able to connect to such devices. The connection fails
+						// with error 133 around 1600 ms after calling connectGatt.
+						// Possible workarounds:
+						// 1. Bonding - reconnecting to devices advertising directly seems to work
+						//              when the device is bonded. Try bonding (in app mode) before starting DFU.
+						// 2. Use button to switch to DFU mode - instead of using automatic Buttonless
+						//              service, check if the device can be switched to bootloader mode using
+						//              a button. In that case the device will advertise using broadcast.
+						logw("Hint: If all connection attempts quickly failed with error 133 " +
+								"the Android device may not support connecting to directly advertising " +
+								"devices without bonding. Bond, or use a button to switch to DFU mode.");
+					}
 				}
 				terminateConnection(gatt, mError);
 				return;

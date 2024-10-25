@@ -494,6 +494,10 @@ import no.nordicsemi.android.error.LegacyDfuError;
 			status = getStatusCode(response, OP_CODE_RECEIVE_FIRMWARE_IMAGE_KEY);
 			logi("Response received (Op Code = " + response[0] + ", Req Op Code = " + response[1] + ", Status = " + response[2] + ")");
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_APPLICATION, "Response received (Op Code = " + response[1] + ", Status = " + status + ")");
+			if (status == 6 && numberOfPacketsBeforeNotification == 0 || numberOfPacketsBeforeNotification > 10) {
+				logw("Hint: Error 6 (OPERATION FAILED) means the date were sent too fast for the target to handle. " +
+						"Reduce the number of packets before notification (PRN) to 10 or less.");
+			}
 			if (status != DFU_STATUS_SUCCESS)
 				throw new RemoteDfuException("Device returned error after sending file", status);
 
