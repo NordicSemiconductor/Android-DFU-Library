@@ -236,7 +236,7 @@ class SecureDfuImpl extends BaseCustomDfuImpl {
 				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_VERBOSE,
 						"Requesting high connection priority...");
 				mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG,
-						"gatt.requestConnectionPriority(CONNECTION_PRIORITY_HIGH)");
+						"gatt.requestConnectionPriority(HIGH)");
 				mGatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
 				// There will be a (hidden) callback on newer Android versions,
 				// but we don't have to wait for it.
