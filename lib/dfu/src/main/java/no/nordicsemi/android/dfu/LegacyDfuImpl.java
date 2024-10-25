@@ -111,7 +111,8 @@ import no.nordicsemi.android.error.LegacyDfuError;
 				handlePacketReceiptNotification(gatt, characteristic, value);
 			} else  {
 				/*
-				 * If the DFU target device is in invalid state (f.e. the Init Packet is required but has not been selected), the target will send DFU_STATUS_INVALID_STATE error
+				 * If the DFU target device is in invalid state (e.g. the Init Packet is required
+				 * but has not been selected), the target will send DFU_STATUS_INVALID_STATE error
 				 * for each firmware packet that was send. We are interested may ignore all but the first one.
 				 * After obtaining a remote DFU error the OP_CODE_RESET_KEY will be sent.
 				 */
