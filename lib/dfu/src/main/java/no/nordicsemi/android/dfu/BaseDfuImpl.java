@@ -663,7 +663,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 			//noinspection ConstantConditions
 			return (Boolean) createBond.invoke(device);
 		} catch (final Exception e) {
-			Log.w(TAG, "An exception occurred while creating bond", e);
+			loge("An exception occurred while creating bond", e);
 		}
 		return false;
 	}
@@ -692,6 +692,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
 			mService.sendLogBroadcast(DfuBaseService.LOG_LEVEL_DEBUG, "gatt.getDevice().removeBond() (hidden)");
 			//noinspection ConstantConditions
 			result = (Boolean) removeBond.invoke(device);
+			logw("Bond information " + (result ? "removed" : "NOT removed"));
 
             // We have to wait until device is unbounded
             try {
@@ -703,7 +704,7 @@ import no.nordicsemi.android.dfu.internal.scanner.BootloaderScannerFactory;
                 loge("Sleeping interrupted", e);
             }
 		} catch (final Exception e) {
-			Log.w(TAG, "An exception occurred while removing bond information", e);
+			loge("An exception occurred while removing bond information", e);
 		}
 		return result;
 	}
