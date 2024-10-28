@@ -8,7 +8,7 @@
 3. Ensure maven command line is installed via `brew install maven`
 4. Run ruby script/github-mvn-publish.rb -u 'https://github.com/somewear-labs/Android-DFU-Library' -m lib:dfu -t X.X.X -v X.X.X (replacing X.X.X with the tagged version i.e. 2.4.4)
 5. Please note you will need to copy in keystore.properties right after the git checkout occurs in the build script (  `cp path_to_keystore/keystore.properties #{repo_path}/keystore.properties` )
-6. In the mvn deploy command replace -Dfile=build/script/#{artifact_id}#{mvn_mod_prefix}/build/outputs/aar/#{mvn_release_prefix}-release.aar with -DFile=-Dfile=build/script/android-dfu-library/lib/dfu/build/outputs/aar/dfu-release.aar
+6. In the mvn deploy command replace `-Dfile=build/script/#{artifact_id}#{mvn_mod_prefix}/build/outputs/aar/#{mvn_release_prefix}-release.aar` with `-DFile=-Dfile=build/script/android-dfu-library/lib/dfu/build/outputs/aar/dfu-release.aar`
 
 
 [ ![Download](https://maven-badges.herokuapp.com/maven-central/no.nordicsemi.android/dfu/badge.svg?style=plastic) ](https://search.maven.org/artifact/no.nordicsemi.android/dfu)
