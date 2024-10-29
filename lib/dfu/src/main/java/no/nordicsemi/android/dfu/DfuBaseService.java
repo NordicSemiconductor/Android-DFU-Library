@@ -51,6 +51,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.core.content.ContextCompat;
 import android.util.Log;
 
 import java.io.ByteArrayInputStream;
@@ -1047,20 +1048,20 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		} else {
 			manager.registerReceiver(mDfuActionReceiver, actionFilter);
 		}
-		registerReceiver(mDfuActionReceiver, actionFilter); // Additionally we must register this receiver as a non-local to get broadcasts from the notification actions
+		ContextCompat.registerReceiver(this, mDfuActionReceiver, actionFilter, ContextCompat.RECEIVER_NOT_EXPORTED); // Additionally we must register this receiver as a non-local to get broadcasts from the notification actions
 
 		final IntentFilter filter = new IntentFilter();
 		// As we no longer perform any action based on this broadcast, we may log all ACL events
 		filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
 		filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED);
 		filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
-		registerReceiver(mConnectionStateBroadcastReceiver, filter);
+		ContextCompat.registerReceiver(mConnectionStateBroadcastReceiver, filter, ContextCompat.RECEIVER_EXPORTED);
 
 		final IntentFilter bondFilter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
-		registerReceiver(mBondStateBroadcastReceiver, bondFilter);
+		ContextCompat.registerReceiver(mBondStateBroadcastReceiver, bondFilter, ContextCompat.RECEIVER_EXPORTED);
 
 		final IntentFilter stateFilter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
-		registerReceiver(mBluetoothStateBroadcastReceiver, stateFilter);
+		ContextCompat.registerReceiver(mBluetoothStateBroadcastReceiver, stateFilter, ContextCompat.RECEIVER_EXPORTED);
 	}
 
 	@Override
