@@ -68,7 +68,7 @@ android {
 
 dependencies {
     //noinspection GradleDependency
-    implementation("androidx.core:core:1.12.0") // Don't update: 1.13 increases minSdk to 19.
+    implementation("androidx.core:core:1.15.0") // Don't update: 1.13 increases minSdk to 19.
     implementation(libs.androidx.annotation)
     implementation(libs.androidx.localbroadcastmanager)
 
