@@ -10,8 +10,8 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-java@v4
         with:
-          distribution: 'corretto'
-          java-version: '17'
+          distribution: 'jetbrains'
+          java-version: '21'
       - shell: bash
         env:
           KEYSTORE_ALIAS: ${{ secrets.KEYSTORE_ALIAS }}
