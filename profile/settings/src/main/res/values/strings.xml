@@ -70,5 +70,5 @@
     <string name="dfu_about_app">About the app</string>
     <string name="dfu_about_dfu">About DFU</string>
     <string name="dfu_about_dfu_desc">DFU documentation on Nordic\'s Infocenter.</string>
-    <string name="dfu_version">Version: %s (build %s)</string>
+    <string name="dfu_version" formatted="false">Version: %s (build %s)</string>
 </resources>
