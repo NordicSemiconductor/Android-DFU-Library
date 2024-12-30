@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        For questions related to DFU bootlaoder from nRF5 SDK and other Nordic's products use 
+        For questions related to DFU bootloader from nRF5 SDK and other Nordic's products use 
         [DevZone](https://devzone.nordicsemi.com/).
 
         If you're using Mcu Manager from nRF Connect SDK (NCS) use 
@@ -17,7 +17,7 @@ body:
       label: Version
       description: What version of our product are you running?
       options:
-        - 2.7.0 or 2.8.0 (Latest)
+        - 2.7.0 - 2.9.0 (Latest)
         - 2.6.0
         - 2.5.0
         - 2.4.x
