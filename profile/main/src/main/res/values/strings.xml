@@ -49,7 +49,7 @@
     <string name="dfu_choose_file">File</string>
     <string name="dfu_choose_info">Select a .zip file</string>
 
-    <string name="dfu_display_status_progress_update_parts">Uploading part %d/%d… %d\%%</string>
+    <string name="dfu_display_status_progress_update_parts" formatted="false">Uploading part %d/%d… %d\%%</string>
     <string name="dfu_display_status_progress_update">Uploading… %d\%%</string>
     <string name="dfu_display_status_progress_speed">%.1f kB/s</string>
 
