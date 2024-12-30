@@ -24,6 +24,10 @@ package no.nordicsemi.android.dfu.internal.manifest;
 
 import com.google.gson.annotations.SerializedName;
 
+/**
+ * The Manifest class contains the information about the firmware files in the Distribution Packet.
+ * @hide
+ */
 @SuppressWarnings("unused")
 public class Manifest {
 	private FileInfo application;

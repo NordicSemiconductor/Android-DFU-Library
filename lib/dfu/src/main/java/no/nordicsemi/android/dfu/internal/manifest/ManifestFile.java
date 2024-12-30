@@ -22,6 +22,10 @@
 
 package no.nordicsemi.android.dfu.internal.manifest;
 
+/**
+ * The ManifestFile class contains a structure of the manifest file.
+ * @hide
+ */
 @SuppressWarnings("unused")
 public class ManifestFile {
 	private Manifest manifest;

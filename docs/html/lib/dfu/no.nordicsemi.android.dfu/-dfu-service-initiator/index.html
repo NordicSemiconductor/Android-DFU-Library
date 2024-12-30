@@ -1,0 +1,676 @@
+<!doctype html>
+<html class="no-js">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>DfuServiceInitiator</title>
+<link href="../../../../images/logo-icon.svg" rel="icon" type="image/svg">    <script>var pathToRoot = "../../../../";</script>
+    <script>document.documentElement.classList.replace("no-js","js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+    if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    } else {
+        const savedDarkMode = JSON.parse(storage)
+        if(savedDarkMode === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    }
+    </script>
+<script type="text/javascript" src="https://unpkg.com/kotlin-playground@1/dist/playground.min.js" async></script>
+<script type="text/javascript" src="../../../../scripts/sourceset_dependencies.js" async></script>
+<link href="../../../../styles/style.css" rel="Stylesheet">
+<link href="../../../../styles/main.css" rel="Stylesheet">
+<link href="../../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../../../styles/font-jb-sans-auto.css" rel="Stylesheet">
+<link href="../../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../../scripts/clipboard.js" async></script>
+<script type="text/javascript" src="../../../../scripts/navigation-loader.js" async></script>
+<script type="text/javascript" src="../../../../scripts/platform-content-handler.js" async></script>
+<script type="text/javascript" src="../../../../scripts/main.js" defer></script>
+<script type="text/javascript" src="../../../../scripts/prism.js" async></script>
+<script type="text/javascript" src="../../../../ui-kit/ui-kit.min.js" defer></script>
+<script type="text/javascript" src="../../../../scripts/symbol-parameters-wrapper_deferred.js" defer></script></head>
+<body>
+    <div class="root">
+    <nav class="navigation theme-dark" id="navigation-wrapper">
+<a class="library-name--link" href="../../../../index.html">
+                    Device Firmware Update
+            </a>        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle" type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version">2.9.0
+        </div>
+        <div class="navigation-controls">
+        <div class="filter-section filter-section_loading" id="filter-section">
+                <button class="platform-tag platform-selector jvm-like" data-active="" data-filter=":lib:dfu/release">androidJvm</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox" data-role="dropdown-toggle" aria-controls="platform-tags-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Toggle source sets"></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox">
+                    <div class="dropdown--header"><span>Platform filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close platform filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":lib:dfu/release" data-filter=":lib:dfu/release">
+                                <span class="checkbox--icon"></span>
+                                androidJvm
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </div>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button" type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </nav>
+        <div id="container">
+            <div class="sidebar" id="leftColumn">
+                <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                    <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list" data-role="dropdown-listbox">
+                        <div class="dropdown--header">
+                            <span>
+                                    Device Firmware Update
+                            </span>
+                            <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                                <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                            </button>
+                        </div>
+                        <div class="sidebar--inner" id="sideMenu"></div>
+                    </ul>
+                    <div class="dropdown--overlay"></div>
+                </div>
+            </div>
+            <div id="main">
+<div class="main-content" data-page-type="classlike" id="content" pageids="dfu::no.nordicsemi.android.dfu/DfuServiceInitiator///PointingToDeclaration//-849819337">
+  <div class="breadcrumbs"><a href="../../index.html">dfu</a><span class="delimiter">/</span><a href="../index.html">no.nordicsemi.android.dfu</a><span class="delimiter">/</span><span class="current">DfuServiceInitiator</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span>Dfu</span><wbr><span>Service</span><wbr><span><span>Initiator</span></span></h1>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="index.html">DfuServiceInitiator</a></div><p class="paragraph">A helper class for starting a DFU process on a remote device supporting Legacy or Secure DFU services from nRF5 SDK. </p><p class="paragraph"> Starting a DFU Service service requires a knowledge of some <code class="lang-kotlin">EXTRA_*</code> constants used to pass parameters to the service. The <code class="lang-kotlin">DfuServiceInitiator</code> class may be used to make this process easier. It provides simple API that covers all low lever operations. </p><h3 class="">How to use it</h3><div class="sample-container"><pre><code class="block lang-kotlin" theme="idea">    final DfuServiceController controller = new DfuServiceInitiator(mSelectedDevice.getAddress())
+     .setDeviceName(mSelectedDevice.getName())
+     .setKeepBond(true)
+     .setZip(mFileStreamUri)
+     .start(this, DfuService.class);
+</code></pre><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><p class="paragraph"> To upgrade devices with an old versions of DFU Bootloader it may be necessary to enable package receipt notifications (PRNs) using <a href="set-packets-receipt-notifications-enabled.html">setPacketsReceiptNotificationsEnabled</a> and set the value to 6 or lower using <a href="set-packets-receipt-notifications-value.html">setPacketsReceiptNotificationsValue</a>. This will slow down the upload, but will make it more reliable.</p></div></div>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="CONSTRUCTOR">
+        <h2 class="">Constructors</h2>
+        <div class="table"><a data-name="509078574%2FConstructors%2F-849819337" anchor-label="DfuServiceInitiator" id="509078574%2FConstructors%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-togglable="CONSTRUCTOR" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-dfu-service-initiator.html"><span>Dfu</span><wbr><span>Service</span><wbr><span><span>Initiator</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="509078574%2FConstructors%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">constructor</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/NonNull.html"><span class="token annotation builtin">NonNull</span></a>&nbsp;</span>deviceAddress<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/lang/String.html">String</a></span></span><span class="token punctuation">)</span></div><div class="brief ">Creates the initiator instance for a device with the given MAC address.</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="PROPERTY">
+        <h2 class="">Properties</h2>
+        <div class="table"><a data-name="1288988345%2FProperties%2F-849819337" anchor-label="DEFAULT_MBR_SIZE" id="1288988345%2FProperties%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-d-e-f-a-u-l-t_-m-b-r_-s-i-z-e.html"><span>DEFAULT_</span><wbr><span>MBR_</span><wbr><span>SIZE</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1288988345%2FProperties%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">val </span><a href="-d-e-f-a-u-l-t_-m-b-r_-s-i-z-e.html">DEFAULT_MBR_SIZE</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">4096</span></div><div class="brief ">The default maximum size of the data block.</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-347457472%2FProperties%2F-849819337" anchor-label="DEFAULT_PRN_VALUE" id="-347457472%2FProperties%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-d-e-f-a-u-l-t_-p-r-n_-v-a-l-u-e.html"><span>DEFAULT_</span><wbr><span>PRN_</span><wbr><span>VALUE</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-347457472%2FProperties%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">val </span><a href="-d-e-f-a-u-l-t_-p-r-n_-v-a-l-u-e.html">DEFAULT_PRN_VALUE</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">12</span></div><div class="brief ">The default packet receipt notification value.</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1449965859%2FProperties%2F-849819337" anchor-label="DEFAULT_SCAN_TIMEOUT" id="-1449965859%2FProperties%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-d-e-f-a-u-l-t_-s-c-a-n_-t-i-m-e-o-u-t.html"><span>DEFAULT_</span><wbr><span>SCAN_</span><wbr><span>TIMEOUT</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1449965859%2FProperties%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">val </span><a href="-d-e-f-a-u-l-t_-s-c-a-n_-t-i-m-e-o-u-t.html">DEFAULT_SCAN_TIMEOUT</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span><span class="token constant">5000</span></div><div class="brief ">The default scan timeout in milliseconds.</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-728550021%2FProperties%2F-849819337" anchor-label="SCOPE_APPLICATION" id="-728550021%2FProperties%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-s-c-o-p-e_-a-p-p-l-i-c-a-t-i-o-n.html"><span>SCOPE_</span><wbr><span><span>APPLICATION</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-728550021%2FProperties%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">val </span><a href="-s-c-o-p-e_-a-p-p-l-i-c-a-t-i-o-n.html">SCOPE_APPLICATION</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">2</span></div><div class="brief ">Constant used to narrow the scope of the update to application only.</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="726985157%2FProperties%2F-849819337" anchor-label="SCOPE_SYSTEM_COMPONENTS" id="726985157%2FProperties%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-s-c-o-p-e_-s-y-s-t-e-m_-c-o-m-p-o-n-e-n-t-s.html"><span>SCOPE_</span><wbr><span>SYSTEM_</span><wbr><span>COMPONENTS</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="726985157%2FProperties%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">val </span><a href="-s-c-o-p-e_-s-y-s-t-e-m_-c-o-m-p-o-n-e-n-t-s.html">SCOPE_SYSTEM_COMPONENTS</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span><span class="token constant">1</span></div><div class="brief ">Constant used to narrow the scope of the update to system components (SD+BL) only.</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="FUNCTION">
+        <h2 class="">Functions</h2>
+        <div class="table"><a data-name="748666955%2FFunctions%2F-849819337" anchor-label="createDfuNotificationChannel" id="748666955%2FFunctions%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="create-dfu-notification-channel.html"><span>create</span><wbr><span>Dfu</span><wbr><span>Notification</span><wbr><span><span>Channel</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="748666955%2FFunctions%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/RequiresApi.html"><span class="token annotation builtin">RequiresApi</span></a><span class="token punctuation">(</span><span>api<span class="token operator"> = </span><a href="https://developer.android.com/reference/kotlin/android/os/Build.VERSION_CODES.html">Build.VERSION_CODES.O</a></span><wbr><span class="token punctuation">)</span></div></div><span class="token keyword">open </span><span class="token keyword">fun </span><a href="create-dfu-notification-channel.html"><span class="token function">createDfuNotificationChannel</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/NonNull.html"><span class="token annotation builtin">NonNull</span></a>&nbsp;</span>context<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/android/content/Context.html">Context</a></span></span><span class="token punctuation">)</span></div><div class="brief ">Creates a notification channel for the DFU service with default name and description.</div><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/RequiresApi.html"><span class="token annotation builtin">RequiresApi</span></a><span class="token punctuation">(</span><span>api<span class="token operator"> = </span><a href="https://developer.android.com/reference/kotlin/android/os/Build.VERSION_CODES.html">Build.VERSION_CODES.O</a></span><wbr><span class="token punctuation">)</span></div></div><span class="token keyword">open </span><span class="token keyword">fun </span><a href="create-dfu-notification-channel.html"><span class="token function">createDfuNotificationChannel</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/NonNull.html"><span class="token annotation builtin">NonNull</span></a>&nbsp;</span>context<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/android/content/Context.html">Context</a><span class="token punctuation">, </span></span><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/NonNull.html"><span class="token annotation builtin">NonNull</span></a>&nbsp;</span>dfu_channel_name<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/lang/String.html">String</a><span class="token punctuation">, </span></span><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/NonNull.html"><span class="token annotation builtin">NonNull</span></a>&nbsp;</span>dfu_channel_description<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/lang/String.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">showBadge<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></span></span><span class="token punctuation">)</span></div><div class="brief ">Creates a notification channel for the DFU service.</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1718042007%2FFunctions%2F-849819337" anchor-label="disableMtuRequest" id="1718042007%2FFunctions%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="disable-mtu-request.html"><span>disable</span><wbr><span>Mtu</span><wbr><span><span>Request</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1718042007%2FFunctions%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="disable-mtu-request.html"><span class="token function">disableMtuRequest</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">Disables MTU request.</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1697908885%2FFunctions%2F-849819337" anchor-label="disableResume" id="-1697908885%2FFunctions%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="disable-resume.html"><span>disable</span><wbr><span><span>Resume</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1697908885%2FFunctions%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="disable-resume.html"><span class="token function">disableResume</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">This options allows to disable the resume feature in Secure DFU.</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="489605090%2FFunctions%2F-849819337" anchor-label="setBinOrHex" id="489605090%2FFunctions%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-bin-or-hex.html"><span>set</span><wbr><span>Bin</span><wbr><span>Or</span><wbr><span><span>Hex</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="489605090%2FFunctions%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-bin-or-hex.html"><span class="token function"><strike>setBinOrHex</strike></span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">fileType<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/NonNull.html"><span class="token annotation builtin">NonNull</span></a>&nbsp;</span>uri<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/android/net/Uri.html">Uri</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-bin-or-hex.html"><span class="token function"><strike>setBinOrHex</strike></span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">fileType<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/NonNull.html"><span class="token annotation builtin">NonNull</span></a>&nbsp;</span>path<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/lang/String.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">Sets the URI of the BIN or HEX file containing the new firmware.</div><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-bin-or-hex.html"><span class="token function"><strike>setBinOrHex</strike></span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">fileType<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/RawRes.html"><span class="token annotation builtin">RawRes</span></a>&nbsp;</span>rawResId<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">Sets the resource ID pointing the BIN or HEX file containing the new firmware.</div><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-bin-or-hex.html"><span class="token function"><strike>setBinOrHex</strike></span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">fileType<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/Nullable.html"><span class="token annotation builtin">Nullable</span></a>&nbsp;</span>uri<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/android/net/Uri.html">Uri</a><span class="token punctuation">, </span></span><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/Nullable.html"><span class="token annotation builtin">Nullable</span></a>&nbsp;</span>path<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/lang/String.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">Sets the URI or path to the BIN or HEX file containing the new firmware.</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-888166678%2FFunctions%2F-849819337" anchor-label="setCurrentMtu" id="-888166678%2FFunctions%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-current-mtu.html"><span>set</span><wbr><span>Current</span><wbr><span><span>Mtu</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-888166678%2FFunctions%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-current-mtu.html"><span class="token function">setCurrentMtu</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/IntRange.html"><span class="token annotation builtin">IntRange</span></a><span class="token punctuation">(</span><span>from<span class="token operator"> = </span><span class="breakable-word"><span class="token constant">23</span></span><span class="token punctuation">, </span></span><wbr><span>to<span class="token operator"> = </span><span class="breakable-word"><span class="token constant">517</span></span></span><wbr><span class="token punctuation">)</span>&nbsp;</span>mtu<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">Sets the current MTU value.</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-2142503154%2FFunctions%2F-849819337" anchor-label="setCustomUuidsForButtonlessDfuWithBondSharing" id="-2142503154%2FFunctions%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-custom-uuids-for-buttonless-dfu-with-bond-sharing.html"><span>set</span><wbr><span>Custom</span><wbr><span>Uuids</span><wbr><span>For</span><wbr><span>Buttonless</span><wbr><span>Dfu</span><wbr><span>With</span><wbr><span>Bond</span><wbr><span><span>Sharing</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2142503154%2FFunctions%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-custom-uuids-for-buttonless-dfu-with-bond-sharing.html"><span class="token function">setCustomUuidsForButtonlessDfuWithBondSharing</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/Nullable.html"><span class="token annotation builtin">Nullable</span></a>&nbsp;</span>buttonlessDfuServiceUuid<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/util/UUID.html">UUID</a><span class="token punctuation">, </span></span><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/Nullable.html"><span class="token annotation builtin">Nullable</span></a>&nbsp;</span>buttonlessDfuControlPointUuid<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/util/UUID.html">UUID</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">Sets custom UUIDs for the Buttonless DFU Service from SDK 14 (or later).</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-268850182%2FFunctions%2F-849819337" anchor-label="setCustomUuidsForButtonlessDfuWithoutBondSharing" id="-268850182%2FFunctions%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-custom-uuids-for-buttonless-dfu-without-bond-sharing.html"><span>set</span><wbr><span>Custom</span><wbr><span>Uuids</span><wbr><span>For</span><wbr><span>Buttonless</span><wbr><span>Dfu</span><wbr><span>Without</span><wbr><span>Bond</span><wbr><span><span>Sharing</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-268850182%2FFunctions%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-custom-uuids-for-buttonless-dfu-without-bond-sharing.html"><span class="token function">setCustomUuidsForButtonlessDfuWithoutBondSharing</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/Nullable.html"><span class="token annotation builtin">Nullable</span></a>&nbsp;</span>buttonlessDfuServiceUuid<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/util/UUID.html">UUID</a><span class="token punctuation">, </span></span><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/Nullable.html"><span class="token annotation builtin">Nullable</span></a>&nbsp;</span>buttonlessDfuControlPointUuid<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/util/UUID.html">UUID</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">Sets custom UUIDs for the Buttonless DFU Service from SDK 13.</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-412977375%2FFunctions%2F-849819337" anchor-label="setCustomUuidsForExperimentalButtonlessDfu" id="-412977375%2FFunctions%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-custom-uuids-for-experimental-buttonless-dfu.html"><span>set</span><wbr><span>Custom</span><wbr><span>Uuids</span><wbr><span>For</span><wbr><span>Experimental</span><wbr><span>Buttonless</span><wbr><span><span>Dfu</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-412977375%2FFunctions%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-custom-uuids-for-experimental-buttonless-dfu.html"><span class="token function">setCustomUuidsForExperimentalButtonlessDfu</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/Nullable.html"><span class="token annotation builtin">Nullable</span></a>&nbsp;</span>buttonlessDfuServiceUuid<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/util/UUID.html">UUID</a><span class="token punctuation">, </span></span><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/Nullable.html"><span class="token annotation builtin">Nullable</span></a>&nbsp;</span>buttonlessDfuControlPointUuid<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/util/UUID.html">UUID</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">Sets custom UUIDs for the experimental Buttonless DFU Service from SDK 12.x.</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="995636011%2FFunctions%2F-849819337" anchor-label="setCustomUuidsForLegacyDfu" id="995636011%2FFunctions%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-custom-uuids-for-legacy-dfu.html"><span>set</span><wbr><span>Custom</span><wbr><span>Uuids</span><wbr><span>For</span><wbr><span>Legacy</span><wbr><span><span>Dfu</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="995636011%2FFunctions%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-custom-uuids-for-legacy-dfu.html"><span class="token function">setCustomUuidsForLegacyDfu</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/Nullable.html"><span class="token annotation builtin">Nullable</span></a>&nbsp;</span>dfuServiceUuid<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/util/UUID.html">UUID</a><span class="token punctuation">, </span></span><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/Nullable.html"><span class="token annotation builtin">Nullable</span></a>&nbsp;</span>dfuControlPointUuid<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/util/UUID.html">UUID</a><span class="token punctuation">, </span></span><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/Nullable.html"><span class="token annotation builtin">Nullable</span></a>&nbsp;</span>dfuPacketUuid<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/util/UUID.html">UUID</a><span class="token punctuation">, </span></span><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/Nullable.html"><span class="token annotation builtin">Nullable</span></a>&nbsp;</span>dfuVersionUuid<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/util/UUID.html">UUID</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">Sets custom UUIDs for Legacy DFU and Legacy Buttonless DFU.</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-987493465%2FFunctions%2F-849819337" anchor-label="setCustomUuidsForSecureDfu" id="-987493465%2FFunctions%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-custom-uuids-for-secure-dfu.html"><span>set</span><wbr><span>Custom</span><wbr><span>Uuids</span><wbr><span>For</span><wbr><span>Secure</span><wbr><span><span>Dfu</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-987493465%2FFunctions%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-custom-uuids-for-secure-dfu.html"><span class="token function">setCustomUuidsForSecureDfu</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/Nullable.html"><span class="token annotation builtin">Nullable</span></a>&nbsp;</span>dfuServiceUuid<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/util/UUID.html">UUID</a><span class="token punctuation">, </span></span><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/Nullable.html"><span class="token annotation builtin">Nullable</span></a>&nbsp;</span>dfuControlPointUuid<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/util/UUID.html">UUID</a><span class="token punctuation">, </span></span><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/Nullable.html"><span class="token annotation builtin">Nullable</span></a>&nbsp;</span>dfuPacketUuid<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/util/UUID.html">UUID</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">Sets custom UUIDs for Secure DFU.</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="421526616%2FFunctions%2F-849819337" anchor-label="setDeviceName" id="421526616%2FFunctions%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-device-name.html"><span>set</span><wbr><span>Device</span><wbr><span><span>Name</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="421526616%2FFunctions%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-device-name.html"><span class="token function">setDeviceName</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/Nullable.html"><span class="token annotation builtin">Nullable</span></a>&nbsp;</span>name<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/lang/String.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">Sets the device name.</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="2084575025%2FFunctions%2F-849819337" anchor-label="setDisableNotification" id="2084575025%2FFunctions%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-disable-notification.html"><span>set</span><wbr><span>Disable</span><wbr><span><span>Notification</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2084575025%2FFunctions%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-disable-notification.html"><span class="token function">setDisableNotification</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">disableNotification<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">Sets whether the progress notification in the status bar should be disabled.</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="2039779364%2FFunctions%2F-849819337" anchor-label="setForceDfu" id="2039779364%2FFunctions%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-force-dfu.html"><span>set</span><wbr><span>Force</span><wbr><span><span>Dfu</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2039779364%2FFunctions%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-force-dfu.html"><span class="token function">setForceDfu</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">force<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">Setting force DFU to true will prevent from jumping to the DFU Bootloader mode in case there is no DFU Version characteristic (Legacy DFU only!).</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="125339074%2FFunctions%2F-849819337" anchor-label="setForceScanningForNewAddressInLegacyDfu" id="125339074%2FFunctions%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-force-scanning-for-new-address-in-legacy-dfu.html"><span>set</span><wbr><span>Force</span><wbr><span>Scanning</span><wbr><span>For</span><wbr><span>New</span><wbr><span>Address</span><wbr><span>In</span><wbr><span>Legacy</span><wbr><span><span>Dfu</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="125339074%2FFunctions%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-force-scanning-for-new-address-in-legacy-dfu.html"><span class="token function">setForceScanningForNewAddressInLegacyDfu</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">force<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">When this is set to true, the Legacy Buttonless Service will scan for the device advertising with an incremented MAC address, instead of trying to reconnect to the same device.</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-962827169%2FFunctions%2F-849819337" anchor-label="setForeground" id="-962827169%2FFunctions%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-foreground.html"><span>set</span><wbr><span><span>Foreground</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-962827169%2FFunctions%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-foreground.html"><span class="token function">setForeground</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">foreground<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">Sets whether the DFU service should be started as a foreground service.</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-330942028%2FFunctions%2F-849819337" anchor-label="setInitFile" id="-330942028%2FFunctions%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-init-file.html"><span>set</span><wbr><span>Init</span><wbr><span><span>File</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-330942028%2FFunctions%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-init-file.html"><span class="token function"><strike>setInitFile</strike></span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/NonNull.html"><span class="token annotation builtin">NonNull</span></a>&nbsp;</span>initFileUri<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/android/net/Uri.html">Uri</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">Sets the URI of the Init file.</div><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-init-file.html"><span class="token function"><strike>setInitFile</strike></span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/RawRes.html"><span class="token annotation builtin">RawRes</span></a>&nbsp;</span>initFileResId<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">Sets the resource ID of the Init file.</div><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-init-file.html"><span class="token function"><strike>setInitFile</strike></span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/Nullable.html"><span class="token annotation builtin">Nullable</span></a>&nbsp;</span>initFilePath<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/lang/String.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">Sets the path to the Init file.</div><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-init-file.html"><span class="token function"><strike>setInitFile</strike></span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/Nullable.html"><span class="token annotation builtin">Nullable</span></a>&nbsp;</span>initFileUri<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/android/net/Uri.html">Uri</a><span class="token punctuation">, </span></span><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/Nullable.html"><span class="token annotation builtin">Nullable</span></a>&nbsp;</span>initFilePath<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/lang/String.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">Sets the URI or path to the Init file.</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1357023940%2FFunctions%2F-849819337" anchor-label="setKeepBond" id="1357023940%2FFunctions%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-keep-bond.html"><span>set</span><wbr><span>Keep</span><wbr><span><span>Bond</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1357023940%2FFunctions%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-keep-bond.html"><span class="token function">setKeepBond</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">keepBond<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">Sets whether the bond information should be preserver after flashing new application.</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1491282357%2FFunctions%2F-849819337" anchor-label="setMbrSize" id="1491282357%2FFunctions%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-mbr-size.html"><span>set</span><wbr><span>Mbr</span><wbr><span><span>Size</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1491282357%2FFunctions%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-mbr-size.html"><span class="token function">setMbrSize</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/IntRange.html"><span class="token annotation builtin">IntRange</span></a><span class="token punctuation">(</span><span>from<span class="token operator"> = </span><span class="breakable-word"><span class="token constant">0</span></span></span><wbr><span class="token punctuation">)</span>&nbsp;</span>mbrSize<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">This method sets the size of an MBR (Master Boot Record).</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="2020167365%2FFunctions%2F-849819337" anchor-label="setMtu" id="2020167365%2FFunctions%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-mtu.html"><span>set</span><wbr><span><span>Mtu</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2020167365%2FFunctions%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-mtu.html"><span class="token function">setMtu</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/IntRange.html"><span class="token annotation builtin">IntRange</span></a><span class="token punctuation">(</span><span>from<span class="token operator"> = </span><span class="breakable-word"><span class="token constant">23</span></span><span class="token punctuation">, </span></span><wbr><span>to<span class="token operator"> = </span><span class="breakable-word"><span class="token constant">517</span></span></span><wbr><span class="token punctuation">)</span>&nbsp;</span>mtu<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">Sets the Maximum Transfer Unit (MTU) value that the Secure DFU service will try to request before performing DFU.</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="947139517%2FFunctions%2F-849819337" anchor-label="setNumberOfRetries" id="947139517%2FFunctions%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-number-of-retries.html"><span>set</span><wbr><span>Number</span><wbr><span>Of</span><wbr><span><span>Retries</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="947139517%2FFunctions%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-number-of-retries.html"><span class="token function">setNumberOfRetries</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/IntRange.html"><span class="token annotation builtin">IntRange</span></a><span class="token punctuation">(</span><span>from<span class="token operator"> = </span><span class="breakable-word"><span class="token constant">0</span></span></span><wbr><span class="token punctuation">)</span>&nbsp;</span>max<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">Sets the number of retries that the DFU service will use to complete DFU.</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1424704962%2FFunctions%2F-849819337" anchor-label="setPacketsReceiptNotificationsEnabled" id="1424704962%2FFunctions%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-packets-receipt-notifications-enabled.html"><span>set</span><wbr><span>Packets</span><wbr><span>Receipt</span><wbr><span>Notifications</span><wbr><span><span>Enabled</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1424704962%2FFunctions%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-packets-receipt-notifications-enabled.html"><span class="token function">setPacketsReceiptNotificationsEnabled</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">enabled<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">Enables or disables the Packet Receipt Notification (PRN) procedure.</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="622321099%2FFunctions%2F-849819337" anchor-label="setPacketsReceiptNotificationsValue" id="622321099%2FFunctions%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-packets-receipt-notifications-value.html"><span>set</span><wbr><span>Packets</span><wbr><span>Receipt</span><wbr><span>Notifications</span><wbr><span><span>Value</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="622321099%2FFunctions%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-packets-receipt-notifications-value.html"><span class="token function">setPacketsReceiptNotificationsValue</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/IntRange.html"><span class="token annotation builtin">IntRange</span></a><span class="token punctuation">(</span><span>from<span class="token operator"> = </span><span class="breakable-word"><span class="token constant">0</span></span></span><wbr><span class="token punctuation">)</span>&nbsp;</span>number<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">If Packet Receipt Notification procedure is enabled, this method sets number of packets to be sent before receiving a PRN.</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="875904687%2FFunctions%2F-849819337" anchor-label="setPrepareDataObjectDelay" id="875904687%2FFunctions%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-prepare-data-object-delay.html"><span>set</span><wbr><span>Prepare</span><wbr><span>Data</span><wbr><span>Object</span><wbr><span><span>Delay</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="875904687%2FFunctions%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-prepare-data-object-delay.html"><span class="token function">setPrepareDataObjectDelay</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">delay<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">This method sets the duration of a delay, that the service will wait before sending each data object in Secure DFU.</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-463566864%2FFunctions%2F-849819337" anchor-label="setRebootTime" id="-463566864%2FFunctions%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-reboot-time.html"><span>set</span><wbr><span>Reboot</span><wbr><span><span>Time</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-463566864%2FFunctions%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-reboot-time.html"><span class="token function">setRebootTime</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">rebootTime<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">Sets the time required by the device to reboot.</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-961259857%2FFunctions%2F-849819337" anchor-label="setRestoreBond" id="-961259857%2FFunctions%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-restore-bond.html"><span>set</span><wbr><span>Restore</span><wbr><span><span>Bond</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-961259857%2FFunctions%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-restore-bond.html"><span class="token function">setRestoreBond</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">restoreBond<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">Sets whether a new bond should be created after the DFU is complete.</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1393649860%2FFunctions%2F-849819337" anchor-label="setScanTimeout" id="-1393649860%2FFunctions%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-scan-timeout.html"><span>set</span><wbr><span>Scan</span><wbr><span><span>Timeout</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1393649860%2FFunctions%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-scan-timeout.html"><span class="token function">setScanTimeout</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">scanTimeout<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">Sets the scan duration (in milliseconds) when scanning for DFU Bootloader.</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-200797141%2FFunctions%2F-849819337" anchor-label="setScope" id="-200797141%2FFunctions%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-scope.html"><span>set</span><wbr><span><span>Scope</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-200797141%2FFunctions%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-scope.html"><span class="token function">setScope</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">scope<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">This method allows to narrow the update to selected parts from the ZIP, for example to allow only application update from a ZIP file that has SD+BL+App.</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1584229924%2FFunctions%2F-849819337" anchor-label="setUnsafeExperimentalButtonlessServiceInSecureDfuEnabled" id="1584229924%2FFunctions%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-unsafe-experimental-buttonless-service-in-secure-dfu-enabled.html"><span>set</span><wbr><span>Unsafe</span><wbr><span>Experimental</span><wbr><span>Buttonless</span><wbr><span>Service</span><wbr><span>In</span><wbr><span>Secure</span><wbr><span>Dfu</span><wbr><span><span>Enabled</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1584229924%2FFunctions%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-unsafe-experimental-buttonless-service-in-secure-dfu-enabled.html"><span class="token function">setUnsafeExperimentalButtonlessServiceInSecureDfuEnabled</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">enable<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">Set this flag to true to enable experimental buttonless feature in Secure DFU.</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-883556248%2FFunctions%2F-849819337" anchor-label="setZip" id="-883556248%2FFunctions%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-zip.html"><span>set</span><wbr><span><span>Zip</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-883556248%2FFunctions%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-zip.html"><span class="token function">setZip</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/NonNull.html"><span class="token annotation builtin">NonNull</span></a>&nbsp;</span>uri<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/android/net/Uri.html">Uri</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">Sets the URI to the Distribution packet (ZIP) or to a ZIP file matching the deprecated naming convention.</div><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-zip.html"><span class="token function">setZip</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/RawRes.html"><span class="token annotation builtin">RawRes</span></a>&nbsp;</span>rawResId<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">Sets the resource ID of the Distribution packet (ZIP) or the a ZIP file matching the deprecated naming convention.</div><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-zip.html"><span class="token function">setZip</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/NonNull.html"><span class="token annotation builtin">NonNull</span></a>&nbsp;</span>path<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/lang/String.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">Sets the path to the Distribution packet (ZIP) or the a ZIP file matching the deprecated naming convention.</div><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="set-zip.html"><span class="token function">setZip</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/Nullable.html"><span class="token annotation builtin">Nullable</span></a>&nbsp;</span>uri<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/android/net/Uri.html">Uri</a><span class="token punctuation">, </span></span><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/Nullable.html"><span class="token annotation builtin">Nullable</span></a>&nbsp;</span>path<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/lang/String.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">DfuServiceInitiator</a></div><div class="brief ">Sets the URI or path of the ZIP file.</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-905724801%2FFunctions%2F-849819337" anchor-label="start" id="-905724801%2FFunctions%2F-849819337" data-filterable-set=":lib:dfu/release"></a>
+          <div class="table-row" data-filterable-current=":lib:dfu/release" data-filterable-set=":lib:dfu/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="start.html"><span><span>start</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-905724801%2FFunctions%2F-849819337"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="start.html"><span class="token function">start</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/NonNull.html"><span class="token annotation builtin">NonNull</span></a>&nbsp;</span>context<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/android/content/Context.html">Context</a><span class="token punctuation">, </span></span><span class="parameter "><span><span class="token annotation builtin">@</span><a href="https://developer.android.com/reference/kotlin/androidx/annotation/NonNull.html"><span class="token annotation builtin">NonNull</span></a>&nbsp;</span>service<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/lang/Class.html">Class</a><span class="token operator">&lt;</span><span class="token keyword">out </span><a href="../-dfu-base-service/index.html">DfuBaseService</a><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../-dfu-service-controller/index.html">DfuServiceController</a></div><div class="brief ">Starts the DFU service.</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+        <span>Copyright © 2022 - 2024 Nordic Semiconductor ASA. All Rights Reserved.</span>
+        <span class="pull-right">
+            <span>Generated by </span>
+            <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                <span>dokka</span>
+            </a>
+        </span>
+    </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

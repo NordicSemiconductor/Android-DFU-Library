@@ -40,6 +40,7 @@ import no.nordicsemi.android.dfu.internal.exception.HexFileValidationException;
  * In nRF51 chips memory a SoftDevice starts at address 0x1000. From 0x0000 to 0x1000 there is
  * MBR sector (since SoftDevice 7.0.0) which should not be transmitted using DFU. Therefore this
  * class skips all data from addresses below 0x1000.
+ * @hide
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
 public class HexInputStream extends FilterInputStream {

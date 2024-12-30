@@ -32,6 +32,7 @@ import no.nordicsemi.android.dfu.DfuDeviceSelector;
 
 /**
  * @see BootloaderScanner
+ * @hide
  */
 @SuppressLint("MissingPermission")
 public class BootloaderScannerJB implements BootloaderScanner, BluetoothAdapter.LeScanCallback {

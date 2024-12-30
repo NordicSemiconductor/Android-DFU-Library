@@ -24,15 +24,33 @@ package no.nordicsemi.android.error;
 
 import no.nordicsemi.android.dfu.DfuBaseService;
 
+/**
+ * Errors that are returned by the legacy DFU service.
+ */
 public final class LegacyDfuError {
 	// DFU status values
 	// public static final int SUCCESS = 1; // that's not an error
+	/** The device is in invalid state and could not handle this request. */
 	public static final int INVALID_STATE = 2;
+	/** The request is not supported by the DFU target. */
 	public static final int NOT_SUPPORTED = 3;
+	/** The data size is greater than the maximum value allowed. */
 	public static final int DATA_SIZE_EXCEEDS_LIMIT = 4;
+	/** The CRC validation failed. */
 	public static final int CRC_ERROR = 5;
+	/** The requested operation failed. */
 	public static final int OPERATION_FAILED = 6;
 
+	private LegacyDfuError() {
+		// empty
+	}
+
+	/**
+	 * Parses the error code and returns the error message.
+	 *
+	 * @param error the received error code
+	 * @return the error message
+	 */
 	public static String parse(final int error) {
 		switch (error) {
 			case DfuBaseService.ERROR_REMOTE_TYPE_LEGACY | INVALID_STATE:				return "INVALID STATE";

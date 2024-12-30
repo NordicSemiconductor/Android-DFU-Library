@@ -40,6 +40,7 @@ import no.nordicsemi.android.dfu.DfuDeviceSelector;
  * As the service does not know which address was used in the first connection (normal,
  * when buttonless update, or +1 when with-button update) we have to scan for the advertising
  * device after SD+BL part is completed.
+ * @hide
  */
 public interface BootloaderScanner {
 	/**

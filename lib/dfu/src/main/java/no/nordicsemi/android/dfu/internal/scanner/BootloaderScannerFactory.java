@@ -32,6 +32,7 @@ import androidx.annotation.NonNull;
 /**
  * The factory should be used to create the {@link BootloaderScanner} instance appropriate
  * for the Android version.
+ * @hide
  */
 public final class BootloaderScannerFactory {
 	/**

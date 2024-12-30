@@ -71,7 +71,7 @@ However, if you want to modify the code to your needs you have to clone the proj
 ### Usage
 
 The library is designed in a way that it is easy to integrate. Whole logic is performed by an
-`IntentService`, started using `DfuServiceInitiator`. The service reportes progress and errors
+`IntentService`, started using `DfuServiceInitiator`. The service reports progress and errors
 using `LocalBroadcastManager`.
 
 Extend the `DfuBaseService` in your project and implement the following method:
@@ -232,6 +232,10 @@ you have to create a notification channel. The easiest way to do this is to call
 ```java
 DfuServiceInitiator.createDfuNotificationChannel(context);
 ```
+
+### API Documentation
+
+API documentation is located [here](https://nordicsemiconductor.github.io/Android-DFU-Library/html/index.html).
 
 ### Example
 

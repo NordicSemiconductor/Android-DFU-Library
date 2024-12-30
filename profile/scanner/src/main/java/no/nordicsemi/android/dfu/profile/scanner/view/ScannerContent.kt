@@ -7,6 +7,8 @@ import no.nordicsemi.android.dfu.profile.scanner.Scanner
 import no.nordicsemi.android.dfu.profile.scanner.data.DfuTarget
 import no.nordicsemi.android.kotlin.ble.ui.scanner.DeviceSelected
 import no.nordicsemi.android.kotlin.ble.ui.scanner.ScannerScreen
+import no.nordicsemi.android.kotlin.ble.ui.scanner.OnlyNearby
+import no.nordicsemi.android.kotlin.ble.ui.scanner.OnlyWithNames
 import no.nordicsemi.android.kotlin.ble.ui.scanner.ScanningCancelled
 
 @Composable
@@ -14,7 +16,10 @@ internal fun ScannerContent() {
     val vm: SimpleNavigationViewModel = hiltViewModel()
 
     ScannerScreen(
-        uuid = null,
+        filters = listOf(
+            OnlyNearby(initiallySelected = false),
+            OnlyWithNames()
+        ),
         onResult = { result ->
             when (result) {
                 ScanningCancelled -> vm.navigateUp()

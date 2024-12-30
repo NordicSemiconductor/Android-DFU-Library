@@ -30,6 +30,8 @@
  */
 
 plugins {
+    // Kotlin is used only to build teh documentation using Dokka.
+    alias(libs.plugins.nordic.kotlin.android)
     // https://github.com/NordicSemiconductor/Android-Gradle-Plugins/blob/main/plugins/src/main/kotlin/AndroidLibraryConventionPlugin.kt
     alias(libs.plugins.nordic.library)
     // https://github.com/NordicSemiconductor/Android-Gradle-Plugins/blob/main/plugins/src/main/kotlin/AndroidNexusRepositoryPlugin.kt
@@ -53,6 +55,12 @@ nordicNexusPublishing {
     POM_DEVELOPER_EMAIL = "mag@nordicsemi.no"
 }
 
+dokka {
+    dokkaSourceSets.named("main") {
+        includes.from("Module.md")
+    }
+}
+
 android {
     namespace = "no.nordicsemi.android.dfu"
 
@@ -73,4 +81,7 @@ dependencies {
     implementation(libs.androidx.localbroadcastmanager)
 
     implementation(libs.gson)
+
+    // Adds @hide annotation to exclude internal classes from the documentation.
+    dokkaPlugin("org.jetbrains.dokka:android-documentation-plugin:2.0.0")
 }

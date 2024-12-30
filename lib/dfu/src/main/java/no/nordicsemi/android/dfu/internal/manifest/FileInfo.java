@@ -24,6 +24,10 @@ package no.nordicsemi.android.dfu.internal.manifest;
 
 import com.google.gson.annotations.SerializedName;
 
+/**
+ * The FileInfo class contains the information about the firmware files in the Distribution Packet.
+ * @hide
+ */
 public class FileInfo {
 	@SerializedName("bin_file") private String binFile;
 	@SerializedName("dat_file") private String datFile;
