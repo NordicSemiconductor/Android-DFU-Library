@@ -1,0 +1,6 @@
+$dokka.format:html-v1
+$dokka.linkExtension:html
+
+module:dfu
+no.nordicsemi.android.dfu
+no.nordicsemi.android.error

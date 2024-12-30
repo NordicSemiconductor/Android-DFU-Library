@@ -1,0 +1,114 @@
+<!doctype html>
+<html class="no-js">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>EXTRA_PROGRESS</title>
+<link href="../../../../images/logo-icon.svg" rel="icon" type="image/svg">    <script>var pathToRoot = "../../../../";</script>
+    <script>document.documentElement.classList.replace("no-js","js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+    if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    } else {
+        const savedDarkMode = JSON.parse(storage)
+        if(savedDarkMode === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    }
+    </script>
+<script type="text/javascript" src="https://unpkg.com/kotlin-playground@1/dist/playground.min.js" async></script>
+<script type="text/javascript" src="../../../../scripts/sourceset_dependencies.js" async></script>
+<link href="../../../../styles/style.css" rel="Stylesheet">
+<link href="../../../../styles/main.css" rel="Stylesheet">
+<link href="../../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../../../styles/font-jb-sans-auto.css" rel="Stylesheet">
+<link href="../../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../../scripts/clipboard.js" async></script>
+<script type="text/javascript" src="../../../../scripts/navigation-loader.js" async></script>
+<script type="text/javascript" src="../../../../scripts/platform-content-handler.js" async></script>
+<script type="text/javascript" src="../../../../scripts/main.js" defer></script>
+<script type="text/javascript" src="../../../../scripts/prism.js" async></script>
+<script type="text/javascript" src="../../../../ui-kit/ui-kit.min.js" defer></script>
+<script type="text/javascript" src="../../../../scripts/symbol-parameters-wrapper_deferred.js" defer></script></head>
+<body>
+    <div class="root">
+    <nav class="navigation theme-dark" id="navigation-wrapper">
+<a class="library-name--link" href="../../../../index.html">
+                    Device Firmware Update
+            </a>        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle" type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version">2.9.0
+        </div>
+        <div class="navigation-controls">
+        <div class="filter-section filter-section_loading" id="filter-section">
+                <button class="platform-tag platform-selector jvm-like" data-active="" data-filter=":lib:dfu/release">androidJvm</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox" data-role="dropdown-toggle" aria-controls="platform-tags-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Toggle source sets"></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox">
+                    <div class="dropdown--header"><span>Platform filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close platform filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":lib:dfu/release" data-filter=":lib:dfu/release">
+                                <span class="checkbox--icon"></span>
+                                androidJvm
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </div>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button" type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </nav>
+        <div id="container">
+            <div class="sidebar" id="leftColumn">
+                <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                    <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list" data-role="dropdown-listbox">
+                        <div class="dropdown--header">
+                            <span>
+                                    Device Firmware Update
+                            </span>
+                            <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                                <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                            </button>
+                        </div>
+                        <div class="sidebar--inner" id="sideMenu"></div>
+                    </ul>
+                    <div class="dropdown--overlay"></div>
+                </div>
+            </div>
+            <div id="main">
+<div class="main-content" data-page-type="member" id="content" pageids="dfu::no.nordicsemi.android.dfu/DfuBaseService/EXTRA_PROGRESS/#/PointingToDeclaration//-849819337">
+  <div class="breadcrumbs"><a href="../../index.html">dfu</a><span class="delimiter">/</span><a href="../index.html">no.nordicsemi.android.dfu</a><span class="delimiter">/</span><a href="index.html">DfuBaseService</a><span class="delimiter">/</span><span class="current">EXTRA_PROGRESS</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span>EXTRA_</span><wbr><span>PROGRESS</span></h1>
+  </div>
+  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":lib:dfu/release"><div class="symbol monospace"><span class="token keyword">val </span><a href="-e-x-t-r-a_-p-r-o-g-r-e-s-s.html">EXTRA_PROGRESS</a><span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/lang/String.html">String</a><span class="token operator"> = </span><span class="token string">"no.nordicsemi.android.dfu.extra.EXTRA_PROGRESS"</span></div><p class="paragraph">An extra field to send the progress or error information in the DFU notification. The value may contain: </p><ul><li>Value 0 - 100 - percentage progress value</li><li>One of the following status constants: <ul><li><a href="-p-r-o-g-r-e-s-s_-c-o-n-n-e-c-t-i-n-g.html">PROGRESS_CONNECTING</a></li><li><a href="-p-r-o-g-r-e-s-s_-s-t-a-r-t-i-n-g.html">PROGRESS_STARTING</a></li><li><a href="-p-r-o-g-r-e-s-s_-e-n-a-b-l-i-n-g_-d-f-u_-m-o-d-e.html">PROGRESS_ENABLING_DFU_MODE</a></li><li><a href="-p-r-o-g-r-e-s-s_-v-a-l-i-d-a-t-i-n-g.html">PROGRESS_VALIDATING</a></li><li><a href="-p-r-o-g-r-e-s-s_-d-i-s-c-o-n-n-e-c-t-i-n-g.html">PROGRESS_DISCONNECTING</a></li><li><a href="-p-r-o-g-r-e-s-s_-c-o-m-p-l-e-t-e-d.html">PROGRESS_COMPLETED</a></li><li><a href="-p-r-o-g-r-e-s-s_-a-b-o-r-t-e-d.html">PROGRESS_ABORTED</a></li></ul></li><li>An error code with <a href="-e-r-r-o-r_-m-a-s-k.html">ERROR_MASK</a> if initialization error occurred</li><li>An error code with <a href="-e-r-r-o-r_-r-e-m-o-t-e_-m-a-s-k.html">ERROR_REMOTE_MASK</a> if remote DFU target returned an error</li><li>An error code with <a href="-e-r-r-o-r_-c-o-n-n-e-c-t-i-o-n_-m-a-s-k.html">ERROR_CONNECTION_MASK</a> if connection error occurred (e.g. GATT error (133) or Internal GATT Error (129))</li></ul> To check if error occurred use:<code class="lang-kotlin">boolean error = progressValue &gt;= DfuBaseService.ERROR_MASK;</code></div></div>
+</div>
+    <div class="footer">
+        <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+        <span>Copyright © 2022 - 2024 Nordic Semiconductor ASA. All Rights Reserved.</span>
+        <span class="pull-right">
+            <span>Generated by </span>
+            <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                <span>dokka</span>
+            </a>
+        </span>
+    </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

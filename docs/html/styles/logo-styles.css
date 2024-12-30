@@ -1,0 +1,37 @@
+:root {
+    /* Navigation bar */
+    --dokka-logo-image-url: url(../images/logo-icon.svg);
+    --dokka-logo-height: 120px;
+    --dokka-logo-width: 120px;
+
+    --color-background-nav: #00A9CE !important;
+    --color-background-nav-dt: #333f48 !important;
+
+    /* Selected menu */
+    --color-key-blue: #00A9CE !important;
+
+    /* Tabs */
+    --active-section-color: #0077C8;
+    --sidemenu-section-active-color: #0077C8;
+    --active-tab-border-color: #0077C8;
+    --hover-link-color: #0077C8;
+
+    .toc--part[data-active]>.toc--row .toc--button:hover, .toc--part[data-active]>.toc--row .toc--link:hover {
+        background-color: #2fb9df;
+    }
+    .sidebar {
+        border-right: 1px solid rgba(39, 40, 44, .2);
+        box-sizing: border-box;
+        overflow: auto;
+        width: var(--sidebar-width);
+        background-color: #35414622;
+    }
+
+}
+
+.theme-dark {
+    --active-section-color: #00A9CE;
+    --sidemenu-section-active-color: #00A9CE;
+    --active-tab-border-color: #00A9CE;
+    --hover-link-color: #00A9CE;
+}
