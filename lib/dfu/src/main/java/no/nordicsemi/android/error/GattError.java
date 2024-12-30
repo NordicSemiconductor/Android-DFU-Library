@@ -27,14 +27,23 @@ import android.bluetooth.BluetoothGatt;
 import no.nordicsemi.android.dfu.DfuBaseService;
 
 /**
- * Parses the error numbers according to the <b>gatt_api.h</b> file from bluedroid stack.
- * See: https://android.googlesource.com/platform/external/bluetooth/bluedroid/+/android-5.1.0_r1/stack/include/gatt_api.h (and other versions) for details.
- * See also: https://android.googlesource.com/platform/external/libnfc-nci/+/master/src/include/hcidefs.h#447 for other possible HCI errors.
+ * Parses the error numbers according to the <b>gatt_api.h</b> file from BlueDroid stack.
+ * <p>
+ * See: <a href="https://android.googlesource.com/platform/external/bluetooth/bluedroid/+/android-5.1.0_r1/stack/include/gatt_api.h">Android 5.1 gatt_api.h</a> (and other versions) for details.<br/>
+ * See also: <a href="https://android.googlesource.com/platform/external/libnfc-nci/+/master/src/include/hcidefs.h#447">HCI definitions</a> for other possible HCI errors.
  */
 public class GattError {
+
+	private GattError() {
+		// empty
+	}
+
 	// Starts at line 106 of gatt_api.h file
 	/**
-	 * Converts the connection status given by the {@link android.bluetooth.BluetoothGattCallback#onConnectionStateChange(android.bluetooth.BluetoothGatt, int, int)} to error name.
+	 * Converts the connection status given by the
+	 * {@link android.bluetooth.BluetoothGattCallback#onConnectionStateChange(android.bluetooth.BluetoothGatt, int, int)}
+	 * to error name.
+	 *
 	 * @param error the status number
 	 * @return the error name as stated in the gatt_api.h file
 	 */
@@ -70,7 +79,9 @@ public class GattError {
 
 	// Starts at line 29 of the gatt_api.h file
 	/**
-	 * Converts the bluetooth communication status given by other BluetoothGattCallbacks to error name. It also parses the DFU errors.
+	 * Converts the bluetooth communication status given by other BluetoothGattCallbacks to error name.
+	 * It also parses the DFU errors.
+	 *
 	 * @param error the status number
 	 * @return the error name as stated in the gatt_api.h file
 	 */
@@ -195,6 +206,12 @@ public class GattError {
 		}
 	}
 
+	/**
+	 * Parses the error code returned by the DFU service and returns the error message.
+	 *
+	 * @param error the received error code
+	 * @return the error message
+	 */
 	public static String parseDfuRemoteError(final int error) {
 		switch (error & (DfuBaseService.ERROR_REMOTE_TYPE_LEGACY | DfuBaseService.ERROR_REMOTE_TYPE_SECURE | DfuBaseService.ERROR_REMOTE_TYPE_SECURE_EXTENDED | DfuBaseService.ERROR_REMOTE_TYPE_SECURE_BUTTONLESS)) {
 			case DfuBaseService.ERROR_REMOTE_TYPE_LEGACY:

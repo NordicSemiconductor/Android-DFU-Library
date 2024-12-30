@@ -26,6 +26,7 @@ import java.io.IOException;
 
 /**
  * The HEX file could not be parsed.
+ * @hide
  */
 public class HexFileValidationException extends IOException {
 	private static final long serialVersionUID = -6467104024030837875L;

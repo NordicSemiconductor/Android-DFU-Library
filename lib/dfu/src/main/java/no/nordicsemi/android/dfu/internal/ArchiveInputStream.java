@@ -59,6 +59,7 @@ import no.nordicsemi.android.dfu.internal.manifest.SoftDeviceBootloaderFileInfo;
  * <p>
  * The ArchiveInputStream will read only files with types specified by <b>types</b> parameter of
  * the constructor.
+ * @hide
  */
 public class ArchiveInputStream extends InputStream {
 	private static final String TAG = "DfuArchiveInputStream";

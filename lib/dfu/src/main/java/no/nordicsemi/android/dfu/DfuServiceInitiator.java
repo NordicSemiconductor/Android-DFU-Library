@@ -44,14 +44,37 @@ import androidx.annotation.RawRes;
 import androidx.annotation.RequiresApi;
 
 /**
- * Starting the DfuService service requires a knowledge of some EXTRA_* constants used to pass
- * parameters to the service. The DfuServiceInitiator class may be used to make this process easier.
- * It provides simple API that covers all low lever operations.
+ * A helper class for starting a DFU process on a remote device supporting Legacy or Secure DFU
+ * services from nRF5 SDK.
+ * <p>
+ * Starting a DFU Service service requires a knowledge of some <code>EXTRA_*</code> constants used
+ * to pass parameters to the service. The <code>DfuServiceInitiator</code> class may be used to
+ * make this process easier. It provides simple API that covers all low lever operations.
+ *
+ * <h3>How to use it</h3>
+ * <pre>
+ *     final DfuServiceController controller = new DfuServiceInitiator(mSelectedDevice.getAddress())
+ *      .setDeviceName(mSelectedDevice.getName())
+ *      .setKeepBond(true)
+ *      .setZip(mFileStreamUri)
+ *      .start(this, DfuService.class);
+ * </pre>
+ * <p>
+ * To upgrade devices with an old versions of DFU Bootloader it may be necessary to enable
+ * package receipt notifications (PRNs) using {@link #setPacketsReceiptNotificationsEnabled(boolean)}
+ * and set the value to 6 or lower using {@link #setPacketsReceiptNotificationsValue(int)}.
+ * This will slow down the upload, but will make it more reliable.
  */
 @SuppressWarnings({"WeakerAccess", "unused", "deprecation"})
 public final class DfuServiceInitiator {
+	/**
+	 * The default packet receipt notification value. The DFU target will send notification
+	 * with CRC each time it receives that many packets of firmware
+	 */
 	public static final int DEFAULT_PRN_VALUE = 12;
+	/** The default maximum size of the data block. */
 	public static final int DEFAULT_MBR_SIZE = 0x1000;
+	/** The default scan timeout in milliseconds. */
 	public static final long DEFAULT_SCAN_TIMEOUT = 5000; // ms
 
 	/** Constant used to narrow the scope of the update to system components (SD+BL) only. */
@@ -101,9 +124,13 @@ public final class DfuServiceInitiator {
 	private Parcelable[] buttonlessDfuWithBondSharingUuids;
 
 	/**
-	 * Creates the builder. Use setZip(...), or setBinOrHex(...) methods to specify the file you
-	 * want to upload. In the latter case an init file may also be set using the setInitFile(...)
+	 * Creates the initiator instance for a device with the given MAC address.
+	 * <p>
+	 * Use {@link #setZip(Uri)}, or {@link #setBinOrHex(int, Uri)} methods to specify the file you
+	 * want to upload. In the latter case an init file may also be set using the {@link #setInitFile(Uri)}
 	 * method. Init files are required by DFU Bootloader version 0.5 or newer (SDK 7.0.0+).
+	 * <p>
+	 * Use {@link #start(Context, Class)} to start the DFU service.
 	 *
 	 * @param deviceAddress the target device device address
 	 */
@@ -112,10 +139,10 @@ public final class DfuServiceInitiator {
 	}
 
 	/**
-	 * Sets the device name. The device name is not required. It's written in the notification
-	 * during the DFU process. If not set the
-	 * {@link no.nordicsemi.android.dfu.R.string#dfu_unknown_name R.string.dfu_unknown_name}
-	 * value will be used.
+	 * Sets the device name.
+	 * <p>
+	 * The device name is not required. It's written in the notification during the DFU process.
+	 * If not set the "unnamed device" value will be used.
 	 *
 	 * @param name the device name (optional)
 	 * @return the builder
@@ -912,6 +939,16 @@ public final class DfuServiceInitiator {
 		return this;
 	}
 
+	/**
+	 * Creates a notification channel for the DFU service.
+	 * <p>
+	 * This method requires Android 8 or newer.
+	 *
+	 * @param context application context
+	 * @param dfu_channel_name the name of the channel
+	 * @param dfu_channel_description the description of the channel
+	 * @param showBadge whether the channel should show a badge
+	 */
 	@RequiresApi(api = Build.VERSION_CODES.O)
 	public static void createDfuNotificationChannel(@NonNull final Context context, @NonNull final String dfu_channel_name, @NonNull final String dfu_channel_description, boolean showBadge) {
 		final NotificationChannel channel =
@@ -927,6 +964,14 @@ public final class DfuServiceInitiator {
 		}
 	}
 
+	/**
+	 * Creates a notification channel for the DFU service with default name and description.
+	 * Badges won't be shown.
+	 * <p>
+	 * This method requires Android 8 or newer.
+	 *
+	 * @param context application context
+	 */
 	@RequiresApi(api = Build.VERSION_CODES.O)
 	public static void createDfuNotificationChannel(@NonNull final Context context) {
 		createDfuNotificationChannel(context, context.getString(R.string.dfu_channel_name), context.getString(R.string.dfu_channel_description), false);

@@ -42,6 +42,7 @@ import no.nordicsemi.android.dfu.DfuDeviceSelector;
 
 /**
  * @see BootloaderScanner
+ * @hide
  */
 @SuppressLint("MissingPermission")
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)

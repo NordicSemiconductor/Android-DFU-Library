@@ -22,10 +22,14 @@
 
 package no.nordicsemi.android.dfu;
 
+/**
+ * A controller class allows you to pause, resume or abort the DFU operation in a easy way.
+ */
 public interface DfuController {
 
 	/**
 	 * Pauses the DFU operation. Call {@link #resume()} to resume, or {@link #abort()} to cancel.
+	 * <p>
 	 * This method does nothing if DFU operation was already paused.
 	 */
 	void pause();

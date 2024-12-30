@@ -81,4 +81,7 @@ dependencies {
     implementation(libs.androidx.localbroadcastmanager)
 
     implementation(libs.gson)
+
+    // Adds @hide annotation to exclude internal classes from the documentation.
+    dokkaPlugin("org.jetbrains.dokka:android-documentation-plugin:2.0.0")
 }
