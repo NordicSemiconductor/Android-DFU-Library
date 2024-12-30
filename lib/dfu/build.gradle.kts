@@ -30,6 +30,8 @@
  */
 
 plugins {
+    // Kotlin is used only to build teh documentation using Dokka.
+    alias(libs.plugins.nordic.kotlin.android)
     // https://github.com/NordicSemiconductor/Android-Gradle-Plugins/blob/main/plugins/src/main/kotlin/AndroidLibraryConventionPlugin.kt
     alias(libs.plugins.nordic.library)
     // https://github.com/NordicSemiconductor/Android-Gradle-Plugins/blob/main/plugins/src/main/kotlin/AndroidNexusRepositoryPlugin.kt
@@ -51,6 +53,12 @@ nordicNexusPublishing {
     POM_DEVELOPER_ID = "mag"
     POM_DEVELOPER_NAME = "Mobile Applications Group"
     POM_DEVELOPER_EMAIL = "mag@nordicsemi.no"
+}
+
+dokka {
+    dokkaSourceSets.named("main") {
+        includes.from("Module.md")
+    }
 }
 
 android {
