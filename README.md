@@ -123,6 +123,8 @@ It is compatible with all Bootloader/DFU versions.
 
 See the [documentation](documentation) for more information.
 
+API documentation is located [here](https://nordicsemiconductor.github.io/Android-DFU-Library/html/index.html).
+
 ## Requirements
 
 The library is compatible with nRF51 and nRF52 devices with S-Series Soft Device and the
