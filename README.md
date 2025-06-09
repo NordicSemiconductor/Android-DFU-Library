@@ -178,6 +178,10 @@ iOS version of the same library can be found at [IOS-DFU-Library](https://github
 A library for both iOS and Android that is based on this library is available for React Native: 
 [react-native-nordic-dfu](https://github.com/Salt-PepperEngineering/react-native-nordic-dfu)
 
+### Expo
+
+An unofficial Expo module for both iOS and Android that is based on this library is available: [expo-nordic-dfu](https://github.com/getquip/expo-nordic-dfu)
+
 ### Capacitor
 
 A library for both iOS and Android that is based on this library is available for [Capacitor](https://capacitorjs.com):
