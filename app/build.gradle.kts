@@ -14,7 +14,9 @@ android {
     namespace = "no.nordicsemi.android.dfu.app"
     defaultConfig {
         applicationId = "no.nordicsemi.android.dfu"
-        resourceConfigurations.add("en")
+    }
+    androidResources {
+        localeFilters += setOf("en")
     }
 }
 
@@ -25,6 +27,11 @@ dependencies {
 
     implementation(libs.nordic.theme)
     implementation(libs.nordic.navigation)
+
+    // Use native Android BLE client.
+    // This can be switched to mock client for testing purposes (not implemented yet).
+    // See CentralManagerModule.kt in :app module.
+    implementation(libs.nordic.blek.client.android)
 
     implementation(libs.androidx.activity.compose)
 }

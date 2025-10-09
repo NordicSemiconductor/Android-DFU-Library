@@ -59,7 +59,7 @@ private val MTU = booleanPreferencesKey("requestMtu")
 
 @Singleton
 class SettingsDataSource @Inject constructor(
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) {
     private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 

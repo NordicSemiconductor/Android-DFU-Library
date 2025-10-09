@@ -36,10 +36,10 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -48,7 +48,7 @@ import javax.inject.Singleton
 
 @Singleton
 class ExternalFileDataSource @Inject internal constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val parser: FileNameParser
 ) {
     private val _fileResource = MutableStateFlow<FileResource?>(null)
@@ -85,7 +85,7 @@ class ExternalFileDataSource @Inject internal constructor(
         }
         _fileResource.value = LoadingFile
 
-        val request: DownloadManager.Request = DownloadManager.Request(Uri.parse(url))
+        val request: DownloadManager.Request = DownloadManager.Request(url.toUri())
         request.setTitle(parser.parseName(url))
         request.setDescription(context.getString(R.string.storage_notification_description))
 

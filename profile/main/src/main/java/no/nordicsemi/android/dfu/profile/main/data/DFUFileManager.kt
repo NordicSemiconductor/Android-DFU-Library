@@ -40,7 +40,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
 internal class DFUFileManager @Inject constructor(
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) {
     companion object {
         private const val TAG = "DFUFileManager"
@@ -49,7 +49,7 @@ internal class DFUFileManager @Inject constructor(
     fun createFile(uri: Uri): ZipFile? {
         return try {
             createFromFile(uri)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             try {
                 createFromContentResolver(uri)
             } catch (e: Exception) {

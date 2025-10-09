@@ -15,7 +15,7 @@ dependencyResolutionManagement {
     }
     versionCatalogs {
         create("libs") {
-            from("no.nordicsemi.android.gradle:version-catalog:2.6.1")
+            from("no.nordicsemi.android.gradle:version-catalog:2.10")
         }
     }
 }
