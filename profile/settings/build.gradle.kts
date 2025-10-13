@@ -14,10 +14,10 @@ dependencies {
     implementation(project(":lib:settings"))
     implementation(project(":profile:welcome"))
 
-    implementation(libs.nordic.ui)
-    implementation(libs.nordic.analytics)
-    implementation(libs.nordic.navigation)
+    implementation(nordic.ui)
+    implementation(nordic.analytics)
+    implementation(nordic.navigation)
 
     // Extended Icons
-    implementation(libs.androidx.compose.material.iconsExtended)
+    implementation(libs.androidx.compose.material.icons.extended)
 }

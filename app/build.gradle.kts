@@ -25,13 +25,13 @@ dependencies {
     implementation(project(":lib:storage")) // Deep link support
     implementation(project(":profile:navigation"))
 
-    implementation(libs.nordic.theme)
-    implementation(libs.nordic.navigation)
+    implementation(nordic.theme)
+    implementation(nordic.navigation)
 
     // Use native Android BLE client.
     // This can be switched to mock client for testing purposes (not implemented yet).
     // See CentralManagerModule.kt in :app module.
-    implementation(libs.nordic.blek.client.android)
+    implementation(nordic.blek.client.android)
 
     implementation(libs.androidx.activity.compose)
 }

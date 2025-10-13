@@ -15,5 +15,5 @@ dependencies {
     implementation(project(":profile:settings"))
     implementation(project(":profile:welcome"))
 
-    implementation(libs.nordic.navigation)
+    implementation(nordic.navigation)
 }
