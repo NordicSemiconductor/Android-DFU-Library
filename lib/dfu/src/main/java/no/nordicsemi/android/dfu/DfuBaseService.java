@@ -981,7 +981,9 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 			logi("Service Changed indication received");
 			sendLogBroadcast(LOG_LEVEL_INFO, "Service Changed indication received");
 			mConnectionState = STATE_CONNECTED;
-			discoverServices(gatt);
+			// Apparently, adding a delay here solves a connectivity issue for micro:bit v1.
+			// See: https://github.com/NordicSemiconductor/Android-DFU-Library/issues/500
+			mHandler.postDelayed(() -> discoverServices(gatt), 1000); // minimum 550 ms
 		}
 
 		/**
