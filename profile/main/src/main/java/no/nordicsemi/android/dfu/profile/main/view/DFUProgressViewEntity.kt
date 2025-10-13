@@ -113,9 +113,9 @@ internal data class ProgressItemViewEntity(
 }
 
 data class ProgressItemLabel(
-    @StringRes val idleText: Int,
-    @StringRes val workingText: Int,
-    @StringRes val successText: Int,
+    @field:StringRes val idleText: Int,
+    @field:StringRes val workingText: Int,
+    @field:StringRes val successText: Int,
 ) {
     @Composable
     fun toDisplayString(status: ProgressItemStatus) = when (status) {

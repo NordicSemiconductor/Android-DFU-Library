@@ -10,5 +10,5 @@ android {
 }
 
 dependencies {
-    implementation(libs.nordic.analytics)
+    implementation(nordic.analytics)
 }

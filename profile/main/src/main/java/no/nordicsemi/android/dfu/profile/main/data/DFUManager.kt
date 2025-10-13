@@ -45,7 +45,7 @@ import no.nordicsemi.android.log.Logger
 import javax.inject.Inject
 
 internal class DFUManager @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
 ) {
     private var session: LogSession? = null
 

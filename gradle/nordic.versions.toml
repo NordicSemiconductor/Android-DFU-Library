@@ -1,0 +1,21 @@
+# Versions of Nordic libraries used in this project.
+
+# This is a subset of the Version Catalog available at https://github.com/NordicSemiconductor/Android-Version-Catalog
+# The version catalog can be updated independently of this project after the release of this library.
+
+[versions]
+blek = "2.0.0-alpha09"
+common = "2.6.0"
+
+[libraries]
+# Native Android client for Bluetooth LE.
+blek-client-android = { group = "no.nordicsemi.kotlin.ble", name = "client-android", version.ref = "blek" }
+# Nordic common libraries for Android.
+core = { group = "no.nordicsemi.android.common", name = "core", version.ref = "common" }
+ui = { group = "no.nordicsemi.android.common", name = "ui", version.ref = "common" }
+theme = { group = "no.nordicsemi.android.common", name = "theme", version.ref = "common" }
+scanner-ble = { group = "no.nordicsemi.android.common", name = "scanner-ble", version.ref = "common" }
+analytics = { group = "no.nordicsemi.android.common", name = "analytics", version.ref = "common" }
+navigation = { group = "no.nordicsemi.android.common", name = "navigation", version.ref = "common" }
+logger = { group = "no.nordicsemi.android.common", name = "logger", version.ref = "common" }
+permissions-ble = { group = "no.nordicsemi.android.common", name = "permissions-ble", version.ref = "common" }

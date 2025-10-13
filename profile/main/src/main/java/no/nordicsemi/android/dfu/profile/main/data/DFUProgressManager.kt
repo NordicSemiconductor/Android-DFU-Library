@@ -44,7 +44,7 @@ import javax.inject.Singleton
 
 @Singleton
 internal class DFUProgressManager @Inject constructor(
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) : DfuProgressListenerAdapter() {
     val status = MutableStateFlow<DfuState>(DfuState.Idle)
 
