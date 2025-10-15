@@ -83,5 +83,5 @@ dependencies {
     implementation(libs.gson)
 
     // Adds @hide annotation to exclude internal classes from the documentation.
-    dokkaPlugin("org.jetbrains.dokka:android-documentation-plugin:2.0.0")
+    dokkaPlugin("org.jetbrains.dokka:android-documentation-plugin:2.1.0")
 }
