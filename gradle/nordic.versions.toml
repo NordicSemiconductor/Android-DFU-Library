@@ -4,7 +4,7 @@
 # The version catalog can be updated independently of this project after the release of this library.
 
 [versions]
-blek = "2.0.0-alpha09"
+blek = "2.0.0-alpha10"
 common = "2.6.1"
 
 [libraries]
