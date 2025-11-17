@@ -778,7 +778,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 * Stores the last progress percent. Used to prevent from sending progress notifications with
 	 * the same value.
 	 */
-	private int mLastProgress = -1;
+	private int mLastProgress = 0;
 	/* package */ DfuProgressInfo mProgressInfo;
 	private long mLastNotificationTime;
 
