@@ -1763,7 +1763,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	public void updateProgressNotification() {
 		final DfuProgressInfo info = mProgressInfo;
 		final int progress = info.getProgress();
-		if (mLastProgress == progress)
+		if (mLastProgress == progress && progress >= 0 && progress <= 100)
 			return;
 
 		mLastProgress = progress;
