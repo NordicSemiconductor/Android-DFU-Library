@@ -1661,6 +1661,8 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		if (mConnectionState == STATE_DISCONNECTED)
 			return;
 
+        mConnectionState = STATE_DISCONNECTING;
+
 		sendLogBroadcast(LOG_LEVEL_VERBOSE, "Disconnecting...");
 		mProgressInfo.setProgress(PROGRESS_DISCONNECTING);
 
