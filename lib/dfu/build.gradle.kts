@@ -56,7 +56,7 @@ nordicNexusPublishing {
 }
 
 dokka {
-    dokkaSourceSets.named("main") {
+    dokkaSourceSets.configureEach {
         includes.from("Module.md")
     }
 }
@@ -81,7 +81,4 @@ dependencies {
     implementation(libs.androidx.localbroadcastmanager)
 
     implementation(libs.gson)
-
-    // Adds @hide annotation to exclude internal classes from the documentation.
-    dokkaPlugin(libs.dokka.android.gradlePlugin)
 }
