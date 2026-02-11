@@ -24,7 +24,6 @@ package no.nordicsemi.android.dfu.internal.exception;
 
 /**
  * A DFU error occurred on the remote DFU target.
- * @hide
  */
 public class RemoteDfuException extends Exception {
 	private static final long serialVersionUID = -6901728550661937942L;

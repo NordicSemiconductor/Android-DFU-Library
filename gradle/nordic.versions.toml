@@ -4,8 +4,8 @@
 # The version catalog can be updated independently of this project after the release of this library.
 
 [versions]
-blek = "2.0.0-alpha10"
-common = "2.6.2"
+blek = "2.0.0-alpha12" # Version 2.0 alpha 13+ uses Environment and requires common in 2.9+.
+common = "2.7.0" # Version 2.8+ increases minSdk to 23.
 
 [libraries]
 # Native Android client for Bluetooth LE.

@@ -26,7 +26,6 @@ import java.util.Locale;
 
 /**
  * Thrown when the DFU target returned an unknown response.
- * @hide
  */
 public class UnknownResponseException extends Exception {
 	private static final long serialVersionUID = -8716125467309979289L;
