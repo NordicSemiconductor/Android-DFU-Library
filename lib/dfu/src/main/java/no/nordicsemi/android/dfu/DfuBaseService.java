@@ -778,7 +778,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	 * Stores the last progress percent. Used to prevent from sending progress notifications with
 	 * the same value.
 	 */
-	private int mLastProgress = -1;
+	private int mLastProgress = 0;
 	/* package */ DfuProgressInfo mProgressInfo;
 	private long mLastNotificationTime;
 
@@ -1661,6 +1661,8 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 		if (mConnectionState == STATE_DISCONNECTED)
 			return;
 
+        mConnectionState = STATE_DISCONNECTING;
+
 		sendLogBroadcast(LOG_LEVEL_VERBOSE, "Disconnecting...");
 		mProgressInfo.setProgress(PROGRESS_DISCONNECTING);
 
@@ -1763,7 +1765,7 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 	public void updateProgressNotification() {
 		final DfuProgressInfo info = mProgressInfo;
 		final int progress = info.getProgress();
-		if (mLastProgress == progress)
+		if (mLastProgress == progress && progress >= 0 && progress <= 100)
 			return;
 
 		mLastProgress = progress;
