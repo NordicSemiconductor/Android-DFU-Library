@@ -1,4 +1,4 @@
-[ ![Download](https://maven-badges.herokuapp.com/maven-central/no.nordicsemi.android/dfu/badge.svg?style=plastic) ](https://search.maven.org/artifact/no.nordicsemi.android/dfu)
+[ ![Maven Central](https://img.shields.io/maven-central/v/no.nordicsemi.android/dfu) ](https://central.sonatype.com/artifact/no.nordicsemi.android/dfu)
 
 # Device Firmware Update
 
