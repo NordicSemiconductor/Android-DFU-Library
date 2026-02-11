@@ -38,14 +38,15 @@ import java.util.UUID;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
+
 import no.nordicsemi.android.dfu.DfuDeviceSelector;
 
 /**
  * @see BootloaderScanner
- * @hide
  */
 @SuppressLint("MissingPermission")
-@TargetApi(Build.VERSION_CODES.LOLLIPOP)
+@RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 class BootloaderScannerLollipop extends ScanCallback implements BootloaderScanner {
     private final Object mLock = new Object();
     private final String mDeviceAddress;

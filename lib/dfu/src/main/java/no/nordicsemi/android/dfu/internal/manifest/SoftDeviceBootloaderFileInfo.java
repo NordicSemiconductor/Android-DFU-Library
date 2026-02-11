@@ -27,7 +27,6 @@ import com.google.gson.annotations.SerializedName;
 /**
  * The SoftDeviceBootloaderFileInfo class contains the information about the SoftDevice and Bootloader
  * firmware files in the Distribution Packet.
- * @hide
  */
 public class SoftDeviceBootloaderFileInfo extends FileInfo {
 	@SerializedName("bl_size") private int bootloaderSize;
