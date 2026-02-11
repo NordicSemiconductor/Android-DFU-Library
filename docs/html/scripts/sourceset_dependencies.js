@@ -1,1 +1,1 @@
-sourceset_dependencies = '{":lib:dfu/debug":[],":lib:dfu/main":[],":lib:dfu/release":[]}'
+sourceset_dependencies = '{":lib:dfu/release":[]}'
