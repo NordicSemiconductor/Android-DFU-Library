@@ -5,7 +5,7 @@
 
 [versions]
 blek = "2.0.0-alpha12" # Version 2.0 alpha 13+ uses Environment and requires common in 2.9+.
-common = "2.7.0" # Version 2.8+ increases minSdk to 23.
+common = "2.9.1" # Version 2.8+ increases minSdk to 23.
 
 [libraries]
 # Native Android client for Bluetooth LE.
